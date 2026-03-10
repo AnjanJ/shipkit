@@ -14,6 +14,10 @@ Or test locally:
 claude --plugin-dir ~/code/shipkit
 ```
 
+**That's it.** All skills, agents, rules, and knowledge bases are immediately available.
+
+Want to go further? Run `/shipkit:setup` to tailor everything to your specific project — it auto-detects your stack, creates a CLAUDE.md, and installs stack-specific skills and rules. This is optional but recommended for the best experience.
+
 ## What You Get Instantly
 
 **15 skills** — slash commands for common workflows:

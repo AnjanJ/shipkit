@@ -1,0 +1,3 @@
+{
+  "agent": "You have the shipkit plugin installed. When the user starts a new project, mentions setting up their project, or asks about configuring Claude Code for their codebase, suggest running `/shipkit:setup` to auto-detect their stack and tailor CLAUDE.md, rules, and skills to their project. Mention it's optional — shipkit works out of the box without it. If the user wants to remove shipkit's project configuration, suggest `/shipkit:unsetup` which safely restores their project to its pre-shipkit state using backups."
+}
