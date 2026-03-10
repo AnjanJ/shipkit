@@ -16,11 +16,12 @@ claude --plugin-dir ~/code/shipkit
 
 ## What You Get Instantly
 
-**14 skills** — slash commands for common workflows:
+**15 skills** — slash commands for common workflows:
 
 | Skill | What It Does |
 |-------|-------------|
 | `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) |
+| `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
 | `/shipkit:test` | Auto-detect test framework and run tests |
@@ -79,6 +80,21 @@ Run `/shipkit:setup` to tailor the plugin to your project:
 | Go | `/new-feature` | go-mod, go | — |
 | Elixir | `/new-feature` | mix-deps, elixir | — |
 | Static | `/audit` | — | — |
+
+## Uninstalling
+
+**Plugin-only users** (never ran `/setup`): just uninstall the plugin. Nothing was written to your project.
+```
+/plugin uninstall shipkit@shipkit
+```
+
+**Users who ran `/setup`**: run `/shipkit:unsetup` first to restore your project, then uninstall the plugin.
+```
+/shipkit:unsetup          # restores CLAUDE.md and .claude/ from backups
+/plugin uninstall shipkit@shipkit
+```
+
+`/setup` creates a manifest (`.claude/shipkit-manifest.json`) and backs up your existing files before making changes, so `/unsetup` knows exactly what to remove and what to restore.
 
 ## Research
 

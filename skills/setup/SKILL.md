@@ -38,9 +38,27 @@ Tailor shipkit to your specific project. Detects your stack, test framework, pac
    - Branch naming prefix (e.g., `feature/`, `JIRA-123-`) — optional
    - PR description preference: summary+test plan, minimal, or none — optional
 
+## Phase 1.5: Create Backup Manifest
+
+Before writing ANY files, record the current state so `/unsetup` can restore it:
+
+1. Create `.claude/shipkit-manifest.json` with:
+   ```json
+   {
+     "installed_at": "ISO timestamp",
+     "stack": "detected stack",
+     "had_claude_md": true/false,
+     "files_created": [],
+     "files_modified": []
+   }
+   ```
+2. If `CLAUDE.md` exists, back it up to `CLAUDE.md.pre-shipkit`
+3. If `.claude/settings.json` exists, back it up to `.claude/settings.json.pre-shipkit`
+4. As you create/modify files in later phases, add each path to the manifest's `files_created` or `files_modified` arrays
+
 ## Phase 2: Create CLAUDE.md
 
-If no CLAUDE.md exists, create one. If one exists, ask before overwriting (back up to CLAUDE.md.backup).
+If no CLAUDE.md exists, create one. If one exists, back it up to `CLAUDE.md.pre-shipkit` (already done in Phase 1.5) and ask before overwriting.
 
 Write a CLAUDE.md with this structure:
 
