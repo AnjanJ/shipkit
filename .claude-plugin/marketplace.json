@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "shipkit",
-      "source": ".",
+      "source": "./",
       "description": "15 skills, 2 agents, 2 knowledge bases, 6 path-scoped rules. Run /shipkit:setup to tailor to your stack, /shipkit:unsetup to revert.",
       "version": "1.0.0",
       "keywords": ["claude-code", "developer-tools", "workflow", "code-review", "testing"]
