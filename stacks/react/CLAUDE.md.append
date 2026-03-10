@@ -1,0 +1,38 @@
+
+## React-Specific
+
+### Architecture
+- **Pattern:** {{REACT_PATTERN}} <!-- Functional components / Class components -->
+- **State management:** {{STATE_MANAGEMENT}} <!-- Zustand / Redux / Context / None -->
+- **Styling:** {{STYLING}} <!-- Tailwind / CSS Modules / styled-components -->
+- **Router:** {{ROUTER}} <!-- React Router / Next.js / Expo Router -->
+
+### Key Paths
+
+| Path | Purpose |
+|------|---------|
+| `src/components/` | Reusable UI components |
+| `src/screens/` or `src/pages/` | Route-level components |
+| `src/hooks/` | Custom hooks |
+| `src/services/` or `src/api/` | API calls and external services |
+| `src/stores/` or `src/state/` | State management |
+| `src/types/` | TypeScript type definitions |
+
+### Testing
+- **Framework:** {{TEST_FRAMEWORK}} <!-- Jest / Vitest / Playwright -->
+- **Run all:** `{{TEST_COMMAND}}`
+- **Run specific:** `{{TEST_COMMAND}} <path>`
+- **Component tests:** Use Testing Library (`@testing-library/react`)
+
+### Style
+- **Linter:** ESLint (`npx eslint .`)
+- **Formatter:** Prettier (`npx prettier --check .`)
+- **Type check:** `npx tsc --noEmit`
+
+### React Conventions
+- **Components:** Functional components with hooks (no class components)
+- **Props:** Define TypeScript interfaces for all props
+- **State:** Colocate state as close to where it's used as possible
+- **Effects:** Minimize useEffect — prefer derived state and event handlers
+- **Keys:** Never use array index as key for dynamic lists
+- **Memoization:** Only `useMemo`/`useCallback` when there's a measured perf issue

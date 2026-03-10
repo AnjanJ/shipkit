@@ -1,0 +1,24 @@
+
+## Static Site
+
+### Structure
+
+| Path | Purpose |
+|------|---------|
+| `index.html` | Main page |
+| `css/` or `styles/` | Stylesheets |
+| `js/` or `scripts/` | JavaScript |
+| `images/` or `assets/` | Static assets |
+| `pages/` | Additional HTML pages |
+
+### Build
+- **Bundler:** {{BUNDLER}} <!-- None / Vite / Webpack / Parcel -->
+- **Dev server:** {{DEV_SERVER}} <!-- None / npx serve / vite dev -->
+
+### Conventions
+- **HTML:** Semantic elements (`header`, `nav`, `main`, `article`, `footer`)
+- **CSS:** Mobile-first, use CSS custom properties for theming
+- **JS:** Vanilla JS preferred — no framework unless complexity demands it
+- **Images:** Optimized (WebP where supported), lazy-loaded below the fold
+- **Accessibility:** All images have `alt` text, all forms have labels, keyboard navigable
+- **SEO:** Meta description, Open Graph tags, JSON-LD structured data, sitemap.xml

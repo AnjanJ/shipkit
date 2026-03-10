@@ -1,0 +1,55 @@
+
+## Python-Specific
+
+### Architecture
+<!-- setup.sh replaces this based on detection -->
+- **Framework:** {{PYTHON_FRAMEWORK}} <!-- Django / FastAPI / Flask / None -->
+- **API style:** {{API_STYLE}} <!-- REST / GraphQL / gRPC -->
+- **Async:** {{ASYNC_MODE}} <!-- yes/no -->
+
+### Key Paths
+
+| Path | Purpose |
+|------|---------|
+| `src/` or `app/` | Application code |
+| `tests/` | Test suite |
+| `migrations/` or `alembic/` | Database migrations |
+| `requirements.txt` or `pyproject.toml` | Dependencies |
+| `config/` or `settings.py` | Configuration |
+
+### Testing
+- **Framework:** {{TEST_FRAMEWORK}} <!-- pytest / unittest -->
+- **Run all:** `{{TEST_COMMAND}}`
+- **Run specific:** `{{TEST_COMMAND}} <path>`
+- **Run with coverage:** `{{TEST_COMMAND}} --cov`
+
+### Style
+- **Linter:** Ruff (`ruff check .`) or flake8
+- **Formatter:** Ruff (`ruff format .`) or Black (`black .`)
+- **Type check:** `mypy .` or `pyright`
+
+### Python Conventions
+- **Type hints:** Use type hints for all function signatures and return types
+- **Imports:** Use absolute imports. Group: stdlib, third-party, local (separated by blank lines)
+- **Exceptions:** Catch specific exceptions — never bare `except:`
+- **Context managers:** Use `with` for file handles, DB connections, locks
+- **Dataclasses/Pydantic:** Prefer dataclasses or Pydantic models over plain dicts for structured data
+- **Async:** Use `async/await` for I/O-bound operations in async frameworks (FastAPI, aiohttp)
+
+### Django Gotchas (if applicable)
+- **N+1 queries:** Always use `select_related`/`prefetch_related` for associations in loops
+- **Migration safety:** Never remove fields in the same deploy that removes code references
+- **Forms/Serializers:** Validate all user input through forms (Django) or serializers (DRF)
+- **Settings:** Use `django-environ` or similar — never hardcode secrets
+- **Signals:** Avoid `post_save` for side effects — use service functions or tasks instead
+
+### FastAPI Gotchas (if applicable)
+- **Dependency injection:** Use `Depends()` for shared logic (auth, DB sessions)
+- **Pydantic models:** Define request/response schemas — never return raw dicts
+- **Background tasks:** Use `BackgroundTasks` or Celery for heavy work
+- **Async DB:** Use async ORM (SQLAlchemy async, Tortoise) with async endpoints
+
+### Database
+- **ORM:** {{ORM}} <!-- Django ORM / SQLAlchemy / Tortoise -->
+- **Migrate:** `python manage.py migrate` or `alembic upgrade head`
+- **Rollback:** `python manage.py migrate <app> <previous>` or `alembic downgrade -1`

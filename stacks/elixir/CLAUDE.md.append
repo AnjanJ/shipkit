@@ -1,0 +1,46 @@
+
+## Elixir-Specific
+
+### Architecture
+- **Framework:** {{ELIXIR_FRAMEWORK}} <!-- Phoenix / bare Elixir -->
+- **Frontend:** {{ELIXIR_FRONTEND}} <!-- LiveView / API-only / SPA -->
+- **OTP patterns:** GenServer, Supervisor trees as needed
+
+### Key Paths
+
+| Path | Purpose |
+|------|---------|
+| `lib/<app>/` | Business logic (contexts) |
+| `lib/<app>_web/` | Web layer (controllers, views, LiveViews) |
+| `lib/<app>_web/live/` | LiveView modules |
+| `lib/<app>/application.ex` | Supervision tree |
+| `priv/repo/migrations/` | Ecto migrations |
+| `test/` | ExUnit tests |
+| `config/` | Environment configs |
+
+### Testing
+- **Framework:** ExUnit
+- **Run all:** `mix test`
+- **Run specific:** `mix test <path>`
+- **Run with coverage:** `mix test --cover`
+- **Watch mode:** `mix test.watch` (if dep installed)
+
+### Style
+- **Formatter:** `mix format`
+- **Linter:** `mix credo` (if installed)
+- **Dialyzer:** `mix dialyzer` (if installed)
+
+### Elixir Conventions
+- **Contexts:** Group related functions in context modules (not in schemas)
+- **Schemas:** Keep schemas lean — validations and changesets only
+- **Pattern matching:** Prefer pattern matching over conditionals
+- **Pipe operator:** Use `|>` for data transformation chains
+- **with statements:** Use `with` for multi-step operations that can fail
+- **GenServer:** Only when you need state or message passing — don't overuse
+- **Error tuples:** Return `{:ok, result}` / `{:error, reason}` — let callers decide how to handle
+
+### Database
+- **ORM:** Ecto
+- **Migrate:** `mix ecto.migrate`
+- **Rollback:** `mix ecto.rollback`
+- **Seed:** `mix run priv/repo/seeds.exs`

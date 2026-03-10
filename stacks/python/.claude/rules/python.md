@@ -1,0 +1,11 @@
+# Python Conventions
+- Use type hints for all function signatures and return values
+- Catch specific exceptions — never bare `except:` or `except Exception:`
+- Use `with` for resource management (files, connections, locks)
+- Prefer dataclasses or Pydantic models over plain dicts for structured data
+- Use absolute imports — no relative imports except within packages
+- Keep functions small and focused — one function, one job
+- Use `pathlib.Path` over `os.path` for file operations
+- Use f-strings over `.format()` or `%` string formatting
+- Prefer list/dict/set comprehensions over manual loops for simple transformations
+- Use `logging` module — never `print()` for production logging

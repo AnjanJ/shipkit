@@ -1,0 +1,93 @@
+# Shipkit
+
+Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that gives you workflow rules, skills, agents, knowledge bases, and path-scoped rules — out of the box.
+
+## Install
+
+```
+/plugin marketplace add AnjanJ/shipkit
+/plugin install shipkit@shipkit
+```
+
+Or test locally:
+```bash
+claude --plugin-dir ~/code/shipkit
+```
+
+## What You Get Instantly
+
+**14 skills** — slash commands for common workflows:
+
+| Skill | What It Does |
+|-------|-------------|
+| `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) |
+| `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
+| `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
+| `/shipkit:test` | Auto-detect test framework and run tests |
+| `/shipkit:onboard` | Multi-phase codebase onboarding |
+| `/shipkit:explain-system` | Explore codebase and write verified system design docs |
+| `/shipkit:walkthrough` | Trace one feature end-to-end |
+| `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
+| `/shipkit:context-audit` | Check context window health and find bloat |
+| `/shipkit:use-library` | Read docs before using any library |
+| `/shipkit:ai-feature` | Scaffold AI/LLM features (chat, embeddings, RAG, agents) |
+| `/shipkit:legacy-audit` | Audit legacy codebase for modernization |
+| `/shipkit:migration-plan` | Plan major dependency upgrades |
+| `/shipkit:ui-ux` | Empathy-driven UI/UX design, review, and audit (web + mobile) |
+
+**2 agents** — diagnostic subagents:
+
+| Agent | What It Does |
+|-------|-------------|
+| `test-analyzer` | Auto-diagnoses test failures |
+| `codebase-explorer` | Read-only exploration: traces flows, maps architecture |
+
+**2 knowledge bases** — on-demand reference material:
+
+| KB | What It Provides |
+|----|-----------------|
+| `code-review-standards` | 8 review lenses, anti-pattern catalog, severity definitions |
+| `ui-ux-standards` | Cross-platform UI/UX: a11y, design, performance, mobile patterns |
+
+**6 path-scoped rules** — auto-loaded when editing matching files:
+
+| Rule | Triggers On |
+|------|-------------|
+| `testing.md` | Test files (`*_test.*`, `*_spec.*`) |
+| `migrations.md` | Database migrations |
+| `security.md` | Controllers, API, auth files |
+| `dependencies.md` | Dependency files (Gemfile, package.json, go.mod, etc.) |
+| `monorepo.md` | Monorepo configs and workspace files |
+| `ui-ux.md` | UI files (web, iOS, Android, Flutter, React Native) |
+
+## Optional: Full Stack Configuration
+
+Run `/shipkit:setup` to tailor the plugin to your project:
+
+1. **Auto-detects** your stack, test framework, and package manager
+2. **Creates CLAUDE.md** with your project info and workflow rules
+3. **Installs stack-specific** skills, rules, and knowledge bases
+4. **Creates settings.json** with safe permission defaults
+
+### Stack-Specific Additions
+
+| Stack | Extra Skills | Extra Rules | Extra KBs |
+|-------|-------------|-------------|-----------|
+| Rails | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | gemfile, rails | code-review-standards-rails, ai-rails |
+| React | `/component` | package-json, react | — |
+| Python | `/new-feature` | pyproject, python | — |
+| Go | `/new-feature` | go-mod, go | — |
+| Elixir | `/new-feature` | mix-deps, elixir | — |
+| Static | `/audit` | — | — |
+
+## Research
+
+Design decisions in this plugin are informed by:
+
+- **[Do Context Files Actually Work?](https://arxiv.org/pdf/2602.11988)** (ETH Zurich, 2025) — LLM-generated context files hurt performance. Human-written help only marginally. "Describe only minimal requirements."
+- **[Optimizing Coding Agent Rules](https://arize.com/blog/optimizing-coding-agent-rules-claude-md-agents-md-clinerules-cursor-rules-for-improved-accuracy/)** (Arize, 2025) — Optimized rulesets contain 20–50 rules. Best rules are root-cause focused, correctness-preserving, edge-case aware.
+- **[Writing a Good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md)** (HumanLayer, 2025) — ~150–200 instruction limit for frontier LLMs. Progressive disclosure over monolithic files.
+
+## License
+
+MIT

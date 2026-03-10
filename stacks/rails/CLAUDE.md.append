@@ -1,0 +1,44 @@
+
+## Rails-Specific
+
+### Architecture
+<!-- setup.sh replaces this based on detection -->
+- **Pattern:** {{RAILS_ARCHITECTURE}} <!-- MVC / Service Objects / CQRS -->
+- **API mode:** {{API_MODE}} <!-- yes/no -->
+- **Frontend:** {{FRONTEND}} <!-- Hotwire / React / API-only -->
+
+### Key Paths
+
+| Path | Purpose |
+|------|---------|
+| `app/models/` | ActiveRecord models |
+| `app/controllers/` | Request handling |
+| `app/services/` | Business logic (if using service objects) |
+| `app/jobs/` | Background jobs |
+| `db/migrate/` | Database migrations |
+| `spec/` or `test/` | Tests |
+| `config/routes.rb` | Route definitions |
+
+### Testing
+- **Framework:** {{TEST_FRAMEWORK}} <!-- RSpec / Minitest -->
+- **Run all:** `{{TEST_COMMAND}}`
+- **Run specific:** `{{TEST_COMMAND}} <path>`
+- **System tests:** `{{TEST_COMMAND}} spec/system` or `bin/rails test:system`
+
+### Style
+- **Linter:** RuboCop (`bundle exec rubocop`)
+- **Config:** `.rubocop.yml`
+- **Auto-fix:** `bundle exec rubocop -a`
+
+### Rails Gotchas
+- **N+1 queries:** Always use `includes`/`preload` for associations in loops
+- **Migration safety:** Never remove columns in the same deploy that removes code references. Use `ignored_columns` first.
+- **Strong params:** Every controller action that accepts input must use strong parameters
+- **Callbacks:** Avoid `after_save` for side effects — use service objects or jobs instead
+- **Scopes:** Prefer scopes over class methods for query building
+
+### Database
+- **DB:** {{DATABASE}} <!-- PostgreSQL / MySQL / SQLite -->
+- **Migrate:** `bin/rails db:migrate`
+- **Rollback:** `bin/rails db:rollback`
+- **Seed:** `bin/rails db:seed`

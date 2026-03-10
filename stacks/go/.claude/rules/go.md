@@ -1,0 +1,11 @@
+# Go Conventions
+- Always check returned errors — never discard with `_`
+- Accept interfaces, return concrete types
+- Keep interfaces small (1-3 methods) and define them where they're used
+- Pass `context.Context` as the first parameter for I/O-bound functions
+- Use `fmt.Errorf("...: %w", err)` for error wrapping
+- Package names are lowercase, single-word — no `util`, `common`, `helpers`
+- Use struct literals with field names — never positional
+- Prefer table-driven tests with `t.Run` subtests
+- Use `defer` for cleanup — never manual cleanup at end of function
+- No `init()` functions unless absolutely necessary
