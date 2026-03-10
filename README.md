@@ -2,6 +2,8 @@
 
 Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that gives you workflow rules, skills, agents, knowledge bases, and path-scoped rules — out of the box.
 
+**[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows.
+
 ## Install
 
 ```
