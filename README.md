@@ -69,12 +69,13 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ## Optional: Full Stack Configuration
 
-Run `/shipkit:setup` to tailor the plugin to your project:
+Run `/shipkit:setup` to tailor the plugin to your project. It backs up your existing files first, and everything it does can be reversed with `/shipkit:unsetup`.
 
 1. **Auto-detects** your stack, test framework, and package manager
-2. **Creates CLAUDE.md** with your project info and workflow rules
+2. **Creates CLAUDE.md** with your project info and workflow rules (backs up existing one)
 3. **Installs stack-specific** skills, rules, and knowledge bases
 4. **Creates settings.json** with safe permission defaults
+5. **Writes a manifest** (`.claude/shipkit-manifest.json`) so `/unsetup` knows exactly what to revert
 
 ### Stack-Specific Additions
 
