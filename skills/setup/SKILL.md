@@ -189,7 +189,21 @@ Based on detected stack, install the appropriate additions:
 - Append static-specific section to CLAUDE.md (structure, tooling, deployment)
 - Install skills: `/audit` (SEO, a11y, performance)
 
-## Phase 5: Install Settings (Optional)
+## Phase 5: Create Lessons File
+
+If `.claude/lessons.md` doesn't already exist, create it:
+
+```markdown
+# Lessons Learned
+
+<!-- Shipkit auto-manages this file. Limit: 30 lines. -->
+<!-- When this file exceeds 30 lines, graduate recurring lessons to CLAUDE.md via /update-rules. -->
+<!-- Format: one line per lesson, dated. -->
+```
+
+If it already exists, leave it as-is (it was backed up in Phase 2).
+
+## Phase 6: Install Settings (Optional)
 
 Ask the user: "Want me to create `.claude/settings.json` with safe defaults? (allows test/lint/build, denies destructive ops)"
 
@@ -199,17 +213,19 @@ If yes, create `.claude/settings.json` with:
 
 Also ask: "Enterprise mode? (also blocks curl, docker, cloud CLIs, secrets files)" — if yes, add the extended deny list.
 
-## Phase 6: Summary
+## Phase 7: Summary
 
 Report what was installed:
 - Backup location (`.shipkit-backup-<ts>/`)
 - CLAUDE.md line count
 - Stack detected
 - Skills, rules, knowledge bases installed
+- Lessons file created/preserved
 - Settings created (if applicable)
 
 Suggest next steps:
 1. Try `/qa`, `/review-my-code`, `/test`
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
-4. Run `/unsetup` anytime to restore your previous configuration
+4. When I learn something project-specific, I'll save it to `.claude/lessons.md` (30-line limit — recurring lessons graduate to CLAUDE.md rules)
+5. Run `/unsetup` anytime to restore your previous configuration

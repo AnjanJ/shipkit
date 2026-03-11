@@ -300,6 +300,43 @@ The `ui-ux` path-scoped rule also auto-loads when editing any UI file, applying 
 
 ---
 
+## Lessons Memory
+
+Shipkit includes a lightweight project memory system via `.claude/lessons.md`.
+
+### How it works
+
+- When you correct Claude or it discovers a project-specific pattern, it writes a one-line entry to `.claude/lessons.md` with the date
+- At the start of every session, Claude reads this file to avoid repeating mistakes
+- The file has a **30-line limit** — when exceeded, Claude alerts you and suggests consolidating
+
+### Why 30 lines?
+
+Research shows frontier LLMs have a ~150-200 effective instruction limit. CLAUDE.md uses ~130 lines, path-scoped rules add ~15-30 when active. Lessons.md needs to stay small to avoid crowding out useful context. 30 lines gives enough room for project-specific corrections without degrading performance.
+
+### The graduation cycle
+
+```
+Correction → lessons.md (short-term memory)
+        ↓ repeats
+/update-rules → CLAUDE.md (permanent rule)
+        ↓ lessons entry removed
+```
+
+Lessons that keep recurring should become proper rules via `/shipkit:update-rules`. This keeps lessons.md lean and CLAUDE.md authoritative.
+
+### Example
+
+```markdown
+# Lessons Learned
+
+- 2026-03-11: Use `factory_bot` not fixtures — project convention
+- 2026-03-11: API responses must include `request_id` header
+- 2026-03-12: Don't use `after_save` for email notifications — use a job
+```
+
+---
+
 ## Agents
 
 Agents are used automatically by skills, or you can reference them in prompts.
