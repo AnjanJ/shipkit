@@ -7,7 +7,7 @@ Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.
 ## Install
 
 ```
-/plugin marketplace add AnjanJ/shipkit
+/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
 /plugin install shipkit@shipkit
 ```
 
