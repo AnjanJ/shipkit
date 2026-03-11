@@ -71,11 +71,11 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 Run `/shipkit:setup` to tailor the plugin to your project. It backs up your existing files first, and everything it does can be reversed with `/shipkit:unsetup`.
 
-1. **Auto-detects** your stack, test framework, and package manager
-2. **Creates CLAUDE.md** with your project info and workflow rules (backs up existing one)
-3. **Installs stack-specific** skills, rules, and knowledge bases
-4. **Creates settings.json** with safe permission defaults
-5. **Writes a manifest** (`.claude/shipkit-manifest.json`) so `/unsetup` knows exactly what to revert
+1. **Snapshots your current state** — copies `CLAUDE.md` + `.claude/` to `.shipkit-backup-<timestamp>/`
+2. **Auto-detects** your stack, test framework, and package manager
+3. **Creates CLAUDE.md** with your project info and workflow rules
+4. **Installs stack-specific** skills, rules, and knowledge bases
+5. **Creates settings.json** with safe permission defaults
 
 ### Stack-Specific Additions
 
@@ -97,11 +97,11 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 
 **Users who ran `/setup`**: run `/shipkit:unsetup` first to restore your project, then uninstall the plugin.
 ```
-/shipkit:unsetup          # restores CLAUDE.md and .claude/ from backups
+/shipkit:unsetup          # restores CLAUDE.md and .claude/ from .shipkit-backup-<timestamp>/
 /plugin uninstall shipkit@shipkit
 ```
 
-`/setup` creates a manifest (`.claude/shipkit-manifest.json`) and backs up your existing files before making changes, so `/unsetup` knows exactly what to remove and what to restore.
+`/setup` snapshots your entire `CLAUDE.md` and `.claude/` directory to `.shipkit-backup-<timestamp>/` before making any changes. `/unsetup` restores from that snapshot — your project goes back to exactly how it was.
 
 ## Research
 

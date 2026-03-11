@@ -38,17 +38,18 @@ For the best experience, run `/shipkit:setup` once per project to tailor everyth
 Configures shipkit for your specific project. Run it once when you start using shipkit in a new codebase.
 
 **What it does:**
-1. Detects your stack (Rails, React, Python, Go, Elixir, static)
-2. Detects test framework and package manager
-3. Asks for your project purpose and team conventions
-4. Creates a tailored CLAUDE.md with workflow rules
-5. Installs stack-specific skills, rules, and knowledge bases
-6. Optionally creates `.claude/settings.json` with safe defaults
+1. Snapshots your current `CLAUDE.md` + `.claude/` directory to `.shipkit-backup-<timestamp>/`
+2. Detects your stack (Rails, React, Python, Go, Elixir, static)
+3. Detects test framework and package manager
+4. Asks for your project purpose and team conventions
+5. Creates a tailored CLAUDE.md with workflow rules
+6. Installs stack-specific skills, rules, and knowledge bases
+7. Optionally creates `.claude/settings.json` with safe defaults
 
-**What it backs up:**
-- Existing `CLAUDE.md` → `CLAUDE.md.pre-shipkit`
-- Existing `.claude/settings.json` → `.claude/settings.json.pre-shipkit`
-- Creates `.claude/shipkit-manifest.json` tracking every file it creates
+**How backups work:**
+- Everything is copied to `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at project root
+- If an older shipkit backup already exists, you're asked to preserve or delete it
+- Preserved old backups are nested inside the new one and restored automatically by `/unsetup`
 
 **Usage:**
 ```
@@ -67,12 +68,13 @@ Configures shipkit for your specific project. Run it once when you start using s
 Reverses everything `/setup` did. Restores your project to its pre-shipkit state.
 
 **What it does:**
-1. Reads the manifest (`.claude/shipkit-manifest.json`)
-2. Shows you exactly what will be removed and restored
+1. Finds the `.shipkit-backup-<timestamp>/` directory
+2. Shows you exactly what will be restored
 3. Asks for confirmation before proceeding
-4. Restores `CLAUDE.md` and `settings.json` from backups
-5. Deletes only files that `/setup` created — never touches your own files
-6. Cleans up empty directories and the manifest itself
+4. Removes current `CLAUDE.md` and `.claude/` directory
+5. Restores everything from the backup snapshot
+6. If the backup contained a nested older backup, restores that too
+7. Deletes the backup directory after successful restore
 
 **Usage:**
 ```

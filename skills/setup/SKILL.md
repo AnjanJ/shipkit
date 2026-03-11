@@ -38,27 +38,41 @@ Tailor shipkit to your specific project. Detects your stack, test framework, pac
    - Branch naming prefix (e.g., `feature/`, `JIRA-123-`) — optional
    - PR description preference: summary+test plan, minimal, or none — optional
 
-## Phase 1.5: Create Backup Manifest
+## Phase 2: Backup Current State
 
-Before writing ANY files, record the current state so `/unsetup` can restore it:
+Before writing ANY files, snapshot the current state so `/unsetup` can restore it.
 
-1. Create `.claude/shipkit-manifest.json` with:
-   ```json
-   {
-     "installed_at": "ISO timestamp",
-     "stack": "detected stack",
-     "had_claude_md": true/false,
-     "files_created": [],
-     "files_modified": []
-   }
-   ```
-2. If `CLAUDE.md` exists, back it up to `CLAUDE.md.pre-shipkit`
-3. If `.claude/settings.json` exists, back it up to `.claude/settings.json.pre-shipkit`
-4. As you create/modify files in later phases, add each path to the manifest's `files_created` or `files_modified` arrays
+### Step 1: Check for existing backup
 
-## Phase 2: Create CLAUDE.md
+Look for any existing `.shipkit-backup-*` directory at the project root.
 
-If no CLAUDE.md exists, create one. If one exists, back it up to `CLAUDE.md.pre-shipkit` (already done in Phase 1.5) and ask before overwriting.
+If one exists, ask the user:
+> "Found an existing shipkit backup from `<timestamp>`. Do you want to preserve it or delete it?"
+
+- **Preserve:** The old backup will be saved inside the new backup directory (as `previous-backup/`), so `/unsetup` restores everything including the old backup.
+- **Delete:** Remove the old backup directory before proceeding.
+
+### Step 2: Create the backup directory
+
+Create `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at the project root.
+
+### Step 3: Snapshot everything
+
+Copy the following into the backup directory (only files/dirs that exist):
+- `CLAUDE.md` → `.shipkit-backup-<ts>/CLAUDE.md`
+- `.claude/` (entire directory) → `.shipkit-backup-<ts>/.claude/`
+
+If the user chose to preserve an existing backup (Step 1), move it into:
+- `.shipkit-backup-<ts>/previous-backup/` (the entire old `.shipkit-backup-*` directory)
+
+Then delete the old backup from the project root (it now lives inside the new one).
+
+### Step 4: Confirm to user
+
+Tell the user:
+> "Backed up current state to `.shipkit-backup-<ts>/`. You can restore it anytime with `/unsetup`."
+
+## Phase 3: Create CLAUDE.md
 
 Write a CLAUDE.md with this structure:
 
@@ -138,10 +152,10 @@ These actions require explicit user confirmation every time:
 - Use `/update-rules` to modify this file — never edit manually
 {team conventions if provided}
 
-{stack-specific section — see Phase 3}
+{stack-specific section — see Phase 4}
 ```
 
-## Phase 3: Install Stack-Specific Content
+## Phase 4: Install Stack-Specific Content
 
 Based on detected stack, install the appropriate additions:
 
@@ -175,7 +189,7 @@ Based on detected stack, install the appropriate additions:
 - Append static-specific section to CLAUDE.md (structure, tooling, deployment)
 - Install skills: `/audit` (SEO, a11y, performance)
 
-## Phase 4: Install Settings (Optional)
+## Phase 5: Install Settings (Optional)
 
 Ask the user: "Want me to create `.claude/settings.json` with safe defaults? (allows test/lint/build, denies destructive ops)"
 
@@ -185,9 +199,10 @@ If yes, create `.claude/settings.json` with:
 
 Also ask: "Enterprise mode? (also blocks curl, docker, cloud CLIs, secrets files)" — if yes, add the extended deny list.
 
-## Phase 5: Summary
+## Phase 6: Summary
 
 Report what was installed:
+- Backup location (`.shipkit-backup-<ts>/`)
 - CLAUDE.md line count
 - Stack detected
 - Skills, rules, knowledge bases installed
@@ -197,3 +212,4 @@ Suggest next steps:
 1. Try `/qa`, `/review-my-code`, `/test`
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
+4. Run `/unsetup` anytime to restore your previous configuration

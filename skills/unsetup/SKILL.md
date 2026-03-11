@@ -6,54 +6,57 @@ argument-hint: ""
 
 # /unsetup — Remove Shipkit Setup
 
-Reverses what `/setup` did. Restores your project's `.claude/` directory and CLAUDE.md to their pre-shipkit state.
+Reverses what `/setup` did. Restores your project's CLAUDE.md and `.claude/` directory to their pre-shipkit state from the backup snapshot.
 
 **This only undoes `/setup`.** Uninstalling the plugin itself is done via `/plugin uninstall shipkit@shipkit`.
 
-## Step 1: Read the Manifest
+## Step 1: Find the Backup
 
-Read `.claude/shipkit-manifest.json`. If it doesn't exist, tell the user:
-> "No shipkit manifest found. Either `/setup` was never run, or the manifest was deleted. I can't safely determine which files to remove. You can manually delete files or run `/plugin uninstall shipkit@shipkit` to remove the plugin."
+Look for a `.shipkit-backup-*` directory at the project root.
 
-Stop here if no manifest.
+If none exists, tell the user:
+> "No shipkit backup found. Either `/setup` was never run, or the backup was manually deleted. I can't safely restore without a backup. You can manually revert changes or run `/plugin uninstall shipkit@shipkit` to remove the plugin."
 
-## Step 2: Confirm with User
+Stop here if no backup found.
 
-Show the user what will happen:
-- List all files in `files_created` that will be **deleted**
-- List all files in `files_modified` that will be **restored from backup**
-- Note whether CLAUDE.md will be restored from `CLAUDE.md.pre-shipkit` or deleted
+If multiple `.shipkit-backup-*` directories exist (shouldn't happen, but be safe), use the most recent one (latest timestamp).
 
-Ask: "This will remove all shipkit setup files and restore backups. Continue? (yes/no)"
+## Step 2: Show What Will Happen
 
-**Do NOT proceed without explicit confirmation.**
+Read the backup contents and tell the user exactly what will be restored:
 
-## Step 3: Restore Backups
+> **Restoring from `.shipkit-backup-<ts>/`:**
+> - CLAUDE.md will be restored (if backup contains one) / deleted (if backup has none)
+> - .claude/ directory will be restored to its pre-shipkit state
+> - [If backup contains `previous-backup/`:] An older shipkit backup will also be restored to the project root
+>
+> **Continue? (yes/no)**
 
-1. If `CLAUDE.md.pre-shipkit` exists, restore it to `CLAUDE.md`
-2. If `.claude/settings.json.pre-shipkit` exists, restore it to `.claude/settings.json`
+**Do NOT proceed without explicit "yes" confirmation.**
 
-## Step 4: Remove Created Files
+## Step 3: Restore
 
-Delete every file listed in `files_created` from the manifest. These are files that didn't exist before `/setup`:
-- Stack-specific rules (e.g., `.claude/rules/rails.md`, `.claude/rules/gemfile.md`)
-- Stack-specific skills (e.g., `.claude/skills/new-feature/SKILL.md`)
-- Stack-specific knowledge bases
-- `.claude/lessons.md` (only if in `files_created`)
+1. **Remove current shipkit files:**
+   - Delete `CLAUDE.md`
+   - Delete the `.claude/` directory entirely
 
-**Never delete files that aren't in the manifest.** The user may have added their own files to `.claude/`.
+2. **Restore from backup:**
+   - If backup contains `CLAUDE.md`, copy it to project root
+   - If backup contains `.claude/`, copy it to project root
+   - (Files that didn't exist before `/setup` simply won't be in the backup, so they get removed cleanly)
 
-## Step 5: Clean Up
+3. **Restore nested backup (if present):**
+   - If the backup contains a `previous-backup/` directory, move it back to the project root with its original name (`.shipkit-backup-<original-ts>/`)
 
-1. Remove empty directories left behind (e.g., `.claude/skills/new-feature/` if now empty)
-2. Delete the manifest itself (`.claude/shipkit-manifest.json`)
-3. Delete backup files (`CLAUDE.md.pre-shipkit`, `.claude/settings.json.pre-shipkit`)
+4. **Delete the backup directory** (`.shipkit-backup-<ts>/`) — it's been fully restored.
 
-## Step 6: Summary
+## Step 4: Summary
 
 Report what was done:
-- Files deleted (count)
-- Files restored from backup (count)
-- What remains (plugin skills/rules still active until plugin is uninstalled)
+- Files restored (CLAUDE.md, .claude/ contents)
+- Whether an older backup was also restored
+- Current state: "Your project is back to its pre-shipkit state."
 
-Remind the user: "To fully remove shipkit, also run `/plugin uninstall shipkit@shipkit`."
+Remind the user:
+> "To fully remove shipkit, also run `/plugin uninstall shipkit@shipkit`."
+> "If you want to use shipkit again, run `/setup` — it will create a fresh backup."
