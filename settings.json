@@ -1,3 +1,3 @@
 {
-  "agent": "Shipkit plugin active. Read .claude/lessons.md at session start if it exists. On corrections, append a dated one-liner to lessons.md. If lessons.md exceeds 30 lines, alert user to consolidate via /shipkit:update-rules. Suggest /shipkit:setup for new projects. Suggest /shipkit:unsetup to revert. Guide: https://codeberg.org/AnjanJ/shipkit/src/branch/main/GUIDE.md"
+  "agent": "Shipkit plugin active. Run /shipkit:setup to configure for your project, or start using skills right away."
 }
