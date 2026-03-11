@@ -11,6 +11,8 @@ Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.
 /plugin install shipkit@shipkit
 ```
 
+**Restart Claude Code after installing** to load the plugin.
+
 Or test locally:
 ```bash
 claude --plugin-dir ~/code/shipkit
