@@ -116,3 +116,7 @@ Design decisions in this plugin are informed by:
 ## License
 
 MIT
+
+---
+
+Made with ❤️ by [Anjan](https://anjan.dev)
