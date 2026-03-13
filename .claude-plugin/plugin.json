@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Ship better code with Claude — 15 skills, 2 agents, knowledge bases, and path-scoped rules. Works instantly, run /shipkit:setup to tailor to your stack.",
   "author": {
-    "name": "AJ",
-    "url": "https://codeberg.org/AnjanJ/shipkit"
+    "name": "Anjan",
+    "url": "https://anjan.dev"
   },
   "repository": "https://codeberg.org/AnjanJ/shipkit",
   "license": "MIT",
