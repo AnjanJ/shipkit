@@ -1,5 +1,7 @@
 # Shipkit
 
+<a href="https://www.buymeacoffee.com/anjanj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200"></a>
+
 Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that gives you workflow rules, skills, agents, knowledge bases, and path-scoped rules — out of the box.
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows.
@@ -121,4 +123,4 @@ MIT
 
 Made with ❤️ by [Anjan](https://anjan.dev)
 
-[Buy me a coffee ☕](https://buymeacoffee.com/anjanj)
+<a href="https://www.buymeacoffee.com/anjanj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200"></a>
