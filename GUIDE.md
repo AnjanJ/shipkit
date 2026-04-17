@@ -155,6 +155,55 @@ Auto-detects your test framework and runs tests. Diagnoses failures automaticall
 
 ---
 
+### /shipkit:tdd — Test-Driven Development
+
+Enforces the Red-Green-Refactor cycle. No production code without a failing test first.
+
+**Iron Law:** Write the test first. Watch it fail. Write minimal code to pass. Refactor.
+
+Includes rationalization prevention (excuse-to-reality table), red flags list, testing anti-patterns catalog, and a verification checklist.
+
+```
+/shipkit:tdd feature       # TDD for a new feature
+/shipkit:tdd bugfix        # TDD for a bug fix
+/shipkit:tdd refactor      # TDD for refactoring
+```
+
+---
+
+### /shipkit:debug — Systematic Debugging
+
+Root-cause debugging with a 4-phase process. No fixes without investigation first.
+
+**Phases:**
+1. Root Cause Investigation — read errors, reproduce, trace data flow
+2. Pattern Analysis — find working examples, compare
+3. Hypothesis and Testing — test one variable at a time
+4. Implementation — create failing test, fix root cause, verify
+
+Includes the **three-strike rule:** after 3 failed fixes, stop and question the architecture.
+
+```
+/shipkit:debug                                  # general debugging
+/shipkit:debug "TypeError in checkout flow"     # describe the error
+/shipkit:debug src/services/payment.ts          # debug a specific file
+```
+
+---
+
+### /shipkit:humanize — AI Writing Detection
+
+Detects and removes AI-generated writing patterns. Two modes: humanize (rewrite) and analyze (detect only).
+
+Covers 40 patterns across vocabulary, structure, tone, and formatting. Includes a full pattern library reference.
+
+```
+/shipkit:humanize                   # humanize provided text
+/shipkit:humanize analyze           # detect patterns only, don't rewrite
+```
+
+---
+
 ### /shipkit:onboard — Codebase Onboarding
 
 5-phase exploration for unfamiliar codebases.
@@ -413,9 +462,9 @@ These auto-load when you edit matching files. No action needed.
 /shipkit:setup  →  /shipkit:onboard  →  /shipkit:explain-system
 ```
 
-**Building a feature:**
+**Building a feature (with TDD):**
 ```
-/shipkit:ui-ux design <feature>  →  write code  →  /shipkit:qa  →  /shipkit:test
+/shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa  →  /shipkit:test
 ```
 
 **Adding a dependency:**
@@ -423,9 +472,14 @@ These auto-load when you edit matching files. No action needed.
 /shipkit:use-library <name>  →  write code  →  /shipkit:test
 ```
 
+**Debugging a bug:**
+```
+/shipkit:debug  →  /shipkit:tdd bugfix  →  /shipkit:test
+```
+
 **Pre-PR checklist:**
 ```
-/shipkit:test  →  /shipkit:review-my-code
+/shipkit:test  →  /shipkit:review-my-code  →  /shipkit:humanize (for docs/PR description)
 ```
 
 **Modernizing a legacy codebase:**

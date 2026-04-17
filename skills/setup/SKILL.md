@@ -2,6 +2,8 @@
 description: "Configure shipkit for your project — detect stack, fill CLAUDE.md, install stack-specific skills and rules"
 user-invocable: true
 argument-hint: "[rails|react|python|go|elixir|static]"
+context: fork
+agent: general-purpose
 ---
 
 # /setup — Configure Shipkit for Your Project

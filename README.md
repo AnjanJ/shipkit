@@ -26,7 +26,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ## What You Get Instantly
 
-**15 skills** — slash commands for common workflows:
+**18 skills** — slash commands for common workflows:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -35,6 +35,9 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
 | `/shipkit:test` | Auto-detect test framework and run tests |
+| `/shipkit:tdd` | Test-driven development — Red-Green-Refactor with Iron Law enforcement |
+| `/shipkit:debug` | Systematic root-cause debugging — investigate before fixing |
+| `/shipkit:humanize` | Detect and remove AI-generated writing patterns from text |
 | `/shipkit:onboard` | Multi-phase codebase onboarding |
 | `/shipkit:explain-system` | Explore codebase and write verified system design docs |
 | `/shipkit:walkthrough` | Trace one feature end-to-end |

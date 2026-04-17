@@ -2,6 +2,8 @@
 description: "5-phase QA workflow: reconnaissance, probing questions, test plan, spec writing, execution"
 user-invocable: true
 argument-hint: "[<file-or-module>|all]"
+context: fork
+agent: general-purpose
 ---
 
 # /qa — Quality Assurance Workflow
@@ -127,6 +129,18 @@ Tests are code too — apply the same principles:
 | Error handling (no silent failures) | PASS/WARN/FAIL | ... |
 | Data integrity (validations, constraints) | PASS/WARN/FAIL | ... |
 | Compatibility (no breaking changes) | PASS/WARN/FAIL | ... |
+
+### Rationalization Check
+
+Before writing a verdict, check yourself against these:
+
+| Excuse | Reality |
+|--------|---------|
+| "Tests pass, so it's fine" | Tests passing is necessary but not sufficient. Did you check edge cases? |
+| "It's a small change, low risk" | Small changes in CRITICAL files are high risk. Check the risk table. |
+| "No time for the bizarre/adversarial category" | That's where production bugs live. At least cover CRITICAL files. |
+| "Coverage looks good enough" | Did you run the tests and see the output? Or are you guessing? |
+| "Ship it, we can fix later" | "Later" means "never." Fix known issues before shipping. |
 
 **Verdict:** SHIP IT / FIX AND RE-TEST / NEEDS REWORK
 

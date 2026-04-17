@@ -51,3 +51,15 @@ Run with coverage reporting:
 1. Report the test summary (pass/fail/skip counts)
 2. On failures: read the failing test + source code, identify root cause, suggest a specific fix
 3. On success: report total time and any slow tests (>5s)
+
+## Verification Gate
+
+Before claiming tests pass, confirm:
+
+- [ ] You actually ran the test command (not assumed from code changes)
+- [ ] You read the full output (not just the last line)
+- [ ] Zero failures in the output
+- [ ] No skipped tests without explanation
+- [ ] No warnings that indicate real problems
+
+**Never say "tests should pass" or "tests likely pass."** Run them. Read the output. Report what happened.

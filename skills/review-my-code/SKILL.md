@@ -2,6 +2,8 @@
 description: "8-lens code review with severity levels and structured report"
 user-invocable: true
 argument-hint: "[<file-path>|<PR-number>|<branch>]"
+context: fork
+agent: general-purpose
 ---
 
 # /review-my-code — Code Review
@@ -82,6 +84,18 @@ Read CLAUDE.md and check the diff against any project-specific rules:
 | Tests for new code | YES/NO |
 | Naming conventions | YES/NO |
 | Architecture patterns | YES/NO |
+
+### Rationalization Check
+
+Before writing a verdict, check yourself:
+
+| Excuse | Reality |
+|--------|---------|
+| "No blockers found, APPROVE" | Did you actually apply all 8 lenses? Or did you skim? |
+| "It's just a style issue" | Check severity definitions. Style issues are NIT, not MINOR. Be precise. |
+| "Tests pass, code is fine" | Tests passing does not prove correctness. Did you check the logic? |
+| "Small diff, low risk" | Small diffs in auth, payments, or data models are high risk. |
+| "I don't see any problems" | Did you read every changed file in full? Or just the diff? |
 
 **Verdict:** APPROVE / REQUEST CHANGES / NEEDS DISCUSSION
 
