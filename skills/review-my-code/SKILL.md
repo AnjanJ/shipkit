@@ -1,5 +1,5 @@
 ---
-description: "8-lens code review with severity levels and structured report"
+description: "8-lens code review. TRIGGER when: user is about to commit, create a PR, or asks to review changes. DO NOT TRIGGER when: user is still actively coding or debugging."
 user-invocable: true
 argument-hint: "[<file-path>|<PR-number>|<branch>]"
 context: fork

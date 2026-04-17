@@ -1,6 +1,7 @@
 ---
 description: "Audit context usage — find bloated files consuming context window"
 user-invocable: true
+context: fork
 ---
 
 # /context-audit — Context Window Audit

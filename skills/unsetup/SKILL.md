@@ -2,6 +2,7 @@
 description: "Remove shipkit setup — restore your project to its pre-shipkit state"
 user-invocable: true
 argument-hint: ""
+context: fork
 ---
 
 # /unsetup — Remove Shipkit Setup

@@ -1,7 +1,8 @@
 ---
-description: "Red-Green-Refactor TDD cycle — no production code without a failing test first"
+description: "Strict TDD enforcer — iron-law red-green-refactor with delete-and-restart. TRIGGER when: user explicitly asks for TDD, says 'test first', or wants strict red-green-refactor enforcement. DO NOT TRIGGER when: normal coding (the default workflow already does test-first)."
 user-invocable: true
 argument-hint: "[feature|bugfix|refactor]"
+context: fork
 ---
 
 # /tdd — Test-Driven Development

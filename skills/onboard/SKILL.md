@@ -1,5 +1,5 @@
 ---
-description: "Multi-phase codebase onboarding: zoom in, zoom out, recognize patterns, learn history, generate docs"
+description: "Multi-phase codebase onboarding"
 user-invocable: true
 argument-hint: "[scope: full|quick|zoom-in <file>|zoom-out]"
 context: fork
@@ -88,24 +88,9 @@ Read dependency files to identify: framework + version, database, background job
 
 ### 2.2 Architectural Shape
 
-Classify from directory structure and code organization:
+Classify from directory structure and code organization. See @reference.md for shape and flow pattern classification tables.
 
-| Shape | Signals |
-|-------|---------|
-| Monolith with conceptual seams | Single deploy, `app/` with models/controllers/services |
-| Modular monolith | `engines/`, `packages/`, or `components/` with internal boundaries |
-| Microservices | Multiple services in subdirs, API gateways, service-to-service calls |
-| Monorepo | `apps/`, `packages/`, shared libraries, workspace config |
-
-### 2.3 Flow Pattern
-
-| Pattern | Signals |
-|---------|---------|
-| Request-driven (sync) | Routes → controllers → response cycle |
-| Event-driven (async) | Event/message classes, broker configs, subscriber definitions |
-| Hybrid | Both routes AND event processing (most real apps) |
-
-### 2.4 Data Model as Ground Truth
+### 2.3 Data Model as Ground Truth
 
 Read the schema source of truth (schema.rb, models.py, schema.prisma, migrations, etc.):
 1. Identify 3-5 **core entities** everything connects to
@@ -132,49 +117,10 @@ Present: stack + versions, architectural shape, flow pattern, API style, core en
 
 ## Phase 3: Learn from History — Git as Historian
 
-> "Code captures decisions, but not the context behind those decisions."
-> "What were the constraints?" — not "Why is this bad?"
-
 **Goal:** Identify hotspots, change patterns, and the team's priorities. Use blame-free
 framing — the code reflects constraints, not incompetence.
 
-### 3.1 Hotspot Analysis
-
-Run (via codebase-explorer agent):
-```
-git log --since="6 months ago" --name-only --pretty=format: | sort | uniq -c | sort -rn | head -20
-```
-
-High churn + high line count = abstraction under strain. These files are where bugs live
-and where refactoring would have the most impact.
-
-### 3.2 Change Pattern Analysis
-
-For the top 5 hotspots:
-- Are changes **additive** (new features extending existing code)?
-- Or **invasive** (cutting across multiple layers for one feature)?
-- Repeated invasive changes = the abstraction needs rework
-
-### 3.3 Contributors
-
-```
-git shortlog -sn --since="6 months ago"
-```
-
-Who works on what areas? This tells you who to ask questions.
-
-### 3.4 PR Archaeology (if GitHub)
-
-Use `gh` CLI to check recent merged PRs — descriptions contain the "why" that code misses.
-
-### 3.5 Metaprogramming Scan
-
-Flag metaprogramming (`method_missing`, metaclasses, Proxy, etc.) — this is where "magic" hides.
-
-### 3.6 Exit Criteria Check
-
-Can you: trace main flows? Name key components? Point to where state lives?
-If yes → Phase 4. If no → investigate the gap.
+See @reference.md for git analysis commands, hotspot analysis, change pattern analysis, contributor mapping, and exit criteria.
 
 ### Output: "History Report"
 
@@ -215,28 +161,6 @@ Present as a diff — do NOT auto-write. Propose: Key Paths, commands, conventio
 that would make working in this codebase faster. Max 5 suggestions, prioritized by
 impact.
 
-### Detection Signals
-
-Look for: CI/CD scripts, frequent migrations, complex test factories, many background jobs,
-feature flags, monitoring config, i18n files, custom scripts — each could become a
-project-specific skill or agent.
-
-For each suggestion, provide: evidence found, what it would do, complexity, priority.
+See @reference.md for detection signals and full constraints.
 
 **Never auto-create skills or agents.** Present proposals only. User decides what to build.
-
----
-
-## Constraints
-
-- **Read-only until Phase 4** — Phases 1-3 only read files and run git commands
-- **User checkpoints are mandatory** — present findings and WAIT at every phase boundary
-- **Use codebase-explorer agent for heavy reading** — keep main context clean
-- **Lightweight docs** — ARCHITECTURE.md: 40-80 lines, CODEBASE_MAP.md: 30-60 lines
-- **Stack-agnostic** — all phases work for any language/framework
-- **Time-box git analysis** — cap at 20 hotspot files, 6-month window
-- **Never auto-create skills/agents** — Phase 5 outputs proposals only
-- **"Enough" exit criteria** — can trace main flows, name key components, point to state
-- **Blame-free framing** — "What were the constraints?" not "Why is this bad?"
-- **WHY not HOW** — documentation explains why decisions were made, not how code works
-- **Questions unlock questions** — each answer unlocks the next question; iterate, don't exhaust

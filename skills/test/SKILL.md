@@ -1,8 +1,9 @@
 ---
-description: "Auto-detect test framework and run tests"
+description: "Auto-detect test framework and run tests. TRIGGER when: user finishes implementing a feature, fix, or refactor and hasn't run tests yet. DO NOT TRIGGER when: user explicitly says they'll run tests themselves."
 user-invocable: true
 disable-model-invocation: true
 argument-hint: "[all|quick|<file-path>|coverage]"
+context: fork
 ---
 
 # /test — Run Tests

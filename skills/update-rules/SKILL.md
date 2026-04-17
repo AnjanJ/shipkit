@@ -2,6 +2,7 @@
 description: "Update CLAUDE.md rules — never manually edit, tell Claude to do it"
 user-invocable: true
 argument-hint: "[rule-description]"
+context: fork
 ---
 
 # /update-rules — Update CLAUDE.md

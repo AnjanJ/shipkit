@@ -1,7 +1,8 @@
 ---
-description: "Systematic root-cause debugging — investigate before fixing, verify before claiming"
+description: "Systematic root-cause debugging. TRIGGER when: tests fail, user reports a bug, or unexpected errors occur. DO NOT TRIGGER when: writing new code or doing refactors."
 user-invocable: true
 argument-hint: "[<error-description>|<test-name>|<file-path>]"
+context: fork
 ---
 
 # /debug — Systematic Debugging

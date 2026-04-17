@@ -1,7 +1,8 @@
 ---
-description: "Design and review UI/UX — empathy-driven, modern, accessible, zero-generic output. Auto-invocable for UI work."
+description: "Empathy-driven UI/UX design and review. TRIGGER when: user asks to build, design, or modify UI components, pages, or layouts. DO NOT TRIGGER when: editing non-UI code like models, services, or configs."
 user-invocable: true
 argument-hint: "[design <feature>|review|audit|improve <file>]"
+context: fork
 ---
 
 # /ui-ux — Empathy-Driven UI/UX Design

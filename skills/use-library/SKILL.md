@@ -1,8 +1,9 @@
 ---
-description: "Read library documentation before using it. Fetches docs, checks latest version, verifies compatibility."
+description: "Read library docs before using it. TRIGGER when: adding a new dependency, importing an unfamiliar library, or upgrading a package version. DO NOT TRIGGER when: using libraries already used in this session."
 user-invocable: true
 argument-hint: "[library-name]"
 allowed-tools: Read, Glob, Grep, Bash, WebFetch
+context: fork
 ---
 # Use Library: $ARGUMENTS
 

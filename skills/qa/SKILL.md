@@ -1,5 +1,5 @@
 ---
-description: "5-phase QA workflow: reconnaissance, probing questions, test plan, spec writing, execution"
+description: "5-phase QA workflow"
 user-invocable: true
 argument-hint: "[<file-or-module>|all]"
 context: fork
@@ -91,57 +91,13 @@ Tests are code too — apply the same principles:
 - **DRY (with restraint):** Prefer clear duplication over clever shared examples. A test should be readable top-to-bottom without jumping to 3 helper files.
 - **Clean Code:** Descriptive test names that read like documentation. No mystery guests — all data visible in the test.
 
-### Framework-Specific Notes
-
-**RSpec:** Use `let`, `before`, `shared_examples` where appropriate. Prefer `have_attributes` over individual matchers.
-
-**Minitest:** Use `setup`, `test "description"` format. Keep assertions simple.
-
-**ExUnit:** Use `setup`, `describe`, `test` blocks. Use `assert_raise` for error cases.
-
-**Jest/Vitest:** Use `describe`, `it`, `beforeEach`. Use `jest.mock()` for dependencies.
+See @reference.md for framework-specific test notes (RSpec, Minitest, ExUnit, Jest/Vitest).
 
 ## Phase 5: Execution & Verification
 
 1. **Run the new specs** — targeted run (just the new file)
 2. **Fix any failures** — read error, read source, fix root cause
 3. **Run the full suite** — ensure nothing else broke
-4. **Produce the QA report:**
-
-### QA Report
-
-**Files Under Test:**
-| File | Tests Added | Coverage |
-|------|------------|----------|
-| ... | ... | ... |
-
-**Findings:**
-| # | Severity | Description | Status |
-|---|----------|-------------|--------|
-| 1 | CRITICAL | Missing auth check | FIXED |
-| ... | ... | ... | ... |
-
-**Core Values Audit:**
-| Value | Status | Notes |
-|-------|--------|-------|
-| Security (no injection, XSS, CSRF) | PASS/WARN/FAIL | ... |
-| Performance (no N+1, bounded queries) | PASS/WARN/FAIL | ... |
-| Error handling (no silent failures) | PASS/WARN/FAIL | ... |
-| Data integrity (validations, constraints) | PASS/WARN/FAIL | ... |
-| Compatibility (no breaking changes) | PASS/WARN/FAIL | ... |
-
-### Rationalization Check
-
-Before writing a verdict, check yourself against these:
-
-| Excuse | Reality |
-|--------|---------|
-| "Tests pass, so it's fine" | Tests passing is necessary but not sufficient. Did you check edge cases? |
-| "It's a small change, low risk" | Small changes in CRITICAL files are high risk. Check the risk table. |
-| "No time for the bizarre/adversarial category" | That's where production bugs live. At least cover CRITICAL files. |
-| "Coverage looks good enough" | Did you run the tests and see the output? Or are you guessing? |
-| "Ship it, we can fix later" | "Later" means "never." Fix known issues before shipping. |
+4. **Produce the QA report** — See @reference.md for report template, core values audit, and rationalization check.
 
 **Verdict:** SHIP IT / FIX AND RE-TEST / NEEDS REWORK
-
-**Stats:** X files reviewed, Y tests added, Z findings (A critical, B major, C minor)

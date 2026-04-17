@@ -14,31 +14,19 @@ Single validation: "We fixed the bug." Multiple layers: "We made the bug impossi
 
 ---
 
-## Red Flags — STOP and Return to Phase 1
+## Red Flags & Rationalizations — STOP and Return to Phase 1
 
-If you catch yourself thinking:
-- "Quick fix for now, investigate later"
-- "Just try changing X and see if it works"
-- "Add multiple changes, run tests"
-- "Skip the test, I'll manually verify"
-- "It's probably X, let me fix that"
-- "I don't fully understand but this might work"
-- "One more fix attempt" (when you've already tried 2+)
-- Proposing solutions before tracing data flow
-
-**ALL of these mean: STOP. Return to Phase 1.**
-
-## Common Rationalizations
-
-| Excuse | Reality |
-|--------|---------|
-| "Issue is simple, don't need process" | Simple issues have root causes too. Process is fast for simple bugs. |
+| Temptation | Reality |
+|------------|---------|
+| "Quick fix for now, investigate later" | First fix sets the pattern. Do it right from the start. |
+| "Just try changing X and see if it works" | Seeing symptoms is not understanding root cause. |
+| "Multiple changes at once, run tests" | Can't isolate what worked. Causes new bugs. |
+| "Skip the test, I'll manually verify" | Untested fixes don't stick. Test first proves it. |
+| "It's probably X, let me fix that" | Process is fast for simple bugs too. |
 | "Emergency, no time for process" | Systematic debugging is FASTER than guess-and-check thrashing. |
-| "Just try this first, then investigate" | First fix sets the pattern. Do it right from the start. |
-| "I'll write the test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
-| "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
-| "I see the problem, let me fix it" | Seeing symptoms is not understanding root cause. |
 | "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem. Question the pattern. |
+
+**If you catch yourself in ANY of these: STOP. Return to Phase 1.**
 
 ## Quick Reference
 

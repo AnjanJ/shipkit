@@ -22,97 +22,11 @@ by handling file reading, pattern searching, and git analysis in a separate cont
 
 ## Task Types
 
-### 1. Trace Flow
-**Input:** "Starting from `<file>:<function>`, follow the call chain for N levels"
-
-Read the starting file, identify what it calls, read those files, repeat for N levels.
-
-**Output:**
-```
-## Flow Trace: [starting point]
-
-| Level | File | Function/Method | Calls |
-|-------|------|----------------|-------|
-| 0 | path/to/file.rb | handle_request | UserService.create |
-| 1 | path/to/service.rb | create | User.new, Mailer.welcome |
-| ... | ... | ... | ... |
-
-**Conventions spotted:** [naming, patterns, organization]
-**Side effects:** [DB writes, jobs enqueued, emails sent, API calls]
-```
-
-### 2. Map Directory
-**Input:** "Inventory `<directory>`, list files with purpose and size"
-
-Read directory contents, scan each file's first 20 lines for class/module definitions
-and comments. Classify by purpose.
-
-**Output:**
-```
-## Directory Map: [path]
-
-| File | Purpose | Lines | Key Classes/Modules |
-|------|---------|-------|---------------------|
-| ... | ... | ... | ... |
-
-**Organization pattern:** [by feature / by type / by layer / mixed]
-**Naming convention:** [snake_case / camelCase / PascalCase files]
-```
-
-### 3. Read Schema
-**Input:** "Analyze the data model from `<schema_file>`"
-
-Read schema, migration files, or model definitions. Map entities and relationships.
-
-**Output:**
-```
-## Data Model Analysis
-
-**Source:** [schema.rb / migrations / model files]
-
-| Entity | Key Columns | Relationships | Notes |
-|--------|------------|---------------|-------|
-| ... | ... | has_many :X, belongs_to :Y | [soft delete, STI, etc.] |
-
-**Core entities:** [3-5 that everything connects to]
-**History preservation:** [audit tables, event logs, versioning]
-**Constraints:** [unique indexes, foreign keys, validations]
-```
-
-### 4. Find Patterns
-**Input:** "Search for `<pattern>` across codebase and summarize"
-
-Grep for the pattern, read surrounding context, classify findings.
-
-**Output:**
-```
-## Pattern Search: [pattern]
-
-**Found in [N] files:**
-
-| File | Line | Context | Classification |
-|------|------|---------|---------------|
-| ... | ... | [surrounding code] | [usage type] |
-
-**Summary:** [What this pattern means for the codebase]
-```
-
-### 5. Analyze Hotspots
-**Input:** "Git log analysis — identify high-churn files in the last N months"
-
-Run git log commands, cross-reference with file sizes, classify churn.
-
-**Output:**
-```
-## Hotspot Analysis ([time window])
-
-| File | Commits | Lines | Churn Rate | Assessment |
-|------|---------|-------|------------|------------|
-| ... | ... | ... | [high/med/low] | [Stable / Under strain / Needs rework] |
-
-**Top contributors:** [who works on what]
-**Change pattern:** [additive / invasive / mixed]
-```
+1. **Trace Flow** — Follow call chain from a starting file:function for N levels. Output: table of level/file/function/calls, conventions spotted, side effects.
+2. **Map Directory** — Inventory a directory, classify files by purpose. Output: table of file/purpose/lines/key classes, organization pattern.
+3. **Read Schema** — Analyze data model from schema files. Output: entity/relationship table, core entities, constraints.
+4. **Find Patterns** — Grep for a pattern, read context, classify findings. Output: table of file/line/context/classification.
+5. **Analyze Hotspots** — Git log analysis for high-churn files. Output: table of file/commits/lines/churn rate/assessment.
 
 ## Constraints
 

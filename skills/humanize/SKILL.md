@@ -51,7 +51,7 @@ prose that reads just as artificial.
 
 ## Core Patterns to Watch For
 
-For the full 40-pattern library, see @pattern-library.md
+For the full 40-pattern library, read the file `pattern-library.md` in this skill's directory (only when analyzing or when the 10 patterns above aren't sufficient).
 
 **Key patterns (most common):**
 
