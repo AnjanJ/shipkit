@@ -6,12 +6,14 @@ tools: Read, Glob, Grep, Bash, mcp__mempalace__mempalace_search, mcp__mempalace_
 disallowedTools: Edit, Write, Agent
 maxTurns: 35
 memory: user
-# MemPalace defined inline so its tool schemas load only in THIS subagent's context,
-# never in the main session. mempalace-mcp installed via `uv tool install mempalace`.
+# OPTIONAL: MemPalace episodic-memory MCP. Defined inline so its tool schemas load only
+# in THIS subagent's context, never the main session. Requires `uv tool install mempalace`
+# (puts mempalace-mcp on PATH). If not installed, the server fails to start and eve runs
+# fine without cross-project recall. See GUIDE.md "Episodic memory".
 mcpServers:
   mempalace:
     type: stdio
-    command: /Users/aj/.local/bin/mempalace-mcp
+    command: mempalace-mcp
     args: []
 ---
 

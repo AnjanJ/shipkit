@@ -26,12 +26,14 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ## What You Get Instantly
 
-**18 skills** — slash commands for common workflows:
+**21 skills** — slash commands for common workflows:
 
 | Skill | What It Does |
 |-------|-------------|
 | `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) |
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
+| `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
+| `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
 | `/shipkit:test` | Auto-detect test framework and run tests |
@@ -49,12 +51,32 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:migration-plan` | Plan major dependency upgrades |
 | `/shipkit:ui-ux` | Empathy-driven UI/UX design, review, and audit (web + mobile) |
 
-**2 agents** — diagnostic subagents:
+**5 agents** — subagents that do heavy work in their own context so yours stays thin:
 
 | Agent | What It Does |
 |-------|-------------|
+| `grandfather` | Answers questions about **one** project (architecture, where-things-live, why) — reads its `PROJECT_MAP.md`, verifies against live source, returns a tight cited answer |
+| `eve` | Answers questions **across all** your registered projects (the 360° view) |
+| `archivist` | Builds/refreshes the `PROJECT_MAP.md` that grandfather and eve read |
 | `test-analyzer` | Auto-diagnoses test failures |
 | `codebase-explorer` | Read-only exploration: traces flows, maps architecture |
+
+### The project elders — ask, don't pollute
+
+The biggest idea in this release: instead of loading project knowledge into your main session
+(and burning context), you **ask an elder** and get back only the answer.
+
+```
+/shipkit:map                      # in a project: build its PROJECT_MAP.md once
+/shipkit:map --register           # also add it to your cross-project registry
+/shipkit:ask how does locale fallback work here?      # → grandfather (this project)
+/shipkit:ask --all which apps deploy to Hetzner?      # → eve (all projects)
+```
+
+`grandfather`/`eve` do all the file reading in their own context and hand back a short, cited
+answer — your main context never sees the 40 file reads behind it. Use them for research,
+architecture questions, and "where/why" lookups. Keep editing in your main session. See
+[GUIDE.md](GUIDE.md) for details, and **Episodic memory** below for the optional decision-recall add-on.
 
 **2 knowledge bases** — on-demand reference material:
 
@@ -94,6 +116,38 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 | Go | `/new-feature` | go-mod, go | — |
 | Elixir | `/new-feature` | mix-deps, elixir | — |
 | Static | `/audit` | — | — |
+
+## Optional: Episodic memory (MemPalace)
+
+`PROJECT_MAP.md` captures **structure** — how a project is built today. It does *not* capture the
+**narrative of decisions**: "why did we pick Paddle over Stripe?", "what did we decide last session?".
+That history lives in your past conversations.
+
+[MemPalace](https://github.com/mempalace/mempalace) is an optional, local-first memory store
+(MIT, no API calls) that indexes your conversation history verbatim and retrieves it with semantic
+search. ShipKit's `grandfather` and `eve` agents will **automatically use it for decision-history
+questions if it is installed** — and run perfectly fine without it (those questions just fall back to
+git history).
+
+**ShipKit does not bundle or auto-install MemPalace** — it is a separate Python package plus a
+~300 MB local embedding model, so it stays opt-in. To enable it:
+
+```bash
+# 1. Install MemPalace (puts `mempalace-mcp` on your PATH; uv or pipx)
+uv tool install mempalace        # or: pipx install mempalace
+
+# 2. Backfill a project's decision history from your Claude Code transcripts.
+#    Transcripts are keyed by the directory you ran Claude in, under ~/.claude/projects/
+mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project> --dry-run
+mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project>   # for real
+```
+
+That's it — the elder agents already declare MemPalace as an inline MCP server scoped to themselves,
+so its tools load **only inside those subagents**, never your main session. No config needed on your
+end beyond installing it. See [GUIDE.md](GUIDE.md) → *Episodic memory* for wings/rooms, repair, and
+the recall-is-a-claim caveat.
+
+> If you do not install MemPalace, nothing breaks — the elders simply skip the decision-recall step.
 
 ## Uninstalling
 

@@ -6,13 +6,15 @@ tools: Read, Glob, Grep, Bash, mcp__mempalace__mempalace_search, mcp__mempalace_
 disallowedTools: Edit, Write, Agent
 maxTurns: 30
 memory: project
-# MemPalace defined inline so its tool schemas load only in THIS subagent's context,
-# never in the main session — preserving the thin-context goal. mempalace-mcp installed
-# via `uv tool install mempalace`.
+# OPTIONAL: MemPalace episodic-memory MCP. Defined inline so its tool schemas load only
+# in THIS subagent's context, never the main session — preserving the thin-context goal.
+# Requires `uv tool install mempalace` (puts mempalace-mcp on PATH). If MemPalace is NOT
+# installed this server just fails to start and the agent runs fine without recall — the
+# decision-history features below are simply skipped. See GUIDE.md "Episodic memory".
 mcpServers:
   mempalace:
     type: stdio
-    command: /Users/aj/.local/bin/mempalace-mcp
+    command: mempalace-mcp
     args: []
 ---
 

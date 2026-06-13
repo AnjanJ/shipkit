@@ -8,12 +8,14 @@ A complete guide to using every skill, agent, and feature in shipkit.
 
 1. [Getting Started](#getting-started)
 2. [Setup & Unsetup](#setup--unsetup)
-3. [Skills Reference](#skills-reference)
-4. [Agents](#agents)
-5. [Knowledge Bases](#knowledge-bases)
-6. [Path-Scoped Rules](#path-scoped-rules)
-7. [Common Workflows](#common-workflows)
-8. [Tips](#tips)
+3. [The Project Elders](#the-project-elders)
+4. [Episodic Memory (MemPalace)](#episodic-memory-mempalace)
+5. [Skills Reference](#skills-reference)
+6. [Agents](#agents)
+7. [Knowledge Bases](#knowledge-bases)
+8. [Path-Scoped Rules](#path-scoped-rules)
+9. [Common Workflows](#common-workflows)
+10. [Tips](#tips)
 
 ---
 
@@ -96,7 +98,129 @@ Reverses everything `/setup` did. Restores your project to its pre-shipkit state
 
 ---
 
+## The Project Elders
+
+The elders solve one problem: **answering questions about a project without polluting your main
+session's context.** When you ask "how does X work?" the naive path is to read a dozen files into
+your main conversation — which then carries that weight for the rest of the session. Instead, an
+elder subagent does the reading in *its own* context and hands back only the answer.
+
+### The pieces
+
+| Piece | Role |
+|-------|------|
+| `PROJECT_MAP.md` | A verified, ~150-line index of one project: architecture, where-things-live, data model, evolution, gotchas. Stamped with the git SHA it was built at. |
+| `archivist` agent | Builds and refreshes `PROJECT_MAP.md`. Run via `/shipkit:map`. |
+| `grandfather` agent | Answers questions about **one** project. Reads the map, verifies the specific claim against live source, returns a tight cited answer. Run via `/shipkit:ask`. |
+| `eve` agent | Answers questions **across all** registered projects (the 360° view). Run via `/shipkit:ask --all`. |
+| Registry | `~/.claude/shipkit/project-registry.md` — the list of projects eve reads. Populated by `/shipkit:map --register`. |
+
+### Typical usage
+
+```
+# One-time per project: build the map and register it
+/shipkit:map --register
+
+# Ask about THIS project (→ grandfather)
+/shipkit:ask how does locale fallback work in this monolith?
+/shipkit:ask is it safe to remove the legacy_token column?
+
+# Ask across ALL your projects (→ eve)
+/shipkit:ask --all which apps deploy to Hetzner vs AWS?
+/shipkit:ask --all everywhere I integrate Stripe
+
+# After a big change, refresh the map
+/shipkit:map refresh
+```
+
+### When to use them — and when not to
+
+- **Use** for research: architecture, "where does X live", "why was this done this way",
+  portfolio-wide lookups, deciding whether a change is safe.
+- **Do not use** mid-edit for a fact you need right now to keep typing — a subagent round-trip is
+  slower than just reading the one file. The elders are read-only; they inform, they do not edit.
+
+### How they stay honest
+
+The map is an *index*, not the final word. When the map and live source disagree, the elders trust
+**source** and flag the drift in their answer — so a stale map produces a correction, not a confident
+wrong answer. Refresh with `/shipkit:map refresh` when you see drift flagged.
+
+---
+
+## Episodic Memory (MemPalace)
+
+`PROJECT_MAP.md` answers *"how is this built?"*. It cannot answer *"what did we **decide**, and why?"*
+— that narrative lives in your past conversations. [MemPalace](https://github.com/mempalace/mempalace)
+is an **optional** local-first memory store that fills exactly this gap.
+
+**It is opt-in. ShipKit does not install it for you.** The `grandfather` and `eve` agents declare
+MemPalace as an inline MCP server scoped to themselves, so:
+
+- If MemPalace **is** installed → the elders use it automatically for decision-history questions.
+- If it is **not** installed → the inline server simply fails to start and the elders run fine
+  without it; decision questions fall back to git history. Nothing breaks.
+
+Because the server is declared *inline in the agents*, its tools load **only inside those subagents**,
+never your main session — the whole thin-context principle is preserved.
+
+### Enabling it
+
+```bash
+# 1. Install (puts `mempalace-mcp` on PATH; ~300 MB embedding model downloads on first use)
+uv tool install mempalace        # or: pipx install mempalace
+
+# 2. Backfill a project's history from your Claude transcripts.
+#    Claude transcripts are keyed by the DIRECTORY you ran Claude in, under ~/.claude/projects/
+#    (not by repo name — find the dir whose sessions hold the decisions you want recalled).
+mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject --dry-run
+mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject
+```
+
+### Concepts
+
+- **Wing** = a project (use one `--wing` per project). **Room** = an auto-classified topic
+  (technical / planning / architecture / decisions / problems). **Drawer** = one verbatim chunk.
+- **Recall is a claim, not gospel.** The elders treat anything MemPalace returns as a statement that
+  was true *when said*, and verify it against current source before stating it — the same discipline
+  they apply to the map.
+
+### Troubleshooting
+
+- **Search fails with "malformed inverted index for FTS5 table"** — the full-text index is corrupt.
+  `mempalace repair --yes` rebuilds it; if `repair` refuses (SQLite-layer corruption), back up
+  `~/.mempalace/palace/chroma.sqlite3`, then run
+  `sqlite3 chroma.sqlite3 "INSERT INTO embedding_fulltext_search(embedding_fulltext_search) VALUES('rebuild');"`
+  and confirm `PRAGMA integrity_check;` returns `ok`.
+
+---
+
 ## Skills Reference
+
+### /shipkit:ask — Ask the Project Elders
+
+Route a question to a research subagent so your main context stays thin. See
+[The Project Elders](#the-project-elders) for the full picture.
+
+- `/shipkit:ask <question>` → `grandfather` answers about **this** project.
+- `/shipkit:ask --all <question>` → `eve` answers across **all** registered projects.
+
+The agent reads the relevant `PROJECT_MAP.md`, verifies the specific claim against live source
+(and queries MemPalace for decision-history questions if installed), and returns a tight, cited
+answer. Use it for "how/where/why" research, not for facts you need inline while editing.
+
+### /shipkit:map — Build & Refresh the Project Map
+
+Create or refresh the `PROJECT_MAP.md` that the elders read.
+
+- `/shipkit:map` → build it if absent, refresh it if present.
+- `/shipkit:map refresh` → force a re-verification pass against current source.
+- `/shipkit:map section <name>` → regenerate one section (e.g. `section evolution`).
+- `/shipkit:map --register` → also add the project to `~/.claude/shipkit/project-registry.md`
+  so `eve` can include it in cross-project answers.
+
+Run it once per project to start, and `refresh` after a big change (new domain, refactor,
+framework upgrade). A stale map makes the elders flag drift — that is your cue to refresh.
 
 ### /shipkit:qa — Quality Assurance
 
@@ -389,6 +513,29 @@ Lessons that keep recurring should become proper rules via `/shipkit:update-rule
 ## Agents
 
 Agents are used automatically by skills, or you can reference them in prompts.
+
+### grandfather
+
+Single-project elder. Answers "how/where/why" questions about the current project by reading its
+`PROJECT_MAP.md`, verifying the specific claim against live source, and (if MemPalace is installed)
+querying decision history. Returns a tight, cited answer so your main context stays thin.
+
+Used by `/shipkit:ask`. See [The Project Elders](#the-project-elders).
+
+### eve
+
+Cross-project elder (named for the common ancestor of the whole portfolio). Answers questions across
+**all** registered projects by reading `~/.claude/shipkit/project-registry.md` and each project's map.
+
+Used by `/shipkit:ask --all`.
+
+### archivist
+
+Builds and refreshes the `PROJECT_MAP.md` that grandfather and eve read. Detects the stack, maps
+structure and data model, reconstructs evolution from git, collects gotchas, and verifies every cited
+path exists before writing. Writes only that one file.
+
+Used by `/shipkit:map`.
 
 ### test-analyzer
 
