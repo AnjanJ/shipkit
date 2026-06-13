@@ -154,15 +154,18 @@ wrong answer. Refresh with `/shipkit:map refresh` when you see drift flagged.
 — that narrative lives in your past conversations. [MemPalace](https://github.com/mempalace/mempalace)
 is an **optional** local-first memory store that fills exactly this gap.
 
-**It is opt-in. ShipKit does not install it for you.** The `grandfather` and `eve` agents declare
-MemPalace as an inline MCP server scoped to themselves, so:
+**It is opt-in. ShipKit does not install it for you.** The `grandfather` and `eve` agents allowlist
+the `mcp__mempalace__*` tools, so:
 
-- If MemPalace **is** installed → the elders use it automatically for decision-history questions.
-- If it is **not** installed → the inline server simply fails to start and the elders run fine
-  without it; decision questions fall back to git history. Nothing breaks.
+- If MemPalace **is** installed and registered → the elders use it for decision-history questions.
+- If it is **not** → those tools are simply absent and the elders run fine without it; decision
+  questions fall back to git history. Nothing breaks.
 
-Because the server is declared *inline in the agents*, its tools load **only inside those subagents**,
-never your main session — the whole thin-context principle is preserved.
+Plugin subagents cannot declare their own MCP server (Claude Code ignores inline `mcpServers` for
+security), so you register MemPalace **once at user scope** and the elders' `tools:` allowlist grants
+it to *only those two agents*. Because Claude Code defers tool schemas by default (tool search), the
+~30 MemPalace tools stay **out of your main session's context** until an elder actually calls one —
+the thin-context principle is preserved.
 
 ### Enabling it
 
@@ -170,7 +173,10 @@ never your main session — the whole thin-context principle is preserved.
 # 1. Install (puts `mempalace-mcp` on PATH; ~300 MB embedding model downloads on first use)
 uv tool install mempalace        # or: pipx install mempalace
 
-# 2. Backfill a project's history from your Claude transcripts.
+# 2. Register once at user scope, then RESTART Claude Code so the server loads
+claude mcp add --scope user mempalace mempalace-mcp
+
+# 3. Backfill a project's history from your Claude transcripts.
 #    Claude transcripts are keyed by the DIRECTORY you ran Claude in, under ~/.claude/projects/
 #    (not by repo name — find the dir whose sessions hold the decisions you want recalled).
 mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject --dry-run

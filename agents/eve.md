@@ -6,15 +6,12 @@ tools: Read, Glob, Grep, Bash, mcp__mempalace__mempalace_search, mcp__mempalace_
 disallowedTools: Edit, Write, Agent
 maxTurns: 35
 memory: user
-# OPTIONAL: MemPalace episodic-memory MCP. Defined inline so its tool schemas load only
-# in THIS subagent's context, never the main session. Requires `uv tool install mempalace`
-# (puts mempalace-mcp on PATH). If not installed, the server fails to start and eve runs
-# fine without cross-project recall. See GUIDE.md "Episodic memory".
-mcpServers:
-  mempalace:
-    type: stdio
-    command: mempalace-mcp
-    args: []
+# OPTIONAL episodic memory via MemPalace. Plugin subagents CANNOT declare an inline
+# mcpServers block (Claude Code ignores it for security), so the user registers the
+# server once at user scope: `claude mcp add --scope user mempalace mempalace-mcp`.
+# The mcp__mempalace__* entries in `tools:` above grant eve access; tool-search deferral
+# keeps the schemas out of the main session until actually called. If MemPalace is not
+# registered, those tools are simply absent and eve runs fine. See GUIDE.md.
 ---
 
 # Eve Agent

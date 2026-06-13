@@ -136,16 +136,20 @@ git history).
 # 1. Install MemPalace (puts `mempalace-mcp` on your PATH; uv or pipx)
 uv tool install mempalace        # or: pipx install mempalace
 
-# 2. Backfill a project's decision history from your Claude Code transcripts.
+# 2. Register it once at user scope so the elder agents can reach it
+claude mcp add --scope user mempalace mempalace-mcp
+
+# 3. Backfill a project's decision history from your Claude Code transcripts.
 #    Transcripts are keyed by the directory you ran Claude in, under ~/.claude/projects/
 mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project> --dry-run
 mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project>   # for real
 ```
 
-That's it — the elder agents already declare MemPalace as an inline MCP server scoped to themselves,
-so its tools load **only inside those subagents**, never your main session. No config needed on your
-end beyond installing it. See [GUIDE.md](GUIDE.md) → *Episodic memory* for wings/rooms, repair, and
-the recall-is-a-claim caveat.
+Restart Claude Code after step 2 so the server loads. The `grandfather`/`eve` agents already
+allowlist the `mcp__mempalace__*` tools, so **only those two subagents** can use them — and because
+Claude Code defers tool schemas by default (tool search), the ~30 MemPalace tools cost your **main
+session almost nothing** until an elder actually calls one. See [GUIDE.md](GUIDE.md) → *Episodic
+memory* for wings/rooms, repair, and the recall-is-a-claim caveat.
 
 > If you do not install MemPalace, nothing breaks — the elders simply skip the decision-recall step.
 

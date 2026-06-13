@@ -6,16 +6,13 @@ tools: Read, Glob, Grep, Bash, mcp__mempalace__mempalace_search, mcp__mempalace_
 disallowedTools: Edit, Write, Agent
 maxTurns: 30
 memory: project
-# OPTIONAL: MemPalace episodic-memory MCP. Defined inline so its tool schemas load only
-# in THIS subagent's context, never the main session — preserving the thin-context goal.
-# Requires `uv tool install mempalace` (puts mempalace-mcp on PATH). If MemPalace is NOT
-# installed this server just fails to start and the agent runs fine without recall — the
-# decision-history features below are simply skipped. See GUIDE.md "Episodic memory".
-mcpServers:
-  mempalace:
-    type: stdio
-    command: mempalace-mcp
-    args: []
+# OPTIONAL episodic memory via MemPalace. Plugin subagents CANNOT declare an inline
+# mcpServers block (Claude Code ignores it for security), so the user registers the
+# server once at user scope: `claude mcp add --scope user mempalace mempalace-mcp`.
+# The mcp__mempalace__* entries in `tools:` above then grant these two elders access;
+# tool-search deferral keeps the schemas OUT of the main session until actually called.
+# If MemPalace is not registered, those tools are simply absent and the agent runs fine
+# without recall. See GUIDE.md "Episodic memory".
 ---
 
 # Grandfather Agent

@@ -72,7 +72,7 @@ You receive one of:
 
 ### 6. Write `PROJECT_MAP.md`
 Write to repo root (or `docs/PROJECT_MAP.md` if a `docs/` dir is the convention). Keep it
-**120-220 lines**. Use the template in @reference-map.md. Stamp it with the current
+**120-220 lines**. Use the template in @templates/reference-map.md. Stamp it with the current
 git HEAD short SHA so freshness is checkable:
 
 ```
