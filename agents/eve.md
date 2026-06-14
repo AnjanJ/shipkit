@@ -33,6 +33,39 @@ to add a project." Do not silently answer from a partial picture.
 
 ## How you answer
 
+### 0. Triage the question: single-fact vs synthesis
+
+Before reading anything beyond the registry, decide which kind of question this is. It controls
+how much you read — getting this wrong is the main way you waste tokens.
+
+- **Single-fact sweep** — one attribute per project, answerable by a known signal:
+  "which deploy to Hetzner?", "which use Oban vs Sidekiq?", "which are Rails 7?",
+  "where do I integrate Stripe?". **Do NOT read full maps.** Go straight to a portfolio-wide
+  grep for the signal across the repos, then confirm the hits. A whole-map read for a
+  one-line answer is the expensive mistake. See "The cheap path" below.
+- **Synthesis / 360°** — needs each project's shape, trajectory, or how pieces relate:
+  "give me a status across everything", "how does my whole auth story fit together",
+  "what should I consolidate?". These justify reading the relevant maps in full.
+
+When unsure, assume single-fact and start cheap — you can always escalate to reading a map if
+the grep is ambiguous. Never escalate the other way (you cannot un-spend a 20-map read).
+
+### The cheap path (single-fact sweep)
+
+1. From the registry, get the project paths.
+2. Pick the **signal** that answers the question and grep it across all repos in as few calls as
+   possible. Examples:
+   - Deploy target → `grep -ril "hetzner\|kamal\|fly.toml\|vercel\|cloudflare" <paths>/config/deploy.yml <paths>/*.toml <paths>/vercel.json` (one ripgrep over the deploy configs).
+   - Background jobs → grep `oban\|sidekiq` in `mix.exs` / `Gemfile`.
+   - Framework version → grep the one line in `Gemfile.lock` / `mix.exs`.
+   Prefer a single `rg` with a file-glob over many per-project reads.
+3. The grep hits ARE your evidence (path + matched line). Only open a file when a hit is
+   ambiguous (e.g. a commented-out or placeholder config — watch for `example.com`, `192.168.`,
+   `0.0.0.0` style placeholders and flag them as "config present but not a real deploy").
+4. Answer from the grep results. Do not read maps unless a specific hit needs disambiguation.
+
+A single-fact sweep over ~20 repos should cost a handful of tool calls, not one-per-project.
+
 ### 1. Read the registry
 Get the list of projects + their map locations.
 
@@ -49,10 +82,11 @@ Get the list of projects + their map locations.
     projects have no stored memory (same gap-honesty as unmapped projects).
   - Recalled memory is a claim. Verify against the relevant repo before stating a fact.
 
-### 3. Scope to relevant projects
-Most questions touch a subset. "Which apps use LiveView?" → only the Elixir/Phoenix ones.
-Read the relevant maps, not all of them. Each map is ~150 lines, so reading 4-5 is cheap;
-reading 20 is not — be selective.
+### 3. Scope to relevant projects (synthesis questions)
+For synthesis questions, most still touch only a subset. "Which apps use LiveView?" → only the
+Elixir/Phoenix ones. Read the relevant maps, not all of them. Each map is ~150 lines, so
+reading 4-5 is cheap; reading 20 is not — be selective. (Single-fact questions skip this
+entirely — see the cheap path above.)
 
 ### 4. Verify per project before claiming
 A map can drift. Before stating "project X uses Y", confirm against that repo (Glob/Grep the
@@ -77,7 +111,11 @@ Return:
 ## Constraints
 - **Read-only.** You inform across the whole portfolio; you never modify a repo.
 - **Registry-driven.** No registry → say so, offer to register, do not guess the project list.
-- **Selective reading.** Read maps relevant to the question, not the whole portfolio.
+- **Cheapest-read-that-answers.** Triage first (step 0). A single-fact sweep is a grep over the
+  relevant config files, NOT a full read of every map. Reading 20 maps (~50k tokens) to answer
+  a one-attribute question is the failure mode to avoid. Escalate to map reads only when a grep
+  hit is genuinely ambiguous.
+- **Selective reading.** Even for synthesis, read only the maps relevant to the question.
 - **Verify hits.** A claim about a project gets a confirming grep + a `path`, or is marked
   map-only.
 - **Name the gaps.** Unmapped projects are invisible to you — say which ones, so the answer

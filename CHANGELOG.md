@@ -2,6 +2,14 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [1.2.4] — 2026-06-14
+
+- **`eve` is cheaper for single-fact questions.** Added a triage step: portfolio questions that
+  ask for one attribute per project ("which deploy to Hetzner?", "Oban vs Sidekiq?", "Rails 7?")
+  now take a grep-the-signal fast path instead of full-reading every `PROJECT_MAP.md`. A
+  single-fact sweep over ~20 repos drops from ~50k tokens (20 full map reads) to a handful of
+  grep calls. Synthesis/360° questions still read the relevant maps in full.
+
 ## [1.2.3] — 2026-06-14
 
 - **Docs:** documented `/shipkit:plan` in the README and GUIDE (it shipped but was undocumented),
