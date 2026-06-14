@@ -2,6 +2,14 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [1.2.5] — 2026-06-14
+
+- **`grandfather` triages reads too.** Same cheap-path idea as eve, applied to single-project
+  questions: a direct lookup ("where do background jobs live?", "what Ruby version?") now greps
+  the signal directly instead of reading the whole `PROJECT_MAP.md` first. The map is read for
+  explanation/judgment/orientation questions, where it earns its cost. Smaller win than eve (one
+  map, not 19) but trims the reflexive full-map read on quick lookups.
+
 ## [1.2.4] — 2026-06-14
 
 - **`eve` is cheaper for single-fact questions.** Added a triage step: portfolio questions that
