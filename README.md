@@ -4,7 +4,9 @@
 
 Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that gives you workflow rules, skills, agents, knowledge bases, and path-scoped rules — out of the box.
 
-**[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows.
+**[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new.
+
+**New in 1.2:** the **project elders** (`grandfather`, `eve`, `archivist`) answer questions about your code without bloating your main context — ask via `/shipkit:ask`. Optional [MemPalace](#optional-episodic-memory-mempalace) adds decision-history recall. Plus `/shipkit:plan` for plan-before-code. See the [Changelog](CHANGELOG.md).
 
 ## Install
 
@@ -34,6 +36,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
 | `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
+| `/shipkit:plan` | Plan before coding — PRD, tech spec, and atomic task breakdown (runs in a forked context) |
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
 | `/shipkit:test` | Auto-detect test framework and run tests |

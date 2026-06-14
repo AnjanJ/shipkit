@@ -228,6 +228,26 @@ Create or refresh the `PROJECT_MAP.md` that the elders read.
 Run it once per project to start, and `refresh` after a big change (new domain, refactor,
 framework upgrade). A stale map makes the elders flag drift — that is your cue to refresh.
 
+### /shipkit:plan — Plan Before You Code
+
+Turns a feature request into a plan before any code is written. Runs in a **forked context**, so the
+planning research does not weigh down your main session — you get back the PRD, spec, and task list.
+
+**Three phases, each with a checkpoint:**
+1. **PRD** — probing questions (purpose, users, behaviors, acceptance criteria, edge cases, out of
+   scope, constraints) until the requirements are unambiguous. Waits for your approval.
+2. **Tech spec** — reads existing code and conventions, then designs the approach against
+   scalability, fault tolerance, readability, maintainability, and security.
+3. **Atomic task breakdown** — a sequenced list of small, independently testable tasks.
+
+```
+/shipkit:plan add team billing with seat-based pricing
+/shipkit:plan                         # describe the feature when prompted
+```
+
+**Skip it** for renames, typo fixes, config changes, one-liners, or when you just say "just do it."
+Pair it with `/shipkit:tdd` to build each task test-first.
+
 ### /shipkit:qa — Quality Assurance
 
 5-phase QA workflow that asks probing questions before writing tests.
@@ -617,7 +637,7 @@ These auto-load when you edit matching files. No action needed.
 
 **Building a feature (with TDD):**
 ```
-/shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa  →  /shipkit:test
+/shipkit:plan <feature>  →  /shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa  →  /shipkit:test
 ```
 
 **Adding a dependency:**

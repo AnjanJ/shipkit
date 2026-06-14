@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Ship better code with Claude — workflow rules, skills, agents (incl. grandfather/eve project elders), knowledge bases, and path-scoped rules",
-    "version": "1.2.2"
+    "version": "1.2.3"
   },
   "plugins": [
     {
       "name": "shipkit",
       "source": "./",
       "description": "21 skills, 5 agents, 2 knowledge bases, 6 path-scoped rules. Run /shipkit:setup to tailor to your stack, /shipkit:unsetup to revert.",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "keywords": ["claude-code", "developer-tools", "workflow", "code-review", "testing"]
     }
   ]
