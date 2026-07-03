@@ -1,6 +1,7 @@
 ---
 description: "5-phase QA workflow"
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[<file-or-module>|all]"
 ---
 

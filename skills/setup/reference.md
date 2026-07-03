@@ -25,7 +25,7 @@ Detailed conventions, platform rules, and review standards live in `.claude/rule
 
 ### 1. Plan Before Coding
 For non-trivial work, plan first: clarify requirements (PRD), design the approach (tech spec),
-break into atomic tasks (sprint plan). Use `/plan` or enter plan mode.
+break into atomic tasks (sprint plan). Enter plan mode for this.
 For trivial fixes (rename, typo, config, one-liner), skip planning and code directly.
 
 ### 2. Subagent Strategy
@@ -45,7 +45,7 @@ Never say "done" without proving it works:
 - Bug fix → reproduce before/after
 - New feature → run the feature + related tests
 - Refactor → full test suite passes
-- Before any commit → suggest running `/review-my-code` to catch issues early
+- Before any commit → review the diff against `.claude/knowledge/code-review-standards` (or run Claude Code's built-in `/code-review`)
 
 ### 5. Autonomous Bug Fixing
 When tests fail, read the error, read the source, fix the root cause.
@@ -60,7 +60,7 @@ Don't ask the user what to do — investigate and fix. Only ask if genuinely stu
 
 ### 7. Library Usage
 When using ANY library or API you haven't used in this session, read its documentation first.
-Use the `/use-library` skill or WebFetch. Never guess at an API — always verify against current docs.
+Use WebFetch (or the project's docs tooling). Never guess at an API — always verify against current docs.
 
 ---
 

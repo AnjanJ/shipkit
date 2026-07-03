@@ -147,7 +147,7 @@ Report what was installed:
 - Settings created (if applicable)
 
 Suggest next steps:
-1. Try `/qa`, `/review-my-code`, `/test`
+1. Try `/shipkit:map --register`, `/shipkit:ask`, `/qa`
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
 4. When I learn something project-specific, I'll save it to `.claude/lessons.md` (30-line limit — recurring lessons graduate to CLAUDE.md rules)

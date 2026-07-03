@@ -35,9 +35,11 @@ get the portfolio view. Each line: project name, path, map location, one-line de
 On `--register` (and offer it on first `build` of any project):
 1. Read `~/.claude/shipkit/project-registry.md` if it exists; create it if not (template below).
 2. Add or update this project's row. Use the project's path, the map's HEAD short SHA in
-   `Mapped At`, and pull the one-liner from the freshly written map's "What this project is" line.
+   `Mapped At`, and pull `Stack`, `Deploys To`, and the one-line `Summary` from the freshly
+   written map (the archivist already verified them).
 3. Keep it sorted, one project per line, deduped by path.
-4. On any `refresh`, update the row's `Mapped At` SHA too (if the project is registered).
+4. On any `refresh`, update the row's `Mapped At` SHA — and `Stack`/`Deploys To` if they
+   changed (if the project is registered).
 
 Registry template:
 
@@ -45,14 +47,18 @@ Registry template:
 # Shipkit Project Registry
 > Portfolio index for `eve`. One row per project. Update via `/shipkit:map --register`.
 
-| Project | Path | Map | Mapped At | Summary |
-|---------|------|-----|-----------|---------|
-| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | ab12cd3 | REST API for the Acme storefront |
-| acme-web | ~/projects/acme-web | PROJECT_MAP.md | 9f8e7d6 | Customer-facing web app |
+| Project | Path | Map | Mapped At | Stack | Deploys To | Summary |
+|---------|------|-----|-----------|-------|------------|---------|
+| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | ab12cd3 | Rails 8 / Postgres | Fly.io | REST API for the Acme storefront |
+| acme-web | ~/projects/acme-web | PROJECT_MAP.md | 9f8e7d6 | Next.js / TS | Vercel | Customer-facing web app |
 ```
 
-(`Mapped At` = the git SHA the map was built at — it lets `eve` flag stale rows without
-opening each map.)
+Column notes:
+- `Mapped At` — the git SHA the map was built at; lets `eve` flag stale rows without opening
+  each map.
+- `Stack` / `Deploys To` — one short phrase each, taken from the verified map. They let `eve`
+  answer common portfolio sweeps ("which are Rails?", "which deploy to Vercel?") from the
+  registry alone — zero repo reads. Use `?` when the map doesn't say; never guess.
 
 ## When to run
 

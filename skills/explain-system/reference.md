@@ -83,7 +83,7 @@ Table with: category, opportunity, evidence (file:line), impact, risk, effort. F
 - **File:line references required** — on every factual claim in the final doc
 - **Target doc length: 100-200 lines** — concise enough to read in one sitting
 - **Cap claims table at ~30-40 entries** — group related claims to stay manageable
-- **If ARCHITECTURE.md exists, read it** — build on /onboard output, don't duplicate
+- **If ARCHITECTURE.md or PROJECT_MAP.md exists, read it** — build on prior docs, don't duplicate
 - **Verification is not optional** — the claims table is the skill's core differentiator
 - **ADR format for decisions** — Context, Decision, Trade-offs, Consequences
 - **Trade-off analysis is central** — every decision and improvement includes what's gained AND sacrificed

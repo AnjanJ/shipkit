@@ -2,11 +2,11 @@
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?logo=buymeacoffee)](https://buymeacoffee.com/anjanj) [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/AnjanJ)
 
-Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that gives you workflow rules, skills, agents, knowledge bases, and path-scoped rules — out of the box.
+**The project knowledge layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).** Shipkit gives Claude a maintained, verified memory of your codebase — and of your whole portfolio of projects — without burning your session's context: a `PROJECT_MAP.md` per project, elder agents (`grandfather`, `eve`, `archivist`) that research in their own context and return only cited answers, a cross-project registry, and automatic freshness nudges. Plus a small set of opt-in workflow skills for teams that want them.
 
-**[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new.
+**[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
-**New in 1.3:** hardening release — interactive skills fixed (forked checkpoints could never reach you), automatic `PROJECT_MAP.md` freshness reminders via a SessionStart hook, a configurable **workflow style** (`strict-tdd` / `test-first` / `lightweight`) chosen at setup, stack-agnostic `eve` sweeps, and a linted, CI-checked plugin. See the [Changelog](CHANGELOG.md) and [Roadmap](ROADMAP.md). *(1.2 introduced the project elders — `grandfather`, `eve`, `archivist` — ask via `/shipkit:ask`; optional [MemPalace](#optional-episodic-memory-mempalace) adds decision-history recall.)*
+**New in 2.0:** shipkit is now focused on the knowledge layer. Five generic workflow skills (`/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard`) were removed — Claude Code does those natively now — and the remaining workflow skills are invoke-when-you-want-them (they no longer auto-trigger or occupy context). See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.
 
 ## Install
 
@@ -28,27 +28,28 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ## What You Get Instantly
 
-**21 skills** — slash commands for common workflows:
+**The knowledge layer** — 6 core skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
-| `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) |
-| `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
-| `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
 | `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
-| `/shipkit:plan` | Plan before coding — PRD, tech spec, and atomic task breakdown (research delegated to a subagent) |
-| `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
-| `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
-| `/shipkit:test` | Auto-detect test framework and run tests |
-| `/shipkit:tdd` | Test-driven development — Red-Green-Refactor with Iron Law enforcement |
-| `/shipkit:debug` | Systematic root-cause debugging — investigate before fixing |
-| `/shipkit:humanize` | Detect and remove AI-generated writing patterns from text |
-| `/shipkit:onboard` | Multi-phase codebase onboarding |
-| `/shipkit:explain-system` | Explore codebase and write verified system design docs |
-| `/shipkit:walkthrough` | Trace one feature end-to-end |
+| `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
+| `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) + pick a workflow style |
+| `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
-| `/shipkit:use-library` | Read docs before using any library |
+
+**Workflow extras** — 10 opt-in skills. They never auto-trigger and cost your context nothing
+until you invoke them:
+
+| Skill | What It Does |
+|-------|-------------|
+| `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
+| `/shipkit:tdd` | Strict TDD — the `strict-tdd` workflow style, Red-Green-Refactor with Iron Law enforcement |
+| `/shipkit:debug` | Systematic root-cause debugging — investigate before fixing |
+| `/shipkit:explain-system` | Explore codebase and return verified system design docs |
+| `/shipkit:walkthrough` | Trace one feature end-to-end |
+| `/shipkit:humanize` | Detect and remove AI-generated writing patterns from text |
 | `/shipkit:ai-feature` | Scaffold AI/LLM features (chat, embeddings, RAG, agents) |
 | `/shipkit:legacy-audit` | Audit legacy codebase for modernization |
 | `/shipkit:migration-plan` | Plan major dependency upgrades |
@@ -66,7 +67,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ### The project elders — ask, don't pollute
 
-The biggest idea in this release: instead of loading project knowledge into your main session
+The core idea: instead of loading project knowledge into your main session
 (and burning context), you **ask an elder** and get back only the answer.
 
 ```

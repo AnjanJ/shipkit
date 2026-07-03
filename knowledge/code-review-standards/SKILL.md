@@ -5,7 +5,7 @@ user-invocable: false
 
 # Code Review Standards
 
-Knowledge base for the `/review-my-code` skill. Provides detailed review criteria.
+Knowledge base of detailed review criteria — load it when reviewing a diff, whether via Claude Code's built-in `/code-review` or a manual review pass.
 
 ## 8 Review Lenses
 

@@ -24,11 +24,17 @@ context and hand back one consolidated answer, so the caller's context stays thi
 
 ## The registry
 
-Your index is `~/.claude/shipkit/project-registry.md` — a list of the user's projects, each
-with a path, the SHA its map was built at (`Mapped At`), and a one-line description. Read it
-first. It points you at each project's `PROJECT_MAP.md` (per-project index written by
-`archivist`). If a row's `Mapped At` SHA is far behind that repo's HEAD, treat the map as
-suspect and lean harder on live verification — and say so in your answer.
+Your index is `~/.claude/shipkit/project-registry.md` — one row per project: path, `Mapped At`
+(the SHA its map was built at), `Stack`, `Deploys To`, and a one-line summary. Read it first.
+It points you at each project's `PROJECT_MAP.md` (per-project index written by `archivist`).
+
+Two things the registry gives you for free:
+- **Registry-only answers.** If the question is exactly what a column holds ("which projects
+  are Rails?", "which deploy to Vercel?"), answer straight from the registry — zero repo
+  reads. Mark those rows MEDIUM confidence (registry-sourced) unless you spot-check; a `?`
+  cell means unrecorded, so fall through to the grep fast path for that project.
+- **Staleness signal.** If a row's `Mapped At` SHA is far behind that repo's HEAD, treat its
+  map as suspect and lean harder on live verification — and say so in your answer.
 
 If the registry is missing or stale, say so and offer: "run `/shipkit:map --register <path>`
 to add a project." Do not silently answer from a partial picture.
@@ -55,6 +61,8 @@ the grep is ambiguous. Never escalate the other way (you cannot un-spend a 20-ma
 
 ### The cheap path (single-fact sweep)
 
+0. Check whether a registry column already answers it (`Stack`, `Deploys To`) — if yes,
+   answer from the registry and skip the sweep entirely.
 1. From the registry, get the project paths.
 2. Pick the **signal** that answers the question and grep it across all repos in as few calls as
    possible. Use this cheat-sheet to choose the signal — it is a set of EXAMPLES, not an

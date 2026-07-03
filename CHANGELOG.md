@@ -2,6 +2,34 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.0.0] — 2026-07-04
+
+Shipkit is now **the project knowledge layer for Claude Code**: project maps, the elders,
+the cross-project registry, and freshness automation. The generic workflow skills that
+duplicated what Claude Code does natively are gone; the remaining workflow skills are
+opt-in. If you relied on a removed skill, pin the [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) tag.
+
+### Removed (use the native equivalent)
+
+| Removed skill | Use instead |
+|---------------|-------------|
+| `/shipkit:plan` | Claude Code's built-in **plan mode** (the shipkit workflow rule tells Claude to delegate plan research to `codebase-explorer`) |
+| `/shipkit:review-my-code` | Built-in **`/code-review`** — the `code-review-standards` knowledge base (8 lenses, anti-patterns, severities) is kept and can back any review |
+| `/shipkit:test` | Just ask Claude to run the tests — it detects the framework; the `test-analyzer` agent is kept for diagnosing failures |
+| `/shipkit:use-library` | Claude reads docs before using unfamiliar libraries; the dependencies rule still enforces docs-first on dependency files |
+| `/shipkit:onboard` | `/shipkit:map` + `/shipkit:ask` (the elders ARE the onboarding), or built-in `/init` for a CLAUDE.md |
+
+### Changed
+
+- **Ten workflow skills no longer auto-trigger** (`debug`, `tdd`, `qa`, `ui-ux`, `humanize`,
+  `ai-feature`, `legacy-audit`, `migration-plan`, `explain-system`, `walkthrough`): they are
+  `disable-model-invocation: true`, so they cost your context nothing and never fire
+  unexpectedly — invoke them when you want them.
+- **Registry v2.** The project registry gains `Stack` and `Deploys To` columns (pulled from
+  each verified map at `--register`/`refresh` time), so `eve` answers common portfolio sweeps
+  ("which are Rails?", "which deploy to Vercel?") from the registry alone — zero repo reads.
+- README, GUIDE, and marketplace metadata rewritten around the knowledge-layer positioning.
+
 ## [1.3.0] — 2026-07-04
 
 ### Changed

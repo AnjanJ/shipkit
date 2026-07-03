@@ -99,7 +99,12 @@ regressions.
 
 ---
 
-## 2.0 — Repositioning (breaking)
+## 2.0 — Repositioning (breaking) — ✅ SHIPPED 2026-07-04 as 2.0.0
+
+Decision made: **hard cut**, not a two-plugin split. The five cut skills point to native
+equivalents in the CHANGELOG; `v1.3.0` is tagged for anyone who relied on them. Registry v2
+landed with `Stack` / `Deploys To` columns. Remaining 2.0 ideas still open: the portfolio
+version/dependency matrix and consolidation report for `eve` (below).
 
 ### 6. Triage the 21 skills
 

@@ -1,6 +1,7 @@
 ---
 description: "End-to-end feature code walkthrough"
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[<feature-name> [surface|deep]]"
 context: fork
 agent: codebase-explorer
@@ -16,8 +17,8 @@ agent: codebase-explorer
 Trace one feature end-to-end — from trigger to database and back — and produce a
 step-by-step walkthrough, returned as a proposed `docs/code-walkthrough/<feature-name>.md`.
 
-**How this relates to /onboard and /explain-system:**
-- `/onboard` maps WHAT exists (architecture, entities, history) — the city map
+**How this relates to the other explainers:**
+- `/shipkit:map` (archivist) indexes WHAT exists and where — the city map
 - `/explain-system` explains WHY decisions were made (trade-offs, ADRs) — the urban planning textbook
 - `/walkthrough` traces HOW one feature works step by step — the guided walking tour
 

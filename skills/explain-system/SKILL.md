@@ -1,6 +1,7 @@
 ---
 description: "Verified system design explainer"
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[full|quick|section <name>]"
 context: fork
 agent: general-purpose
@@ -16,10 +17,9 @@ agent: general-purpose
 Explore a codebase, reason about WHY it's designed the way it is, verify every claim
 against source code, and return a system design document proposed for `docs/SYSTEM_DESIGN.md`.
 
-**How this differs from /onboard:** `/onboard` maps WHAT exists (architecture, flows,
-entities). `/explain-system` explains WHY the system is designed this way (decisions,
-trade-offs, constraints). `/onboard` gives you a map of the city. `/explain-system`
-gives you the textbook chapter explaining why the city was planned this way.
+**How this differs from `/shipkit:map`:** the archivist's `PROJECT_MAP.md` indexes WHAT
+exists and where. `/explain-system` explains WHY the system is designed this way (decisions,
+trade-offs, constraints) — the textbook chapter, not the map.
 
 ## Arguments
 
@@ -29,7 +29,7 @@ Scope: $ARGUMENTS (default: `full`)
 - `quick` — Phases 1-2 only, produce a brief explainer (skip verification loop)
 - `section <name>` — Regenerate one section (e.g., `section decisions`, `section flows`)
 
-**If `docs/ARCHITECTURE.md` exists** (from `/onboard`), read it as input. Don't redo
+**If `docs/ARCHITECTURE.md` or `PROJECT_MAP.md` exists**, read it as input. Don't redo
 work that's already been done — build on it.
 
 ---

@@ -1,6 +1,7 @@
 ---
 description: "Detect and remove AI-generated writing patterns — make text sound naturally human"
 user-invocable: true
+disable-model-invocation: true
 argument-hint: "[analyze|<text-or-file-path>]"
 context: fork
 agent: general-purpose

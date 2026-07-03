@@ -5,8 +5,8 @@
 
 ## Default Coding Workflow
 
-This section is the single source of truth for the shipkit workflow — `/shipkit:plan`,
-`/shipkit:tdd`, and the CLAUDE.md written by `/shipkit:setup` all defer to it.
+This section is the single source of truth for the shipkit workflow — `/shipkit:tdd` and
+the CLAUDE.md written by `/shipkit:setup` defer to it.
 
 **Workflow style.** If the project's CLAUDE.md declares a `Workflow style:` (set by
 `/shipkit:setup`), honor it:
@@ -18,7 +18,7 @@ This section is the single source of truth for the shipkit workflow — `/shipki
 something — assess first:
 
 **Non-trivial work** (new features, refactors, integrations, architectural changes):
-1. **Plan first** — clarify requirements, design the approach, break into atomic tasks. Use `/shipkit:plan`.
+1. **Plan first** — enter plan mode; clarify requirements, design the approach, break into atomic tasks. Delegate heavy codebase research to `codebase-explorer`.
 2. **Execute task by task** — prefer writing the test before the implementation; one atomic commit per task (test + implementation together).
 
 **Trivial work** (renames, typo fixes, config changes, one-liners, or user says "just do it"):

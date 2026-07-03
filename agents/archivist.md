@@ -37,8 +37,8 @@ You receive one of:
 - Read dependency manifests: `Gemfile`/`*.gemspec`, `mix.exs`, `package.json`, `go.mod`,
   `requirements.txt`/`pyproject.toml`.
 - Read `README*`, `CLAUDE.md`, any `docs/` (especially `docs/ARCHITECTURE.md` or
-  `docs/SYSTEM_DESIGN.md` from shipkit's `/onboard` / `/explain-system` — reuse them, do
-  not redo them).
+  `docs/SYSTEM_DESIGN.md` from shipkit's `/explain-system` or earlier onboarding passes —
+  reuse them, do not redo them).
 - Identify framework: Rails, Phoenix/Elixir, React/TS, etc. Use stack conventions to know
   where to look (Rails → `app/`, `config/routes.rb`, `db/schema.rb`; Phoenix → `lib/<app>`,
   `lib/<app>_web`, contexts; React → `src/`, routing, state).

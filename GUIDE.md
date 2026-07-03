@@ -24,12 +24,13 @@ A complete guide to using every skill, agent, and feature in shipkit.
 After installing the plugin, all skills are available as `/shipkit:<skill-name>`. You can start using them immediately — no configuration needed.
 
 ```
-/shipkit:review-my-code    # review your staged changes
-/shipkit:test              # run your tests
+/shipkit:map --register    # build this project's PROJECT_MAP.md + register it
+/shipkit:ask <question>    # ask the elders about this project (or --all, portfolio-wide)
 /shipkit:qa                # full QA workflow
 ```
 
-For the best experience, run `/shipkit:setup` once per project to tailor everything to your stack.
+For the best experience, run `/shipkit:setup` once per project to tailor everything to your stack
+and pick a workflow style.
 
 ---
 
@@ -236,27 +237,6 @@ Create or refresh the `PROJECT_MAP.md` that the elders read.
 Run it once per project to start, and `refresh` after a big change (new domain, refactor,
 framework upgrade). A stale map makes the elders flag drift — that is your cue to refresh.
 
-### /shipkit:plan — Plan Before You Code
-
-Turns a feature request into a plan before any code is written. Runs **inline** so its
-questions and approval checkpoints reach you; the heavy codebase research is delegated to the
-`codebase-explorer` agent so it does not weigh down your session.
-
-**Three phases, each with a checkpoint:**
-1. **PRD** — probing questions (purpose, users, behaviors, acceptance criteria, edge cases, out of
-   scope, constraints) until the requirements are unambiguous. Waits for your approval.
-2. **Tech spec** — reads existing code and conventions, then designs the approach against
-   scalability, fault tolerance, readability, maintainability, and security.
-3. **Atomic task breakdown** — a sequenced list of small, independently testable tasks.
-
-```
-/shipkit:plan add team billing with seat-based pricing
-/shipkit:plan                         # describe the feature when prompted
-```
-
-**Skip it** for renames, typo fixes, config changes, one-liners, or when you just say "just do it."
-Pair it with `/shipkit:tdd` to build each task test-first.
-
 ### /shipkit:qa — Quality Assurance
 
 5-phase QA workflow that asks probing questions before writing tests.
@@ -271,45 +251,6 @@ Pair it with `/shipkit:tdd` to build each task test-first.
 ```
 /shipkit:qa                              # QA recent changes
 /shipkit:qa src/services/payment.ts      # focus on specific file
-```
-
----
-
-### /shipkit:review-my-code — Code Review
-
-Reviews code through 8 lenses with severity levels.
-
-**The 8 lenses:**
-1. Clean Code + Single Responsibility
-2. DRY (Don't Repeat Yourself)
-3. KISS (Keep It Simple)
-4. YAGNI (You Aren't Gonna Need It)
-5. Language Idioms
-6. Framework Patterns + OCP/DIP
-7. Performance & Scalability
-8. Error Handling
-
-**Severity levels:** BLOCKER, CRITICAL, MAJOR, MINOR, NIT, PRAISE
-
-**Verdict:** APPROVE, REQUEST CHANGES, or NEEDS DISCUSSION
-
-```
-/shipkit:review-my-code                          # review staged changes
-/shipkit:review-my-code src/billing.ts           # review specific file
-/shipkit:review-my-code 142                      # review PR #142
-```
-
----
-
-### /shipkit:test — Run Tests
-
-Auto-detects your test framework and runs tests. Diagnoses failures automatically.
-
-```
-/shipkit:test                    # run all tests
-/shipkit:test quick              # fast tests only
-/shipkit:test specific path/to   # run one test file
-/shipkit:test coverage           # with coverage reporting
 ```
 
 ---
@@ -363,25 +304,6 @@ Covers 40 patterns across vocabulary, structure, tone, and formatting. Includes 
 
 ---
 
-### /shipkit:onboard — Codebase Onboarding
-
-5-phase exploration for unfamiliar codebases.
-
-**Phases:**
-1. Trace one request/flow end-to-end
-2. Map the architecture
-3. Analyze git history for hotspots
-4. Generate lightweight docs (ARCHITECTURE.md, CODEBASE_MAP.md)
-5. Suggest project-specific skills
-
-```
-/shipkit:onboard                         # full 5-phase onboarding
-/shipkit:onboard zoom-in src/app.ts      # start from specific file
-/shipkit:onboard zoom-out                # skip tracing, go to architecture
-```
-
----
-
 ### /shipkit:explain-system — System Design Docs
 
 Explores your codebase and writes a verified system design document explaining WHY it's designed the way it is.
@@ -430,20 +352,6 @@ Reports what's consuming your context window and suggests optimizations.
 ```
 
 Use this when Claude seems to be forgetting things or losing context.
-
----
-
-### /shipkit:use-library — Documentation-First Library Usage
-
-Reads docs before using any library. Fetches official docs, checks versions, verifies compatibility.
-
-```
-/shipkit:use-library redis
-/shipkit:use-library @tanstack/react-query
-/shipkit:use-library fastapi
-```
-
-Will NOT write code until documentation has been read.
 
 ---
 
@@ -576,13 +484,13 @@ Used by `/shipkit:map`.
 
 Diagnoses test failures. Checks for state leakage, timing issues, environment differences, dependency changes, and order-dependent failures.
 
-Used automatically by `/shipkit:test` when tests fail. Or reference directly: "use the test-analyzer agent to diagnose this flaky test."
+Reference it directly when tests fail: "use the test-analyzer agent to diagnose this flaky test."
 
 ### codebase-explorer
 
 Read-only exploration agent. Traces call chains, maps directories, analyzes schemas, finds patterns, identifies hotspots.
 
-Used automatically by `/shipkit:onboard` during phases 1-3. Or reference directly: "use the codebase-explorer agent to map the services directory."
+Used by `/shipkit:qa` and plan-mode research for heavy reading. Or reference directly: "use the codebase-explorer agent to map the services directory."
 
 Both agents: read-only, cap at 20 files per task, report confidence levels.
 
@@ -594,7 +502,7 @@ Loaded on demand by skills — not always in context.
 
 ### code-review-standards
 
-Backs `/shipkit:review-my-code` with detailed criteria for each of the 8 lenses, anti-pattern catalog with smell-to-pattern mapping, and severity definitions.
+Detailed review criteria: 8 lenses, anti-pattern catalog with smell-to-pattern mapping, and severity definitions. Load it for any diff review — Claude Code's built-in `/code-review` or a manual pass.
 
 ### ui-ux-standards
 
@@ -641,32 +549,27 @@ These auto-load when you edit matching files. No action needed.
 
 **Joining a project:**
 ```
-/shipkit:setup  →  /shipkit:onboard  →  /shipkit:explain-system
+/shipkit:setup  →  /shipkit:map --register  →  /shipkit:ask <your first questions>
 ```
 
 **Building a feature (with TDD):**
 ```
-/shipkit:plan <feature>  →  /shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa  →  /shipkit:test
-```
-
-**Adding a dependency:**
-```
-/shipkit:use-library <name>  →  write code  →  /shipkit:test
+plan mode  →  /shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa
 ```
 
 **Debugging a bug:**
 ```
-/shipkit:debug  →  /shipkit:tdd bugfix  →  /shipkit:test
+/shipkit:debug  →  /shipkit:tdd bugfix  →  run the tests
 ```
 
 **Pre-PR checklist:**
 ```
-/shipkit:test  →  /shipkit:review-my-code  →  /shipkit:humanize (for docs/PR description)
+run the tests  →  /code-review (built-in)  →  /shipkit:humanize (for docs/PR description)
 ```
 
 **Modernizing a legacy codebase:**
 ```
-/shipkit:legacy-audit  →  /shipkit:migration-plan <dep> <old> <new>  →  execute  →  /shipkit:test
+/shipkit:legacy-audit  →  /shipkit:migration-plan <dep> <old> <new>  →  execute  →  run the tests
 ```
 
 **Leaving shipkit:**
@@ -678,7 +581,7 @@ These auto-load when you edit matching files. No action needed.
 
 ## Tips
 
-1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit:plan` and `/shipkit:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:onboard`, `/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
+1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
 
 2. **Use `/clear` between skills.** Each skill works best with a fresh context window.
 
