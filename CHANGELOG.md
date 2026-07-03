@@ -4,6 +4,17 @@ All notable changes to Shipkit are documented here. Newest first.
 
 ## [Unreleased — 1.3]
 
+### Added
+
+- **Plugin lint + CI.** `./scripts/lint.sh` validates everything the plugin ships: frontmatter
+  parses with required fields, `@reference` links resolve, files directly under `agents/` are
+  real agents (the 1.2.1 bogus-agent bug class), plugin/marketplace/CHANGELOG versions agree,
+  no machine-specific absolute paths, rule `paths:` globs are well-formed, and — new bug class
+  from this release — forked skills contain no interactive checkpoints. Runs in Woodpecker CI
+  on every push (`.woodpecker.yml`). The path check immediately caught two real leaks of the
+  author's home directory in the `/shipkit:map` registry template; those examples are now
+  generic.
+
 ### Fixed
 
 - **Interactive skills no longer run in forked contexts.** Forked skills cannot use

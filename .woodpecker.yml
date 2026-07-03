@@ -1,0 +1,6 @@
+steps:
+  lint:
+    image: python:3.12-alpine
+    commands:
+      - pip install --quiet pyyaml
+      - python3 scripts/lint.py

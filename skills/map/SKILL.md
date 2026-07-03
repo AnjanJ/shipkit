@@ -46,8 +46,8 @@ Registry template:
 
 | Project | Path | Map | Summary |
 |---------|------|-----|---------|
-| audio_intelli_api | /Users/aj/code/audio_intelli_api | docs/PROJECT_MAP.md | Rails API for audio intelligence |
-| health_mirror | /Users/aj/code/health_mirror | PROJECT_MAP.md | Personal health data mirror |
+| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | REST API for the Acme storefront |
+| acme-web | ~/projects/acme-web | PROJECT_MAP.md | Customer-facing web app |
 ```
 
 ## When to run
