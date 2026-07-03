@@ -4,6 +4,15 @@ All notable changes to Shipkit are documented here. Newest first.
 
 ## [Unreleased — 1.3]
 
+### Changed
+
+- **`eve`'s grep guidance is now stack-agnostic.** Her fast-path examples were hardcoded to one
+  specific portfolio (Hetzner/Kamal, Oban vs Sidekiq, Rails versions) and could aim another
+  user's sweep at the wrong signals entirely. Replaced with a multi-ecosystem signal
+  cheat-sheet (deploy, background jobs, framework versions, payments, datastores across
+  Ruby/JS/Python/Go/Elixir/Rust/PHP), explicitly labeled as examples to extend, not an
+  exhaustive registry.
+
 ### Added
 
 - **Map-freshness hook.** A `SessionStart` hook (`hooks/hooks.json` +

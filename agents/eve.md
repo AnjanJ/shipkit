@@ -41,8 +41,9 @@ Before reading anything beyond the registry, decide which kind of question this 
 how much you read — getting this wrong is the main way you waste tokens.
 
 - **Single-fact sweep** — one attribute per project, answerable by a known signal:
-  "which deploy to Hetzner?", "which use Oban vs Sidekiq?", "which are Rails 7?",
-  "where do I integrate Stripe?". **Do NOT read full maps.** Go straight to a portfolio-wide
+  "which deploy to Fly.io?", "which background-job library does each app use?",
+  "which are on the current framework major?", "where do I integrate Stripe?".
+  **Do NOT read full maps.** Go straight to a portfolio-wide
   grep for the signal across the repos, then confirm the hits. A whole-map read for a
   one-line answer is the expensive mistake. See "The cheap path" below.
 - **Synthesis / 360°** — needs each project's shape, trajectory, or how pieces relate:
@@ -56,10 +57,18 @@ the grep is ambiguous. Never escalate the other way (you cannot un-spend a 20-ma
 
 1. From the registry, get the project paths.
 2. Pick the **signal** that answers the question and grep it across all repos in as few calls as
-   possible. Examples:
-   - Deploy target → `grep -ril "hetzner\|kamal\|fly.toml\|vercel\|cloudflare" <paths>/config/deploy.yml <paths>/*.toml <paths>/vercel.json` (one ripgrep over the deploy configs).
-   - Background jobs → grep `oban\|sidekiq` in `mix.exs` / `Gemfile`.
-   - Framework version → grep the one line in `Gemfile.lock` / `mix.exs`.
+   possible. Use this cheat-sheet to choose the signal — it is a set of EXAMPLES, not an
+   exhaustive registry: match it to the stacks actually in the registry, and extend it when the
+   question names a technology not listed here.
+
+   | Question type | Signal files | Signal terms (examples) |
+   |---------------|--------------|------------------------|
+   | Deploy target | `fly.toml`, `vercel.json`, `netlify.toml`, `render.yaml`, `wrangler.toml`/`.jsonc`, `config/deploy.yml` (Kamal), `Procfile`, `app.yaml`, `Dockerfile`, CI workflow files | provider names in CI/deploy configs |
+   | Background jobs | `Gemfile`, `mix.exs`, `package.json`, `pyproject.toml`/`requirements.txt`, `go.mod` | `sidekiq`, `solid_queue`, `oban`, `bullmq`, `celery`, `rq`, `river` |
+   | Framework + version | `Gemfile.lock`, `package.json`, `mix.exs`, `go.mod`, `pyproject.toml`, `Cargo.toml`, `composer.json` | the one version line — grep it, don't read the file |
+   | Payments / billing | dependency manifests + `grep -ril` source | `stripe`, `paddle`, `braintree`, `lemonsqueezy` |
+   | Datastores / infra | `docker-compose.yml`, `database.yml`, `.env.example`, config dirs | `postgres`, `mysql`, `redis`, `sqlite`, `kafka`, `s3` |
+
    Prefer a single `rg` with a file-glob over many per-project reads.
 3. The grep hits ARE your evidence (path + matched line). Only open a file when a hit is
    ambiguous (e.g. a commented-out or placeholder config — watch for `example.com`, `192.168.`,
@@ -103,11 +112,12 @@ Return:
   drift you spotted.
 
 ## Good questions for you
-- "Which of my projects use Sidekiq vs Oban?"
+- "Which of my projects use which background-job library?"
 - "Everywhere I integrate Stripe / handle webhooks."
-- "Which apps deploy to Hetzner, which to AWS, which to Cloudflare?"
+- "Which apps deploy where — Fly.io, Vercel, AWS, a VPS?"
 - "Across all projects, where do I do i18n?"
-- "Which projects are Rails 7 vs older?"
+- "Which projects are on the latest framework major, and which lag behind?"
+- "Which projects still depend on <library> — I want to drop/upgrade it everywhere."
 - "Give me a 360° status: what each project is and where it is heading."
 
 ## Constraints
