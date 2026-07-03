@@ -43,8 +43,11 @@ Configures shipkit for your specific project. Run it once when you start using s
 1. Snapshots your current `CLAUDE.md` + `.claude/` directory to `.shipkit-backup-<timestamp>/`
 2. Detects your stack (Rails, React, Python, Go, Elixir, static)
 3. Detects test framework and package manager
-4. Asks for your project purpose and team conventions
-5. Creates a tailored CLAUDE.md with workflow rules
+4. Asks for your project purpose, team conventions, and **workflow style** — `strict-tdd`
+   (iron-law red-green-refactor), `test-first` (the default: prefer test-before-implementation,
+   pragmatic exceptions), or `lightweight` (tests where they earn their keep)
+5. Creates a tailored CLAUDE.md that declares your choices; the workflow itself is defined
+   once, in shipkit's always-on rules
 6. Installs stack-specific skills, rules, and knowledge bases
 7. Optionally creates `.claude/settings.json` with safe defaults
 

@@ -110,7 +110,7 @@ Present as a numbered checklist. Each item maps to one TDD cycle:
 ...
 ```
 
-### CHECKPOINT — Present the task list. Wait for user approval. Then execute: one task at a time, each following the TDD cycle (test first → implement → refactor → commit).
+### CHECKPOINT — Present the task list. Wait for user approval. Then execute: one task at a time, following the project's workflow style (see the shipkit Default Coding Workflow rule — test-first unless the project's CLAUDE.md says otherwise).
 
 ---
 
@@ -119,8 +119,9 @@ Present as a numbered checklist. Each item maps to one TDD cycle:
 - **Questions before code** — Phase 1 is pure conversation. No file reading until Phase 2.
 - **User approves each phase** — never skip a checkpoint.
 - **Atomic tasks** — if a task needs "and" in its description, split it.
-- **Each task = one commit** — test + implementation + refactor in one atomic commit.
+- **Each task = one commit** — one atomic commit per task; test discipline per the shipkit
+  Default Coding Workflow rule (the single source of truth — don't restate it here).
 - **Design for the real world** — consider scale, failure, readability, maintainability, security in Phase 2. Not as afterthoughts.
-- **BDD-style tests** — describe behavior from the user's perspective, not implementation details.
+- **Behavior-focused test descriptions** — each task's Test line describes what the user experiences, not implementation details.
 - **Order matters** — foundation before features, core before edge cases.
 - **No gold plating** — only tasks that serve the approved PRD. Nothing speculative.

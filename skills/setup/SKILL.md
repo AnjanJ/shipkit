@@ -39,6 +39,10 @@ Tailor shipkit to your specific project. Detects your stack, test framework, pac
 
 4. **Ask the user:**
    - One-line project purpose (e.g., "SaaS billing platform for freelancers")
+   - **Workflow style** — how strict should the coding workflow be?
+     - `strict-tdd` — iron-law red-green-refactor for every change (`/shipkit:tdd`)
+     - `test-first` (default) — prefer test-before-implementation, pragmatic exceptions
+     - `lightweight` — tests where they earn their keep; you decide when
    - Branch naming prefix (e.g., `feature/`, `JIRA-123-`) — optional
    - PR description preference: summary+test plan, minimal, or none — optional
 

@@ -10,6 +10,10 @@ argument-hint: "[feature|bugfix|refactor]"
 
 # /tdd — Test-Driven Development
 
+This is the **opt-in strict mode** of the shipkit Default Coding Workflow rule — the
+`strict-tdd` workflow style. Invoked explicitly, or automatically when the project's
+CLAUDE.md declares `Workflow style: strict-tdd`.
+
 Write the test first. Watch it fail. Write minimal code to pass. Refactor.
 
 **If you didn't watch the test fail, you don't know if it tests the right thing.**

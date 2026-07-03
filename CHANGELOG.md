@@ -6,6 +6,15 @@ All notable changes to Shipkit are documented here. Newest first.
 
 ### Changed
 
+- **The coding workflow is softer, configurable, and defined once.** The workflow used to be
+  restated in three places (`rules/shipkit.md`, the `/setup` CLAUDE.md template, `/plan`) and
+  installed strict TDD + "BDD is not optional" into every project. Now `rules/shipkit.md` is
+  the single source of truth, `/plan` and `/tdd` point at it, and `/shipkit:setup` asks for a
+  **workflow style** — `strict-tdd` (the old iron law, now opt-in via `/shipkit:tdd`),
+  `test-first` (the new default: prefer test-before-implementation, pragmatic exceptions), or
+  `lightweight` (tests where they earn their keep). Prescriptions you didn't choose degrade
+  over long sessions anyway; a declared style is honored better than an imposed law.
+
 - **`eve`'s grep guidance is now stack-agnostic.** Her fast-path examples were hardcoded to one
   specific portfolio (Hetzner/Kamal, Oban vs Sidekiq, Rails versions) and could aim another
   user's sweep at the wrong signals entirely. Replaced with a multi-ecosystem signal

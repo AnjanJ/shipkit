@@ -32,14 +32,12 @@ For trivial fixes (rename, typo, config, one-liner), skip planning and code dire
 Use subagents only for atomic, well-defined tasks (search, test run, file analysis).
 Keep all reasoning and decision-making in the main session — never split thinking across agents.
 
-### 3. Default Coding Workflow
-When adding a feature, fixing a bug, or changing behavior — follow this cycle automatically:
-1. **Write a failing test first** (red) — one test for one behavior. BDD-style for user-facing features.
-2. **Make it pass** (green) — simplest code that passes. Nothing extra.
-3. **Refactor** — clean up while tests stay green.
-4. **Commit** — atomic commit: this test + its implementation. Tests must pass.
-5. **Repeat** — next behavior, next test.
-Skip TDD only for config, docs, generated code, or prototypes — with user agreement.
+### 3. Workflow Style
+**Workflow style:** {chosen style: strict-tdd | test-first | lightweight}
+The shipkit workflow rules (always loaded with the plugin) define what each style means and
+are the single source of truth — this line only declares this project's choice.
+{if strict-tdd: "Every change follows /shipkit:tdd — red, green, refactor, no exceptions."}
+{if lightweight: "Tests are written where they earn their keep; the user decides when."}
 
 ### 4. Verification Before Done
 Never say "done" without proving it works:
