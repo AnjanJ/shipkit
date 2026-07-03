@@ -6,6 +6,14 @@ All notable changes to Shipkit are documented here. Newest first.
 
 ### Added
 
+- **Map-freshness hook.** A `SessionStart` hook (`hooks/hooks.json` +
+  `scripts/check-map-freshness.sh`) compares `PROJECT_MAP.md`'s SHA stamp to HEAD and prints a
+  one-line reminder when the map is ≥20 commits behind (tune with `SHIPKIT_MAP_STALE_COMMITS`)
+  or when a dependency manifest changed since it was built. Silent otherwise; never fails a
+  session. Maps used to rot until an elder happened to flag drift — now staleness announces
+  itself. The project registry also gains a `Mapped At` SHA column so `eve` can spot stale
+  rows without opening each map.
+
 - **Plugin lint + CI.** `./scripts/lint.sh` validates everything the plugin ships: frontmatter
   parses with required fields, `@reference` links resolve, files directly under `agents/` are
   real agents (the 1.2.1 bogus-agent bug class), plugin/marketplace/CHANGELOG versions agree,

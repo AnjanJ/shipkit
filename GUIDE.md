@@ -146,6 +146,11 @@ The map is an *index*, not the final word. When the map and live source disagree
 **source** and flag the drift in their answer — so a stale map produces a correction, not a confident
 wrong answer. Refresh with `/shipkit:map refresh` when you see drift flagged.
 
+You also get an automatic nudge: a shipkit `SessionStart` hook compares the map's SHA stamp to
+HEAD and prints a one-line reminder when the map is ≥20 commits behind (tune with
+`SHIPKIT_MAP_STALE_COMMITS`) or when a dependency manifest has changed since it was built. It is
+silent otherwise and never blocks a session.
+
 ---
 
 ## Episodic Memory (MemPalace)

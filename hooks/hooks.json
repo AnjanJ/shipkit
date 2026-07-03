@@ -1,0 +1,17 @@
+{
+  "description": "Shipkit: one-line reminder at session start when PROJECT_MAP.md has drifted from HEAD",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-map-freshness.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -34,9 +34,10 @@ get the portfolio view. Each line: project name, path, map location, one-line de
 
 On `--register` (and offer it on first `build` of any project):
 1. Read `~/.claude/shipkit/project-registry.md` if it exists; create it if not (template below).
-2. Add or update this project's row. Use the project's path and pull the one-liner from the
-   freshly written map's "What this project is" line.
+2. Add or update this project's row. Use the project's path, the map's HEAD short SHA in
+   `Mapped At`, and pull the one-liner from the freshly written map's "What this project is" line.
 3. Keep it sorted, one project per line, deduped by path.
+4. On any `refresh`, update the row's `Mapped At` SHA too (if the project is registered).
 
 Registry template:
 
@@ -44,11 +45,14 @@ Registry template:
 # Shipkit Project Registry
 > Portfolio index for `eve`. One row per project. Update via `/shipkit:map --register`.
 
-| Project | Path | Map | Summary |
-|---------|------|-----|---------|
-| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | REST API for the Acme storefront |
-| acme-web | ~/projects/acme-web | PROJECT_MAP.md | Customer-facing web app |
+| Project | Path | Map | Mapped At | Summary |
+|---------|------|-----|-----------|---------|
+| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | ab12cd3 | REST API for the Acme storefront |
+| acme-web | ~/projects/acme-web | PROJECT_MAP.md | 9f8e7d6 | Customer-facing web app |
 ```
+
+(`Mapped At` = the git SHA the map was built at — it lets `eve` flag stale rows without
+opening each map.)
 
 ## When to run
 
@@ -60,5 +64,8 @@ Registry template:
 
 ## Note on freshness
 
-The map is stamped with the git SHA it was built at. If the elders flag drift in their answers,
-that is your signal to run `/shipkit:map refresh`.
+The map is stamped with the git SHA it was built at. You don't have to track drift yourself:
+a shipkit `SessionStart` hook checks the stamp against HEAD and prints a one-line reminder
+when the map is ≥20 commits behind (override with `SHIPKIT_MAP_STALE_COMMITS`) or when a
+dependency manifest changed since it was built. The elders flagging drift in their answers is
+the other signal. Either way: `/shipkit:map refresh`.

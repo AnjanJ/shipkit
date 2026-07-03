@@ -25,8 +25,10 @@ context and hand back one consolidated answer, so the caller's context stays thi
 ## The registry
 
 Your index is `~/.claude/shipkit/project-registry.md` — a list of the user's projects, each
-with a path and a one-line description. Read it first. It points you at each project's
-`PROJECT_MAP.md` (per-project index written by `archivist`).
+with a path, the SHA its map was built at (`Mapped At`), and a one-line description. Read it
+first. It points you at each project's `PROJECT_MAP.md` (per-project index written by
+`archivist`). If a row's `Mapped At` SHA is far behind that repo's HEAD, treat the map as
+suspect and lean harder on live verification — and say so in your answer.
 
 If the registry is missing or stale, say so and offer: "run `/shipkit:map --register <path>`
 to add a project." Do not silently answer from a partial picture.
