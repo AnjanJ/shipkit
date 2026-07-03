@@ -2,7 +2,7 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
-## [Unreleased — 1.3]
+## [1.3.0] — 2026-07-04
 
 ### Changed
 

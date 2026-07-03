@@ -17,9 +17,14 @@ Two verified platform facts shape this plan (checked against official Claude Cod
 
 ---
 
-## 1.3 — Hardening (non-breaking)
+## 1.3 — Hardening (non-breaking) — ✅ SHIPPED 2026-07-04 as 1.3.0
 
-Ordered; each item is small and independently shippable with its own changelog entry.
+All five items below landed (the fork-interactivity audit found **nine** affected skills, not
+three — including `/unsetup`, whose destructive-restore confirmation ran where the user could
+never see it). Remaining from the review: the 2.0 items, plus the 1.3 deprecation notices for
+the cut-bucket skills, which are deferred until the cut-vs-split decision (see 2.0 item 6).
+
+Ordered; each item was small and independently shippable with its own changelog entry.
 
 ### 1. Fix fork-interactivity bugs (live bugs — first)
 

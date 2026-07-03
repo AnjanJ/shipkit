@@ -1,6 +1,6 @@
 {
   "name": "shipkit",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "Ship better code with Claude — skills, agents (incl. grandfather/eve project elders), knowledge bases, and path-scoped rules. Works instantly, run /shipkit:setup to tailor to your stack.",
   "author": {
     "name": "Anjan",

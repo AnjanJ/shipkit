@@ -6,7 +6,7 @@ Ship better code with Claude. A plugin for [Claude Code](https://docs.anthropic.
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new.
 
-**New in 1.2:** the **project elders** (`grandfather`, `eve`, `archivist`) answer questions about your code without bloating your main context — ask via `/shipkit:ask`. Optional [MemPalace](#optional-episodic-memory-mempalace) adds decision-history recall. Plus `/shipkit:plan` for plan-before-code. See the [Changelog](CHANGELOG.md).
+**New in 1.3:** hardening release — interactive skills fixed (forked checkpoints could never reach you), automatic `PROJECT_MAP.md` freshness reminders via a SessionStart hook, a configurable **workflow style** (`strict-tdd` / `test-first` / `lightweight`) chosen at setup, stack-agnostic `eve` sweeps, and a linted, CI-checked plugin. See the [Changelog](CHANGELOG.md) and [Roadmap](ROADMAP.md). *(1.2 introduced the project elders — `grandfather`, `eve`, `archivist` — ask via `/shipkit:ask`; optional [MemPalace](#optional-episodic-memory-mempalace) adds decision-history recall.)*
 
 ## Install
 
