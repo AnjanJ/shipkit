@@ -2,9 +2,11 @@
 description: "5-phase QA workflow"
 user-invocable: true
 argument-hint: "[<file-or-module>|all]"
-context: fork
-agent: general-purpose
 ---
+
+<!-- Runs INLINE (no context: fork) on purpose: Phase 2's probing questions and the
+     Phase 3 plan approval need AskUserQuestion, which forked skills cannot use.
+     For large change sets, delegate Phase 1 recon to codebase-explorer instead. -->
 
 # /qa — Quality Assurance Workflow
 
@@ -26,7 +28,9 @@ Run this skill to perform thorough QA on recent changes or a specific file.
    - HIGH: business logic, services, controllers
    - MEDIUM: views, serializers, helpers, config
    - LOW: docs, comments, formatting
-4. **Read each changed file** and its existing tests (if any)
+4. **Read each changed file** and its existing tests (if any). If more than ~5 files
+   changed, delegate this reading to the `codebase-explorer` agent and work from its
+   summary — keep the main context for the questions and the tests.
 5. **Build a context table:**
 
 | File | Type | Risk | Existing Tests? |

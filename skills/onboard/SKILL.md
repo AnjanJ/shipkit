@@ -6,6 +6,11 @@ context: fork
 agent: codebase-explorer
 ---
 
+<!-- FIRE-AND-FORGET FORK: this runs non-interactively as the read-only
+     codebase-explorer agent. It cannot ask the user anything mid-run and cannot
+     write files. It runs all phases end-to-end and RETURNS the report + drafted
+     docs; the main session presents them and writes only what the user approves. -->
+
 # /onboard — Codebase Onboarding
 
 Systematically explore and document an unfamiliar codebase. Based on Ridhwana Khan's
@@ -24,7 +29,7 @@ than those built top-down (from directory listings).
 
 Scope: $ARGUMENTS (default: `full`)
 
-- `full` — Run all 5 phases with checkpoints between each
+- `full` — Run all 5 phases end-to-end, then return the combined report
 - `zoom-in <file>` — Start Phase 1 from a specific file (skip auto-detection)
 - `zoom-out` — Skip Phase 1, start at Phase 2 (only if you already understand a flow)
 
@@ -47,7 +52,8 @@ If user provided `zoom-in <file>`, use that file. Otherwise auto-detect:
 
 ### 1.2 Trace the Flow
 
-Use the `codebase-explorer` agent for heavy file reading. Keep main context clean.
+You ARE the read-only explorer, running in a fork — read freely; none of it lands in the
+caller's context.
 
 1. Follow the call chain through layers (e.g., controller → service → model → DB)
 2. **Stop after 5-8 files** — this is reconnaissance, not exhaustive mapping
@@ -68,9 +74,7 @@ Read tests for this flow — do descriptions match behavior? Do tests reveal edg
 
 ### Output: "First Trail"
 
-Present: entry point, flow (files traversed), step-by-step description, conventions spotted, open questions, test coverage.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Record: entry point, flow (files traversed), step-by-step description, conventions spotted, open questions, test coverage. This becomes section 1 of your final report — then continue to Phase 2.
 
 ---
 
@@ -109,9 +113,7 @@ Note language-specific patterns: metaprogramming, dynamic dispatch, async patter
 
 ### Output: "Architecture Snapshot"
 
-Present: stack + versions, architectural shape, flow pattern, API style, core entities table, directory map, external integrations, consistency assessment.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Record: stack + versions, architectural shape, flow pattern, API style, core entities table, directory map, external integrations, consistency assessment. Section 2 of the report — continue to Phase 3.
 
 ---
 
@@ -124,9 +126,7 @@ See @reference.md for git analysis commands, hotspot analysis, change pattern an
 
 ### Output: "History Report"
 
-Present: hotspot table (file, commits, lines, assessment), change patterns, key contributors, PR themes, metaprogramming locations, "enough" check results.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Record: hotspot table (file, commits, lines, assessment), change patterns, key contributors, PR themes, metaprogramming locations, "enough" check results. Section 3 — continue to Phase 4.
 
 ---
 
@@ -139,11 +139,11 @@ Present: hotspot table (file, commits, lines, assessment), change patterns, key 
 **Goal:** Generate lightweight docs that help both humans AND future AI agents understand
 this codebase. Focus on WHY, not HOW — how changes with every commit, why endures.
 
-### 4.1 Generate `docs/ARCHITECTURE.md` (40-80 lines)
+### 4.1 Draft `docs/ARCHITECTURE.md` (40-80 lines)
 
 System overview, stack, core entities, directory map, key patterns, primary flow, hotspots, integrations.
 
-### 4.2 Generate `docs/CODEBASE_MAP.md` (30-60 lines)
+### 4.2 Draft `docs/CODEBASE_MAP.md` (30-60 lines)
 
 Module inventory, external integrations, testing landscape, background jobs, config files.
 
@@ -151,7 +151,9 @@ Module inventory, external integrations, testing landscape, background jobs, con
 
 Present as a diff — do NOT auto-write. Propose: Key Paths, commands, conventions, gotchas.
 
-### CHECKPOINT — Present all docs for review. Only write files after approval.
+**You are read-only and non-interactive: write NOTHING.** Return the drafted docs in your
+final output, each under a clearly marked heading (`PROPOSED: docs/ARCHITECTURE.md`, etc.),
+so the main session can present them to the user and write only what gets approved.
 
 ---
 

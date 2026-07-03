@@ -23,9 +23,9 @@ Define 3-5 domain terms or patterns from this trace in plain language.
 ## Constraints
 
 - **File:line references mandatory** — every step must cite exact source location
-- **Read-only until Phase 4** — Phases 1-3 only read files and run git commands
-- **Use codebase-explorer for heavy reading** — keep main context clean for reasoning
-- **User checkpoints mandatory** — present findings and WAIT at every phase boundary
+- **Read-only, always** — you never write files; the walkthrough is returned as a proposal
+- **You ARE the explorer** — read freely in your own forked context
+- **No mid-run interaction** — non-interactive fork; pick the entry point per the skill's rules, trace end-to-end, return the walkthrough (the caller handles review and file writing)
 - **Plain language required** — define every domain term on first use
 - **Cap trace at 10 hops** — if deeper, note "continues beyond trace depth"
 - **surface = happy path only** — skip side effects, error paths, key concepts sections

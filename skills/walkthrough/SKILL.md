@@ -6,10 +6,15 @@ context: fork
 agent: codebase-explorer
 ---
 
+<!-- FIRE-AND-FORGET FORK: runs non-interactively as the read-only codebase-explorer
+     agent. It cannot ask the user anything mid-run and cannot write files. It traces
+     end-to-end and RETURNS the walkthrough; the main session presents it and writes
+     docs/code-walkthrough/<feature>.md only after the user approves. -->
+
 # /walkthrough — Guided Code Walkthrough
 
 Trace one feature end-to-end — from trigger to database and back — and produce a
-step-by-step walkthrough in `docs/code-walkthrough/<feature-name>.md`.
+step-by-step walkthrough, returned as a proposed `docs/code-walkthrough/<feature-name>.md`.
 
 **How this relates to /onboard and /explain-system:**
 - `/onboard` maps WHAT exists (architecture, entities, history) — the city map
@@ -39,7 +44,7 @@ Target: $ARGUMENTS (required — feature name or file path, optionally followed 
 - Treat it as the entry point — skip to 1.2
 
 **If a feature name was given:**
-Use `codebase-explorer` agent to search:
+You ARE the read-only explorer — search directly:
 - Routes/URL patterns matching the feature name
 - File names matching the feature name (controllers, services, jobs, commands)
 - Git log: `git log --all --oneline --grep="<feature-name>"` for related commits
@@ -47,9 +52,14 @@ Use `codebase-explorer` agent to search:
 
 ### 1.2 Catalog All Entry Points
 
-Features often have multiple triggers: HTTP requests, background jobs, cron, webhooks, events, admin actions, CLI, internal calls. Find ALL of them and present as a table (trigger type, entry point, file:line).
+Features often have multiple triggers: HTTP requests, background jobs, cron, webhooks, events, admin actions, CLI, internal calls. Find ALL of them and record a table (trigger type, entry point, file:line) for the final output.
 
-### CHECKPOINT — Ask user which entry point to trace. Confirm deep or surface.
+### Pick the entry point yourself — you cannot ask mid-run
+- If a file path was given, that IS the entry point.
+- Otherwise trace the **primary user-facing trigger** (usually the HTTP route).
+- Include the full entry-point table in your output with a note: "re-run
+  `/shipkit:walkthrough <feature> from <entry>` to trace a different trigger."
+- Depth comes from the arguments; default `deep`.
 
 ---
 
@@ -80,9 +90,7 @@ Find tests for this feature — they reveal edge cases code hides.
 
 ### 2.6 Build Raw Trace Table
 
-Compile internal trace (step, layer, file:line, method, data in/out, side effects, errors).
-
-### CHECKPOINT — Summarize layers/side effects/errors found. Ask to proceed.
+Compile internal trace (step, layer, file:line, method, data in/out, side effects, errors), then continue to Phase 3.
 
 ---
 
@@ -90,15 +98,18 @@ Compile internal trace (step, layer, file:line, method, data in/out, side effect
 
 **Goal:** Transform the raw trace into a readable, guided walkthrough. See @reference.md for section formats (user journey, code trace, data transformations, side effects, error paths, key concepts).
 
-### CHECKPOINT — Present full walkthrough for review. Write only after approval.
-
 ---
 
-## Phase 4: Write
+## Phase 4: Return the Deliverable
 
-**Goal:** Write the approved walkthrough to `docs/code-walkthrough/<feature-name>.md`.
+**You are read-only and non-interactive: write NOTHING.** Return in your final output:
 
-Write to `docs/code-walkthrough/<feature-name>.md` (kebab-case). Include header block (entry point, depth, layers, steps, date). Warn before overwriting existing files.
+1. The entry-point table (with the re-run note for other triggers).
+2. The full walkthrough under a marked heading: `PROPOSED: docs/code-walkthrough/<feature-name>.md`
+   (kebab-case), including the header block (entry point, depth, layers, steps, date).
+
+The main session presents it and, on approval, writes the file — checking first whether it
+would overwrite an existing one.
 
 ---
 

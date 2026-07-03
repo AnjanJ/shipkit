@@ -36,7 +36,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
 | `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
-| `/shipkit:plan` | Plan before coding — PRD, tech spec, and atomic task breakdown (runs in a forked context) |
+| `/shipkit:plan` | Plan before coding — PRD, tech spec, and atomic task breakdown (research delegated to a subagent) |
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:review-my-code` | 8-lens code review (Clean Code, DRY, KISS, YAGNI, Idioms, Framework, Perf, Errors) |
 | `/shipkit:test` | Auto-detect test framework and run tests |

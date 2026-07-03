@@ -230,8 +230,9 @@ framework upgrade). A stale map makes the elders flag drift — that is your cue
 
 ### /shipkit:plan — Plan Before You Code
 
-Turns a feature request into a plan before any code is written. Runs in a **forked context**, so the
-planning research does not weigh down your main session — you get back the PRD, spec, and task list.
+Turns a feature request into a plan before any code is written. Runs **inline** so its
+questions and approval checkpoints reach you; the heavy codebase research is delegated to the
+`codebase-explorer` agent so it does not weigh down your session.
 
 **Three phases, each with a checkpoint:**
 1. **PRD** — probing questions (purpose, users, behaviors, acceptance criteria, edge cases, out of
@@ -669,7 +670,7 @@ These auto-load when you edit matching files. No action needed.
 
 ## Tips
 
-1. **Skills pause at checkpoints.** Multi-phase skills like `/shipkit:onboard` and `/shipkit:qa` stop between phases for your input. Don't skip these.
+1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit:plan` and `/shipkit:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:onboard`, `/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
 
 2. **Use `/clear` between skills.** Each skill works best with a fresh context window.
 

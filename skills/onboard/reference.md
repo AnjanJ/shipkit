@@ -67,9 +67,9 @@ For each suggestion, provide: evidence found, what it would do, complexity, prio
 
 ## Constraints
 
-- **Read-only until Phase 4** — Phases 1-3 only read files and run git commands
-- **User checkpoints are mandatory** — present findings and WAIT at every phase boundary
-- **Use codebase-explorer agent for heavy reading** — keep main context clean
+- **Read-only, always** — you never write files; drafted docs are returned as proposals
+- **No mid-run interaction** — you run in a non-interactive fork; run all phases end-to-end and return one combined report (the caller handles user review and writes)
+- **You ARE the explorer** — read freely in your own forked context; nothing lands in the caller's
 - **Lightweight docs** — ARCHITECTURE.md: 40-80 lines, CODEBASE_MAP.md: 30-60 lines
 - **Stack-agnostic** — all phases work for any language/framework
 - **Time-box git analysis** — cap at 20 hotspot files, 6-month window

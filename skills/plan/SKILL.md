@@ -2,9 +2,11 @@
 description: "Plan before coding: PRD, tech spec, and atomic task breakdown. TRIGGER when: user asks to build, add, implement, create, or refactor a feature. DO NOT TRIGGER when: task is a simple rename, typo fix, config change, or user says 'just do it'."
 user-invocable: true
 argument-hint: "[<feature-description>]"
-context: fork
-agent: general-purpose
 ---
+
+<!-- Runs INLINE (no context: fork) on purpose: the PRD interview and the three
+     approval checkpoints need AskUserQuestion, which forked skills cannot use.
+     Context-thinness comes from delegating Phase 2 research to codebase-explorer. -->
 
 # /plan — Plan Before You Code
 
@@ -44,7 +46,9 @@ See @reference.md for the PRD template format.
 
 ### 2.1 Read Existing Code
 
-Use `codebase-explorer` agent or read directly:
+**Delegate this to the `codebase-explorer` agent** — it does the heavy reading in its own
+context and returns a summary, so the planning session stays thin. Read directly only when
+the scope is small (a handful of known files). Have it report on:
 - Current architecture (directory structure, patterns, conventions)
 - Related existing code (similar features, shared utilities, data models)
 - Test patterns (framework, style, coverage of related areas)

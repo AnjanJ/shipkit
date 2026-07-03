@@ -6,10 +6,15 @@ context: fork
 agent: general-purpose
 ---
 
+<!-- FIRE-AND-FORGET FORK: runs non-interactively — it cannot ask the user anything
+     mid-run. All phases run end-to-end; verification is self-enforced (unverifiable
+     claims get cut, not user-arbitrated). It RETURNS the drafted document; the main
+     session presents it and writes docs/SYSTEM_DESIGN.md only after user approval. -->
+
 # /explain-system — Verified System Design Explainer
 
 Explore a codebase, reason about WHY it's designed the way it is, verify every claim
-against source code, and produce a system design document in `docs/SYSTEM_DESIGN.md`.
+against source code, and return a system design document proposed for `docs/SYSTEM_DESIGN.md`.
 
 **How this differs from /onboard:** `/onboard` maps WHAT exists (architecture, flows,
 entities). `/explain-system` explains WHY the system is designed this way (decisions,
@@ -20,7 +25,7 @@ gives you the textbook chapter explaining why the city was planned this way.
 
 Scope: $ARGUMENTS (default: `full`)
 
-- `full` — All 6 phases with checkpoints between each
+- `full` — All 6 phases end-to-end, returning the finished document
 - `quick` — Phases 1-2 only, produce a brief explainer (skip verification loop)
 - `section <name>` — Regenerate one section (e.g., `section decisions`, `section flows`)
 
@@ -51,9 +56,7 @@ Answer:
 
 ### Output: Problem Statement
 
-Present: system name, core problem, users, alternatives, scope boundary.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Record: system name, core problem, users, alternatives, scope boundary. This opens the final document — continue to Phase 2.
 
 ---
 
@@ -102,9 +105,7 @@ For each architectural choice discovered, identify:
 
 ### Output: System Map
 
-Present: context (actors + externals), containers, key components, domain model table, trade-off table.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Record: context (actors + externals), containers, key components, domain model table, trade-off table. Continue to Phase 3.
 
 ---
 
@@ -133,35 +134,38 @@ See @reference.md for ADR format template. Each decision needs: Context, Decisio
 
 ### 3.4 Invariants, Security, and Protections
 
-Identify: validation rules, authorization patterns, data integrity guarantees, auth pattern, input validation, encryption, secrets management.
-
-### CHECKPOINT — Stop and ask user to confirm before proceeding.
+Identify: validation rules, authorization patterns, data integrity guarantees, auth pattern, input validation, encryption, secrets management. Continue to Phase 4.
 
 ---
 
 ## Phase 4: Verification Loop — THE KEY DIFFERENTIATOR
 
-Every factual claim is individually verified against source code. See @reference.md for detailed verification steps (compile claims table, present to user, re-verify, zero-UNCERTAIN gate).
+Every factual claim is individually verified against source code. See @reference.md for detailed verification steps (compile claims table, re-verify, zero-UNCERTAIN gate).
 
-**Gate: Zero UNCERTAIN claims in final doc.** Not optional.
-
-### CHECKPOINT — Present final claims table. Ask user to confirm before writing.
-
----
-
-## Phase 5: Write the Document
-
-**Goal:** Generate `docs/SYSTEM_DESIGN.md` (100-200 lines). See @reference.md for document structure template and writing rules.
-
-### CHECKPOINT — Present full document. Only write after approval.
+**Gate: Zero UNCERTAIN claims in final doc.** Not optional. You cannot ask the user to
+arbitrate — a claim you cannot verify against source gets **cut or rewritten** as an explicit
+open question, never stated as fact. Include the final claims table in your output so the
+user can audit the verification.
 
 ---
 
-## Phase 6: Improvement Opportunities
+## Phase 5: Draft the Document
+
+**Goal:** Draft the full `docs/SYSTEM_DESIGN.md` content (100-200 lines). See @reference.md for document structure template and writing rules. **Do not write the file** — it goes into your final output (Phase 6).
+
+---
+
+## Phase 6: Improvement Opportunities + Return the Deliverable
 
 **Goal:** Evidence-based improvement suggestions. Every suggestion must cite specific files. No generic advice. See @reference.md for trade-off analysis template and opportunities table format.
 
-### CHECKPOINT — Present opportunities for approval before finalizing document.
+Then return, in your final output:
+
+1. The full document under a marked heading: `PROPOSED: docs/SYSTEM_DESIGN.md`
+2. The claims table from Phase 4
+3. The opportunities table
+
+The main session presents these and, on approval, writes the file.
 
 ---
 

@@ -2,9 +2,11 @@
 description: "Configure shipkit for your project"
 user-invocable: true
 argument-hint: "[rails|react|python|go|elixir|static]"
-context: fork
-agent: general-purpose
 ---
+
+<!-- Runs INLINE (no context: fork) on purpose: this skill interviews the user
+     (stack confirmation, project purpose, backup decisions) and forked skills
+     cannot use AskUserQuestion. It runs once per project; the context cost is fine. -->
 
 # /setup — Configure Shipkit for Your Project
 

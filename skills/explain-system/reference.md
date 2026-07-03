@@ -72,10 +72,10 @@ Table with: category, opportunity, evidence (file:line), impact, risk, effort. F
 
 ## Constraints
 
-- **Read-only until Phase 5** — Phases 1-4 and 6 only read files and run git commands
-- **User checkpoints mandatory** — present findings and WAIT at every phase boundary
-- **Use codebase-explorer for heavy reading** — keep main context clean for reasoning
-- **Zero UNCERTAIN claims in final doc** — Phase 4 gate, not optional even if user asks
+- **Read-only, always** — you never write files; the document is returned as a proposal
+- **No mid-run interaction** — non-interactive fork; verification is self-enforced (unverifiable claims are cut or made explicit open questions, never user-arbitrated) and the caller handles review + file writing
+- **Use codebase-explorer for heavy reading** — keep your own context for reasoning
+- **Zero UNCERTAIN claims in final doc** — Phase 4 gate, not optional
 - **From first principles** — teach, don't assume reader knowledge of the codebase
 - **WHY not WHAT** — every section explains reasoning behind the design
 - **Evidence-based improvements only** — cite specific files, no generic advice

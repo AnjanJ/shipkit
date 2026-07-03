@@ -2,6 +2,23 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [Unreleased — 1.3]
+
+### Fixed
+
+- **Interactive skills no longer run in forked contexts.** Forked skills cannot use
+  AskUserQuestion (blocked in subagents), so every mid-run question or approval checkpoint in a
+  `context: fork` skill silently never reached the user. Nine skills were affected:
+  - `/setup`, `/unsetup`, `/plan`, `/qa`, `/tdd` now run **inline** — their interviews,
+    approval checkpoints, and (for unsetup) the destructive-restore confirmation actually reach
+    you. `/plan` and `/qa` keep context thin by delegating heavy code reading to
+    `codebase-explorer` instead.
+  - `/onboard`, `/walkthrough`, `/explain-system` stay forked but are now **fire-and-forget**:
+    all choices come from arguments, they run end-to-end, and they RETURN their drafted docs as
+    proposals — the main session writes files only after you approve. This also fixes
+    `/onboard` and `/walkthrough` promising file writes while running as the read-only
+    `codebase-explorer` agent, which has no Write tool.
+
 ## [1.2.5] — 2026-06-14
 
 - **`grandfather` triages reads too.** Same cheap-path idea as eve, applied to single-project

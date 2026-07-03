@@ -2,8 +2,11 @@
 description: "Remove shipkit setup — restore your project to its pre-shipkit state"
 user-invocable: true
 argument-hint: ""
-context: fork
 ---
+
+<!-- Runs INLINE (no context: fork) on purpose: this skill DELETES CLAUDE.md and
+     .claude/ behind a mandatory yes/no confirmation, and forked skills cannot ask
+     the user anything. A destructive confirmation must reach the user. -->
 
 # /unsetup — Remove Shipkit Setup
 
