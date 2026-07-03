@@ -22,6 +22,12 @@ Question: `$ARGUMENTS`
   "across all my apps…") → delegate to the **`eve`** agent, which reads the project
   registry and answers across the portfolio.
 
+- **Portfolio reports** — two named report shapes eve knows how to produce:
+  - `--all matrix <library|framework|"everything major">` → dependency/version matrix across
+    all repos (lockfile truth, one row per project). For upgrades and vulnerability sweeps.
+  - `--all consolidate` → ranked report of patterns implemented in multiple repos that could
+    exist once, with per-copy evidence and drift notes.
+
 ## How to run it
 
 1. **Do not research in the main context.** That defeats the purpose. Immediately spawn the
@@ -47,3 +53,5 @@ Question: `$ARGUMENTS`
 - `/shipkit:ask is it safe to remove the legacy_token column?` → grandfather (judgment, high effort)
 - `/shipkit:ask --all which of my projects deploy to Hetzner?` → eve
 - `/shipkit:ask --all everywhere I integrate Stripe` → eve
+- `/shipkit:ask --all matrix rails` → eve (version matrix: every repo's Rails version, from lockfiles)
+- `/shipkit:ask --all consolidate` → eve (what am I maintaining N times that should exist once?)

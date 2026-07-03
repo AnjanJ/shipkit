@@ -75,6 +75,8 @@ The core idea: instead of loading project knowledge into your main session
 /shipkit:map --register           # also add it to your cross-project registry
 /shipkit:ask how does locale fallback work here?      # → grandfather (this project)
 /shipkit:ask --all which apps deploy to Hetzner?      # → eve (all projects)
+/shipkit:ask --all matrix rails                       # → eve: version matrix from lockfiles
+/shipkit:ask --all consolidate                        # → eve: what exists N times that should exist once?
 ```
 
 `grandfather`/`eve` do all the file reading in their own context and hand back a short, cited

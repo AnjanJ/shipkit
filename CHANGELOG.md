@@ -2,6 +2,22 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.1.0] — 2026-07-04
+
+### Added — Portfolio reports
+
+Two named report shapes for `eve`, completing the roadmap's "double down on eve" item:
+
+- **`/shipkit:ask --all matrix <target>`** — dependency/version matrix across every registered
+  repo, read from lockfiles (installed truth over declared ranges), one evidenced row per
+  project. Built for upgrade planning and vulnerability sweeps ("which repos still ship
+  lodash < 4.17.21?"). Eve reports what's found in the repos and never invents upstream
+  "latest"/"vulnerable" claims — it names the check to run instead.
+- **`/shipkit:ask --all consolidate`** — ranked report of patterns implemented in multiple
+  repos that could exist once (auth glue, API clients, deploy scripts…), with per-copy
+  `path` evidence, drift notes, and an honest "not worth consolidating" verdict where that's
+  the right call. Capped at the top 5-7 candidates.
+
 ## [2.0.0] — 2026-07-04
 
 Shipkit is now **the project knowledge layer for Claude Code**: project maps, the elders,

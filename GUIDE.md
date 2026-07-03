@@ -133,6 +133,11 @@ elder subagent does the reading in *its own* context and hands back only the ans
 /shipkit:ask --all which apps deploy to Hetzner vs AWS?
 /shipkit:ask --all everywhere I integrate Stripe
 
+# Portfolio reports (→ eve, fixed report shapes)
+/shipkit:ask --all matrix rails          # every repo's Rails version, from lockfiles
+/shipkit:ask --all matrix lodash         # vulnerability/upgrade sweep for one dep
+/shipkit:ask --all consolidate           # what am I maintaining N times?
+
 # After a big change, refresh the map
 /shipkit:map refresh
 ```

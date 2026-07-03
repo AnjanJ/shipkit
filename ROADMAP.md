@@ -103,8 +103,13 @@ regressions.
 
 Decision made: **hard cut**, not a two-plugin split. The five cut skills point to native
 equivalents in the CHANGELOG; `v1.3.0` is tagged for anyone who relied on them. Registry v2
-landed with `Stack` / `Deploys To` columns. Remaining 2.0 ideas still open: the portfolio
-version/dependency matrix and consolidation report for `eve` (below).
+landed with `Stack` / `Deploys To` columns. The portfolio version/dependency matrix and
+consolidation report shipped as **2.1.0** (`/shipkit:ask --all matrix <target>` and
+`--all consolidate`) — the review's seven findings are now fully addressed.
+
+Still open (not yet scheduled): Woodpecker CI is configured (`.woodpecker.yml`) but Codeberg
+CI access is invite-gated — request access via Codeberg's Community tracker, then enable the
+repo at ci.codeberg.org. Until then, run `./scripts/lint.sh` before each release.
 
 ### 6. Triage the 21 skills
 
