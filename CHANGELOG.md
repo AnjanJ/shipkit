@@ -2,6 +2,17 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.2.0] — 2026-07-04
+
+### Docs
+
+- **Doc audit against 2.1.0 code.** Fixed two stale claims found by auditing every count and
+  cross-reference: the `code-review-standards` knowledge base has 9 review lenses (a 9th,
+  AI/LLM integration, engages only when AI code is present), but the README and GUIDE still
+  said "8 lenses"; and the README what's-new banner still led with 2.0, omitting eve's
+  `matrix`/`consolidate` reports. Everything else — 16 skills, 5 agents, 6 path-scoped rules,
+  stack tables, version strings — verified accurate.
+
 ## [2.1.0] — 2026-07-04
 
 ### Added — Portfolio reports
