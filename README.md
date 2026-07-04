@@ -6,7 +6,7 @@
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
-**New in 2.0:** shipkit is now focused on the knowledge layer. Five generic workflow skills (`/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard`) were removed — Claude Code does those natively now — and the remaining workflow skills are invoke-when-you-want-them (they no longer auto-trigger or occupy context). See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.
+**New in 2.1:** two portfolio reports for `eve` — `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo (from lockfiles), and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. *(2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively, and the remaining workflow skills became invoke-when-you-want-them. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
 
 ## Install
 
@@ -88,7 +88,7 @@ architecture questions, and "where/why" lookups. Keep editing in your main sessi
 
 | KB | What It Provides |
 |----|-----------------|
-| `code-review-standards` | 8 review lenses, anti-pattern catalog, severity definitions |
+| `code-review-standards` | 8 core review lenses (+1 for AI/LLM code), anti-pattern catalog, severity definitions |
 | `ui-ux-standards` | Cross-platform UI/UX: a11y, design, performance, mobile patterns |
 
 **6 path-scoped rules** — auto-loaded when editing matching files:

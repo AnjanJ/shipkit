@@ -507,7 +507,7 @@ Loaded on demand by skills — not always in context.
 
 ### code-review-standards
 
-Detailed review criteria: 8 lenses, anti-pattern catalog with smell-to-pattern mapping, and severity definitions. Load it for any diff review — Claude Code's built-in `/code-review` or a manual pass.
+Detailed review criteria: 8 core lenses (Clean Code, DRY, KISS, YAGNI, Idioms, Framework Patterns, Performance, Error Handling) plus a 9th that engages only when AI/LLM code is present, an anti-pattern catalog with smell-to-pattern mapping, and severity definitions. Load it for any diff review — Claude Code's built-in `/code-review` or a manual pass.
 
 ### ui-ux-standards
 
