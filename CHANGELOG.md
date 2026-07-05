@@ -2,6 +2,20 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.3.0] — 2026-07-05
+
+### Added — Commit discipline
+
+- **`/shipkit:commit`** — an auto-invocable skill that builds one atomic commit whose message
+  scales to the change: a clean subject line for trivial commits, and **What / Why / How-and-
+  decisions / Test plan** (plus Risk/Rollback, Follow-ups, Refs where they apply) for
+  substantive ones. It splits or questions tangled changes instead of bundling them, stages
+  specific files, and won't fabricate a test plan or add a co-author trailer.
+- **Commit Discipline rule** — a new always-on section in `rules/shipkit.md` defines the
+  format, so Claude follows it on *any* commit it makes, not only when the skill is invoked by
+  name. The `/setup` CLAUDE.md template now points at this rule as the single source of truth
+  instead of carrying its own commit list.
+
 ## [2.2.0] — 2026-07-04
 
 ### Docs

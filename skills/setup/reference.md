@@ -67,12 +67,15 @@ Use WebFetch (or the project's docs tooling). Never guess at an API — always v
 ## Conventions
 
 ### Commits
-- Atomic commits — one passing test + its implementation, one refactor, or one fix per commit
-- Each commit must leave tests passing — never commit broken tests
-- Imperative mood, explain the "why" not the "what"
-- Never add a co-author signature unless explicitly told to
-- Never amend or squash published commits without asking
+Follow the shipkit **Commit Discipline** rule (always loaded with the plugin) — it is the
+single source of truth. In short:
+- Atomic commits — one logical change; test + implementation together; build stays green
+- Message depth scales to the change: a good subject line for trivial commits; What / Why /
+  How-and-decisions / Test plan (plus Risk/Rollback, Follow-ups, Refs where they apply) for
+  substantive ones
 - Stage specific files — never `git add .` or `git add -A`
+- Never add a co-author signature, or amend/squash/force-push published commits, unless asked
+- Use `/shipkit:commit` to have Claude build the commit for you
 
 ### Destructive Operations — ALWAYS Ask First
 These actions require explicit user confirmation every time:

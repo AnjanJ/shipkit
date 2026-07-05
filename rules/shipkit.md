@@ -29,3 +29,43 @@ so when you skip, don't skip silently.
 
 For user-facing features, prefer behavior-focused (BDD-style) tests: describe what the user
 experiences, not how the code works.
+
+## Commit Discipline
+
+The single source of truth for how shipkit commits. `/shipkit:commit` and the CLAUDE.md
+written by `/shipkit:setup` defer to it. Applies to every commit you make, not just ones the
+user asks for by name.
+
+**Atomicity (always).** One logical change per commit — one behavior, one fix, or one refactor.
+Test and implementation land together. Never `git add .` / `git add -A`; stage the specific
+files. Each commit leaves the build/tests green. Never `--no-verify`.
+
+**Message depth scales to the change.** Do not force a template onto a one-liner.
+
+- **Trivial** (version bump, typo, formatting, a one-line doc/config change): a good imperative
+  subject line is enough. `chore: bump to 2.2.0`.
+
+- **Substantive** (a feature, fix, refactor, integration, or anything with a decision behind
+  it): subject line + a body with these sections. Include a section only when it has real
+  content — omit it rather than pad.
+
+  ```
+  <type>: <imperative subject, <=72 chars, the WHAT in one line>
+
+  What:  what changed, concretely (the surfaces touched).
+  Why:   the problem or goal this serves — the reason it exists.
+  How:   the approach, and the decisions made getting there.
+         Name alternatives you rejected and why ("chose X over Y because…") —
+         this is the highest-value line for a future reader.
+  Test plan: how this was verified — commands run and what you observed,
+         or why no test applies (docs/config/generated).
+
+  Risk/Rollback: (only if it touches data, config, or prod behavior) what could
+         break and how to undo it.
+  Follow-ups: (only if the commit deliberately leaves gaps) what's left for later.
+  Refs: (only if applicable) #issue / PR / link.
+  ```
+
+**Never** add a co-author/`Co-Authored-By` trailer unless the user explicitly asks. Never
+amend, squash, or force-push published commits without asking. When on the default branch for
+non-trivial work, branch first.

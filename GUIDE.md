@@ -348,6 +348,31 @@ Adds, updates, or removes rules in CLAUDE.md while maintaining structure.
 
 ---
 
+### /shipkit:commit — Atomic Commit, Message Scaled to the Change
+
+Builds one atomic commit whose message carries the reasoning a future reader (and the elders)
+will want. It inspects the working tree, splits or questions tangled changes rather than
+bundling them, stages the specific files, and writes a message whose depth matches the change.
+
+The format lives in the **Commit Discipline** section of the always-on shipkit rule, so Claude
+follows it on *any* commit it makes — not only when you invoke this skill by name.
+
+- **Trivial** change (version bump, typo, one-line doc/config) → a clean imperative subject is
+  the whole message.
+- **Substantive** change → subject + body: **What** changed, **Why** it exists, **How** and the
+  decisions made (including alternatives rejected), and a **Test plan** (the command run and
+  what you observed). Plus **Risk/Rollback**, **Follow-ups**, and **Refs** where they apply.
+
+```
+/shipkit:commit                     # inspect the tree and commit it well
+/shipkit:commit emphasize the perf tradeoff in the why
+```
+
+It never bundles unrelated changes, never fabricates a test plan, and never adds a co-author
+trailer or touches published commits unless you ask.
+
+---
+
 ### /shipkit:context-audit — Context Window Health
 
 Reports what's consuming your context window and suggests optimizations.

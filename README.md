@@ -28,7 +28,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 
 ## What You Get Instantly
 
-**The knowledge layer** — 6 core skills, always at hand:
+**The knowledge layer** — 7 core skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -36,6 +36,7 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
 | `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) + pick a workflow style |
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
+| `/shipkit:commit` | Write an atomic commit — subject-only for trivial changes, What/Why/How-decisions/Test plan for substantive ones |
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
