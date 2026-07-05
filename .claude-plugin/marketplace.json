@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "The project knowledge layer for Claude Code — project maps, elder agents (grandfather/eve/archivist), cross-project registry, freshness hooks, plus opt-in workflow skills",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "plugins": [
     {
       "name": "shipkit",
       "source": "./",
       "description": "17 skills (7 core + 10 opt-in), 5 agents, 2 knowledge bases, 6 path-scoped rules. Run /shipkit:setup to tailor to your stack, /shipkit:unsetup to revert.",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "keywords": ["claude-code", "developer-tools", "workflow", "code-review", "testing"]
     }
   ]

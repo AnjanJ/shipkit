@@ -2,6 +2,23 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.4.0] — 2026-07-05
+
+### Changed — all skills are auto-invocable
+
+- **Removed `disable-model-invocation` from all 10 workflow skills** (`debug`, `tdd`, `qa`,
+  `ui-ux`, `humanize`, `ai-feature`, `legacy-audit`, `migration-plan`, `explain-system`,
+  `walkthrough`). Every shipkit skill is now model-invocable — Claude reaches for the right one
+  when the work calls for it, in addition to explicit `/shipkit:<name>` invocation. This
+  reverses the 2.0 decision to gate them behind manual invocation.
+- **Added `TRIGGER when: / DO NOT TRIGGER when:` guidance** to the five skills that lacked it
+  (`explain-system`, `humanize`, `legacy-audit`, `migration-plan`, `walkthrough`), so
+  auto-invocation fires at the right moment instead of guessing from a bare description.
+- **Trade-off to know:** these skills' descriptions are back in every session's context (the
+  cost 2.0 removed), and Claude may trigger them on its own judgment. `tdd` stays bounded by
+  its own "DO NOT TRIGGER when: normal coding" clause. To make any single skill user-only
+  again, add `disable-model-invocation: true` to its frontmatter.
+
 ## [2.3.0] — 2026-07-05
 
 ### Added — Commit discipline

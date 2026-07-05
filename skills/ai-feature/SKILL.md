@@ -1,7 +1,6 @@
 ---
 description: "Scaffold AI/LLM features. TRIGGER when: user asks to add AI/LLM functionality like chat, embeddings, RAG, agents, or structured output. DO NOT TRIGGER when: working with existing AI code that's already set up."
 user-invocable: true
-disable-model-invocation: true
 argument-hint: "[chat|embeddings|rag|agent|structured-output]"
 context: fork
 ---

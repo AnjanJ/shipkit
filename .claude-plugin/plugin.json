@@ -1,6 +1,6 @@
 {
   "name": "shipkit",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "The project knowledge layer for Claude Code — verified PROJECT_MAP.md per project, elder agents (grandfather/eve/archivist) that answer from their own context, a cross-project registry, and freshness hooks. Plus opt-in workflow skills. Run /shipkit:setup to tailor to your stack.",
   "author": {
     "name": "Anjan",

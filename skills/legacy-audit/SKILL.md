@@ -1,7 +1,6 @@
 ---
-description: "Audit a legacy codebase for modernization: dependency age, dead code, complexity hotspots, test coverage gaps"
+description: "Audit a legacy codebase for modernization: dependency age, dead code, complexity hotspots, test-coverage gaps. TRIGGER when: user asks to assess, audit, or plan modernization of an old/inherited codebase. DO NOT TRIGGER when: working on a single feature or bug, or the user just wants a specific fact about the code."
 user-invocable: true
-disable-model-invocation: true
 argument-hint: "[deps|dead-code|complexity|coverage|all]"
 context: fork
 ---

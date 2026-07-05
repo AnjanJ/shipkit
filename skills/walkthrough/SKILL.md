@@ -1,7 +1,6 @@
 ---
-description: "End-to-end feature code walkthrough"
+description: "Trace one feature end-to-end (trigger → DB → back) and return a step-by-step code walkthrough. TRIGGER when: user asks how a specific feature/flow works or wants a guided trace of one path. DO NOT TRIGGER when: user wants whole-system architecture (use /explain-system), a where-things-live index (use /shipkit:map), or is mid-edit."
 user-invocable: true
-disable-model-invocation: true
 argument-hint: "[<feature-name> [surface|deep]]"
 context: fork
 agent: codebase-explorer

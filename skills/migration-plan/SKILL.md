@@ -1,7 +1,6 @@
 ---
-description: "Plan a major dependency upgrade or framework migration with impact analysis and step-by-step execution plan"
+description: "Plan a major dependency upgrade or framework migration with impact analysis and a step-by-step execution plan. TRIGGER when: user asks to plan a major/breaking upgrade or framework migration (e.g. Rails 7→8, React 18→19). DO NOT TRIGGER when: adding a new dependency, doing a minor/patch bump, or already mid-migration."
 user-invocable: true
-disable-model-invocation: true
 argument-hint: "[<dependency> <from-version> <to-version>, e.g. rails 7.1 8.0]"
 context: fork
 ---

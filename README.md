@@ -2,7 +2,7 @@
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?logo=buymeacoffee)](https://buymeacoffee.com/anjanj) [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/AnjanJ)
 
-**The project knowledge layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).** Shipkit gives Claude a maintained, verified memory of your codebase — and of your whole portfolio of projects — without burning your session's context: a `PROJECT_MAP.md` per project, elder agents (`grandfather`, `eve`, `archivist`) that research in their own context and return only cited answers, a cross-project registry, and automatic freshness nudges. Plus a small set of opt-in workflow skills for teams that want them.
+**The project knowledge layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).** Shipkit gives Claude a maintained, verified memory of your codebase — and of your whole portfolio of projects — without burning your session's context: a `PROJECT_MAP.md` per project, elder agents (`grandfather`, `eve`, `archivist`) that research in their own context and return only cited answers, a cross-project registry, and automatic freshness nudges. Plus a set of workflow skills Claude invokes when the work calls for them.
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
@@ -40,8 +40,9 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-**Workflow extras** — 10 opt-in skills. They never auto-trigger and cost your context nothing
-until you invoke them:
+**Workflow extras** — 10 skills Claude reaches for when the work calls for it (each carries
+`TRIGGER when: / DO NOT TRIGGER when:` guidance so it fires at the right moment), or you can
+invoke any of them by name:
 
 | Skill | What It Does |
 |-------|-------------|

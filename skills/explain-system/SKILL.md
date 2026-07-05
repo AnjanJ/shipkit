@@ -1,7 +1,6 @@
 ---
-description: "Verified system design explainer"
+description: "Explore a codebase and return a verified system-design doc explaining WHY it's built this way (decisions, trade-offs, ADRs). TRIGGER when: user asks how/why a system is designed, wants architecture reasoning, or a SYSTEM_DESIGN doc. DO NOT TRIGGER when: user wants a where-things-live index (use /shipkit:map), is mid-edit, or asked a narrow factual question."
 user-invocable: true
-disable-model-invocation: true
 argument-hint: "[full|quick|section <name>]"
 context: fork
 agent: general-purpose
