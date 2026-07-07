@@ -55,7 +55,10 @@ You receive one of:
 ### 3. Reconstruct evolution (lightweight)
 - `git log --oneline -30` and `git log --pretty='%ad %s' --date=short -- <key dirs>` for a
   sense of what changed recently and what the project is trending toward.
-- Look for ADRs (`docs/adr/`, `docs/decisions/`) and major refactor commits.
+- Look for decision records — shipkit's `.shipkit/decisions/NNNN-*.md` first, then legacy ADRs
+  (`docs/adr/`, `docs/decisions/`) — and major refactor commits.
+- Note any **active specs** under `.shipkit/specs/<feature>/` — these say where the project is
+  heading next (not just where it has been), the most forward-looking signal you have.
 - Do NOT write a changelog. Write 4-8 lines: where it started, the big shifts, where it is
   heading. This is the part raw source cannot tell Grandfather — it is the highest-value
   section.
@@ -78,6 +81,11 @@ git HEAD short SHA so freshness is checkable:
 ```
 > Map generated at commit `<sha>` on <branch>. Refresh with `/shipkit:map`.
 ```
+
+If `.shipkit/` artifacts exist, add a short **"Specs & decisions"** pointer section linking the
+active specs (`.shipkit/specs/<feature>/`) and the decision log (`.shipkit/decisions/`) — so the
+map is the front door to shipkit's forward-looking (specs) and why (decisions) artifacts, not just
+the backward-looking structure. One line each; do not summarize their contents, just point.
 
 ## Constraints
 - **One write only** — `PROJECT_MAP.md`. Touch nothing else.
