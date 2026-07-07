@@ -7,13 +7,21 @@ Newest thinking wins — treat this as a living document, not a contract.
 knowledge layer for Claude Code** — map + elders (grandfather/eve/archivist) + registry +
 lessons — with the generic workflow content demoted or split out.
 
-Two verified platform facts shape this plan (checked against official Claude Code docs):
+**Status (as of 2026-07-08, v2.7.0):** the north star is largely realized. The repositioning
+(1.3, 2.0) shipped; the knowledge layer then grew **forward** with spec-driven development and
+decision records (2.5), and its optional decision-recall (MemPalace) got one-command setup (2.7).
+Everything below through 2.7 is shipped; treat the rest as living direction.
+
+Two verified platform facts shaped this plan (checked against official Claude Code docs), both now
+realized in shipped code:
 
 1. **Plugins can ship hooks** — `hooks/hooks.json` at plugin root, `${CLAUDE_PLUGIN_ROOT}`
    for bundled scripts; `SessionStart` fires on startup/resume/clear/post-compaction.
-   Map-freshness automation is fully buildable.
+   ✅ Realized: the map-freshness hook shipped in 1.3.0 and gained spec-drift nudges in 2.5.0.
 2. **Forked skills cannot use AskUserQuestion** — it is explicitly blocked in subagents.
-   Any skill with `context: fork` that asks the user questions mid-run is broken today.
+   ✅ Realized: the fork-interactivity audit (1.3.0) fixed the affected skills; new interactive
+   skills (`/shipkit:spec`, `/shipkit:decide`, `/shipkit:connect-memory`) all run inline for this
+   reason.
 
 ---
 
@@ -150,10 +158,22 @@ portfolio view. Invest there:
 
 ---
 
-## 2.5 — Spec-Driven Development + Decision Records — 📋 PROPOSED
+## 2.5 — Spec-Driven Development + Decision Records — ✅ SHIPPED 2026-07-07 (2.5.0 + 2.6.0)
 
 Full design: [`docs/design/spec-driven-development.md`](docs/design/spec-driven-development.md).
-Written 2026-07-07. Not yet scheduled.
+Written 2026-07-07. **Shipped across two releases:** 2.5.0 (the SDD core) and 2.6.0 (completion).
+All four design open-questions are now settled (see the design doc §7). What landed:
+
+- **2.5.0** — the always-on `spec-driven` + `decisions` rules; `/shipkit:spec` (the three
+  questions → `.shipkit/specs/<feature>/`, EARS requirements, design-as-decision-records);
+  `grandfather`/`eve`/`archivist` taught to read `.shipkit/`; the spec-drift freshness hook.
+- **2.6.0** — `/shipkit:decide` (standalone five-part decision capture with a concrete
+  falsifiability clause); the registry `Active Specs` column so `eve` sees open specs across the
+  portfolio; an explicit guard that `/unsetup` never deletes `.shipkit/`; and narrated capability
+  playbooks (new-repo / legacy-repo / elders) plus a "How Shipkit Works" automatic-vs-invoked
+  section in the docs.
+
+The original proposal follows, kept for the rationale.
 
 **The gap.** `PROJECT_MAP.md` looks backward (what exists, where). Shipkit has no forward-looking
 artifact (what we're *about* to build) and no durable **narrative of decisions** (the "why" the
@@ -209,6 +229,25 @@ map = *what/where*, log = *why*.
 Rules → agent reads → `/shipkit:spec` → hook extension → `/shipkit:decide` (if needed) → docs.
 See the design doc §7 for the open decisions (record home, skill-vs-rule, one-hook-vs-two, EARS
 strictness — the last settled as *default, escapable*).
+
+---
+
+## 2.7 — One-command episodic-memory setup — ✅ SHIPPED 2026-07-08 as 2.7.0
+
+**The gap.** MemPalace (the optional decision-recall store the elders use) had thorough but fully
+**manual** onboarding — install, register, restart, backfill — and `/shipkit:setup` never
+mentioned it. The worst friction was hand-deriving the `~/.claude/projects/-Users-...` transcript
+path, which users got wrong.
+
+**What shipped.** `/shipkit:connect-memory` — an inline skill that sets it up end-to-end: detects
+what's already done and skips it, installs via `uv`/`pipx` if missing, registers at user scope,
+**auto-derives the transcript directory**, splits concatenated transcripts, backfills this
+project's history (dry-run first, then real), and reminds you to restart Claude Code. `/shipkit:setup`
+now points users to it; README/GUIDE lead with the command and keep the manual steps as a fallback.
+
+**Positioning held.** MemPalace stays opt-in and **unbundled** (a separate package + ~300 MB
+model) — the base plugin remains dependency-free. This only automates the setup the docs already
+described by hand; skip it and the elders fall back to git history, nothing breaks.
 
 ---
 
