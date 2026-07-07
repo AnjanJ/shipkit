@@ -45,13 +45,13 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 
 **🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. Ask it to add a chat feature → `/shipkit:ai-feature`; a test fails → `/shipkit:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
 
-**⚪ You invoke — call it when you want it:** research and one-shot tools you reach for deliberately — `/shipkit:ask` (ask the elders), `/shipkit:map` (build the project map), `/shipkit:setup` / `/shipkit:unsetup`, `/shipkit:context-audit`.
+**⚪ You invoke — call it when you want it:** research and one-shot tools you reach for deliberately — `/shipkit:ask` (ask the elders), `/shipkit:map` (build the project map), `/shipkit:setup` / `/shipkit:unsetup`, `/shipkit:connect-memory` (set up episodic memory), `/shipkit:context-audit`.
 
 > **Rule of thumb:** the *knowledge layer* (maps, elders, registry) is something you **ask**; the *discipline* (rules, commit hygiene, spec/decision capture, freshness) is something that **happens**. The [User Guide](GUIDE.md#how-shipkit-works) has the full per-capability breakdown.
 
 ## What You Get Instantly
 
-**The knowledge layer** — 7 core skills, always at hand:
+**The knowledge layer** — 8 core skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -59,6 +59,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
 | `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) + pick a workflow style |
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
+| `/shipkit:connect-memory` | Set up MemPalace episodic memory so the elders recall past decisions |
 | `/shipkit:commit` | Write an atomic commit — subject-only for trivial changes, What/Why/How-decisions/Test plan for substantive ones |
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
@@ -209,7 +210,19 @@ questions if it is installed** — and run perfectly fine without it (those ques
 git history).
 
 **ShipKit does not bundle or auto-install MemPalace** — it is a separate Python package plus a
-~300 MB local embedding model, so it stays opt-in. To enable it:
+~300 MB local embedding model, so it stays opt-in.
+
+**The easy way — one command:**
+
+```
+/shipkit:connect-memory
+```
+
+It installs MemPalace if missing, registers it at user scope, auto-derives your transcript
+directory (the fiddly part), backfills this project's history (dry-run first), and reminds you to
+restart Claude Code. Run it once per machine to install, once per project to backfill.
+
+<details><summary><b>Or do it by hand</b> (what the command runs for you)</summary>
 
 ```bash
 # 1. Install MemPalace (puts `mempalace-mcp` on your PATH; uv or pipx)
@@ -224,7 +237,8 @@ mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <proj
 mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project>   # for real
 ```
 
-Restart Claude Code after step 2 so the server loads. The `grandfather`/`eve` agents already
+Restart Claude Code after step 2 so the server loads.
+</details> The `grandfather`/`eve` agents already
 allowlist the `mcp__mempalace__*` tools, so **only those two subagents** can use them — and because
 Claude Code defers tool schemas by default (tool search), the ~30 MemPalace tools cost your **main
 session almost nothing** until an elder actually calls one. See [GUIDE.md](GUIDE.md) → *Episodic

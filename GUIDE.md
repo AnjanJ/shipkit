@@ -84,13 +84,16 @@ exist. You can still invoke any by name to force it.
 
 ### ⚪ You invoke — call it when you want it
 
-Research and one-shot tools you reach for on purpose. These don't auto-fire — you decide when.
+Research, setup, and one-shot tools you reach for on purpose — you decide when. (Most don't
+auto-fire; `/shipkit:connect-memory` will also start on its own if you *ask* to "set up episodic
+memory", but you'd normally just call it.)
 
 | Skill | Use it to… |
 |-------|-----------|
 | `/shipkit:ask` | ask the elders a question (this project, or `--all` for the portfolio) |
 | `/shipkit:map` | build/refresh `PROJECT_MAP.md`; `--register` for cross-project answers |
 | `/shipkit:setup` / `/shipkit:unsetup` | configure shipkit for your stack, or revert |
+| `/shipkit:connect-memory` | set up MemPalace so the elders recall past decisions |
 | `/shipkit:context-audit` | check context-window health and find bloat |
 | `/shipkit:qa` | run the 5-phase QA workflow |
 | `/shipkit:update-rules` | change CLAUDE.md rules (never edit them by hand) |
@@ -250,6 +253,21 @@ the thin-context principle is preserved.
 
 ### Enabling it
 
+**The easy way — `/shipkit:connect-memory`.** One skill does the whole setup: detects what's
+already done, installs MemPalace if missing, registers it at user scope, **auto-derives your
+transcript directory** (so you don't hand-build the `~/.claude/projects/-Users-...` path),
+backfills this project's history (dry-run first, then for real), and reminds you to restart Claude
+Code. Run it once per machine to install/register, and once per project to backfill. It's safe to
+re-run — it skips whatever is already done.
+
+```
+/shipkit:connect-memory                 # set it up for this project
+/shipkit:connect-memory --wing myapp    # override the wing name
+/shipkit:connect-memory --reinstall     # force re-install/register on a broken setup
+```
+
+**By hand** (what the command runs for you), if you'd rather:
+
 ```bash
 # 1. Install (puts `mempalace-mcp` on PATH; ~300 MB embedding model downloads on first use)
 uv tool install mempalace        # or: pipx install mempalace
@@ -260,6 +278,7 @@ claude mcp add --scope user mempalace mempalace-mcp
 # 3. Backfill a project's history from your Claude transcripts.
 #    Claude transcripts are keyed by the DIRECTORY you ran Claude in, under ~/.claude/projects/
 #    (not by repo name — find the dir whose sessions hold the decisions you want recalled).
+#    NOTE: run `mempalace split <dir>` first if transcripts are concatenated mega-files.
 mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject --dry-run
 mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject
 ```
@@ -308,6 +327,21 @@ Create or refresh the `PROJECT_MAP.md` that the elders read.
 
 Run it once per project to start, and `refresh` after a big change (new domain, refactor,
 framework upgrade). A stale map makes the elders flag drift — that is your cue to refresh.
+
+### /shipkit:connect-memory — Set Up Episodic Memory
+
+Wire up [MemPalace](#episodic-memory-mempalace) so `grandfather`/`eve` can recall *why* past
+decisions were made — end to end, so you don't hand-run the install and hand-derive your
+transcript path.
+
+- `/shipkit:connect-memory` → detect state, install if missing, register at user scope, backfill
+  this project's history (dry-run first), remind you to restart Claude Code.
+- `/shipkit:connect-memory --wing <name>` → override the wing name (default: directory basename).
+- `/shipkit:connect-memory --reinstall` → force re-install/register on a broken setup.
+
+Once per machine to install/register; once per project to backfill. Optional — skip it and the
+elders fall back to git history for decision questions. Full concepts and troubleshooting live in
+[Episodic Memory](#episodic-memory-mempalace).
 
 ### /shipkit:qa — Quality Assurance
 

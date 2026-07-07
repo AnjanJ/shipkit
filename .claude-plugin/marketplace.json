@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "The project knowledge layer for Claude Code — project maps, elder agents (grandfather/eve/archivist), cross-project registry, spec-driven development, freshness hooks, plus opt-in workflow skills",
-    "version": "2.6.0"
+    "version": "2.7.0"
   },
   "plugins": [
     {
       "name": "shipkit",
       "source": "./",
-      "description": "19 skills (7 core + 12 opt-in), 5 agents, 2 knowledge bases, 6 path-scoped + 2 always-on rules. Spec-driven development via /shipkit:spec and /shipkit:decide. Run /shipkit:setup to tailor to your stack, /shipkit:unsetup to revert.",
-      "version": "2.6.0",
+      "description": "20 skills (8 core + 12 opt-in), 5 agents, 2 knowledge bases, 6 path-scoped + 2 always-on rules. Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. Run /shipkit:setup to tailor to your stack, /shipkit:unsetup to revert.",
+      "version": "2.7.0",
       "keywords": ["claude-code", "developer-tools", "workflow", "code-review", "testing"]
     }
   ]

@@ -151,4 +151,5 @@ Suggest next steps:
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
 4. When I learn something project-specific, I'll save it to `.claude/lessons.md` (30-line limit — recurring lessons graduate to CLAUDE.md rules)
-5. Run `/unsetup` anytime to restore your previous configuration
+5. **Want the elders to recall past decisions** ("why did we pick X?")? Run `/shipkit:connect-memory` to set up optional episodic memory (MemPalace). Skip it and the elders fall back to git history — nothing breaks.
+6. Run `/unsetup` anytime to restore your previous configuration
