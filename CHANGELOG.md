@@ -2,6 +2,25 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.7.0] — 2026-07-08
+
+### Added — one-command episodic memory setup
+
+- **`/shipkit:connect-memory`** — sets up MemPalace end-to-end so `grandfather`/`eve` can recall
+  *why* past decisions were made. It detects what's already done, installs MemPalace if missing
+  (`uv`/`pipx`), registers it at user scope, **auto-derives your transcript directory** (the fiddly
+  `~/.claude/projects/-Users-...` path users previously hand-built), splits concatenated
+  transcripts, backfills this project's history (dry-run first, then for real), and reminds you to
+  restart Claude Code. Safe to re-run — it skips completed steps. Optional as ever: skip it and the
+  elders fall back to git history. Once per machine to install/register, once per project to
+  backfill.
+- **`/shipkit:setup` now points to it** — the setup summary suggests `/shipkit:connect-memory` as a
+  next step for decision recall, so users discover the option instead of having to read the GUIDE.
+
+MemPalace stays opt-in and unbundled (a separate package + ~300 MB model); this skill only
+automates the setup the docs already described by hand. Docs (README + GUIDE) now lead with the
+command and keep the manual steps as a collapsible fallback.
+
 ## [2.6.0] — 2026-07-07
 
 ### Added — decision capture + portfolio spec visibility
