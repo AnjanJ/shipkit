@@ -150,6 +150,68 @@ portfolio view. Invest there:
 
 ---
 
+## 2.5 — Spec-Driven Development + Decision Records — 📋 PROPOSED
+
+Full design: [`docs/design/spec-driven-development.md`](docs/design/spec-driven-development.md).
+Written 2026-07-07. Not yet scheduled.
+
+**The gap.** `PROJECT_MAP.md` looks backward (what exists, where). Shipkit has no forward-looking
+artifact (what we're *about* to build) and no durable **narrative of decisions** (the "why" the
+README's Episodic-memory section explicitly calls out as missing). This item adds both, as new
+classes of verified, elder-readable artifact — **extending the knowledge layer forward in time,
+not re-adding a methodology bundle.**
+
+**Positioning guardrail.** 2.0 deliberately cut the old `/plan` skill to stop being a methodology
+bundle. This must NOT walk that back: no port of Spec Kit's seven `/speckit.*` commands, no
+workflow that overlaps native Plan Mode. Specs and decisions are *artifacts the elders read*, and
+the discipline is carried by always-on **rules** that ride the existing trivial-vs-non-trivial
+split — not by a command chain.
+
+### The model — three questions (user-facing)
+
+1. **What are we building?** → `spec.md`, requirements in **EARS notation** (default, prose-escapable).
+2. **How should it work?** → `design.md`, written **as decision records** (below).
+3. **How will we know it's done?** → acceptance criteria as **tests** (TDD/BDD-first). Each EARS
+   `shall` maps 1:1 to a behavior-focused test. SDD sits *above* TDD: the spec says what to test.
+
+Artifacts live under a single dotted root, `.shipkit/specs/<feature-slug>/`, one folder per
+feature, SHA-stamped like the map so drift is detectable. `.shipkit/` is the canonical home for
+all shipkit-generated docs — one place humans, the elders, and MemPalace all reference.
+
+### Decision records — the five-part format (the spine)
+
+Every "how" answer is a decision. Records use five parts, in order: **Context · Alternatives (≥2
+real) · Case for · Case against (the honest cost of your own choice) · Decision + falsifiability
+clause.** The **falsifiability clause** — a concrete, checkable "I'd reverse this if ___" — is the
+novel piece: it makes decisions *queryable for staleness* ("chose SQLite because <10k users; now
+at 40k" → fired). Hard rule: the clause must be a metric/event/threshold, never a vague hedge —
+the guard against LLM-generated hollow honesty, enforced like `explain-system`'s zero-UNCERTAIN
+gate. Lives inline in a spec's `design.md` (feature-scoped) or standalone
+`.shipkit/decisions/NNNN-*.md` (project-wide). The standalone log is the map's counterpart:
+map = *what/where*, log = *why*.
+
+### Reuse (minimal new surface)
+
+- **Rules** (the "effortless" property): `rules/spec-driven.md` + `rules/decisions.md` fire the
+  discipline automatically on non-trivial work — no command to memorize; a typo never gets specced.
+- **Skills:** one thin `/shipkit:spec` (inline, interviews Q1→Q2→Q3, delegates research to
+  `codebase-explorer`, native Plan Mode as the review gate). `/shipkit:decide` optional — ship the
+  rule first, add the skill only if capture proves unreliable.
+- **Agents:** teach `grandfather`/`eve` that `specs/` + the decision log are first-class sources
+  (enables "what's next?", "why X?", and "which decisions are now falsified?"); `archivist` links
+  active specs/decisions from the map. Structured records are preferred over fuzzy MemPalace recall
+  for "why" questions (verified > recalled) — complementary, not competing.
+- **Hook:** extend `check-map-freshness.sh` (one proven mechanism) to flag specs whose code has
+  drifted and, cheaply, surface fired falsifiability clauses at session start.
+
+### Build order (each independently shippable)
+
+Rules → agent reads → `/shipkit:spec` → hook extension → `/shipkit:decide` (if needed) → docs.
+See the design doc §7 for the open decisions (record home, skill-vs-rule, one-hook-vs-two, EARS
+strictness — the last settled as *default, escapable*).
+
+---
+
 ## Origin
 
 This roadmap came out of an honest design review (2026-07-03) whose seven findings map to the
