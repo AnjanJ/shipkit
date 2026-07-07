@@ -28,6 +28,27 @@ claude --plugin-dir ~/code/shipkit
 
 Want to go further? Run `/shipkit:setup` to tailor everything to your specific project — it auto-detects your stack, creates a CLAUDE.md, and installs stack-specific skills and rules. This is optional but recommended for the best experience.
 
+## How Shipkit Works — automatic vs. invoked
+
+Shipkit has three kinds of behavior. Knowing which is which tells you what to expect:
+
+| Kind | What it is | You do… |
+|------|-----------|---------|
+| 🟢 **Automatic** | Rules and hooks that fire on their own — no command. | Nothing. It just happens. |
+| 🔵 **Auto-invoked** | Skills Claude reaches for when your request matches them. | Nothing — or invoke by name to force it. |
+| ⚪ **You invoke** | Skills you call explicitly by name when you want them. | Type `/shipkit:<name>`. |
+
+**🟢 Automatic — always on, no command:**
+- **Path-scoped rules** load when you edit a matching file — edit a test, the testing rule applies; edit a migration, the migration rule applies (6 rules, see below).
+- **Always-on rules** apply to the *work*, not a file type — start non-trivial feature work and the *spec-driven* + *decisions* discipline is in effect; every commit follows the commit rule.
+- **The freshness hook** prints one line at session start if your `PROJECT_MAP.md` or a spec has drifted from the code. Silent otherwise.
+
+**🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. Ask it to add a chat feature → `/shipkit:ai-feature`; a test fails → `/shipkit:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
+
+**⚪ You invoke — call it when you want it:** research and one-shot tools you reach for deliberately — `/shipkit:ask` (ask the elders), `/shipkit:map` (build the project map), `/shipkit:setup` / `/shipkit:unsetup`, `/shipkit:context-audit`.
+
+> **Rule of thumb:** the *knowledge layer* (maps, elders, registry) is something you **ask**; the *discipline* (rules, commit hygiene, spec/decision capture, freshness) is something that **happens**. The [User Guide](GUIDE.md#how-shipkit-works) has the full per-capability breakdown.
+
 ## What You Get Instantly
 
 **The knowledge layer** — 7 core skills, always at hand:

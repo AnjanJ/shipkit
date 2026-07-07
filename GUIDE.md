@@ -7,15 +7,18 @@ A complete guide to using every skill, agent, and feature in shipkit.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Setup & Unsetup](#setup--unsetup)
-3. [The Project Elders](#the-project-elders)
-4. [Episodic Memory (MemPalace)](#episodic-memory-mempalace)
-5. [Skills Reference](#skills-reference)
-6. [Agents](#agents)
-7. [Knowledge Bases](#knowledge-bases)
-8. [Path-Scoped Rules](#path-scoped-rules)
-9. [Common Workflows](#common-workflows)
-10. [Tips](#tips)
+2. [How Shipkit Works](#how-shipkit-works) — automatic vs. invoked
+3. [Setup & Unsetup](#setup--unsetup)
+4. [The Project Elders](#the-project-elders)
+5. [Episodic Memory (MemPalace)](#episodic-memory-mempalace)
+6. [Skills Reference](#skills-reference)
+7. [Spec-Driven Development](#spec-driven-development)
+8. [Lessons Memory](#lessons-memory)
+9. [Agents](#agents)
+10. [Knowledge Bases](#knowledge-bases)
+11. [Path-Scoped Rules](#path-scoped-rules) — automatic + always-on
+12. [Common Workflows](#common-workflows)
+13. [Tips](#tips)
 
 ---
 
@@ -31,6 +34,70 @@ After installing the plugin, all skills are available as `/shipkit:<skill-name>`
 
 For the best experience, run `/shipkit:setup` once per project to tailor everything to your stack
 and pick a workflow style.
+
+---
+
+## How Shipkit Works
+
+Shipkit has three kinds of behavior. Most confusion ("do I have to run something?") disappears
+once you know which is which.
+
+| Kind | Fires… | Your action |
+|------|--------|-------------|
+| 🟢 **Automatic** (rules + hooks) | On its own — when you edit a file, do certain work, or start a session | None |
+| 🔵 **Auto-invoked** (skills with `TRIGGER when:`) | When your request matches the skill | None, or invoke by name to force |
+| ⚪ **You invoke** (research/one-shot skills) | When you type `/shipkit:<name>` | Call it deliberately |
+
+### 🟢 Automatic — no command needed
+
+These are always on once the plugin is loaded. You never call them.
+
+| What | When it fires | What it does |
+|------|--------------|--------------|
+| **Path-scoped rules** | You edit a matching file (test, migration, controller, dependency file, UI, monorepo config) | Applies that file type's conventions — see [Path-Scoped Rules](#path-scoped-rules) |
+| **`spec-driven` rule** | You start **non-trivial** feature work | Puts the three questions (what/how/done) + EARS + TDD-first in effect — see [Spec-Driven Development](#spec-driven-development) |
+| **`decisions` rule** | You make a real choice (≥2 alternatives) | Prompts a five-part decision record with a falsifiability clause |
+| **Commit discipline** | Any commit | Atomic commits, message scaled to the change, no `git add .`, no `--no-verify` |
+| **Lessons memory** | You correct Claude / a project pattern emerges | Appends a dated line to `.claude/lessons.md` (30-line cap) — see [Lessons Memory](#lessons-memory) |
+| **Freshness hook** | Session start | One line if `PROJECT_MAP.md` or a spec has drifted from the code; silent otherwise |
+
+### 🔵 Auto-invoked — Claude picks the right skill
+
+Every shipkit skill is model-invocable. The ones below carry `TRIGGER when: / DO NOT TRIGGER
+when:` guidance, so Claude runs them when your request matches — you don't have to remember they
+exist. You can still invoke any by name to force it.
+
+| Skill | Auto-fires when you… |
+|-------|---------------------|
+| `/shipkit:spec` | ask to build/design a non-trivial feature before coding |
+| `/shipkit:decide` | make a project-wide choice with real alternatives |
+| `/shipkit:commit` | ask to commit, or reach a natural commit point |
+| `/shipkit:debug` | hit a failing test or a bug to root-cause |
+| `/shipkit:tdd` | explicitly ask for strict red-green-refactor |
+| `/shipkit:ai-feature` | ask to add AI/LLM functionality (chat, RAG, embeddings) |
+| `/shipkit:ui-ux` | build, design, or review UI |
+| `/shipkit:explain-system` | ask *why* a system is designed the way it is |
+| `/shipkit:walkthrough` | ask how one feature works end-to-end |
+| `/shipkit:legacy-audit` | ask to assess/modernize an inherited codebase |
+| `/shipkit:migration-plan` | ask to plan a major upgrade or framework migration |
+| `/shipkit:humanize` | ask to de-AI writing in docs/READMEs/PRs |
+
+### ⚪ You invoke — call it when you want it
+
+Research and one-shot tools you reach for on purpose. These don't auto-fire — you decide when.
+
+| Skill | Use it to… |
+|-------|-----------|
+| `/shipkit:ask` | ask the elders a question (this project, or `--all` for the portfolio) |
+| `/shipkit:map` | build/refresh `PROJECT_MAP.md`; `--register` for cross-project answers |
+| `/shipkit:setup` / `/shipkit:unsetup` | configure shipkit for your stack, or revert |
+| `/shipkit:context-audit` | check context-window health and find bloat |
+| `/shipkit:qa` | run the 5-phase QA workflow |
+| `/shipkit:update-rules` | change CLAUDE.md rules (never edit them by hand) |
+
+**Rule of thumb:** the *knowledge layer* (maps, elders, registry) is something you **ask**; the
+*discipline* (rules, commit hygiene, spec/decision capture, freshness) is something that
+**happens**.
 
 ---
 
