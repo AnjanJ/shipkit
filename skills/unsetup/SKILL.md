@@ -43,6 +43,9 @@ Read the backup contents and tell the user exactly what will be restored:
 1. **Remove current shipkit files:**
    - Delete `CLAUDE.md`
    - Delete the `.claude/` directory entirely
+   - **Never touch `.shipkit/`** — specs and decision records are your project's own work
+     product (they version with the code, not with shipkit config). `/unsetup` removes shipkit's
+     configuration, not the knowledge you built with it. Leave `.shipkit/` exactly as it is.
 
 2. **Restore from backup:**
    - If backup contains `CLAUDE.md`, copy it to project root
