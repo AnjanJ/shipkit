@@ -2,6 +2,28 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.6.0] — 2026-07-07
+
+### Added — decision capture + portfolio spec visibility
+
+Completes the spec-driven development work from 2.5.0.
+
+- **`/shipkit:decide`** — an inline, auto-invocable skill that interviews the five-part decision
+  record (Context, Alternatives, Case-for, Case-against, Decision + a concrete falsifiability
+  clause) and appends `.shipkit/decisions/NNNN-<slug>.md`. For deliberate, project-wide decisions;
+  feature-scoped ones still go inline in a spec's `design.md` via `/shipkit:spec`. (2.5.0 deferred
+  this to the always-on `decisions` rule; the guided skill earns its place for decisions made
+  outside plan mode.)
+- **Registry `Active Specs` column** — `/shipkit:map --register` now records the feature slugs
+  with an open spec under `.shipkit/specs/*/`, so `eve` can answer "which projects have an open
+  spec?" / "what's in flight across the portfolio?" from the registry alone — zero repo reads.
+
+### Fixed
+
+- **`/unsetup` never deletes `.shipkit/`** — made explicit that unsetup removes shipkit config
+  (`CLAUDE.md`, `.claude/`) but never your specs and decision records, which version with the code
+  as project work product. Previously correct but only implicit.
+
 ## [2.5.0] — 2026-07-07
 
 ### Added — Spec-Driven Development

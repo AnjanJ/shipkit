@@ -30,9 +30,11 @@ It points you at each project's `PROJECT_MAP.md` (per-project index written by `
 
 Two things the registry gives you for free:
 - **Registry-only answers.** If the question is exactly what a column holds ("which projects
-  are Rails?", "which deploy to Vercel?"), answer straight from the registry — zero repo
-  reads. Mark those rows MEDIUM confidence (registry-sourced) unless you spot-check; a `?`
-  cell means unrecorded, so fall through to the grep fast path for that project.
+  are Rails?", "which deploy to Vercel?", "which have an open spec?" → the `Active Specs`
+  column), answer straight from the registry — zero repo reads. Mark those rows MEDIUM
+  confidence (registry-sourced) unless you spot-check; a `?` cell means unrecorded, so fall
+  through to the grep fast path for that project. `Active Specs` is a point-in-time snapshot
+  from the last `--register` — verify against `.shipkit/specs/` when certainty matters.
 - **Staleness signal.** If a row's `Mapped At` SHA is far behind that repo's HEAD, treat its
   map as suspect and lean harder on live verification — and say so in your answer.
 

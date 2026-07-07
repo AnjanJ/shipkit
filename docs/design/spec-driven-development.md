@@ -261,8 +261,10 @@ Written, fittingly, as the start of a decision log:
 - **DR-A: Decision-record home** — ✅ *settled:* one artifact root `.shipkit/`; standalone
   project-wide records in `.shipkit/decisions/`, feature-scoped inline in the spec's `design.md`.
   A single dotted root so humans, the elders, and MemPalace share one canonical place to look.
-- **DR-B: `/shipkit:decide` — ship it or rely on the rule?** *Lean:* rule first, skill only if
-  needed. Falsifiability clause: reverse if capture-via-rule proves unreliable in practice.
+- **DR-B: `/shipkit:decide` — ship it or rely on the rule?** ✅ *settled: shipped both.* The
+  `decisions` rule captures during plan mode; `/shipkit:decide` adds a guided five-part interview
+  for deliberate, project-wide records made outside plan mode. Reversal condition (met): rule-only
+  capture missed decisions made outside plan mode, so the skill earns its place.
 - **DR-C: One hook or two?** *Lean:* extend `check-map-freshness.sh`. Reverse if spec/decision
   freshness logic makes the single script hard to keep silent-on-failure.
 - **DR-D: EARS strictness** — settled by the user: **default, escapable.** Reverse toward strict

@@ -469,6 +469,26 @@ Development* section below for the full picture.
 
 ---
 
+### /shipkit:decide — Capture a Decision Record
+
+Record a project-wide decision as a durable, five-part artifact in `.shipkit/decisions/`.
+
+```
+/shipkit:decide "Paddle over Stripe"
+/shipkit:decide "monolith over microservices"
+```
+
+The five parts: **Context · Alternatives (≥2 real) · Case for · Case against · Decision +
+falsifiability clause**. The falsifiability clause must be concrete — "we would reverse this if
+p99 latency exceeds 200ms", not "if it turns out wrong" — because that's what lets `grandfather`
+later answer *"is this decision now falsified?"*.
+
+Use this for **project-wide** decisions not tied to one feature. Feature-scoped decisions belong
+inline in that spec's `design.md` (via `/shipkit:spec`). Capture real forks only — a decision
+with one option isn't a decision.
+
+---
+
 ## Spec-Driven Development
 
 Shipkit extends the knowledge layer *forward in time*. `PROJECT_MAP.md` is the backward-looking
