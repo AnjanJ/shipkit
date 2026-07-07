@@ -446,6 +446,80 @@ The `ui-ux` path-scoped rule also auto-loads when editing any UI file, applying 
 
 ---
 
+### /shipkit:spec — Spec a Non-Trivial Feature
+
+Turn a feature idea into a durable, verified spec before building it — the **three questions**,
+written to `.shipkit/specs/<feature-slug>/`. This is the forward-looking half of the knowledge
+layer: `PROJECT_MAP.md` says what exists; a spec says what you're about to build.
+
+```
+/shipkit:spec checkout-redesign            # run all three questions end-to-end
+/shipkit:spec checkout-redesign design     # regenerate design.md only
+```
+
+The three questions:
+1. **What are we building?** → `spec.md`, requirements in EARS (`When X, the system shall Y`).
+2. **How should it work?** → `design.md`, the approach written as five-part decision records.
+3. **How will we know it's done?** → acceptance criteria as tests, and `tasks.md` (each task cites
+   its requirement).
+
+Runs inline with an approval gate after requirements and native Plan Mode before tasks. Spec
+**non-trivial** work only — a typo or one-liner doesn't get a spec. See the *Spec-Driven
+Development* section below for the full picture.
+
+---
+
+## Spec-Driven Development
+
+Shipkit extends the knowledge layer *forward in time*. `PROJECT_MAP.md` is the backward-looking
+index (what exists, where); **specs** and **decision records** capture what you're building next
+and *why* — as durable, verified artifacts the elders read.
+
+Everything lives under one root, **`.shipkit/`**, so a human always knows where to look and
+`grandfather`/`eve`/MemPalace share one canonical place to reference:
+
+```
+.shipkit/
+  specs/<feature-slug>/
+    spec.md      # WHAT — requirements (EARS)
+    design.md    # HOW — approach, as decision records
+    tasks.md     # STEPS — ordered, each citing its requirement
+  decisions/
+    NNNN-<slug>.md   # project-wide decision records (the "why" log)
+```
+
+### The three questions (always-on)
+
+Two always-on rules drive this without any command:
+
+- **`spec-driven`** — on non-trivial feature work, answer *what are we building* (EARS
+  requirements), *how should it work* (design), *how will we know it's done* (tests, TDD/BDD-first).
+  Trivial work is exempt — it never specs a typo.
+- **`decisions`** — when a real choice is made (≥2 alternatives), capture it in five parts:
+  **Context · Alternatives · Case for · Case against · Decision + falsifiability clause.**
+
+The **falsifiability clause** is the key idea: a concrete "I would reverse this if ___" (a metric,
+event, or threshold — never a vague hedge). It makes decisions *queryable for staleness* — ask
+`grandfather` *"are any past decisions now falsified?"* and it checks each clause against current
+reality. A hollow clause is treated as a bug.
+
+### How it ties into the elders
+
+- `grandfather` reads `.shipkit/decisions/` and specs to answer *why is X built this way?*,
+  *what are we building next?*, and *which decisions are now falsified?* — preferring these
+  verified records over `git log` or MemPalace recall.
+- `eve` greps `.shipkit/decisions/` across the portfolio (*"where did we decide against
+  microservices, and are those reasons still true?"*).
+- `archivist` links active specs and decisions from `PROJECT_MAP.md`, so the map is the front door.
+
+### Freshness
+
+A `SessionStart` hook nudges once per accepted spec whose code has drifted ≥15 commits past its
+acceptance SHA (override with `SHIPKIT_SPEC_STALE_COMMITS`) — the same closed-loop treatment the
+map already gets. Silent when fresh.
+
+---
+
 ## Lessons Memory
 
 Shipkit includes a lightweight project memory system via `.claude/lessons.md`.
@@ -557,6 +631,15 @@ These auto-load when you edit matching files. No action needed.
 | `dependencies` | Dependency files (Gemfile, package.json, etc.) | Version constraints, security audits, test suite after changes |
 | `monorepo` | Monorepo configs, workspace files | Cross-package testing, dependency hoisting, breaking change paths |
 | `ui-ux` | UI files (web + mobile) | Empathy-first design, accessibility, all 5 states, platform conventions |
+
+### Always-on rules
+
+These are not path-scoped — they apply to the work itself, not to a file type.
+
+| Rule | Applies To | What It Enforces |
+|------|-----------|-----------------|
+| `spec-driven` | Non-trivial feature work | The three questions (what/how/done), EARS requirements, TDD/BDD-first — see *Spec-Driven Development* |
+| `decisions` | Any non-trivial choice (≥2 alternatives) | The five-part decision record with a concrete falsifiability clause |
 
 ### Stack-specific rules (installed via /setup)
 

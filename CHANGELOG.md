@@ -2,6 +2,37 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.5.0] — 2026-07-07
+
+### Added — Spec-Driven Development
+
+The knowledge layer now looks **forward**. `PROJECT_MAP.md` indexes what exists; specs and
+decision records capture what you're building next and *why* — durable, verified artifacts the
+elders read. Everything lives under one root, `.shipkit/`, so humans, the elders, and MemPalace
+share one canonical place to look.
+
+- **Two always-on rules** — `spec-driven.md` (the three questions: *what are we building / how
+  should it work / how will we know it's done*, EARS requirements, TDD/BDD-first) and
+  `decisions.md` (the five-part decision record: Context, Alternatives, Case-for, Case-against,
+  Decision + a **concrete falsifiability clause**). Both ride the existing trivial-vs-non-trivial
+  split — a typo never gets specced.
+- **`/shipkit:spec <feature>`** — an inline, auto-invocable skill that interviews a feature
+  through the three questions and writes `.shipkit/specs/<feature>/{spec,design,tasks}.md`, with
+  an approval gate on requirements and native Plan Mode before tasks. Requirements in EARS,
+  design as decision records, done-criteria as tests with requirement → task → code traceability.
+- **Elders read `.shipkit/`** — `grandfather` and `eve` now treat specs and decision records as
+  first-class sources (preferring these verified records over `git log`/MemPalace for "why"),
+  and can answer *"which past decisions are now falsified?"* by checking each record's
+  falsifiability clause against current reality. `archivist` links active specs and decisions
+  from `PROJECT_MAP.md`.
+- **Spec-drift freshness** — the `SessionStart` hook now also nudges once per accepted spec whose
+  code has moved ≥15 commits past its acceptance SHA (`SHIPKIT_SPEC_STALE_COMMITS`). Silent when
+  fresh; always exits 0.
+
+Design: `docs/design/spec-driven-development.md`. `/shipkit:decide` (standalone decision capture)
+is intentionally deferred — the always-on `decisions` rule captures records during plan mode; the
+skill will be added only if rule-driven capture proves insufficient.
+
 ## [2.4.0] — 2026-07-05
 
 ### Changed — all skills are auto-invocable

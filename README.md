@@ -6,7 +6,9 @@
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
-**New in 2.1:** two portfolio reports for `eve` — `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo (from lockfiles), and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. *(2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively, and the remaining workflow skills became invoke-when-you-want-them. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
+**New in 2.5:** **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/`, requirements in EARS and design as **decision records** with a concrete **falsifiability clause** (`.shipkit/decisions/`). The elders read both — including *"which past decisions are now falsified?"* — and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.
+
+*(2.1 added two portfolio reports for `eve`: `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo, and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. 2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
 
 ## Install
 
@@ -40,12 +42,13 @@ Want to go further? Run `/shipkit:setup` to tailor everything to your specific p
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-**Workflow extras** — 10 skills Claude reaches for when the work calls for it (each carries
+**Workflow extras** — 11 skills Claude reaches for when the work calls for it (each carries
 `TRIGGER when: / DO NOT TRIGGER when:` guidance so it fires at the right moment), or you can
 invoke any of them by name:
 
 | Skill | What It Does |
 |-------|-------------|
+| `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
 | `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
 | `/shipkit:tdd` | Strict TDD — the `strict-tdd` workflow style, Red-Green-Refactor with Iron Law enforcement |
 | `/shipkit:debug` | Systematic root-cause debugging — investigate before fixing |
@@ -103,6 +106,44 @@ architecture questions, and "where/why" lookups. Keep editing in your main sessi
 | `dependencies.md` | Dependency files (Gemfile, package.json, go.mod, etc.) |
 | `monorepo.md` | Monorepo configs and workspace files |
 | `ui-ux.md` | UI files (web, iOS, Android, Flutter, React Native) |
+
+**2 always-on rules** — apply to the work itself, not a file type:
+
+| Rule | Applies When |
+|------|-------------|
+| `spec-driven.md` | Non-trivial feature work — the three questions, EARS requirements, TDD/BDD-first |
+| `decisions.md` | A non-trivial choice with ≥2 alternatives — the five-part record + falsifiability clause |
+
+## Spec-Driven Development
+
+The knowledge layer looks *forward*, too. `PROJECT_MAP.md` indexes what exists; **specs** and
+**decision records** capture what you're building next and *why* — as durable, verified artifacts
+the elders read. Everything lives under one root, `.shipkit/`, so a human, the elders, and
+MemPalace all share one place to look.
+
+Two always-on rules drive it without any command, on non-trivial work only (a typo never gets
+specced) — the **three questions**:
+
+1. **What are we building?** → `.shipkit/specs/<feature>/spec.md`, requirements in **EARS**
+   (`When X, the system shall Y`) so each maps 1:1 to a test.
+2. **How should it work?** → `design.md`, the approach written as **decision records**.
+3. **How will we know it's done?** → acceptance criteria as **tests** (TDD/BDD-first), and
+   `tasks.md` with requirement → task → code → test traceability.
+
+`/shipkit:spec <feature>` runs the guided interview (approval gate on requirements, native Plan
+Mode before tasks). Decision records use five parts — **Context · Alternatives · Case for · Case
+against · Decision + falsifiability clause** — where the falsifiability clause is a concrete
+"I would reverse this if ___" (a metric, event, or threshold). That makes decisions *queryable
+for staleness*: ask `grandfather` *"are any past decisions now falsified?"* and it checks each
+clause against current reality. A `SessionStart` hook nudges when a spec drifts from its code.
+
+```
+/shipkit:spec checkout-redesign      # spec a feature: what / how / done
+/shipkit:ask why did we choose SQLite here?      # grandfather reads .shipkit/decisions/
+/shipkit:ask are any of our past decisions now falsified?
+```
+
+See [GUIDE.md](GUIDE.md) → *Spec-Driven Development* for the full workflow and file templates.
 
 ## Optional: Full Stack Configuration
 
