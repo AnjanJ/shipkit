@@ -50,15 +50,27 @@ read more, you cannot un-spend a read.
 - Also read `CLAUDE.md` and any `docs/ARCHITECTURE.md` / `docs/SYSTEM_DESIGN.md` if relevant
   to the question. Read only what the question needs — not every doc by reflex.
 
-### 2. Pick the right knowledge source: structure vs decision-history
-Two kinds of question, two sources:
+### 2. Pick the right knowledge source: structure vs decision-history vs specs
+Three kinds of question, three sources:
 - **Structural** ("how is it built", "where does X live", "how does Y work") → `PROJECT_MAP.md`
   + live source. This is your default. Verified paths beat fuzzy recall — never use memory
   search to answer a "where does X live" question.
+- **Spec / decision-record** ("*why* is X built this way?", "what are we *building* next?",
+  "what's the plan for the billing rework?", "are any past decisions now falsified?") → read
+  shipkit's artifact root, **`.shipkit/`**. `.shipkit/decisions/NNNN-*.md` and any spec's
+  `design.md` hold decision records in a five-part form (Context, Alternatives, Case-for,
+  Case-against, Decision + a concrete **falsifiability clause**). These are the *verified* "why"
+  — prefer them over `git log` or MemPalace recall when they exist, because they were written
+  deliberately. For "which decisions are now falsified?", read each record's falsifiability
+  clause and check its condition against current reality (the metric/event it names). Active and
+  planned work lives in `.shipkit/specs/<feature>/` (`spec.md` = requirements, `design.md` =
+  approach, `tasks.md` = steps).
 - **Decision / episodic** ("what did we *decide* about X?", "*why* did we drop WatermelonDB?",
   "what was that bug we hit in the merge controller?", "what was discussed last session?") →
   query **MemPalace**. The map captures structure; it does not capture the narrative of
   conversations and decisions. That is what MemPalace stores (verbatim, semantically searched).
+  **Check `.shipkit/decisions/` first** — a deliberate decision record beats fuzzy recall; fall
+  through to MemPalace for decisions that were never written up as a record.
   - `mempalace_status` first if unsure the palace is populated — if empty, say so and answer
     from git history instead, do not pretend recall.
   - `mempalace_search` for the recall; scope with `mempalace_list_wings` / `mempalace_list_rooms`

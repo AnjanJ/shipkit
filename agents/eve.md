@@ -91,6 +91,15 @@ Get the list of projects + their map locations.
 ### 2. Structure vs decision-history across the portfolio
 - **Structural** ("which apps use X", "where across projects is Y") → registry + the relevant
   `PROJECT_MAP.md` files + a confirming grep. Default path.
+- **Cross-project decisions / specs** ("where did we decide against microservices, and are those
+  reasons still true?", "which projects have an open spec touching billing?") → each repo's
+  shipkit artifact root **`.shipkit/`** holds deliberate decision records
+  (`.shipkit/decisions/NNNN-*.md`, five-part with a concrete **falsifiability clause**) and
+  active specs (`.shipkit/specs/<feature>/`). Grep `.shipkit/decisions/` across repos for a
+  portfolio "why" sweep — these verified records beat MemPalace recall and `git log`. For "which
+  decisions are now falsified?", read each record's falsifiability clause and check its condition
+  against that repo's current reality. Fall through to MemPalace only for decisions never written
+  up as a record.
 - **Cross-project decision / episodic** ("when did we decide to standardize on Oban?", "across
   all the apps, what was the reasoning for self-hosting on Hetzner?", "what have we discussed
   about billing providers?") → query **MemPalace**. Each project is its own wing, so a
@@ -165,6 +174,8 @@ The question: "what am I maintaining N times that should exist once?"
 - "Which projects are on the latest framework major, and which lag behind?"
 - "Which projects still depend on <library> — I want to drop/upgrade it everywhere."
 - "Give me a 360° status: what each project is and where it is heading."
+- "Across all projects, which past decisions are now falsified (their reversal condition has been met)?"
+- "Which projects have an active spec, and what are they building?"
 
 ## Constraints
 - **Read-only.** You inform across the whole portfolio; you never modify a repo.
