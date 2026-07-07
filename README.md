@@ -111,6 +111,12 @@ answer — your main context never sees the 40 file reads behind it. Use them fo
 architecture questions, and "where/why" lookups. Keep editing in your main session. See
 [GUIDE.md](GUIDE.md) for details, and **Episodic memory** below for the optional decision-recall add-on.
 
+**New here?** The User Guide has three end-to-end playbooks — [starting a new
+repo](GUIDE.md#playbook-1--starting-a-new-repo-greenfield), [taking over a legacy
+repo](GUIDE.md#playbook-2--taking-over-a-legacy--inherited-repo), and [asking the
+elders](GUIDE.md#playbook-3--asking-the-elders-when--why) — each a step-by-step walkthrough of
+what to run, what you get, and what's next.
+
 **2 knowledge bases** — on-demand reference material:
 
 | KB | What It Provides |

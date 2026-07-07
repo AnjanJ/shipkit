@@ -747,15 +747,157 @@ These are not path-scoped — they apply to the work itself, not to a file type.
 
 ## Common Workflows
 
-**Joining a project:**
-```
-/shipkit:setup  →  /shipkit:map --register  →  /shipkit:ask <your first questions>
-```
+Three end-to-end playbooks cover most of how you'll use shipkit: **starting a new repo**,
+**taking over a legacy one**, and **asking the elders**. Each step says what you do, what it gives
+you, and what comes next. Shorter recipes follow at the end.
 
-**Building a feature (with TDD):**
+---
+
+### Playbook 1 — Starting a new repo (greenfield)
+
+A fresh repo is where shipkit's spec-driven flow shines most: you have no existing code to work
+around, so a spec becomes the single source of truth and gives the AI no room to invent. Build
+**spec-first**.
+
+**1. Configure shipkit for the project.**
 ```
-plan mode  →  /shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipkit:qa
+/shipkit:setup
 ```
+Pick your stack and a workflow style (`test-first` is the sensible default; `strict-tdd` if you
+want the iron law; `lightweight` if you don't). **What you get:** a tailored `CLAUDE.md`, the
+always-on rules (spec-driven, decisions, commit discipline) now in effect, and stack-specific
+skills/rules installed. One-time per repo.
+
+**2. Spec the first feature before writing code.**
+```
+/shipkit:spec user-signup
+```
+This runs the three questions — *what are we building* (requirements in EARS), *how should it
+work* (design, written as decision records), *how will we know it's done* (acceptance criteria as
+tests). **What you get:** `.shipkit/specs/user-signup/{spec,design,tasks.md}`, an approval gate on
+the requirements, and native Plan Mode before the tasks are locked. **Why first:** the spec is the
+artifact you'll build against — and the one the elders read later to explain *what you're
+building*.
+
+**3. Build task by task.**
+The `tasks.md` is ordered and each task cites its requirement. Work through them — the always-on
+rules fire automatically (test-first per your chosen style, atomic commits, and any real
+architectural fork prompts a decision record). **What you get:** code that traces
+requirement → task → test, with the *why* captured as you go. No extra commands needed; the
+discipline is automatic.
+
+**4. Record project-wide decisions as they come up.**
+```
+/shipkit:decide "Postgres over SQLite"
+```
+When you make a choice that isn't tied to one feature (a datastore, a deploy target, an auth
+strategy), capture it. **What you get:** a five-part record in `.shipkit/decisions/` with a
+concrete falsifiability clause — so a year from now you (or grandfather) can answer *why* and
+*"is this still the right call?"*.
+
+**5. Build the map once the repo has a shape, and register it.**
+```
+/shipkit:map --register
+```
+**What you get:** a verified `PROJECT_MAP.md` and a row in your cross-project registry — from now
+on the elders can answer questions about this repo, and `eve` sees it in portfolio sweeps. **When:**
+once there's real structure (a few features in), not on day one.
+
+**From here:** ask the elders when you need to understand something (Playbook 3), `/shipkit:map
+refresh` after big changes, and repeat steps 2–4 per feature.
+
+---
+
+### Playbook 2 — Taking over a legacy / inherited repo
+
+The opposite starting point: lots of existing code, little context, and the standard warning is
+*don't retro-spec the whole thing*. **Understand first, then spec only what you change.**
+
+**1. Get oriented with an audit.**
+```
+/shipkit:legacy-audit
+```
+**What you get:** a modernization assessment — dependency age, dead code, complexity hotspots,
+test-coverage gaps. This tells you what you're walking into before you touch anything.
+
+**2. Build the map so you (and the elders) have an index.**
+```
+/shipkit:map --register
+```
+**What you get:** a verified `PROJECT_MAP.md` — architecture, where-things-live, data model,
+evolution, gotchas. On an unfamiliar codebase this is the highest-value first move: it turns "I
+have no idea where anything is" into a navigable index, and lets you ask the elders from now on.
+
+**3. Understand before you change.**
+```
+/shipkit:ask how does authentication flow through this app?   # grandfather, cited answer
+/shipkit:walkthrough checkout                                  # trace one path step by step
+/shipkit:explain-system                                        # why is it built this way?
+```
+**What you get:** grandfather traces the flow and returns a cited answer without dumping the code
+into your session; `/shipkit:walkthrough` traces one path step by step; `/shipkit:explain-system`
+returns the *why* (decisions, trade-offs). **Why:** on legacy code, the reason something exists is
+usually the thing you're missing — and the thing most likely to bite you if you change it blind.
+
+**4. When you add a feature, spec only the delta.**
+```
+/shipkit:spec add-sso
+```
+**What you get:** a spec for the *new* behavior on top of the old code — lock what exists, spec the
+change. Don't spec the whole legacy surface; spec the part you're adding or reworking. This is
+where spec-driven development pays off in brownfield without drowning you in ceremony.
+
+**5. Plan any big upgrade before executing it.**
+```
+/shipkit:migration-plan rails 6.1 7.0
+```
+**What you get:** an impact analysis and a step-by-step execution plan for a major/breaking
+upgrade — before you start, not halfway through.
+
+**From here:** as you learn non-obvious things, they graduate into `.claude/lessons.md`
+automatically; refresh the map after big changes; capture the decisions you make with
+`/shipkit:decide` so the next person (or you in six months) inherits the *why* you didn't have.
+
+---
+
+### Playbook 3 — Asking the elders (when & why)
+
+The elders exist to answer questions **without polluting your main context** — the subagent reads
+the files, you get back only the cited answer. Reach for them whenever the answer would otherwise
+cost you a dozen file reads in your working session.
+
+**grandfather — one project.** Use it for:
+
+| You want to… | Ask |
+|--------------|-----|
+| Understand how something works | `/shipkit:ask how does locale fallback work here?` |
+| Find where something lives | `/shipkit:ask where are background jobs defined?` |
+| Know *why* a decision was made | `/shipkit:ask why did we choose Paddle over Stripe?` |
+| Judge whether a change is safe | `/shipkit:ask is it safe to drop the legacy_token column?` |
+| Check if a past decision still holds | `/shipkit:ask are any of our decisions now falsified?` |
+
+**eve — across all your registered projects.** Use it for the 360° view:
+
+| You want to… | Ask |
+|--------------|-----|
+| Find a pattern across the portfolio | `/shipkit:ask --all which apps deploy to Hetzner vs AWS?` |
+| Locate every place you do X | `/shipkit:ask --all everywhere I integrate Stripe` |
+| Sweep versions for an upgrade/CVE | `/shipkit:ask --all matrix rails` |
+| Find duplication worth consolidating | `/shipkit:ask --all consolidate` |
+| See what's in flight | `/shipkit:ask --all which projects have an open spec?` |
+
+**When *not* to use them:** mid-edit, when you need one fact to keep typing — just read the file;
+a subagent round-trip is slower. And they're read-only: they inform, they don't edit. Get the
+answer, then act in your main session.
+
+**Why they stay trustworthy:** the map is an *index*, not the last word. When it disagrees with
+live source, the elders trust **source** and flag the drift — so a stale map yields a correction,
+not a confident wrong answer. Refresh with `/shipkit:map refresh` when you see a drift flag or the
+session-start hook nudges you.
+
+---
+
+### Shorter recipes
 
 **Debugging a bug:**
 ```
@@ -767,15 +909,12 @@ plan mode  →  /shipkit:ui-ux design <feature>  →  /shipkit:tdd  →  /shipki
 run the tests  →  /code-review (built-in)  →  /shipkit:humanize (for docs/PR description)
 ```
 
-**Modernizing a legacy codebase:**
-```
-/shipkit:legacy-audit  →  /shipkit:migration-plan <dep> <old> <new>  →  execute  →  run the tests
-```
-
 **Leaving shipkit:**
 ```
 /shipkit:unsetup  →  /plugin uninstall shipkit@shipkit
 ```
+(`/unsetup` restores your pre-shipkit `CLAUDE.md` and `.claude/`; it never touches `.shipkit/` —
+your specs and decisions are yours to keep.)
 
 ---
 
