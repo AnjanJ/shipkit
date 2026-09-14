@@ -22,6 +22,7 @@ PyYAML is missing.
 
 import json
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -299,8 +300,32 @@ HOOK_CONTEXT_CAP = 10_000  # chars per hook command added to context (verified o
 HOOK_HEADER = 400          # inject-rule.sh's own header lines, with margin
 injected_rules = set()
 if hooks_json.exists():
-    for cmd in re.findall(r'"command":\s*"([^"]+)"', hooks_json.read_text()):
-        parts = cmd.split()
+    # Parse as JSON and split with shlex: the commands quote the interpolated
+    # ${CLAUDE_PLUGIN_ROOT} (a plugin path may contain spaces — unquoted it exits 127),
+    # so neither a "([^"]+)" regex nor a bare .split() reads them correctly.
+    _hook_cmds = []
+    try:
+        _hj = json.loads(hooks_json.read_text())
+        for _event in _hj.get("hooks", {}).values():
+            for _matcher in _event:
+                for _h in _matcher.get("hooks", []):
+                    if "command" in _h:
+                        _hook_cmds.append(_h["command"])
+    except (OSError, json.JSONDecodeError) as e:
+        err(hooks_json, f"cannot parse: {e}")
+    for cmd in _hook_cmds:
+        try:
+            parts = shlex.split(cmd)
+        except ValueError as e:
+            err(hooks_json, f"hook command {cmd!r} is not valid shell syntax: {e}")
+            continue
+        if not parts:
+            err(hooks_json, "empty hook command")
+            continue
+        if "${CLAUDE_PLUGIN_ROOT}/" in cmd and not cmd.startswith('"${CLAUDE_PLUGIN_ROOT}/'):
+            err(hooks_json, f"hook command {cmd!r} interpolates ${{CLAUDE_PLUGIN_ROOT}} "
+                            "unquoted — it exits 127 when the plugin path contains spaces; "
+                            'write "${CLAUDE_PLUGIN_ROOT}/scripts/x.sh" args')
         script = CORE / parts[0].replace("${CLAUDE_PLUGIN_ROOT}/", "")
         if not script.exists():
             err(hooks_json, f"hook command {cmd!r} does not resolve to a file")
@@ -375,6 +400,26 @@ for path in skill_files:
         if DEAD_FALLBACK.search(line):
             warn(path, f"!`…` injection has a dead `|| echo` fallback (line {i}) — "
                        "guard on output emptiness instead")
+
+# --- 11. Bare multi-operand `ls` in !`…` injections ---------------------------
+# `ls a b c 2>/dev/null` exits NONZERO if ANY operand is missing (exit 2 with one of
+# eight present). A skill whose dynamic-context command fails does not render at all:
+# Claude returns "Shell command failed for pattern" with zero model turns, so the
+# whole skill is lost before the model ever sees it. Probe with the guarded form:
+#   f=$(ls a b c 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "none found"
+
+BARE_LS = re.compile(r"!`\s*ls\s+(?![^`]*\[\s-n\s)[^`|]*?\s+\S+[^`]*`")
+for path in skill_files:
+    for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        for m in BARE_LS.finditer(line):
+            frag = m.group(0)
+            # A single operand (plus redirections) cannot fail on a missing sibling.
+            operands = [w for w in frag[2:-1].split()[1:]
+                        if not w.startswith(("2>", ">", "-"))]
+            if len(operands) > 1:
+                err(path, f"bare multi-operand `ls` in a !`…` injection (line {i}) — "
+                          "exits nonzero if ANY operand is missing and the skill then "
+                          'fails to render; use f=$(ls …); [ -n "$f" ] && echo "$f" || echo "none"')
 
 # --- 12. Stack overlays: structure and add-on bases ---------------------------
 # An overlay rule with no paths: becomes an always-on rule in the project that installs it.

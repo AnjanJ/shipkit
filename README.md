@@ -37,9 +37,12 @@ debugging, audits, migration plans. Install either or both; **each works without
 
 **Restart Claude Code after installing** to load the plugin.
 
-Or test locally:
+Or test locally — the repo root is the *marketplace*, so point at the two plugin roots
+themselves (one `--plugin-dir` each; either alone works):
 ```bash
-claude --plugin-dir ~/code/shipkit
+claude \
+  --plugin-dir ~/code/shipkit/plugins/shipkit \
+  --plugin-dir ~/code/shipkit/plugins/shipkit-workflows
 ```
 
 **That's it.** All skills, agents and knowledge bases are immediately available, and the session
