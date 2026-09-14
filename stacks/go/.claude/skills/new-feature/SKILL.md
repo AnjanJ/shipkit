@@ -23,8 +23,8 @@ Scaffold: $ARGUMENTS
 If an existing package can handle this, say so.
 
 ## Project Detection
-!`cat go.mod 2>/dev/null | head -3 || echo "no go.mod found"`
-!`ls cmd/ internal/ pkg/ 2>/dev/null || echo "flat layout"`
+!`f=$(head -3 go.mod 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no go.mod found"`
+!`f=$(ls -d cmd internal pkg 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "flat layout"`
 
 Check CLAUDE.md for the project layout, or auto-detect:
 - `cmd/` + `internal/` exists → **Standard Go layout**

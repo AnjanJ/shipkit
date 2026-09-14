@@ -10,7 +10,7 @@ argument-hint: "[ComponentName]"
 Component name: $ARGUMENTS
 
 ## Project Context
-!`cat package.json 2>/dev/null | grep -E '"(react|vue|svelte|next|vite|storybook|tailwind)"' | head -10 || echo "no package.json found"`
+!`f=$(grep -E '"(react|vue|svelte|next|vite|storybook|tailwind)"' package.json 2>/dev/null | head -10); [ -n "$f" ] && echo "$f" || echo "no package.json found (or no UI framework listed)"`
 
 ## Detection
 

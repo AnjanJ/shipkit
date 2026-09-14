@@ -9,7 +9,7 @@ argument-hint: "[<file-path>|all]"
 Audit code changes for common Rails security and safety issues.
 
 ## Changed Files
-!`git diff --cached --name-only 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "no changes detected"`
+!`f=$(git diff --cached --name-only 2>/dev/null); [ -z "$f" ] && f=$(git diff --name-only HEAD~1 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no changes detected"`
 
 ## Process
 
