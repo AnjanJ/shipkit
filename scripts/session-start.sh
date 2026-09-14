@@ -31,6 +31,26 @@ if [ -n "$ROOT" ] && [ -d "$ROOT/rules" ]; then
   fi
 fi
 
+# --- 1b. Installed rules older than the plugin? -----------------------------------------
+# /shipkit:setup (install-rules.sh) stamps .claude/rules/shipkit/.installed with the plugin
+# version and a digest of the rules as shipped. If the plugin's rules have changed since, the
+# project's copies are stale — nudge once. A directory without a stamp is a 2.8-era install.
+if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-rules-sha.sh" ]; then
+  if . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null; then
+    cur=$(rules_sha "$ROOT/rules" 2>/dev/null)
+    ver=$(plugin_version "$ROOT")
+    if [ -f .claude/rules/shipkit/.installed ]; then
+      isha=$(sed -n 's/^sha=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+      iver=$(sed -n 's/^version=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+      if [ -n "$cur" ] && [ "$isha" != "$cur" ]; then
+        echo "shipkit: installed rules are from shipkit ${iver:-?} and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      fi
+    else
+      echo "shipkit: installed rules have no version stamp (installed by shipkit ≤ 2.8) and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+    fi
+  fi
+fi
+
 # --- 2. Freshness nudges (git only) -------------------------------------------------
 git rev-parse --git-dir >/dev/null 2>&1 || exit 0
 
