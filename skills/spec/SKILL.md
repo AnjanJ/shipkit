@@ -15,9 +15,11 @@ Turn a feature idea into a durable, verified spec before building it: the **thre
 written to `.shipkit/specs/<feature-slug>/`. This is the forward-looking half of shipkit's
 knowledge layer — `PROJECT_MAP.md` says what exists; a spec says what you're about to build.
 
-Governed by `rules/spec-driven.md` (the three questions, EARS) and `rules/decisions.md` (the
-five-part decision format). This skill runs the interview that produces the artifacts those
-rules describe.
+Governed by the `spec-driven` rule (the three questions, EARS) and the `decisions` rule (the
+five-part decision format). Both are in your context — injected by the shipkit session hook, or
+installed at `.claude/rules/shipkit/` by `/shipkit:setup`; if neither, read them from
+`<plugin root>/rules/`. This skill runs the interview that produces the artifacts those rules
+describe, and @reference.md carries every template you need.
 
 **Spec non-trivial work only.** A typo or one-liner does not get a spec — if the request is
 trivial, say so and just do it. See `rules/spec-driven.md` for the trivial-vs-non-trivial split.

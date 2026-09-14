@@ -2,7 +2,7 @@
 ## Rails-Specific
 
 ### Architecture
-<!-- setup.sh replaces this based on detection -->
+<!-- /shipkit:setup fills these in from detection -->
 - **Pattern:** {{RAILS_ARCHITECTURE}} <!-- MVC / Service Objects / CQRS -->
 - **API mode:** {{API_MODE}} <!-- yes/no -->
 - **Frontend:** {{FRONTEND}} <!-- Hotwire / React / API-only -->

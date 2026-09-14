@@ -2,7 +2,7 @@
 ## Python-Specific
 
 ### Architecture
-<!-- setup.sh replaces this based on detection -->
+<!-- /shipkit:setup fills these in from detection -->
 - **Framework:** {{PYTHON_FRAMEWORK}} <!-- Django / FastAPI / Flask / None -->
 - **API style:** {{API_STYLE}} <!-- REST / GraphQL / gRPC -->
 - **Async:** {{ASYNC_MODE}} <!-- yes/no -->

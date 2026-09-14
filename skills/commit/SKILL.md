@@ -12,7 +12,10 @@ argument-hint: "[optional: what to emphasize, or a message]"
 
 Produce one atomic commit whose message carries what a future reader (and the project elders)
 will need. The rules for atomicity and message depth live in the **Commit Discipline** section
-of the shipkit workflow rule — this skill applies them. Read that rule; do not restate it here.
+of the shipkit workflow rule — this skill applies them. That rule is already in your context:
+the shipkit session hook injects it, or `/shipkit:setup` installed it at
+`.claude/rules/shipkit/shipkit.md`. If you cannot find it in either place, read
+`<plugin root>/rules/shipkit.md` (the root is in the `shipkit: plugin root is …` context line).
 
 Emphasis from the user (optional): $ARGUMENTS
 
