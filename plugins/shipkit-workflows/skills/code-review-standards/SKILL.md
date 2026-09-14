@@ -10,11 +10,16 @@ Knowledge base of detailed review criteria — load it when reviewing a diff, wh
 ## 8 Review Lenses
 
 ### 1. Clean Code + SRP
-- **MUST:** Functions under 20 lines. One responsibility per method.
-- **MUST:** Class has one reason to change (Single Responsibility Principle).
-- **MUST:** Descriptive names — no abbreviations, no single-letter vars (except block params).
+
+Size and shape are **signals, not thresholds**. A long function that reads top-to-bottom as one
+procedure is better than four fragments that only make sense together — flag length when it
+hides a second responsibility or an untestable branch, not because it crossed a line count.
+
 - **MUST:** No dead code, no commented-out code.
-- **SHOULD:** No more than 3 parameters per method.
+- **SHOULD:** One responsibility per method; a class has one reason to change (SRP).
+- **SHOULD:** Descriptive names — no abbreviations, no single-letter vars (except block params).
+- **CONSIDER:** Functions past ~20 lines — ask what the extra length is doing, don't split reflexively.
+- **CONSIDER:** More than 3 parameters — often a missing value object, sometimes just a constructor.
 - **CONSIDER:** Early returns over nested conditionals.
 
 ### 2. DRY

@@ -2,7 +2,15 @@
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?logo=buymeacoffee)](https://buymeacoffee.com/anjanj) [![Sponsor](https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-ea4aaa?logo=githubsponsors)](https://github.com/sponsors/AnjanJ)
 
-**The project knowledge layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).** Shipkit gives Claude a maintained, verified memory of your codebase — and of your whole portfolio of projects — without burning your session's context: a `PROJECT_MAP.md` per project, elder agents (`grandfather`, `eve`, `archivist`) that research in their own context and return only cited answers, a cross-project registry, and automatic freshness nudges. Plus a set of workflow skills Claude invokes when the work calls for them.
+**The project knowledge layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code).** Shipkit gives Claude a maintained, inspectable memory of your codebase — and of your whole portfolio of projects — without burning your session's context: a `PROJECT_MAP.md` per project, elder agents (`grandfather`, `eve`, `archivist`) that research in their own context and return cited answers, a cross-project registry, and automatic freshness nudges. Plus a set of workflow skills Claude invokes when the work calls for them.
+
+*What "verified" means here, precisely:* `grandfather` reads the map as an index and then checks
+the specific claim it is about to make against live source. `eve` answers some portfolio
+questions straight from the registry and labels those MEDIUM confidence — attributed snapshots,
+not live reads. Every answer carries `file:line` citations so you can check it yourself. There is
+no independent validator confirming that a citation supports its claim; the durable part of the
+promise is that the knowledge lives in **files you can read and correct**, not in opaque agent
+memory.
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
@@ -174,7 +182,7 @@ what to run, what you get, and what's next.
 ## Spec-Driven Development
 
 The knowledge layer looks *forward*, too. `PROJECT_MAP.md` indexes what exists; **specs** and
-**decision records** capture what you're building next and *why* — as durable, verified artifacts
+**decision records** capture what you're building next and *why* — as durable, inspectable artifacts
 the elders read. Everything lives under one root, `.shipkit/`, so a human, the elders, and
 MemPalace all share one place to look.
 
