@@ -12,7 +12,7 @@ built-in `/context`** — this skill explains *what* is loading and *why*; it do
 percentages.
 
 ## Sizes on disk
-!`f=$(wc -l CLAUDE.md .claude/CLAUDE.md .claude/lessons.md 2>/dev/null; find .claude/rules -name '*.md' 2>/dev/null | xargs wc -l 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no CLAUDE.md, .claude/rules or lessons file found"`
+!`f=$(wc -l CLAUDE.md .claude/CLAUDE.md 2>/dev/null; find .claude/rules -name '*.md' 2>/dev/null | xargs wc -l 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no CLAUDE.md or .claude/rules found"`
 
 ## What actually loads (Claude Code facts — reason from these, not from guesses)
 
@@ -25,7 +25,7 @@ percentages.
 | Skill **descriptions** (every registered skill, plugin and project) | Every session | ~1 line each; shipkit's 20 skills ≈ 1.2k tokens |
 | Skill **bodies** (`SKILL.md` + its references) | Only when the skill is invoked | `user-invocable: false` knowledge bases behave the same — description always, body on demand |
 | MCP tool schemas | Deferred until first use (tool search) | Not a per-session cost |
-| `.claude/lessons.md` | Only if the shipkit rule tells Claude to read it | Shipkit convention, 30-line cap |
+| Claude Code's own project memory (`~/.claude/projects/<dir>/memory/`) | Its index every session | Native; shipkit ≤ 2.8's `.claude/lessons.md` is legacy — migrate and delete it |
 
 ## Process
 
@@ -37,13 +37,13 @@ percentages.
 | CLAUDE.md | 142 | every session | OK |
 | .claude/rules/shipkit/shipkit.md | 60 | every session | OK (installed by /setup) |
 | .claude/rules/shipkit/testing.md | 12 | on test files | path-scoped |
-| .claude/lessons.md | 41 | every session | over 30-line cap — graduate lessons |
+| .claude/lessons.md | 41 | every session | legacy (shipkit ≤ 2.8) — migrate into rules, then delete |
 
 2. **Flag issues:**
    - `CLAUDE.md` over 200 lines → prune; move stable detail into path-scoped rules or an
      on-demand skill
    - Any always-on rule over 100 lines → split, or give it `paths:` so it becomes path-scoped
-   - `.claude/lessons.md` over 30 lines → consolidate via `/shipkit:update-rules`
+   - `.claude/lessons.md` present → legacy; migrate entries via `/shipkit:update-rules`, then delete it
    - Content duplicated between `CLAUDE.md` and a rule → keep one copy
    - Stale content (references to deleted files, old commands) → remove
    - Always-on rules that only matter for some files → add `paths:` frontmatter
@@ -61,6 +61,6 @@ percentages.
   until it is needed
 - Keep `CLAUDE.md` to project facts (purpose, stack, commands, key paths); let rules carry
   conventions
-- Archive old lessons; keep only recent, actionable ones
+- Let Claude Code's native project memory hold corrections; keep CLAUDE.md for facts and rules for conventions
 - Use `disable-model-invocation: true` on mechanical skills (release, deploy-check) so their
   descriptions are not offered to the model every turn
