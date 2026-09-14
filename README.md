@@ -6,7 +6,16 @@
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
-**New in 2.6:** **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/` (requirements in EARS, design as **decision records** with a concrete **falsifiability clause**) and `/shipkit:decide` captures standalone project-wide decisions to `.shipkit/decisions/`. The elders read both — including *"which past decisions are now falsified?"* — `eve` sees open specs across the portfolio, and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.
+**New in 2.8:** **the automatic tier now actually runs.** An audit found that Claude Code does not
+load a plugin's `rules/` or `knowledge/` directories, so the rules and knowledge bases had never
+entered a session. The session hook now injects the always-on rules (spec-driven, decisions,
+commit discipline) at session start, `/shipkit:setup` installs all nine rules as files under
+`.claude/rules/shipkit/` (which is what makes the path-scoped ones load), and the knowledge bases
+are on-demand skills. Also fixed: a template that registered as a bogus agent, the
+`connect-memory` transcript path for projects with `_` or `.` in their path, and setup's missing
+path to the stack overlays. See the [Changelog](CHANGELOG.md).
+
+*(2.6 added **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/` (requirements in EARS, design as **decision records** with a concrete **falsifiability clause**) and `/shipkit:decide` captures standalone project-wide decisions to `.shipkit/decisions/`. The elders read both — including *"which past decisions are now falsified?"* — `eve` sees open specs across the portfolio, and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.)*
 
 *(2.1 added two portfolio reports for `eve`: `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo, and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. 2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
 
@@ -24,9 +33,14 @@ Or test locally:
 claude --plugin-dir ~/code/shipkit
 ```
 
-**That's it.** All skills, agents, rules, and knowledge bases are immediately available.
+**That's it.** All skills, agents and knowledge bases are immediately available, and the session
+hook injects the always-on rules (spec-driven, decisions, commit discipline) at the start of
+every session.
 
-Want to go further? Run `/shipkit:setup` to tailor everything to your specific project — it auto-detects your stack, creates a CLAUDE.md, and installs stack-specific skills and rules. This is optional but recommended for the best experience.
+Want to go further? Run `/shipkit:setup` to tailor everything to your specific project — it
+installs all of shipkit's rules as files under `.claude/rules/shipkit/` (the path-scoped rules
+only load this way), auto-detects your stack, creates a CLAUDE.md, and installs stack-specific
+skills and rules. Optional but recommended.
 
 ## How Shipkit Works — automatic vs. invoked
 
@@ -38,10 +52,10 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | 🔵 **Auto-invoked** | Skills Claude reaches for when your request matches them. | Nothing — or invoke by name to force it. |
 | ⚪ **You invoke** | Skills you call explicitly by name when you want them. | Type `/shipkit:<name>`. |
 
-**🟢 Automatic — always on, no command:**
-- **Path-scoped rules** load when you edit a matching file — edit a test, the testing rule applies; edit a migration, the migration rule applies (6 rules, see below).
-- **Always-on rules** apply to the *work*, not a file type — start non-trivial feature work and the *spec-driven* + *decisions* discipline is in effect; every commit follows the commit rule.
-- **The freshness hook** prints one line at session start if your `PROJECT_MAP.md` or a spec has drifted from the code. Silent otherwise.
+**🟢 Automatic — no command:**
+- **Always-on rules** apply to the *work*, not a file type — start non-trivial feature work and the *spec-driven* + *decisions* discipline is in effect; every commit follows the commit rule. The session hook injects them into every session; after `/shipkit:setup` they load from `.claude/rules/shipkit/` instead.
+- **Path-scoped rules** load when you edit a matching file — edit a test, the testing rule applies; edit a migration, the migration rule applies (6 rules, see below). Claude Code only loads rules from a project's `.claude/rules/`, so these need `/shipkit:setup` once per project.
+- **The session hook** runs at session start: it tells Claude where the plugin lives, injects the always-on rules if they are not installed, and prints one line if your `PROJECT_MAP.md` or a spec has drifted from the code. Silent otherwise.
 
 **🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. Ask it to add a chat feature → `/shipkit:ai-feature`; a test fails → `/shipkit:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
 
@@ -118,14 +132,14 @@ repo](GUIDE.md#playbook-2--taking-over-a-legacy--inherited-repo), and [asking th
 elders](GUIDE.md#playbook-3--asking-the-elders-when--why) — each a step-by-step walkthrough of
 what to run, what you get, and what's next.
 
-**2 knowledge bases** — on-demand reference material:
+**2 knowledge bases** — on-demand reference material, shipped as `user-invocable: false` skills (their one-line description is always known; the body loads only when Claude reaches for it):
 
 | KB | What It Provides |
 |----|-----------------|
 | `code-review-standards` | 8 core review lenses (+1 for AI/LLM code), anti-pattern catalog, severity definitions |
 | `ui-ux-standards` | Cross-platform UI/UX: a11y, design, performance, mobile patterns |
 
-**6 path-scoped rules** — auto-loaded when editing matching files:
+**6 path-scoped rules** — installed into `.claude/rules/shipkit/` by `/shipkit:setup`, then auto-loaded when editing matching files:
 
 | Rule | Triggers On |
 |------|-------------|
@@ -136,7 +150,7 @@ what to run, what you get, and what's next.
 | `monorepo.md` | Monorepo configs and workspace files |
 | `ui-ux.md` | UI files (web, iOS, Android, Flutter, React Native) |
 
-**2 always-on rules** — apply to the work itself, not a file type:
+**2 always-on rules** (plus the workflow/commit rule) — apply to the work itself, not a file type; injected by the session hook, or loaded from `.claude/rules/shipkit/` once `/shipkit:setup` has installed them:
 
 | Rule | Applies When |
 |------|-------------|
@@ -150,8 +164,9 @@ The knowledge layer looks *forward*, too. `PROJECT_MAP.md` indexes what exists; 
 the elders read. Everything lives under one root, `.shipkit/`, so a human, the elders, and
 MemPalace all share one place to look.
 
-Two always-on rules drive it without any command, on non-trivial work only (a typo never gets
-specced) — the **three questions**:
+Two always-on rules drive it without any command (the session hook injects them; `/shipkit:setup`
+installs them as files), on non-trivial work only (a typo never gets specced) — the **three
+questions**:
 
 1. **What are we building?** → `.shipkit/specs/<feature>/spec.md`, requirements in **EARS**
    (`When X, the system shall Y`) so each maps 1:1 to a test.
@@ -183,8 +198,9 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 1. **Snapshots your current state** — copies `CLAUDE.md` + `.claude/` to `.shipkit-backup-<timestamp>/`
 2. **Auto-detects** your stack, test framework, and package manager
 3. **Creates CLAUDE.md** with your project info and workflow rules
-4. **Installs stack-specific** skills, rules, and knowledge bases
-5. **Creates settings.json** with safe permission defaults
+4. **Installs shipkit's 9 rules** as files under `.claude/rules/shipkit/` — the path-scoped ones only work this way
+5. **Installs stack-specific** skills, rules, and knowledge bases, with every `{{placeholder}}` filled from detection
+6. **Creates settings.json** with safe permission defaults
 
 ### Stack-Specific Additions
 
@@ -232,7 +248,8 @@ uv tool install mempalace        # or: pipx install mempalace
 claude mcp add --scope user mempalace mempalace-mcp
 
 # 3. Backfill a project's decision history from your Claude Code transcripts.
-#    Transcripts are keyed by the directory you ran Claude in, under ~/.claude/projects/
+#    Transcripts are keyed by the directory you ran Claude in, under ~/.claude/projects/,
+#    with EVERY non-alphanumeric character replaced by "-" (~/code/my_app → -Users-you-code-my-app)
 mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project> --dry-run
 mempalace mine ~/.claude/projects/-<your-project-dir> --mode convos --wing <project>   # for real
 ```
@@ -265,7 +282,7 @@ memory* for wings/rooms, repair, and the recall-is-a-claim caveat.
 
 Design decisions in this plugin are informed by:
 
-- **[Do Context Files Actually Work?](https://arxiv.org/pdf/2602.11988)** (ETH Zurich, 2025) — LLM-generated context files hurt performance. Human-written help only marginally. "Describe only minimal requirements."
+- **[Do Context Files Actually Work?](https://arxiv.org/pdf/2602.11988)** (ETH Zurich, 2026) — LLM-generated context files hurt performance. Human-written help only marginally. "Describe only minimal requirements."
 - **[Optimizing Coding Agent Rules](https://arize.com/blog/optimizing-coding-agent-rules-claude-md-agents-md-clinerules-cursor-rules-for-improved-accuracy/)** (Arize, 2025) — Optimized rulesets contain 20–50 rules. Best rules are root-cause focused, correctness-preserving, edge-case aware.
 - **[Writing a Good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md)** (HumanLayer, 2025) — ~150–200 instruction limit for frontier LLMs. Progressive disclosure over monolithic files.
 

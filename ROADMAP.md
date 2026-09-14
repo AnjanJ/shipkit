@@ -7,21 +7,34 @@ Newest thinking wins — treat this as a living document, not a contract.
 knowledge layer for Claude Code** — map + elders (grandfather/eve/archivist) + registry +
 lessons — with the generic workflow content demoted or split out.
 
-**Status (as of 2026-07-08, v2.7.0):** the north star is largely realized. The repositioning
+**Status (as of 2026-09-14, v2.8.0):** the north star is largely realized. The repositioning
 (1.3, 2.0) shipped; the knowledge layer then grew **forward** with spec-driven development and
 decision records (2.5), and its optional decision-recall (MemPalace) got one-command setup (2.7).
-Everything below through 2.7 is shipped; treat the rest as living direction.
+2.8 fixed the audit findings that showed the "automatic" tier was not actually loading.
+Everything below through 2.8 is shipped; treat the rest as living direction.
 
-Two verified platform facts shaped this plan (checked against official Claude Code docs), both now
-realized in shipped code:
+Platform facts that shaped this plan, each verified against the official Claude Code docs and,
+since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):
 
 1. **Plugins can ship hooks** — `hooks/hooks.json` at plugin root, `${CLAUDE_PLUGIN_ROOT}`
-   for bundled scripts; `SessionStart` fires on startup/resume/clear/post-compaction.
-   ✅ Realized: the map-freshness hook shipped in 1.3.0 and gained spec-drift nudges in 2.5.0.
-2. **Forked skills cannot use AskUserQuestion** — it is explicitly blocked in subagents.
+   for bundled scripts; `SessionStart` fires on startup/resume/clear/post-compaction, and its
+   plain stdout is added to Claude's context — capped at ~10,000 characters **per hook
+   command** (larger output is persisted with a 2 KB preview), which is why each always-on
+   rule is its own hook command.
+   ✅ Realized: the map-freshness hook shipped in 1.3.0, gained spec-drift nudges in 2.5.0, and
+   in 2.8.0 became the carrier for the always-on rules and the plugin-root line.
+2. **Forked skills cannot use AskUserQuestion** — it is explicitly blocked in subagents, and a
+   subagent cannot spawn subagents either.
    ✅ Realized: the fork-interactivity audit (1.3.0) fixed the affected skills; new interactive
    skills (`/shipkit:spec`, `/shipkit:decide`, `/shipkit:connect-memory`) all run inline for this
-   reason.
+   reason; 2.8.0 removed the last fork-delegates-to-subagent instruction.
+3. **Plugins cannot ship `rules/` or `knowledge/`** — the plugin loader handles agents,
+   commands, hooks, skills, settings, themes, monitors, output styles and workflows, nothing
+   else. Rules only load from a project's `.claude/rules/` (recursively). `agents/` is scanned
+   recursively, so nothing but agents may live under it.
+   ✅ Realized (2.8.0): always-on rules are injected by the hook and installed as files by
+   `/shipkit:setup`; knowledge bases are `user-invocable: false` skills; the map template is
+   inlined in the archivist.
 
 ---
 
@@ -248,6 +261,28 @@ now points users to it; README/GUIDE lead with the command and keep the manual s
 **Positioning held.** MemPalace stays opt-in and **unbundled** (a separate package + ~300 MB
 model) — the base plugin remains dependency-free. This only automates the setup the docs already
 described by hand; skip it and the elders fall back to git history, nothing breaks.
+
+---
+
+## 2.8 — Make the automatic tier real — ✅ SHIPPED 2026-09-14 as 2.8.0
+
+**The gap.** A full audit of 2.7.0 against Claude Code 2.1.270 (binary loader list, nonce tests
+with `--plugin-dir`, two live archivist runs) found that the plugin-root `rules/` and
+`knowledge/` directories are not plugin components, so the 9 rules and 2 knowledge bases never
+entered a session; that `agents/templates/` registered as a bogus agent; that `connect-memory`
+derived the wrong transcript path for `_`/`.` paths; and that `/setup` had no way to find
+`stacks/` or fill its placeholders.
+
+**What shipped.** The session hook (`scripts/session-start.sh`) now carries the plugin root and
+the three always-on rules; `/shipkit:setup` installs all 9 rules as files under
+`.claude/rules/shipkit/` (the only way path-scoped rules can work); knowledge bases became
+on-demand skills; the template moved into `archivist.md`; the transcript-path, hook-regex,
+dead-fallback, `explain-system`, `context-audit` and doc-drift findings were fixed; and the
+lint gained checks for every bug class the audit found. Full list in the CHANGELOG.
+
+**Positioning held.** Nothing was added to the skill surface. The audit's scope recommendations
+(the methodology skills that dilute the knowledge-layer identity; the two-plugin split from
+item 6) remain open and are the natural next release.
 
 ---
 

@@ -2,6 +2,74 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.8.0] — 2026-09-14
+
+### Fixed — the "automatic" tier now actually runs
+
+An audit of 2.7.0 against Claude Code 2.1.270 found that several documented behaviours were not
+wired to anything Claude Code loads. This release fixes every finding; the mechanisms shipkit
+now relies on were each verified with a nonce test in a fresh session.
+
+- **Rules never loaded.** Claude Code does not load a plugin's `rules/` directory (its plugin
+  loaders are agents, commands, hooks, skills, settings, themes, monitors, output styles,
+  workflows — no rules, no knowledge). So the 6 path-scoped rules, the `spec-driven` and
+  `decisions` rules, commit discipline and lessons memory were inert for every user. Now:
+  - the **session hooks inject the three always-on rules** (`shipkit.md`, `spec-driven.md`,
+    `decisions.md`) at session start unless the project has them installed as files;
+  - **`/shipkit:setup` installs all 9 rules** into `.claude/rules/shipkit/` (path-scoped rules
+    can only work this way — a hook has no path semantics). Once installed, the hook stops
+    injecting, so nothing loads twice.
+- **Knowledge bases were unreachable.** `knowledge/` is not a plugin directory, so
+  `code-review-standards` and `ui-ux-standards` never registered and the `ui-ux` rule pointed
+  at a name Claude could not resolve. They now live under `skills/` as `user-invocable: false`
+  skills (description always, body on demand — what "loaded on demand" was meant to mean). The
+  Rails stack KBs moved to `stacks/rails/.claude/skills/` and install into `.claude/skills/`.
+- **A template registered as an agent.** Claude Code scans `agents/` recursively, so
+  `agents/templates/reference-map.md` became a seventh agent (`shipkit:templates:reference-map`,
+  all tools, no frontmatter). The template is now inlined in `archivist.md`, which also fixes
+  the archivist finding it only by searching the filesystem (the `@path` syntax is not expanded
+  in agent bodies).
+- **`/shipkit:connect-memory` derived the wrong transcript directory** for any project path
+  containing `_`, `.` or a space — Claude replaces every non-alphanumeric character with `-`,
+  not just `/` — and then silently skipped the backfill. Fixed (`sed 's/[^A-Za-z0-9]/-/g'`).
+- **`/shipkit:setup` could not find the stack overlays** and never substituted
+  `{{…}}` placeholders (the overlays referenced a `setup.sh` that never existed). The session
+  hook now prints `shipkit: plugin root is <path>` and writes it to
+  `~/.claude/shipkit/plugin-root`; setup has explicit source→destination paths and a full
+  substitution table, and ends with a `grep '{{'` that must be empty.
+- **Freshness hook regex** missed a map stamp written without backticks and a 7-char SHA.
+- **Dead `|| echo` fallbacks** in the `!`…`` injections of `qa`, `ai-feature`,
+  `safety-check`, `deploy-check`, `component` never fired (`git diff` exits 0 on empty output;
+  after a pipe `||` tests `head`). Rewritten to guard on empty output.
+- **`explain-system`** told a forked skill to delegate to `codebase-explorer` (subagents cannot
+  spawn subagents) and its reference file waited for user feedback mid-run. Now reads directly
+  and self-verifies.
+- **`context-audit`** reasoned from a wrong model (knowledge bases "always loaded",
+  `user-invocable: false` "loaded as context", invented "% of budget"). Rewritten around what
+  Claude Code actually loads; points to native `/context` for numbers.
+- **Removed plugin-root `settings.json`** — its `agent` key means "run this agent as the main
+  thread" and the value was prose.
+- **Docs drift:** agent count, "rules auto-load" wording, arXiv citation year, `/ui-ux audit`
+  mode was advertised but undefined (now defined), Rails `release` pushed to `main` inside the
+  "no side effects" phase (moved after the approval gate), `deploy-check` now cleans up the
+  `assets:precompile` output, and the "use `/clear` between skills" tip is gone.
+
+### Added
+
+- `scripts/session-start.sh` replaces `check-map-freshness.sh` (plugin-root discovery + the existing
+  drift nudges) and `scripts/inject-rule.sh` injects one always-on rule per hook command — Claude
+  Code caps each hook's context contribution at ~10K chars, so the three rules ship as three
+  commands; the lint enforces the size.
+- `/shipkit:setup` Phase 4 (install shipkit rules) and an explicit Phase 5 with source paths
+  and the placeholder substitution table.
+- `/shipkit:ui-ux audit` — the review checklist across the whole UI surface, top-10 findings.
+- `codebase-explorer` gets 40 turns (was 25) so a deep `/shipkit:walkthrough` can finish.
+- Lint: recursive `agents/` purity, no `knowledge/` or plugin `settings.json`, hook scripts must
+  exist and be executable, `{{…}}` placeholders only under `stacks/` and only if setup's table
+  covers them, fork-interactivity scan over every `.md` in a forked skill, no subagent
+  delegation from a fork, marketplace counts must match reality, dead-fallback warning.
+  `./scripts/lint.sh` runs under `uv run --with pyyaml` when `uv` is present.
+
 ## [2.7.0] — 2026-07-08
 
 ### Added — one-command episodic memory setup
