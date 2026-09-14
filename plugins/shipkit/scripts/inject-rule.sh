@@ -15,7 +15,13 @@
 
 NAME="$1"
 [ -n "$NAME" ] || exit 0
-[ -d .claude/rules/shipkit ] && exit 0
+
+# Skip injection only when THIS rule is actually installed as a file. Testing the directory
+# alone (what 3.0 did) meant an interrupted install or a deleted rule suppressed injection
+# too: the rule was then absent from disk AND from context, with nothing to notice it. The
+# fallback must key on the specific file it is standing in for. See
+# .shipkit/specs/install-lifecycle/design.md DR-3.
+[ -f ".claude/rules/shipkit/$NAME.md" ] && exit 0
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-}"
 if [ -z "$ROOT" ]; then

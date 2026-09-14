@@ -35,18 +35,59 @@ fi
 # /shipkit:setup (install-rules.sh) stamps .claude/rules/shipkit/.installed with the plugin
 # version and a digest of the rules as shipped. If the plugin's rules have changed since, the
 # project's copies are stale — nudge once. A directory without a stamp is a 2.8-era install.
-if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-rules-sha.sh" ]; then
-  if . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null; then
-    cur=$(rules_sha "$ROOT/rules" 2>/dev/null)
+if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-manifest.sh" ]; then
+  if . "$ROOT/scripts/lib-manifest.sh" 2>/dev/null \
+     && . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null; then
     ver=$(plugin_version "$ROOT")
-    if [ -f .claude/rules/shipkit/.installed ]; then
-      isha=$(sed -n 's/^sha=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+    if [ ! -f .claude/rules/shipkit/.installed ]; then
+      echo "shipkit: installed rules have no version stamp (installed by shipkit ≤ 2.8) and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+    elif manifest_is_legacy .; then
       iver=$(sed -n 's/^version=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+      cur=$(rules_sha "$ROOT/rules" 2>/dev/null)
+      isha=$(sed -n 's/^sha=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
       if [ -n "$cur" ] && [ "$isha" != "$cur" ]; then
         echo "shipkit: installed rules are from shipkit ${iver:-?} and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      else
+        echo "shipkit: installed rules use the pre-3.1 stamp — run /shipkit:setup once so shipkit can track which files it owns (nothing will be removed)."
       fi
     else
-      echo "shipkit: installed rules have no version stamp (installed by shipkit ≤ 2.8) and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      # MISSING owned files first: an incomplete install is the one state that silently
+      # disabled the always-on fallback in 3.0 (rule absent from disk AND from context).
+      # inject-rule.sh now covers the context half; this names the file so it gets fixed.
+      miss=$(manifest_missing . 2>/dev/null | head -3)
+      if [ -n "$miss" ]; then
+        nmiss=$(manifest_missing . 2>/dev/null | wc -l | tr -d ' ')
+        echo "shipkit: $nmiss installed file(s) are missing — the install is incomplete. Run /shipkit:setup to repair:"
+        printf '%s\n' "$miss" | while read -r m; do [ -n "$m" ] && echo "shipkit:   missing $m"; done
+      fi
+      # Per-file drift against what the plugin now ships.
+      drift=0
+      for f in "$ROOT"/rules/*.md; do
+        [ -f "$f" ] || continue
+        b=$(basename "$f")
+        inst=".claude/rules/shipkit/$b"
+        [ -f "$inst" ] || continue
+        if [ "$(file_sha "$f" 2>/dev/null)" != "$(file_sha "$inst" 2>/dev/null)" ]; then
+          drift=$((drift + 1))
+        fi
+      done
+      # Rules the project still has but the plugin no longer ships.
+      obsolete=0
+      for inst in .claude/rules/shipkit/*.md; do
+        [ -f "$inst" ] || continue
+        b=$(basename "$inst")
+        [ -f "$ROOT/rules/$b" ] || obsolete=$((obsolete + 1))
+      done
+      iver=$(manifest_version . 2>/dev/null)
+      if [ "$drift" -gt 0 ] || [ "$obsolete" -gt 0 ]; then
+        note=""
+        [ "$drift" -gt 0 ] && note="$drift rule(s) changed upstream"
+        if [ "$obsolete" -gt 0 ]; then
+          [ -n "$note" ] && note="$note, "
+          note="$note$obsolete no longer shipped"
+        fi
+        echo "shipkit: installed rules are from shipkit ${iver:-?} and the plugin is ${ver:-?} ($note) — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      fi
     fi
   fi
 fi
