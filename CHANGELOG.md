@@ -2,6 +2,96 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.1.0] — 2026-09-14
+
+Response to an external review of 3.0.0. Nine findings were raised; eight reproduced against
+the tree and are fixed here. The ninth (`/unsetup` restore safety) is deferred to its own spec
+rather than batched with one-line edits — redesigning a destructive restore path deserves its
+own confirmation. Full requirements and decision records in
+[`.shipkit/specs/install-lifecycle/`](.shipkit/specs/install-lifecycle/).
+
+### Fixed — skills that failed before the model ever ran
+
+- **`/legacy-audit` could not render.** Its dependency probe ran `ls` over eight lockfiles;
+  `ls` exits **2** if *any* operand is missing, so a normal Rails project with only
+  `Gemfile.lock` failed the whole skill — "Shell command failed for pattern", zero model turns.
+  The same defect existed uncited in the `python` overlay's `new-feature` skill; both are fixed.
+- **Every hook broke on a plugin path containing a space.** The commands interpolated
+  `${CLAUDE_PLUGIN_ROOT}` unquoted and exited **127**. All four are quoted.
+- **The README's local-test command registered neither plugin.** After the 3.0 split,
+  `~/code/shipkit` is the *marketplace* root; the two plugin roots are what `--plugin-dir` wants.
+
+### Fixed — installation ownership
+
+The 3.0 stamp digested the plugin's **own** `rules/` directory, recording what was *shipped*
+rather than what *landed*. One digest over the wrong side of the copy cannot say whether an
+install is complete, which file drifted, or whether an installed file is now obsolete. Four
+findings were that one defect:
+
+- **An incomplete install silently disabled the always-on fallback.** `inject-rule.sh` tested
+  for the *directory*, so deleting a rule from a complete install left it absent from disk **and**
+  suppressed from context, with the stamp still matching and nothing warning. It now tests for
+  the specific rule file, and the hook names any missing file.
+- **Reinstalling never removed a rule upstream had dropped.**
+- **Overlays and skills were outside the digest entirely.**
+- Installation state now lives in a **per-file manifest** (`scripts/lib-manifest.sh`) recording
+  every path shipkit wrote with its content digest, written atomically. A **pre-3.1 stamp owns
+  nothing** — upgrading from 3.0 deletes nothing and simply starts tracking, because shipkit
+  cannot know which files it wrote.
+
+### Fixed — stack reinstalls reconcile
+
+- **A rerun updated the installed skill but left CLAUDE.md asserting the old value**, so two
+  files in the same install disagreed about how to run the tests. The `<!-- shipkit:stack:X -->`
+  marker made the append idempotent and therefore un-updatable. Sections now have a **closing
+  marker** and are refreshed in place; content outside them is never touched. A 3.0-era section
+  with no closing marker is left alone with an explanation — its extent cannot be determined
+  safely. `SHIPKIT_NONINTERACTIVE=1` warns instead of rewriting.
+
+### Fixed — freshness measures drift, not just age
+
+- **Lockfile-only dependency bumps went unnoticed** — `mix.lock`, `package-lock.json`,
+  `yarn.lock`, `pnpm-lock.yaml`, `bun.lockb`, `go.sum`, `Pipfile.lock`, `Cargo.lock` and
+  `composer.lock` are now in the manifest-change check.
+- **Stale-spec reporting starved the tail.** It iterated in glob order and capped at three, so
+  with N equally-stale specs the same three printed every session. Specs are now sorted by
+  staleness, the **most-stale is always shown**, the remaining slots rotate between sessions, and
+  the total is printed ("3 of 7 shown") so an omission is visible rather than silent.
+
+### Changed — claims match mechanism
+
+- **The MemPalace exclusivity claim was wrong.** A user-scope MCP server is inherited by the main
+  session; a subagent `tools:` allowlist grants access to that subagent rather than withholding
+  it from others. The accurate claim — *the elders are the agents configured to use it* — replaces it.
+- **"Verified memory" now says what it means.** `grandfather` checks the specific claim against
+  live source; `eve` answers some questions from the registry and labels them MEDIUM confidence —
+  attributed snapshots, not live reads. There is no independent validator confirming a citation
+  supports its claim, and the README says so.
+- **`code-review-standards` lens 1 softened** from MUST thresholds ("functions under 20 lines")
+  to SHOULD/CONSIDER signals: it loads on every review, so a blanket MUST is applied to code it
+  has never seen. **`tdd` is deliberately left absolute** — it is invoked by name and its
+  `DO NOT TRIGGER` clause excludes ordinary coding, so softening an opt-in enforcer would remove
+  its reason to exist. The asymmetry is commented in place so it is not "fixed" later.
+
+### Added — regression coverage
+
+- Two lint rules: bare multi-operand `ls` in a `` !` `` injection, and unquoted
+  `${CLAUDE_PLUGIN_ROOT}` in a hook command. Both produce **6 errors against the 3.0.0 tree** and
+  0 against this one. `lint.py`'s hook parser now reads `hooks.json` as JSON and splits with
+  `shlex` — a regex over a quoted shell string was the underlying weakness in both cases.
+- Smoke fixtures for incomplete installs, reconciliation, legacy stamps, rule drift, the
+  CLAUDE.md refresh, overlay manifest coverage, lockfile freshness and spec staleness. The old
+  `sha=` tamper was replaced: a v1 manifest has no `sha=` line, so that assertion had quietly
+  become a no-op.
+
+### Known gaps
+
+Not addressed here, and named rather than implied: `/unsetup` still deletes `.claude/` before
+restoring a snapshot (own spec pending); there is still no behavioral evaluation suite measuring
+whether the elders admit gaps instead of answering confidently; and the net-context-efficiency
+claim remains unmeasured — moving research into a subagent hides those reads from the parent
+context, it does not eliminate their tokens or latency.
+
 ## [3.0.0] — 2026-09-14
 
 ### Changed — BREAKING: shipkit is now two plugins

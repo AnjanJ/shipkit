@@ -62,7 +62,16 @@ CARRIED=0
 if [ "$LEGACY" -eq 0 ] && [ -s "$PRIOR" ]; then
   while read -r rel; do
     [ -n "$rel" ] || continue
+    # NOTE: a `case` glob matches `/` too, so `.claude/rules/shipkit/*.md` would also match
+    # the nested overlay path `.claude/rules/shipkit/ml/data.md` — which then gets looked up
+    # as <root>/rules/data.md, missed, and DELETED. Exclude nested paths explicitly.
     case "$rel" in
+      .claude/rules/shipkit/*/*)
+        if [ -f "$PROJ/$rel" ]; then
+          manifest_add "$PROJ" "$PROJ/$rel" || true
+          CARRIED=$((CARRIED + 1))
+        fi
+        ;;
       .claude/rules/shipkit/*.md)
         # a core rule — already re-added above if upstream still ships it
         base=${rel##*/}

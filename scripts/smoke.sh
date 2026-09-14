@@ -122,14 +122,126 @@ else
 fi
 
 # 8. stale-nudge: the hook notices installed rules older than the plugin (no claude needed)
-sed 's/^sha=.*/sha=deadbeef/' "$IP/.claude/rules/shipkit/.installed" > "$IP/.installed.tmp" && mv "$IP/.installed.tmp" "$IP/.claude/rules/shipkit/.installed"
-out=$(cd "$IP" && git init -q 2>/dev/null; CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
-case "$out" in *"installed rules are from"*) pass "stale-nudge (hook flags outdated installed rules)";;
+# The manifest records the INSTALLED file's digest, so drift is simulated by editing an
+# installed rule — not by tampering with a `sha=` line, which no longer exists (the pre-3.1
+# stamp had one; a v1 manifest does not, so that tamper silently asserted nothing).
+(cd "$IP" && git init -q 2>/dev/null)
+printf '\ndrift\n' >> "$IP/.claude/rules/shipkit/decisions.md"
+out=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
+case "$out" in *"run /shipkit:setup to refresh"*) pass "stale-nudge (hook flags a drifted installed rule)";;
   *) failc "stale-nudge" "no nudge printed: $out";; esac
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null   # back to a clean install
+
+# 8b. incomplete-install: a deleted rule is reported BY NAME and re-injected (review finding 2).
+# In 3.0 this was the silent failure: absent from disk AND suppressed from context.
+rm -f "$IP/.claude/rules/shipkit/shipkit.md"
+out=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
+case "$out" in *"missing .claude/rules/shipkit/shipkit.md"*) pass "incomplete-install (missing rule named)";;
+  *) failc "incomplete-install" "missing rule not reported: $out";; esac
+n=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/inject-rule.sh" shipkit | wc -c | tr -d ' ')
+if [ "$n" -gt 100 ]; then pass "incomplete-install (deleted rule falls back to injection, $n bytes)"
+else failc "incomplete-install" "deleted rule was not re-injected ($n bytes)"; fi
+n=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/inject-rule.sh" decisions | wc -c | tr -d ' ')
+if [ "$n" -eq 0 ]; then pass "incomplete-install (an installed rule is still not double-injected)"
+else failc "incomplete-install" "double-inject of an installed rule ($n bytes)"; fi
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+
+# 8c. reconciliation: a rule upstream no longer ships is removed on reinstall (finding 3).
+cp "$COPY/rules/monorepo.md" "$WORK/monorepo.md.bak"
+rm -f "$COPY/rules/monorepo.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+if [ -f "$IP/.claude/rules/shipkit/monorepo.md" ]; then
+  failc "reconcile" "an obsolete installed rule survived the reinstall"
+else pass "reconcile (rule dropped upstream is removed from the project)"; fi
+cp "$WORK/monorepo.md.bak" "$COPY/rules/monorepo.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+
+# 8d. legacy stamp owns nothing: a pre-3.1 install must never trigger a deletion (DR-2).
+printf 'custom\n' > "$IP/.claude/rules/shipkit/hand-written.md"
+printf 'version=3.0.0\nsha=deadbeef\n' > "$IP/.claude/rules/shipkit/.installed"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+if [ -f "$IP/.claude/rules/shipkit/hand-written.md" ]; then
+  pass "legacy-stamp (upgrading a pre-3.1 install deletes nothing)"
+else failc "legacy-stamp" "upgrading a legacy stamp deleted a file shipkit never owned"; fi
+rm -f "$IP/.claude/rules/shipkit/hand-written.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+
+# 8e. unstamped 2.8-era install is still flagged
 rm -f "$IP/.claude/rules/shipkit/.installed"
 out=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
 case "$out" in *"no version stamp"*) pass "stale-nudge (unstamped 2.8-era install is flagged)";;
   *) failc "stale-nudge" "unstamped install not flagged: $out";; esac
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
+
+# 9. CLAUDE.md stack section refreshes in place, preserving content outside it (finding 3a).
+PY="$WORK/py-proj"; mkdir -p "$PY"
+printf '# demo\n\nPROSE-BEFORE\n' > "$PY/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$PY" >/dev/null
+pyargs="API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+printf '\nPROSE-AFTER\n' >> "$PY/CLAUDE.md"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="uv run pytest" $pyargs >/dev/null 2>&1
+# NOTE: `x=$(grep -c … || echo 0)` yields "0\n0" when grep matches nothing — grep -c already
+# prints 0 before the fallback fires — and the arithmetic test then fails on a two-line value.
+# Count with a plain grep -c and normalise a missing file to 0 separately.
+count() {
+  # `grep -c` prints 0 AND exits 1 when there is no match, so `grep -c … || echo 0` emits
+  # "0\n0" and every arithmetic test on it dies. Keep the fallback on the missing-file
+  # branch only, and swallow grep's exit status.
+  if [ -f "$2" ]; then grep -c "$1" "$2" 2>/dev/null || true; else echo 0; fi
+}
+cm=$(count 'uv run pytest' "$PY/CLAUDE.md")
+sk=$(count 'uv run pytest' "$PY/.claude/skills/new-feature/SKILL.md")
+b=$(count 'PROSE-BEFORE' "$PY/CLAUDE.md")
+a=$(count 'PROSE-AFTER' "$PY/CLAUDE.md")
+if [ "$cm" -gt 0 ] && [ "$sk" -gt 0 ] && [ "$b" -eq 1 ] && [ "$a" -eq 1 ]; then
+  pass "claude-md-refresh (rerun updates the section; prose outside it survives)"
+else
+  failc "claude-md-refresh" "CLAUDE.md=$cm skill=$sk before=$b after=$a (want >0 >0 1 1)"
+fi
+# the overlay's files are under manifest management, and a rules reinstall must not eat them
+ov=$(count 'rules/shipkit/python/\|skills/new-feature' "$PY/.claude/rules/shipkit/.installed")
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$PY" >/dev/null
+ov2=$(find "$PY/.claude/rules/shipkit/python" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$ov" -gt 0 ] && [ "$ov2" -gt 0 ]; then
+  pass "manifest-overlays ($ov overlay entries tracked; survive a rules reinstall)"
+else failc "manifest-overlays" "overlay entries=$ov, overlay rules on disk after reinstall=$ov2"; fi
+
+# 10. freshness: a lockfile-only dependency bump is noticed (finding 6).
+FP="$WORK/fresh"; mkdir -p "$FP"
+(cd "$FP" && git init -q && printf 'x\n' > mix.lock \
+  && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+base=$(cd "$FP" && git rev-parse HEAD)
+printf '# Map\n\n> Map generated at commit `%s` on main.\n' "$base" > "$FP/PROJECT_MAP.md"
+(cd "$FP" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m map \
+  && printf 'x2\n' > mix.lock && git add -A && git -c user.email=s@s -c user.name=s commit -q -m bump)
+out=$(cd "$FP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
+case "$out" in *"dependencies changed"*) pass "freshness (lockfile-only bump is noticed)";;
+  *) failc "freshness" "lockfile bump not reported: $out";; esac
+
+# 11. spec staleness: the most-stale spec always shows, and the total is reported (finding 6).
+SP="$WORK/specs"; mkdir -p "$SP"
+(cd "$SP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+i=1; while [ "$i" -le 40 ]; do
+  (cd "$SP" && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m "c$i"); i=$((i + 1))
+done
+for pair in "worst 40" "mid 30" "near 20" "edge 16"; do
+  nm=${pair% *}; back=${pair#* }
+  mkdir -p "$SP/.shipkit/specs/$nm"
+  sha=$(cd "$SP" && git rev-parse --short "HEAD~$back")
+  printf '# %s\n\n> Spec accepted at commit `%s` on main.\n' "$nm" "$sha" > "$SP/.shipkit/specs/$nm/spec.md"
+done
+out=$(cd "$SP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
+nlines=$(printf '%s\n' "$out" | grep -c 'commits behind HEAD')
+case "$out" in
+  *"worst/spec.md is 40 commits"*)
+    if [ "$nlines" -eq 3 ] && printf '%s\n' "$out" | grep -q 'of 4 stale specs shown'; then
+      pass "spec-staleness (worst spec always shown, capped at 3, total reported)"
+    else failc "spec-staleness" "lines=$nlines, expected 3 + a total line: $out"; fi ;;
+  *) failc "spec-staleness" "the most-stale spec was not reported: $out";;
+esac
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

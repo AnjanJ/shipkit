@@ -1,6 +1,6 @@
 {
   "name": "shipkit-workflows",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Opinionated engineering workflows for Claude Code: a 5-phase QA pass, strict TDD enforcement, systematic root-cause debugging, legacy audits, migration planning, prose humanizing, and a code-review knowledge base. Complements the shipkit knowledge layer; works standalone.",
   "author": {
     "name": "Anjan",
