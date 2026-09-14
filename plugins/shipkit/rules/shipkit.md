@@ -24,12 +24,15 @@
 
 ## Default Coding Workflow
 
-This section is the single source of truth for the shipkit workflow — `/shipkit:tdd` and
-the CLAUDE.md written by `/shipkit:setup` defer to it.
+This section is the single source of truth for the shipkit workflow — `/shipkit-workflows:tdd`
+(if that plugin is installed) and the CLAUDE.md written by `/shipkit:setup` defer to it.
 
 **Workflow style.** If the project's CLAUDE.md declares a `Workflow style:` (set by
 `/shipkit:setup`), honor it:
-- `strict-tdd` — iron-law red-green-refactor; follow `/shipkit:tdd` for every change.
+- `strict-tdd` — iron-law red-green-refactor for every change: write the test first, watch
+  it fail for the right reason, write the minimal code to pass, then refactor with the
+  suite green. Never write implementation before a failing test. If the `shipkit-workflows`
+  plugin is installed, `/shipkit-workflows:tdd` walks this with enforcement.
 - `test-first` — the default below.
 - `lightweight` — plan and implement; write tests where they earn their keep, when the user wants them. Also relaxes the spec-driven rule to inline answers (see `spec-driven.md`).
 

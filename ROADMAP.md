@@ -337,6 +337,29 @@ verified explanations of *real* systems via `/shipkit:explain-system` and `/ship
 
 ---
 
+## 3.0 — The two-plugin split — ✅ SHIPPED 2026-09-14 as 3.0.0
+
+Full design: [`docs/design/two-plugin-split.md`](docs/design/two-plugin-split.md) §1–2, §4.
+**This closes item 6**, open since the 2.0 repositioning chose a hard cut over a split.
+
+**What shipped.** The repo became a marketplace of two plugins: `shipkit` (12 skills, 5 agents,
+9 rules, 10 stack overlays, the session hook) and `shipkit-workflows` (6 skills, 1 knowledge
+base, 1 agent). The dividing rule is *core produces, reads or installs knowledge artifacts;
+workflows tell Claude how to do the work* — sharper than "how opinionated is it", which every
+reviewer draws differently. Each half stands alone: the eight cross-references became soft
+references or self-contained fallbacks, and no plugin dependency is declared.
+
+**Also cut**, for the reason 2.0 cut five skills — do not ship what the platform ships:
+`/shipkit:ui-ux` and `ui-ux-standards` (the official `frontend-design` plugin covers it; the
+path-scoped rule stays with an inline WCAG 2.2 AA baseline) and `/shipkit:ai-feature` (the
+built-in `claude-api` skill covers the SDK; `ai-rails` stays in the Rails overlay).
+
+**Still open.** Whether the nine rules belong wholly in core (recommended, with a falsifiability
+clause in the design doc §1) and where the stack overlay skills should live (design doc §5).
+Both are reversible and neither blocks anything.
+
+---
+
 ## Origin
 
 This roadmap came out of an honest design review (2026-07-03) whose seven findings map to the

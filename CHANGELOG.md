@@ -2,6 +2,71 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.0.0] — 2026-09-14
+
+### Changed — BREAKING: shipkit is now two plugins
+
+The repo is a **marketplace** holding two plugins. Install either or both:
+
+```
+/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
+/plugin install shipkit@shipkit                # the knowledge layer
+/plugin install shipkit-workflows@shipkit      # optional: the engineering workflows
+```
+
+- **`shipkit`** — the project knowledge layer: `map`, `ask`, `setup`, `unsetup`,
+  `connect-memory`, `commit`, `update-rules`, `context-audit`, `spec`, `decide`,
+  `explain-system`, `walkthrough`; the `grandfather`, `eve`, `archivist`,
+  `codebase-explorer` and `tracer` agents; all 9 rules; all 10 stack overlays; the session hook.
+- **`shipkit-workflows`** — the opinionated workflows: `qa`, `tdd`, `debug`, `humanize`,
+  `legacy-audit`, `migration-plan`, the `code-review-standards` knowledge base, and the
+  `test-analyzer` agent.
+
+The line between them: **core produces, reads or installs knowledge artifacts; workflows tell
+Claude how to do the work.** Core's per-session description tax drops by a third, and its pitch
+is one sentence again.
+
+**Each half works alone.** No plugin dependency is declared (Claude Code supports one, but its
+install-time semantics are not yet nonce-tested here): the eight places where one half
+referenced the other became soft references or self-contained fallbacks. `/shipkit-workflows:qa`
+delegates to `shipkit:codebase-explorer` when present and the built-in `Explore` agent
+otherwise; `/shipkit-workflows:tdd` states its whole discipline itself; the always-on `shipkit`
+rule spells out the `strict-tdd` iron law rather than deferring to a skill that may not be
+installed.
+
+### Removed
+
+- **`/shipkit:ui-ux` and the `ui-ux-standards` knowledge base.** The official
+  [`frontend-design`](https://github.com/anthropics/claude-code) plugin covers design direction,
+  and the platform should own what the platform ships — the same reasoning that cut five skills
+  in 2.0. **The `ui-ux` path-scoped rule stays** and now carries a self-contained WCAG 2.2 AA
+  baseline inline (semantic structure, accessible names, keyboard reach, contrast, target size,
+  reduced motion, errors in text, no layout shift), so accessibility still applies automatically
+  when you edit a UI file.
+- **`/shipkit:ai-feature`.** The built-in `claude-api` skill covers the Anthropic SDK properly
+  and stays current; the stack-specific AI knowledge that shipkit uniquely had (`ai-rails` —
+  RubyLLM, Turbo Streams for streaming, jobs for every LLM call) **stays** in the Rails overlay.
+
+### Migration
+
+- `shipkit@shipkit` keeps its name, so `/plugin update` keeps the knowledge layer working.
+  Install `shipkit-workflows@shipkit` to get the workflow skills back.
+- Namespaces changed for six skills: `/shipkit:qa` → `/shipkit-workflows:qa`, and likewise
+  `tdd`, `debug`, `humanize`, `legacy-audit`, `migration-plan`.
+- `.claude/rules/shipkit/` installs are unaffected (rules did not move), but the rules digest
+  changed, so the session hook nudges once — run `/shipkit:setup` to refresh.
+- Pin [`v2.10.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v2.10.0) for the single-plugin
+  layout, or `v2.9.0` for the layout before composable stacks.
+
+### Internal
+
+- `scripts/lint.py` derives the plugin roots from `marketplace.json` and runs every per-plugin
+  check against each, so a third plugin needs no lint change. Version lockstep is enforced
+  across both `plugin.json` files; the skill/agent counts in each marketplace description are
+  checked against that plugin's own directory.
+- `scripts/smoke.sh` runs against `plugins/shipkit` and gained a **namespace check**: both
+  plugins registering together under distinct prefixes with no collision.
+
 ## [2.10.0] — 2026-09-14
 
 ### Added — composable stacks: Hotwire, LiveView, Oban, ML

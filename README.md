@@ -27,8 +27,13 @@ nine rules as files under `.claude/rules/shipkit/`, and the knowledge bases are 
 
 ```
 /plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
-/plugin install shipkit@shipkit
+/plugin install shipkit@shipkit                # the knowledge layer
+/plugin install shipkit-workflows@shipkit      # optional: opinionated engineering workflows
 ```
+
+**Two plugins, one repo.** `shipkit` is the knowledge layer — maps, elders, registry, specs,
+decisions, stack overlays. `shipkit-workflows` is the opinionated half — QA, strict TDD,
+debugging, audits, migration plans. Install either or both; **each works without the other**.
 
 **Restart Claude Code after installing** to load the plugin.
 
@@ -61,7 +66,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 - **Path-scoped rules** load when you edit a matching file — edit a test, the testing rule applies; edit a migration, the migration rule applies (6 rules, see below). Claude Code only loads rules from a project's `.claude/rules/`, so these need `/shipkit:setup` once per project.
 - **The session hook** runs at session start: it tells Claude where the plugin lives, injects the always-on rules if they are not installed, and prints one line if your `PROJECT_MAP.md` or a spec has drifted from the code. Silent otherwise.
 
-**🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. Ask it to add a chat feature → `/shipkit:ai-feature`; a test fails → `/shipkit:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
+**🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. A test fails → `/shipkit-workflows:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
 
 **⚪ You invoke — call it when you want it:** research and one-shot tools you reach for deliberately — `/shipkit:ask` (ask the elders), `/shipkit:map` (build the project map), `/shipkit:setup` / `/shipkit:unsetup`, `/shipkit:connect-memory` (set up episodic memory), `/shipkit:context-audit`.
 
@@ -69,48 +74,50 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 
 ## What You Get Instantly
 
-**The knowledge layer** — 8 core skills, always at hand:
+**The knowledge layer** (`shipkit`) — 12 skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
 | `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
 | `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
-| `/shipkit:setup` | Configure for your stack (Rails, React, Python, Go, Elixir, static) + pick a workflow style |
+| `/shipkit:setup` | Configure for your stack set (base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML) + pick a workflow style |
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:connect-memory` | Set up MemPalace episodic memory so the elders recall past decisions |
 | `/shipkit:commit` | Write an atomic commit — subject-only for trivial changes, What/Why/How-decisions/Test plan for substantive ones |
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-**Workflow extras** — 12 skills Claude reaches for when the work calls for it (each carries
-`TRIGGER when: / DO NOT TRIGGER when:` guidance so it fires at the right moment), or you can
-invoke any of them by name:
+Four of those are reached for automatically when the work calls for it (each carries
+`TRIGGER when: / DO NOT TRIGGER when:` guidance), or you can invoke any by name:
 
 | Skill | What It Does |
 |-------|-------------|
 | `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
 | `/shipkit:decide` | Capture a project decision as a five-part record with a falsifiability clause (`.shipkit/decisions/`) |
-| `/shipkit:qa` | 5-phase QA workflow with probing questions before writing tests |
-| `/shipkit:tdd` | Strict TDD — the `strict-tdd` workflow style, Red-Green-Refactor with Iron Law enforcement |
-| `/shipkit:debug` | Systematic root-cause debugging — investigate before fixing |
 | `/shipkit:explain-system` | Explore codebase and return verified system design docs |
 | `/shipkit:walkthrough` | Trace one feature end-to-end |
-| `/shipkit:humanize` | Detect and remove AI-generated writing patterns from text |
-| `/shipkit:ai-feature` | Scaffold AI/LLM features (chat, embeddings, RAG, agents) |
-| `/shipkit:legacy-audit` | Audit legacy codebase for modernization |
-| `/shipkit:migration-plan` | Plan major dependency upgrades |
-| `/shipkit:ui-ux` | Empathy-driven UI/UX design, review, and audit (web + mobile) |
 
-**6 agents** — subagents that do heavy work in their own context so yours stays thin:
+**The workflows** (`shipkit-workflows`) — 6 skills, installed separately:
 
-| Agent | What It Does |
+| Skill | What It Does |
 |-------|-------------|
-| `grandfather` | Answers questions about **one** project (architecture, where-things-live, why) — reads its `PROJECT_MAP.md`, verifies against live source, returns a tight cited answer |
-| `eve` | Answers questions **across all** your registered projects (the 360° view) |
-| `archivist` | Builds/refreshes the `PROJECT_MAP.md` that grandfather and eve read |
-| `test-analyzer` | Auto-diagnoses test failures |
-| `codebase-explorer` | Read-only exploration: maps directories, answers bounded questions cheaply |
-| `tracer` | Read-only deep trace of one feature end-to-end, `file:line`-cited — behind `/shipkit:walkthrough` |
+| `/shipkit-workflows:qa` | 5-phase QA workflow with probing questions before writing tests |
+| `/shipkit-workflows:tdd` | Strict TDD — Red-Green-Refactor with Iron Law enforcement |
+| `/shipkit-workflows:debug` | Systematic root-cause debugging — investigate before fixing |
+| `/shipkit-workflows:legacy-audit` | Audit a legacy codebase for modernization |
+| `/shipkit-workflows:migration-plan` | Plan major dependency upgrades |
+| `/shipkit-workflows:humanize` | Detect and remove AI-generated writing patterns from text |
+
+**6 agents** (5 in `shipkit`, 1 in `shipkit-workflows`) — subagents that do heavy work in their own context so yours stays thin:
+
+| Agent | Plugin | What It Does |
+|-------|--------|-------------|
+| `grandfather` | shipkit | Answers questions about **one** project (architecture, where-things-live, why) — reads its `PROJECT_MAP.md`, verifies against live source, returns a tight cited answer |
+| `eve` | shipkit | Answers questions **across all** your registered projects (the 360° view) |
+| `archivist` | shipkit | Builds/refreshes the `PROJECT_MAP.md` that grandfather and eve read |
+| `codebase-explorer` | shipkit | Read-only exploration: maps directories, answers bounded questions cheaply |
+| `tracer` | shipkit | Read-only deep trace of one feature end-to-end, `file:line`-cited — behind `/shipkit:walkthrough` |
+| `test-analyzer` | shipkit-workflows | Auto-diagnoses test failures |
 
 ### The project elders — ask, don't pollute
 
@@ -137,12 +144,11 @@ repo](GUIDE.md#playbook-2--taking-over-a-legacy--inherited-repo), and [asking th
 elders](GUIDE.md#playbook-3--asking-the-elders-when--why) — each a step-by-step walkthrough of
 what to run, what you get, and what's next.
 
-**2 knowledge bases** — on-demand reference material, shipped as `user-invocable: false` skills (their one-line description is always known; the body loads only when Claude reaches for it):
+**1 knowledge base** (in `shipkit-workflows`) — on-demand reference material, shipped as a `user-invocable: false` skill (its one-line description is always known; the body loads only when Claude reaches for it):
 
 | KB | What It Provides |
 |----|-----------------|
 | `code-review-standards` | 8 core review lenses (+1 for AI/LLM code), anti-pattern catalog, severity definitions |
-| `ui-ux-standards` | Cross-platform UI/UX: a11y, design, performance, mobile patterns |
 
 **6 path-scoped rules** — installed into `.claude/rules/shipkit/` by `/shipkit:setup`, then auto-loaded when editing matching files:
 
@@ -203,8 +209,8 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 1. **Snapshots your current state** — copies `CLAUDE.md` + `.claude/` to `.shipkit-backup-<timestamp>/`
 2. **Auto-detects** your stack, test framework, and package manager
 3. **Creates CLAUDE.md** with your project info and workflow rules
-4. **Installs shipkit's 9 rules** as files under `.claude/rules/shipkit/` (via `scripts/install-rules.sh`, stamped with the plugin version) — the path-scoped ones only work this way
-5. **Installs stack-specific** skills, rules, and knowledge bases (via `scripts/install-stack.sh`), with every `{{placeholder}}` filled from detection — the script refuses to leave one unfilled
+4. **Installs shipkit's 9 rules** as files under `.claude/rules/shipkit/` (via the plugin's `scripts/install-rules.sh`, stamped with the plugin version) — the path-scoped ones only work this way
+5. **Installs stack-specific** skills, rules, and knowledge bases (via the plugin's `scripts/install-stack.sh`), with every `{{placeholder}}` filled from detection — the script refuses to leave one unfilled
 6. **Creates settings.json** with safe permission defaults
 
 ### Stack-Specific Additions

@@ -24,12 +24,25 @@ A complete guide to using every skill, agent, and feature in shipkit.
 
 ## Getting Started
 
-After installing the plugin, all skills are available as `/shipkit:<skill-name>`. You can start using them immediately — no configuration needed.
+Shipkit ships as **two plugins from one marketplace**. Install either or both:
 
 ```
-/shipkit:map --register    # build this project's PROJECT_MAP.md + register it
-/shipkit:ask <question>    # ask the elders about this project (or --all, portfolio-wide)
-/shipkit:qa                # full QA workflow
+/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
+/plugin install shipkit@shipkit                # the knowledge layer
+/plugin install shipkit-workflows@shipkit      # optional: the engineering workflows
+```
+
+`shipkit` is the knowledge layer — maps, elders, registry, specs, decisions, stack overlays.
+`shipkit-workflows` is the opinionated half — QA, strict TDD, debugging, audits, migration
+plans. **Each works without the other**, so you can install just one.
+
+Skills are namespaced by their plugin: `/shipkit:<name>` and `/shipkit-workflows:<name>`. You
+can start using them immediately — no configuration needed.
+
+```
+/shipkit:map --register     # build this project's PROJECT_MAP.md + register it
+/shipkit:ask <question>     # ask the elders about this project (or --all, portfolio-wide)
+/shipkit-workflows:qa       # full QA workflow (needs the workflows plugin)
 ```
 
 For the best experience, run `/shipkit:setup` once per project to tailor everything to your stack
@@ -75,15 +88,13 @@ exist. You can still invoke any by name to force it.
 | `/shipkit:spec` | ask to build/design a non-trivial feature before coding |
 | `/shipkit:decide` | make a project-wide choice with real alternatives |
 | `/shipkit:commit` | ask to commit, or reach a natural commit point |
-| `/shipkit:debug` | hit a failing test or a bug to root-cause |
-| `/shipkit:tdd` | explicitly ask for strict red-green-refactor |
-| `/shipkit:ai-feature` | ask to add AI/LLM functionality (chat, RAG, embeddings) |
-| `/shipkit:ui-ux` | build, design, or review UI |
+| `/shipkit-workflows:debug` | hit a failing test or a bug to root-cause |
+| `/shipkit-workflows:tdd` | explicitly ask for strict red-green-refactor |
 | `/shipkit:explain-system` | ask *why* a system is designed the way it is |
 | `/shipkit:walkthrough` | ask how one feature works end-to-end |
-| `/shipkit:legacy-audit` | ask to assess/modernize an inherited codebase |
-| `/shipkit:migration-plan` | ask to plan a major upgrade or framework migration |
-| `/shipkit:humanize` | ask to de-AI writing in docs/READMEs/PRs |
+| `/shipkit-workflows:legacy-audit` | ask to assess/modernize an inherited codebase |
+| `/shipkit-workflows:migration-plan` | ask to plan a major upgrade or framework migration |
+| `/shipkit-workflows:humanize` | ask to de-AI writing in docs/READMEs/PRs |
 
 ### ⚪ You invoke — call it when you want it
 
@@ -98,7 +109,7 @@ memory", but you'd normally just call it.)
 | `/shipkit:setup` / `/shipkit:unsetup` | configure shipkit for your stack, or revert |
 | `/shipkit:connect-memory` | set up MemPalace so the elders recall past decisions |
 | `/shipkit:context-audit` | check context-window health and find bloat |
-| `/shipkit:qa` | run the 5-phase QA workflow |
+| `/shipkit-workflows:qa` | run the 5-phase QA workflow |
 | `/shipkit:update-rules` | change CLAUDE.md rules (never edit them by hand) |
 
 **Rule of thumb:** the *knowledge layer* (maps, elders, registry) is something you **ask**; the
@@ -123,10 +134,10 @@ Configures shipkit for your specific project. Run it once when you start using s
 5. Creates a tailored CLAUDE.md that declares your choices; the workflow itself is defined
    once, in shipkit's always-on rules
 6. Installs all nine shipkit rules as files under `.claude/rules/shipkit/` via
-   `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
+   the plugin's `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
    makes the path-scoped rules work. The install is stamped with the plugin version; the session
    hook tells you when a plugin upgrade has made the copies stale, and re-running setup refreshes them
-7. Installs stack-specific skills, rules, and knowledge bases via `scripts/install-stack.sh`
+7. Installs stack-specific skills, rules, and knowledge bases via the plugin's `scripts/install-stack.sh`
    (into `.claude/skills/` and `.claude/rules/shipkit/<stack>/`), filling every
    `{{placeholder}}` from detection — the script refuses to leave one unfilled
 8. Optionally creates `.claude/settings.json` with safe defaults
@@ -356,7 +367,7 @@ Once per machine to install/register; once per project to backfill. Optional —
 elders fall back to git history for decision questions. Full concepts and troubleshooting live in
 [Episodic Memory](#episodic-memory-mempalace).
 
-### /shipkit:qa — Quality Assurance
+### /shipkit-workflows:qa — Quality Assurance
 
 5-phase QA workflow that asks probing questions before writing tests.
 
@@ -368,13 +379,13 @@ elders fall back to git history for decision questions. Full concepts and troubl
 5. Execution — run tests, fix failures, produce QA report
 
 ```
-/shipkit:qa                              # QA recent changes
-/shipkit:qa src/services/payment.ts      # focus on specific file
+/shipkit-workflows:qa                              # QA recent changes
+/shipkit-workflows:qa src/services/payment.ts      # focus on specific file
 ```
 
 ---
 
-### /shipkit:tdd — Test-Driven Development
+### /shipkit-workflows:tdd — Test-Driven Development
 
 Enforces the Red-Green-Refactor cycle. No production code without a failing test first.
 
@@ -383,14 +394,14 @@ Enforces the Red-Green-Refactor cycle. No production code without a failing test
 Includes rationalization prevention (excuse-to-reality table), red flags list, testing anti-patterns catalog, and a verification checklist.
 
 ```
-/shipkit:tdd feature       # TDD for a new feature
-/shipkit:tdd bugfix        # TDD for a bug fix
-/shipkit:tdd refactor      # TDD for refactoring
+/shipkit-workflows:tdd feature       # TDD for a new feature
+/shipkit-workflows:tdd bugfix        # TDD for a bug fix
+/shipkit-workflows:tdd refactor      # TDD for refactoring
 ```
 
 ---
 
-### /shipkit:debug — Systematic Debugging
+### /shipkit-workflows:debug — Systematic Debugging
 
 Root-cause debugging with a 4-phase process. No fixes without investigation first.
 
@@ -403,22 +414,22 @@ Root-cause debugging with a 4-phase process. No fixes without investigation firs
 Includes the **three-strike rule:** after 3 failed fixes, stop and question the architecture.
 
 ```
-/shipkit:debug                                  # general debugging
-/shipkit:debug "TypeError in checkout flow"     # describe the error
-/shipkit:debug src/services/payment.ts          # debug a specific file
+/shipkit-workflows:debug                                  # general debugging
+/shipkit-workflows:debug "TypeError in checkout flow"     # describe the error
+/shipkit-workflows:debug src/services/payment.ts          # debug a specific file
 ```
 
 ---
 
-### /shipkit:humanize — AI Writing Detection
+### /shipkit-workflows:humanize — AI Writing Detection
 
 Detects and removes AI-generated writing patterns. Two modes: humanize (rewrite) and analyze (detect only).
 
 Covers 40 patterns across vocabulary, structure, tone, and formatting. Includes a full pattern library reference.
 
 ```
-/shipkit:humanize                   # humanize provided text
-/shipkit:humanize analyze           # detect patterns only, don't rewrite
+/shipkit-workflows:humanize                   # humanize provided text
+/shipkit-workflows:humanize analyze           # detect patterns only, don't rewrite
 ```
 
 ---
@@ -499,64 +510,29 @@ Use this when Claude seems to be forgetting things or losing context.
 
 ---
 
-### /shipkit:ai-feature — AI/LLM Feature Scaffolding
-
-Scaffolds AI features with the right library for your stack.
-
-```
-/shipkit:ai-feature chat
-/shipkit:ai-feature embeddings
-/shipkit:ai-feature rag
-/shipkit:ai-feature agent
-/shipkit:ai-feature structured-output
-```
-
----
-
-### /shipkit:legacy-audit — Legacy Codebase Audit
+### /shipkit-workflows:legacy-audit — Legacy Codebase Audit
 
 Audits for modernization opportunities. Read-only — does not modify files.
 
 ```
-/shipkit:legacy-audit              # all categories
-/shipkit:legacy-audit deps         # dependency age and security
-/shipkit:legacy-audit dead-code    # unused files and functions
-/shipkit:legacy-audit complexity   # hotspots cross-referenced with git churn
-/shipkit:legacy-audit coverage     # test coverage gaps
+/shipkit-workflows:legacy-audit              # all categories
+/shipkit-workflows:legacy-audit deps         # dependency age and security
+/shipkit-workflows:legacy-audit dead-code    # unused files and functions
+/shipkit-workflows:legacy-audit complexity   # hotspots cross-referenced with git churn
+/shipkit-workflows:legacy-audit coverage     # test coverage gaps
 ```
 
 ---
 
-### /shipkit:migration-plan — Dependency Migration Planning
+### /shipkit-workflows:migration-plan — Dependency Migration Planning
 
 Plans major upgrades with impact analysis. Plan only — does not execute.
 
 ```
-/shipkit:migration-plan rails 7.1 8.0
-/shipkit:migration-plan react 18 19
-/shipkit:migration-plan webpack vite
+/shipkit-workflows:migration-plan rails 7.1 8.0
+/shipkit-workflows:migration-plan react 18 19
+/shipkit-workflows:migration-plan webpack vite
 ```
-
----
-
-### /shipkit:ui-ux — UI/UX Design & Review
-
-Empathy-driven UI/UX for web and mobile (iOS, Android, Flutter, React Native).
-
-**Modes:**
-- **Design** — user flow first, all 5 states, accessibility, mobile, performance
-- **Review** — 24-point checklist with severity levels and score
-- **Audit** — comprehensive UI/UX evaluation
-- **Improve** — identify top 3 improvements and implement them
-
-```
-/shipkit:ui-ux design user-onboarding
-/shipkit:ui-ux review
-/shipkit:ui-ux audit
-/shipkit:ui-ux improve src/UserProfile.tsx
-```
-
-The `ui-ux` path-scoped rule also auto-loads when editing any UI file, applying core principles without needing to invoke the skill.
 
 ---
 
@@ -710,7 +686,7 @@ Reference it directly when tests fail: "use the test-analyzer agent to diagnose 
 
 Read-only exploration agent. Traces call chains, maps directories, analyzes schemas, finds patterns, identifies hotspots.
 
-Used by `/shipkit:qa` and plan-mode research for heavy reading. Or reference directly: "use the codebase-explorer agent to map the services directory."
+Used by `/shipkit-workflows:qa` and plan-mode research for heavy reading. Or reference directly: "use the codebase-explorer agent to map the services directory."
 
 ### tracer
 
@@ -735,9 +711,11 @@ always in context.
 
 Detailed review criteria: 8 core lenses (Clean Code, DRY, KISS, YAGNI, Idioms, Framework Patterns, Performance, Error Handling) plus a 9th that engages only when AI/LLM code is present, an anti-pattern catalog with smell-to-pattern mapping, and severity definitions. Load it for any diff review — Claude Code's built-in `/code-review` or a manual pass.
 
-### ui-ux-standards
+### ui-ux-standards — removed in 3.0
 
-Backs `/shipkit:ui-ux` with cross-platform accessibility standards, design principles, platform-specific navigation patterns, performance budgets, and anti-pattern catalog.
+The UI knowledge base and `/shipkit:ui-ux` were removed; the official `frontend-design`
+plugin covers design direction. The `ui-ux` **path-scoped rule stays** and now carries a
+self-contained WCAG 2.2 AA baseline, so accessibility still applies when you edit a UI file.
 
 ### Stack-specific (installed via /setup)
 
@@ -873,7 +851,7 @@ The opposite starting point: lots of existing code, little context, and the stan
 
 **1. Get oriented with an audit.**
 ```
-/shipkit:legacy-audit
+/shipkit-workflows:legacy-audit
 ```
 **What you get:** a modernization assessment — dependency age, dead code, complexity hotspots,
 test-coverage gaps. This tells you what you're walking into before you touch anything.
@@ -907,7 +885,7 @@ where spec-driven development pays off in brownfield without drowning you in cer
 
 **5. Plan any big upgrade before executing it.**
 ```
-/shipkit:migration-plan rails 6.1 7.0
+/shipkit-workflows:migration-plan rails 6.1 7.0
 ```
 **What you get:** an impact analysis and a step-by-step execution plan for a major/breaking
 upgrade — before you start, not halfway through.
@@ -959,12 +937,12 @@ session-start hook nudges you.
 
 **Debugging a bug:**
 ```
-/shipkit:debug  →  /shipkit:tdd bugfix  →  run the tests
+/shipkit-workflows:debug  →  /shipkit-workflows:tdd bugfix  →  run the tests
 ```
 
 **Pre-PR checklist:**
 ```
-run the tests  →  /code-review (built-in)  →  /shipkit:humanize (for docs/PR description)
+run the tests  →  /code-review (built-in)  →  /shipkit-workflows:humanize (for docs/PR description)
 ```
 
 **Leaving shipkit:**
@@ -978,7 +956,7 @@ your specs and decisions are yours to keep.)
 
 ## Tips
 
-1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
+1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit-workflows:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
 
 2. **Skills adapt to your stack.** You don't need to specify your test framework or language — skills detect it automatically.
 

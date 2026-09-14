@@ -21,7 +21,7 @@ LLM-written context files hurt; a short file of things only this project can tel
 - **Build:** `{build command or "n/a"}`
 
 **Workflow style:** {strict-tdd | test-first | lightweight}
-{if strict-tdd: "Every change follows /shipkit:tdd — red, green, refactor, no exceptions."}
+{if strict-tdd: "Every change is test-first — red, green, refactor, no exceptions."}
 {if lightweight: "Tests where they earn their keep; spec-driven answers stay inline unless a spec is asked for."}
 
 ## Key Paths
@@ -34,8 +34,8 @@ LLM-written context files hurt; a short file of things only this project can tel
 
 Shipkit's rules apply — see `.claude/rules/shipkit/` (workflow, commit discipline, spec-driven
 development, decision records, and path-scoped rules for tests, migrations, security,
-dependencies, monorepos and UI). Review diffs against the `code-review-standards` skill or the
-built-in `/code-review`. Change this file with `/shipkit:update-rules`, not by hand.
+dependencies, monorepos and UI). Review diffs with the built-in `/code-review` (or the
+`code-review-standards` knowledge base if the `shipkit-workflows` plugin is installed). Change this file with `/shipkit:update-rules`, not by hand.
 {team conventions if provided: branch prefix, PR description preference}
 
 {stack-specific section — appended by install-stack.sh in Phase 5}

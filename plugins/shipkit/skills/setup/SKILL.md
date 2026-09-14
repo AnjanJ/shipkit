@@ -122,7 +122,8 @@ must exist.
 5. **Ask the user:**
    - One-line project purpose (e.g., "SaaS billing platform for freelancers")
    - **Workflow style** — how strict should the coding workflow be?
-     - `strict-tdd` — iron-law red-green-refactor for every change (`/shipkit:tdd`)
+     - `strict-tdd` — iron-law red-green-refactor for every change (walked with enforcement by
+       `/shipkit-workflows:tdd` when that plugin is installed)
      - `test-first` (default) — prefer test-before-implementation, pragmatic exceptions
      - `lightweight` — tests where they earn their keep; spec-driven answers stay inline
    - Branch naming prefix (e.g., `feature/`, `JIRA-123-`) — optional
@@ -245,7 +246,8 @@ Report what was installed:
 - Settings created (if applicable)
 
 Suggest next steps:
-1. Try `/shipkit:map --register`, `/shipkit:ask`, `/qa`
+1. Try `/shipkit:map --register` and `/shipkit:ask` (and `/shipkit-workflows:qa` if you have
+   the workflows plugin)
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
 4. **Want the elders to recall past decisions** ("why did we pick X?")? Run `/shipkit:connect-memory` to set up optional episodic memory (MemPalace). Skip it and the elders fall back to git history — nothing breaks.

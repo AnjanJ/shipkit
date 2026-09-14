@@ -27,6 +27,30 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+# The repo is a MARKETPLACE holding several plugins (since 3.0). Per-plugin checks run
+# against each root listed in marketplace.json; repo-level checks (version consistency,
+# CHANGELOG) run once. PLUGIN_ROOTS is derived, never hard-coded, so adding a third
+# plugin needs no lint change.
+def _plugin_roots():
+    mp_path = ROOT / ".claude-plugin" / "marketplace.json"
+    try:
+        mp = json.loads(mp_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return [ROOT]
+    roots = []
+    for entry in mp.get("plugins", []):
+        src = entry.get("source")
+        if isinstance(src, str):
+            roots.append((ROOT / src).resolve())
+    return roots or [ROOT]
+
+
+PLUGIN_ROOTS = _plugin_roots()
+
+# The CORE plugin owns the hook, the rules, the stacks and the install scripts. Checks that
+# are about those surfaces run against it specifically, not against every plugin.
+CORE = next((r for r in PLUGIN_ROOTS if r.name == "shipkit"), PLUGIN_ROOTS[0])
+
 try:
     import yaml  # type: ignore
 except ImportError:
@@ -94,16 +118,16 @@ def shipped_text_files():
 
 # --- Collect files -----------------------------------------------------------
 
-skill_files = sorted(
-    list(ROOT.glob("skills/*/SKILL.md"))
-    + list(ROOT.glob("stacks/*/.claude/skills/*/SKILL.md"))
-)
-agent_files = sorted(p for p in ROOT.glob("agents/*.md"))
-agent_files_recursive = sorted(p for p in ROOT.rglob("agents/**/*.md") if p.is_file()
-                               and p.relative_to(ROOT).parts[0] == "agents")
-rule_files = sorted(
-    list(ROOT.glob("rules/*.md")) + list(ROOT.glob("stacks/*/.claude/rules/*.md"))
-)
+skill_files, agent_files, agent_files_recursive, rule_files = [], [], [], []
+for _r in PLUGIN_ROOTS:
+    skill_files += list(_r.glob("skills/*/SKILL.md")) + list(_r.glob("stacks/*/.claude/skills/*/SKILL.md"))
+    agent_files += list(_r.glob("agents/*.md"))
+    agent_files_recursive += [p for p in _r.rglob("agents/**/*.md") if p.is_file()]
+    rule_files += list(_r.glob("rules/*.md")) + list(_r.glob("stacks/*/.claude/rules/*.md"))
+skill_files = sorted(skill_files)
+agent_files = sorted(agent_files)
+agent_files_recursive = sorted(agent_files_recursive)
+rule_files = sorted(rule_files)
 
 # --- 1. Skill frontmatter ----------------------------------------------------
 
@@ -160,7 +184,7 @@ for path in agent_files_recursive:
         err(path, "file under agents/ has no frontmatter — it registers as a broken agent "
                   "with all tools; agents/ may contain only real agents (recursively)")
         continue
-    if path.parent != ROOT / "agents":
+    if path.parent.name != "agents":
         err(path, "agent file in a subdirectory of agents/ — Claude Code registers it under a "
                   "nested name; keep agents flat")
     fm = parse_frontmatter(path, fm_text)
@@ -190,13 +214,20 @@ for path in rule_files:
 
 # --- 6. Version consistency + doc counts ------------------------------------
 
-plugin_json = ROOT / ".claude-plugin" / "plugin.json"
 marketplace_json = ROOT / ".claude-plugin" / "marketplace.json"
 version = None
-try:
-    version = json.loads(plugin_json.read_text())["version"]
-except (OSError, json.JSONDecodeError, KeyError) as e:
-    err(plugin_json, f"cannot read version: {e}")
+for _r in PLUGIN_ROOTS:
+    pj = _r / ".claude-plugin" / "plugin.json"
+    try:
+        v = json.loads(pj.read_text())["version"]
+    except (OSError, json.JSONDecodeError, KeyError) as e:
+        err(pj, f"cannot read version: {e}")
+        continue
+    if version is None:
+        version = v
+    elif v != version:
+        err(pj, f"version is {v!r} but another plugin in this marketplace says {version!r} "
+                f"(versions are lockstep)")
 
 mp = None
 if version:
@@ -218,14 +249,16 @@ if version:
 # user-invocable skills (knowledge bases are user-invocable: false and are
 # described separately); "N agents" counts files directly under agents/.
 if mp:
-    user_skills = 0
-    for p in ROOT.glob("skills/*/SKILL.md"):
-        fm_text, _ = split_frontmatter(p)
-        fm = parse_frontmatter(p, fm_text) if fm_text else {}
-        if fm.get("user-invocable") is True:
-            user_skills += 1
-    actual_agents = len(agent_files)
     for i, p in enumerate(mp.get("plugins", [])):
+        src = p.get("source")
+        proot = (ROOT / src).resolve() if isinstance(src, str) else ROOT
+        user_skills = 0
+        for sp in proot.glob("skills/*/SKILL.md"):
+            fm_text, _ = split_frontmatter(sp)
+            fm = parse_frontmatter(sp, fm_text) if fm_text else {}
+            if fm.get("user-invocable") is True:
+                user_skills += 1
+        actual_agents = len(list(proot.glob("agents/*.md")))
         desc = p.get("description", "")
         m = re.search(r"(\d+) skills", desc)
         if m and int(m.group(1)) != user_skills:
@@ -261,14 +294,14 @@ if (ROOT / "settings.json").exists():
     err(ROOT / "settings.json", "plugin-root settings.json — its `agent` key runs an agent as "
                                 "the main thread; shipkit must not ship one")
 
-hooks_json = ROOT / "hooks" / "hooks.json"
+hooks_json = CORE / "hooks" / "hooks.json"
 HOOK_CONTEXT_CAP = 10_000  # chars per hook command added to context (verified on 2.1.270)
 HOOK_HEADER = 400          # inject-rule.sh's own header lines, with margin
 injected_rules = set()
 if hooks_json.exists():
     for cmd in re.findall(r'"command":\s*"([^"]+)"', hooks_json.read_text()):
         parts = cmd.split()
-        script = ROOT / parts[0].replace("${CLAUDE_PLUGIN_ROOT}/", "")
+        script = CORE / parts[0].replace("${CLAUDE_PLUGIN_ROOT}/", "")
         if not script.exists():
             err(hooks_json, f"hook command {cmd!r} does not resolve to a file")
         elif not (script.stat().st_mode & 0o111):
@@ -278,7 +311,7 @@ if hooks_json.exists():
             if len(parts) != 2:
                 err(hooks_json, f"hook command {cmd!r} must pass exactly one rule name")
                 continue
-            rule = ROOT / "rules" / f"{parts[1]}.md"
+            rule = CORE / "rules" / f"{parts[1]}.md"
             injected_rules.add(rule.name)
             if not rule.exists():
                 err(hooks_json, f"hook command {cmd!r} names a rule that does not exist")
@@ -288,7 +321,7 @@ if hooks_json.exists():
                           "be silently dropped — split it or trim it")
     # Every always-on rule (no paths: frontmatter) must be injected by a hook command;
     # otherwise plugin-only users never see it.
-    for path in sorted(ROOT.glob("rules/*.md")):
+    for path in sorted(CORE.glob("rules/*.md")):
         fm_text, _ = split_frontmatter(path)
         fm = parse_frontmatter(path, fm_text) if fm_text else {}
         if "paths" not in fm and path.name not in injected_rules:
@@ -296,15 +329,16 @@ if hooks_json.exists():
                       "inject-rule.sh hook command in hooks/hooks.json")
 
 # --- 8b. Shipped scripts must exist and be executable ------------------------
-for name in ("session-start.sh", "inject-rule.sh", "install-rules.sh", "install-stack.sh",
-             "smoke.sh", "lint.sh"):
-    s = ROOT / "scripts" / name
-    if not s.exists():
-        err(s, "required script is missing")
-    elif not (s.stat().st_mode & 0o111):
-        err(s, "script is not executable")
-if not (ROOT / "scripts" / "lib-rules-sha.sh").exists():
-    err(ROOT / "scripts" / "lib-rules-sha.sh", "shared helper is missing (install-rules.sh and "
+for name, base in [("session-start.sh", CORE), ("inject-rule.sh", CORE),
+                   ("install-rules.sh", CORE), ("install-stack.sh", CORE),
+                   ("smoke.sh", ROOT), ("lint.sh", ROOT)]:
+    sp = base / "scripts" / name
+    if not sp.exists():
+        err(sp, "required script is missing")
+    elif not (sp.stat().st_mode & 0o111):
+        err(sp, "script is not executable")
+if not (CORE / "scripts" / "lib-rules-sha.sh").exists():
+    err(CORE / "scripts" / "lib-rules-sha.sh", "shared helper is missing (install-rules.sh and "
                                                "session-start.sh both source it)")
 
 # --- 9. Placeholders --------------------------------------------------------
@@ -313,18 +347,19 @@ if not (ROOT / "scripts" / "lib-rules-sha.sh").exists():
 # actually replaced.
 
 PLACEHOLDER = re.compile(r"\{\{([A-Z_]+)\}\}")
-setup_skill = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+setup_skill = (CORE / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
 setup_table = set(PLACEHOLDER.findall(setup_skill))
 for path in shipped_text_files():
     rel = path.relative_to(ROOT)
     for i, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
         for name in PLACEHOLDER.findall(line):
-            if rel.parts[0] == "stacks":
+            if "stacks" in rel.parts:
                 if name not in setup_table:
                     err(path, f"{{{{{name}}}}} is not in /setup's substitution table "
                               f"(skills/setup/SKILL.md) — it would be installed verbatim")
-            elif rel == Path("skills/setup/SKILL.md"):
-                pass  # the table itself
+            elif path in (CORE / "skills" / "setup" / "SKILL.md",
+                          CORE / "scripts" / "install-stack.sh"):
+                pass  # the substitution table itself, and the installer's own usage prose
             else:
                 err(path, f"{{{{{name}}}}} placeholder outside stacks/ (line {i}) — nothing "
                           "substitutes it")
@@ -350,7 +385,7 @@ for path in skill_files:
 
 OVERLAY_ALWAYS_ON_MAX = 2000   # bytes; these load in every session of the installed project
 
-overlay_dirs = sorted(d for d in (ROOT / "stacks").glob("*") if d.is_dir())
+overlay_dirs = sorted(d for d in (CORE / "stacks").glob("*") if d.is_dir())
 overlay_names = {d.name for d in overlay_dirs}
 for d in overlay_dirs:
     for rule in sorted(d.glob(".claude/rules/*.md")):

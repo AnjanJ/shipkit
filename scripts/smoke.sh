@@ -14,6 +14,9 @@
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
+# Since 3.0 the repo is a marketplace of plugins; the smoke test exercises the CORE plugin
+# (it owns the hook, the rules, the stacks and the install scripts).
+CORE="$ROOT/plugins/shipkit"
 command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
 
 WORK=$(mktemp -d) || exit 1
@@ -22,9 +25,9 @@ COPY="$WORK/plugin"; PROJ="$WORK/proj"
 mkdir -p "$COPY" "$PROJ"
 # copy the working tree without .git (rsync if present, tar otherwise)
 if command -v rsync >/dev/null 2>&1; then
-  rsync -a --exclude .git "$ROOT/" "$COPY/"
+  rsync -a --exclude .git "$CORE/" "$COPY/"
 else
-  (cd "$ROOT" && tar cf - --exclude .git .) | (cd "$COPY" && tar xf -)
+  (cd "$CORE" && tar cf - --exclude .git .) | (cd "$COPY" && tar xf -)
 fi
 (cd "$PROJ" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
 
@@ -56,15 +59,24 @@ case "$out" in *"$COPY"*) pass "plugin-root (hook publishes the plugin root)";;
   *) failc "plugin-root" "got: $out";; esac
 
 # 4. agents: exactly the agents defined under agents/*.md, nothing else
-expected=$(ls "$ROOT"/agents/*.md | sed 's#.*/##; s/\.md$//' | sort | tr '\n' ' ')
+expected=$(ls "$CORE"/agents/*.md | sed 's#.*/##; s/\.md$//' | sort | tr '\n' ' ')
 out=$(ask "$COPY" 'List the exact names of every agent type available to you that starts with "shipkit:", one per line, nothing else.')
 got=$(printf '%s\n' "$out" | grep -o 'shipkit:[a-z-]*' | sed 's/shipkit://' | sort -u | tr '\n' ' ')
 if [ "$got" = "$expected" ]; then pass "agents (registered set = $expected)"; else failc "agents" "expected [$expected] got [$got]"; fi
 
-# 5. kb-skills: the knowledge bases register as skills
-out=$(ask "$COPY" 'List the exact names of every skill available to you whose name contains "standards", one per line, or NONE.')
-case "$out" in *code-review-standards*ui-ux-standards*|*ui-ux-standards*code-review-standards*) pass "kb-skills (both knowledge bases registered)";;
+# 5. kb-skills: the workflows plugin's knowledge base registers as a skill
+out=$(ask "$ROOT/plugins/shipkit-workflows" 'List the exact names of every skill available to you whose name contains "standards", one per line, or NONE.')
+case "$out" in *code-review-standards*) pass "kb-skills (knowledge base registered in shipkit-workflows)";;
   *) failc "kb-skills" "got: $out";; esac
+
+# 5b. namespaces: the two plugins register under distinct prefixes, no collision.
+# Ask about two SPECIFIC skills rather than asking for an enumeration — a small model
+# listing "every skill" truncates unreliably and produced false failures here.
+out=$(cd "$PROJ" && claude --plugin-dir "$COPY" --plugin-dir "$ROOT/plugins/shipkit-workflows" --model haiku -p 'Answer with exactly two words separated by a comma: whether a skill named "shipkit:map" is available (YES or NO), then whether a skill named "shipkit-workflows:tdd" is available (YES or NO). Do not use tools.' 2>/dev/null | tail -5)
+case "$out" in
+  *YES*YES*) pass "namespaces (both plugins register under distinct prefixes)";;
+  *) failc "namespaces" "expected YES,YES — got: $out";;
+esac
 
 # 6. hook-cap: 9,500 chars of hook output is seen; 11,000 is not (informational if it now is)
 mkhook() {  # mkhook <dir> <chars> <codeword>
@@ -90,7 +102,7 @@ if sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null \
    && sh "$COPY/scripts/install-stack.sh" "$COPY" rails "$IP" TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire >/dev/null; then
   nrules=$(ls "$IP"/.claude/rules/shipkit/*.md | wc -l | tr -d ' ')
   left=$(grep -rl '{{[A-Z_]*}}' "$IP/CLAUDE.md" "$IP/.claude" 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$nrules" -eq "$(ls "$ROOT"/rules/*.md | wc -l | tr -d ' ')" ] && [ -f "$IP/.claude/rules/shipkit/.installed" ] \
+  if [ "$nrules" -eq "$(ls "$CORE"/rules/*.md | wc -l | tr -d ' ')" ] && [ -f "$IP/.claude/rules/shipkit/.installed" ] \
      && [ -f "$IP/.claude/rules/shipkit/rails/rails.md" ] && [ -f "$IP/.claude/skills/new-feature/SKILL.md" ] \
      && grep -q 'bundle exec rspec' "$IP/.claude/skills/new-feature/SKILL.md" && [ "$left" -eq 0 ] \
      && grep -q 'shipkit:stack:rails' "$IP/CLAUDE.md"; then

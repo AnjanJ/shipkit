@@ -10,11 +10,10 @@ argument-hint: "[feature|bugfix|refactor]"
 
 # /tdd — Test-Driven Development
 
-This is the **opt-in strict mode** of the shipkit Default Coding Workflow rule — the
-`strict-tdd` workflow style. Invoked explicitly, or automatically when the project's
-CLAUDE.md declares `Workflow style: strict-tdd`. (The workflow rule is in your context via the
-shipkit session hook or `.claude/rules/shipkit/shipkit.md`; this skill is self-contained
-either way.)
+This is the **opt-in strict mode** of the default coding workflow — the `strict-tdd` workflow
+style. Invoked explicitly, or automatically when the project's CLAUDE.md declares
+`Workflow style: strict-tdd`. This skill is self-contained: it states the whole discipline
+below and needs no other plugin.
 
 Write the test first. Watch it fail. Write minimal code to pass. Refactor.
 

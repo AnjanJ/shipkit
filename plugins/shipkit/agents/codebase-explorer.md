@@ -14,7 +14,7 @@ by handling file reading, pattern searching, and git analysis in a separate cont
 
 ## When to Use
 
-- Skills like `/qa` and plan-mode research delegate file-heavy exploration to this agent
+- Skills and plan-mode research delegate file-heavy exploration to this agent
 - You need to explore a large directory or trace a deep call chain
 - You need git log analysis that would pollute the main context
 - You want a structured summary, not raw file contents
