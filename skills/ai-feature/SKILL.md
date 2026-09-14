@@ -8,7 +8,7 @@ context: fork
 
 ## Step 1: Detect Stack and Existing AI Libraries
 !`ls Gemfile mix.exs package.json pyproject.toml requirements.txt go.mod 2>/dev/null`
-!`grep -rE "ruby_llm|langchain|openai|anthropic|ollama|instructor" Gemfile package.json pyproject.toml requirements.txt mix.exs 2>/dev/null | head -10 || echo "no AI libraries detected"`
+!`f=$(grep -rE "ruby_llm|langchain|openai|anthropic|ollama|instructor" Gemfile package.json pyproject.toml requirements.txt mix.exs 2>/dev/null | head -10); [ -n "$f" ] && echo "$f" || echo "no AI libraries detected"`
 
 ## Step 2: Library Selection
 

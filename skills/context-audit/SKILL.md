@@ -1,62 +1,66 @@
 ---
-description: "Audit context usage — find bloated files consuming context window"
+description: "Audit context usage — what shipkit and your project actually load into every session, and where the bloat is"
 user-invocable: true
 context: fork
 ---
 
 # /context-audit — Context Window Audit
 
-Check what's consuming your Claude Code context and find optimization opportunities.
+Report what this project loads into Claude's context at session start and on every file edit,
+and where it can be trimmed. **For real token numbers, the user should run Claude Code's
+built-in `/context`** — this skill explains *what* is loading and *why*; it does not estimate
+percentages.
 
-## File Sizes
-!`wc -l CLAUDE.md .claude/rules/*.md .claude/lessons.md 2>/dev/null || echo "no context files found"`
+## Sizes on disk
+!`f=$(wc -l CLAUDE.md .claude/CLAUDE.md .claude/lessons.md 2>/dev/null; find .claude/rules -name '*.md' 2>/dev/null | xargs wc -l 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no CLAUDE.md, .claude/rules or lessons file found"`
+
+## What actually loads (Claude Code facts — reason from these, not from guesses)
+
+| Source | When it loads | Notes |
+|--------|---------------|-------|
+| `CLAUDE.md` (project root, `.claude/CLAUDE.md`, and parent dirs up to `~/.claude/CLAUDE.md`) | Every session, in full | The main always-on cost |
+| `.claude/rules/**/*.md` **without** `paths:` frontmatter | Every session, in full | Always-on rules (shipkit's `shipkit.md`, `spec-driven.md`, `decisions.md` if installed by `/setup`) |
+| `.claude/rules/**/*.md` **with** `paths:` frontmatter | Only when Claude touches a matching file | Path-scoped; near-zero cost until triggered |
+| Shipkit session hook output | Every session | One `plugin root` line, plus the three always-on rules **only if** `.claude/rules/shipkit/` is not installed |
+| Skill **descriptions** (every registered skill, plugin and project) | Every session | ~1 line each; shipkit's 20 skills ≈ 1.2k tokens |
+| Skill **bodies** (`SKILL.md` + its references) | Only when the skill is invoked | `user-invocable: false` knowledge bases behave the same — description always, body on demand |
+| MCP tool schemas | Deferred until first use (tool search) | Not a per-session cost |
+| `.claude/lessons.md` | Only if the shipkit rule tells Claude to read it | Shipkit convention, 30-line cap |
 
 ## Process
 
-1. **List all auto-loaded files:**
-   - `CLAUDE.md` (always loaded)
-   - `.claude/settings.json` / `.claude/settings.local.json`
-   - Any memory files (`.claude/memory/`, `.claude/lessons.md`)
-   - Parent CLAUDE.md files (home directory, parent dirs)
+1. **List the always-on files** — `CLAUDE.md` chain, always-on rules under `.claude/rules/`,
+   the hook's output — and report their line counts in a table:
 
-2. **Count lines for each file** and report:
+| File | Lines | Loads | Status |
+|------|-------|-------|--------|
+| CLAUDE.md | 142 | every session | OK |
+| .claude/rules/shipkit/shipkit.md | 60 | every session | OK (installed by /setup) |
+| .claude/rules/shipkit/testing.md | 12 | on test files | path-scoped |
+| .claude/lessons.md | 41 | every session | over 30-line cap — graduate lessons |
 
-| File | Lines | Status |
-|------|-------|--------|
-| CLAUDE.md | 142 | OK |
-| .claude/lessons.md | 205 | WARNING — over 100 lines |
-| ~/.claude/CLAUDE.md | 45 | OK |
+2. **Flag issues:**
+   - `CLAUDE.md` over 200 lines → prune; move stable detail into path-scoped rules or an
+     on-demand skill
+   - Any always-on rule over 100 lines → split, or give it `paths:` so it becomes path-scoped
+   - `.claude/lessons.md` over 30 lines → consolidate via `/shipkit:update-rules`
+   - Content duplicated between `CLAUDE.md` and a rule → keep one copy
+   - Stale content (references to deleted files, old commands) → remove
+   - Always-on rules that only matter for some files → add `paths:` frontmatter
 
-3. **Flag issues:**
-   - Any file over 100 lines → suggest trimming or splitting
-   - CLAUDE.md over 200 lines → needs immediate pruning
-   - Duplicate content across files → suggest consolidation
-   - Stale content (references to deleted files, old conventions) → suggest removal
-   - Large knowledge bases that could be skills instead (loaded on demand, not always)
+3. **Check skills** (`.claude/skills/*/SKILL.md`): count them (each costs its description every
+   session), and flag any body over 200 lines as worth trimming — it loads in full when invoked.
 
-4. **Check skill files:**
-   - List skills with `user-invocable: true` (loaded on demand — good)
-   - List skills with `user-invocable: false` (loaded as context — check if needed)
-   - Flag skills over 200 lines → suggest trimming
-
-5. **Report total context budget:**
-
-```
-Context Budget Summary:
-  Auto-loaded files:    X lines
-  Knowledge bases:      Y lines (always loaded)
-  Skills:               Z files (loaded on demand)
-  Estimated context:    ~N% of budget
-
-  Recommendations:
-  - Move lessons.md entries older than 30 days to archive
-  - Split CLAUDE.md conventions into a knowledge base skill
-  - Remove unused knowledge base: code-review-standards
-```
+4. **Report** a short summary and the three highest-impact recommendations. End by suggesting
+   `/context` for the exact token breakdown.
 
 ## Tips for Reducing Context
 
-- Move stable rules to knowledge base skills (loaded only when relevant)
-- Archive old lessons — keep only recent, actionable ones
-- Use `disable-model-invocation: true` on mechanical skills (test, release)
-- Remove comments and examples from CLAUDE.md — keep it terse
+- Path-scope anything that only applies to some files (`paths:` frontmatter on the rule)
+- Move stable reference material into a `user-invocable: false` skill — description-only cost
+  until it is needed
+- Keep `CLAUDE.md` to project facts (purpose, stack, commands, key paths); let rules carry
+  conventions
+- Archive old lessons; keep only recent, actionable ones
+- Use `disable-model-invocation: true` on mechanical skills (release, deploy-check) so their
+  descriptions are not offered to the model every turn

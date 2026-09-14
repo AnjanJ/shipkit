@@ -10,9 +10,24 @@ argument-hint: "[rails|react|python|go|elixir|static]"
 
 # /setup — Configure Shipkit for Your Project
 
-Tailor shipkit to your specific project. Detects your stack, test framework, package manager, and installs stack-specific skills, rules, and knowledge bases.
+Tailor shipkit to your specific project. Detects your stack, test framework, package manager,
+installs shipkit's rules as files, and installs stack-specific skills, rules, and knowledge bases.
 
-**This skill is optional.** Shipkit works out of the box without setup. Run this when you want stack-specific configuration.
+**This skill is optional.** Shipkit's skills, agents and session hook work without it. Run this
+when you want the rules installed in the project (the path-scoped ones only work this way) and
+stack-specific configuration.
+
+## Phase 0: Locate the plugin
+
+Everything this skill installs is copied from the plugin's own directory. Find it, in order:
+
+1. The context line `shipkit: plugin root is <path>` printed by the shipkit session hook at the
+   start of this session. Use that path.
+2. Else read `~/.claude/shipkit/plugin-root` (the hook also writes it there).
+3. Else stop and tell the user: "The shipkit session hook has not run yet — restart Claude Code
+   (or start a new session) and run `/shipkit:setup` again." Do not guess a path.
+
+Call it `<root>` below. Sanity-check it: `<root>/rules/shipkit.md` and `<root>/stacks/` must exist.
 
 ## Phase 1: Detect Project
 
@@ -82,43 +97,83 @@ Tell the user:
 
 ## Phase 3: Create CLAUDE.md
 
-Read @reference.md for the full CLAUDE.md template. The template includes: Project Info, Workflow Rules (plan mode, subagents, verification, bug fixing, core principles, library usage), Conventions (commits, destructive operations, general), and a placeholder for stack-specific sections from Phase 4.
+Read @reference.md for the full CLAUDE.md template. The template includes: Project Info, Workflow Rules (plan mode, subagents, verification, bug fixing, core principles, library usage), Conventions (commits, destructive operations, general), and a placeholder for stack-specific sections from Phase 5.
 
-## Phase 4: Install Stack-Specific Content
+## Phase 4: Install Shipkit's Rules
 
-Based on detected stack, install the appropriate additions:
+Claude Code does not load rules from a plugin, only from a project's `.claude/rules/`
+(discovered recursively, path-scoped rules included). Without this phase, the always-on rules
+reach a session only through the hook's injection and the path-scoped rules never load at all.
 
-### Rails
-- Append Rails-specific section to CLAUDE.md (architecture, key paths, testing, gotchas, database)
-- Install stack-specific rules: `gemfile.md` (Gemfile/gemspec patterns), `rails.md` (always-on Rails conventions)
-- Install stack-specific skills: `/new-feature` (scaffold Rails class), `/release` (release workflow), `/safety-check` (security audit), `/deploy-check` (pre-deploy checklist)
-- Install knowledge bases: `code-review-standards-rails` (ActiveRecord, Sidekiq, Hotwire checks), `ai-rails` (RubyLLM patterns)
+Copy all nine files from `<root>/rules/` into `.claude/rules/shipkit/`, unchanged:
 
-### React
-- Append React-specific section to CLAUDE.md (component patterns, state, testing, TypeScript)
-- Install rules: `package-json.md`, `react.md`
-- Install skills: `/component` (scaffold React component)
+| File | Kind |
+|------|------|
+| `shipkit.md` | always-on — default workflow, commit discipline, lessons memory |
+| `spec-driven.md` | always-on — the three questions, EARS |
+| `decisions.md` | always-on — five-part decision records |
+| `testing.md`, `migrations.md`, `security.md`, `dependencies.md`, `monorepo.md`, `ui-ux.md` | path-scoped (their `paths:` frontmatter stays as is) |
 
-### Python
-- Append Python-specific section to CLAUDE.md (framework, virtual env, testing, type hints)
-- Install rules: `pyproject.md`, `python.md`
-- Install skills: `/new-feature` (scaffold Python module)
+Once `.claude/rules/shipkit/` exists the session hook stops injecting the always-on rules, so
+nothing loads twice. Tell the user these are copies: re-run `/shipkit:setup` after a plugin
+upgrade to refresh them.
 
-### Go
-- Append Go-specific section to CLAUDE.md (project layout, error handling, testing, tooling)
-- Install rules: `go-mod.md`, `go.md`
-- Install skills: `/new-feature` (scaffold Go package)
+## Phase 5: Install Stack-Specific Content
 
-### Elixir
-- Append Elixir-specific section to CLAUDE.md (contexts, testing, OTP, deployment)
-- Install rules: `mix-deps.md`, `elixir.md`
-- Install skills: `/new-feature` (scaffold Elixir module)
+Source: `<root>/stacks/<stack>/`. Each stack directory has the same shape:
 
-### Static
-- Append static-specific section to CLAUDE.md (structure, tooling, deployment)
-- Install skills: `/audit` (SEO, a11y, performance)
+| Source (under `<root>/stacks/<stack>/`) | Destination in the project |
+|------|------|
+| `CLAUDE.md.append` | appended to `CLAUDE.md` (the stack-specific section) |
+| `.claude/rules/*.md` | `.claude/rules/shipkit/<stack>/` |
+| `.claude/skills/<name>/` | `.claude/skills/<name>/` (workflow skills and on-demand knowledge bases alike) |
 
-## Phase 5: Create Lessons File
+Copy the files, then **substitute every `{{PLACEHOLDER}}`** in what you copied. The
+placeholders and where their values come from:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{{TEST_COMMAND}}` | the detected test command (e.g. `bundle exec rspec`, `npm test`, `pytest`, `go test ./...`, `mix test`) |
+| `{{TEST_FRAMEWORK}}` | RSpec / Minitest / Jest / Vitest / pytest / unittest / ExUnit |
+| `{{DATABASE}}` | from `config/database.yml` / env: PostgreSQL / MySQL / SQLite |
+| `{{RAILS_ARCHITECTURE}}` | `app/commands/` or `app/queries/` → CQRS; `app/services/` → Service Objects; else MVC |
+| `{{API_MODE}}` | `config.api_only = true` in `config/application.rb` → yes, else no |
+| `{{FRONTEND}}` | Hotwire (turbo-rails/stimulus in Gemfile/package.json) / React / API-only |
+| `{{PYTHON_FRAMEWORK}}` | Django / FastAPI / Flask / None, from dependencies |
+| `{{API_STYLE}}` | REST / GraphQL / gRPC, from dependencies and routes |
+| `{{ASYNC_MODE}}` | yes if the framework or code uses `async def`, else no |
+| `{{ORM}}` | Django ORM / SQLAlchemy / Tortoise, from dependencies |
+| `{{GO_FRAMEWORK}}` | stdlib net/http / Gin / Echo / Chi / Fiber, from `go.mod` |
+| `{{MODULE_PATH}}` | the `module` line of `go.mod` |
+| `{{DB_LIBRARY}}` | database/sql / sqlx / GORM / ent, from `go.mod` |
+| `{{ELIXIR_FRAMEWORK}}` | Phoenix (if `:phoenix` in `mix.exs`) / bare Elixir |
+| `{{ELIXIR_FRONTEND}}` | LiveView / API-only / SPA, from `mix.exs` and `lib/*_web/` |
+| `{{REACT_PATTERN}}` | Functional components (default) / Class components |
+| `{{STATE_MANAGEMENT}}` | Zustand / Redux / Context / None, from `package.json` |
+| `{{STYLING}}` | Tailwind / CSS Modules / styled-components, from config files and `package.json` |
+| `{{ROUTER}}` | React Router / Next.js / Expo Router, from `package.json` |
+| `{{BUNDLER}}` | None / Vite / Webpack / Parcel, from `package.json` |
+| `{{DEV_SERVER}}` | None / `npx serve` / `vite dev`, from `package.json` scripts |
+
+Rules for substitution:
+- Replace **every** occurrence, in `CLAUDE.md` and in every installed skill and rule.
+- If you cannot detect a value, write `TODO: <the hint from the HTML comment next to it>` — never
+  leave the braces.
+- Finish with `grep -rn '{{' CLAUDE.md .claude/` — it must print nothing. If it does, fix those
+  before moving on.
+
+What each stack installs:
+
+| Stack | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
+|-------|--------|-------|---------|
+| Rails | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
+| React | `/component` | `package-json.md`, `react.md` | — |
+| Python | `/new-feature` | `pyproject.md`, `python.md` | — |
+| Go | `/new-feature` | `go-mod.md`, `go.md` | — |
+| Elixir | `/new-feature` | `mix-deps.md`, `elixir.md` | — |
+| Static | `/audit` | — | — |
+
+## Phase 6: Create Lessons File
 
 If `.claude/lessons.md` doesn't already exist, create it:
 
@@ -132,17 +187,20 @@ If `.claude/lessons.md` doesn't already exist, create it:
 
 If it already exists, leave it as-is (it was backed up in Phase 2).
 
-## Phase 6: Install Settings (Optional)
+## Phase 7: Install Settings (Optional)
 
 Ask the user if they want `.claude/settings.json` with safe defaults. See @reference.md for settings details and enterprise mode options.
 
-## Phase 7: Summary
+## Phase 8: Summary
 
 Report what was installed:
 - Backup location (`.shipkit-backup-<ts>/`)
 - CLAUDE.md line count
 - Stack detected
-- Skills, rules, knowledge bases installed
+- Shipkit rules installed under `.claude/rules/shipkit/` (list the 9 files) — note the hook will
+  no longer inject the always-on ones
+- Stack skills, rules, knowledge bases installed (with their paths)
+- Placeholder check result (`grep -rn '{{'` was empty)
 - Lessons file created/preserved
 - Settings created (if applicable)
 

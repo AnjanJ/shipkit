@@ -11,7 +11,7 @@ Two-phase release with a mandatory approval gate.
 
 Version bump type: $ARGUMENTS (default: `patch`)
 
-## Phase 1: Prepare (Safe — No Side Effects)
+## Phase 1: Prepare (Local only — nothing leaves this machine)
 
 1. **Check prerequisites:**
    - Working directory clean? (`git status`)
@@ -36,13 +36,7 @@ Version bump type: $ARGUMENTS (default: `patch`)
    git commit -m "Release vX.Y.Z"
    ```
    Stage only version and changelog files — never use `git add -A` or `git add .`.
-
-5. **Push to remote:**
-   ```
-   git push origin main
-   ```
-
-6. **Run CI:** Wait for CI to pass (if configured)
+   The commit stays local until Phase 2 — nothing is pushed before the gate.
 
 ---
 
@@ -51,14 +45,14 @@ Version bump type: $ARGUMENTS (default: `patch`)
 **Display this message and STOP:**
 
 ```
-Phase 1 complete. Ready to publish:
+Phase 1 complete (local only). Ready to publish:
   Version: vX.Y.Z
   Changes: [summary]
   Tests: PASSING
-  CI: PASSING
 
 ⚠️  Phase 2 is IRREVERSIBLE. It will:
-  - Push to RubyGems/npm/Hex (gems/packages)
+  - Push the release commit to origin/main
+  - Wait for CI, then push to RubyGems/npm/Hex (gems/packages)
   - OR deploy to production (apps)
   - Create a Git tag
   - Create a GitHub release
@@ -72,21 +66,25 @@ Type 'yes' to proceed, anything else to abort.
 
 ## Phase 2: Publish (Irreversible)
 
+1. **Push to remote:** `git push origin main`
+2. **Run CI:** wait for CI to pass (if configured). If it fails, STOP — fix on main and
+   re-run this skill; do not publish a red build.
+
 ### For Gems (RubyGems)
-1. `gem build <gemspec>`
-2. `gem push <gem-file>.gem`
-3. `git tag vX.Y.Z && git push origin vX.Y.Z`
-4. Create GitHub release: `gh release create vX.Y.Z --notes "..."`
+3. `gem build <gemspec>`
+4. `gem push <gem-file>.gem`
+5. `git tag vX.Y.Z && git push origin vX.Y.Z`
+6. Create GitHub release: `gh release create vX.Y.Z --notes "..."`
 
 ### For npm Packages
-1. `npm publish`
-2. `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. Create GitHub release
+3. `npm publish`
+4. `git tag vX.Y.Z && git push origin vX.Y.Z`
+5. Create GitHub release
 
 ### For Apps (Deploy)
-1. Run deploy command (from CLAUDE.md or prompt user)
-2. `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. Create GitHub release
+3. Run deploy command (from CLAUDE.md or prompt user)
+4. `git tag vX.Y.Z && git push origin vX.Y.Z`
+5. Create GitHub release
 
 ## After Publishing
 

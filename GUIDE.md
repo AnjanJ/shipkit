@@ -50,16 +50,20 @@ once you know which is which.
 
 ### 🟢 Automatic — no command needed
 
-These are always on once the plugin is loaded. You never call them.
+You never call these. How they reach a session matters, because Claude Code does **not** load a
+plugin's `rules/` directory: the always-on rules and the hook work as soon as the plugin is
+loaded (the session hook injects the rules); the path-scoped rules and lessons memory need
+`/shipkit:setup` once per project, which installs every rule as a file under
+`.claude/rules/shipkit/`.
 
 | What | When it fires | What it does |
 |------|--------------|--------------|
-| **Path-scoped rules** | You edit a matching file (test, migration, controller, dependency file, UI, monorepo config) | Applies that file type's conventions — see [Path-Scoped Rules](#path-scoped-rules) |
+| **Path-scoped rules** (after `/shipkit:setup`) | You edit a matching file (test, migration, controller, dependency file, UI, monorepo config) | Applies that file type's conventions — see [Path-Scoped Rules](#path-scoped-rules) |
 | **`spec-driven` rule** | You start **non-trivial** feature work | Puts the three questions (what/how/done) + EARS + TDD-first in effect — see [Spec-Driven Development](#spec-driven-development) |
 | **`decisions` rule** | You make a real choice (≥2 alternatives) | Prompts a five-part decision record with a falsifiability clause |
 | **Commit discipline** | Any commit | Atomic commits, message scaled to the change, no `git add .`, no `--no-verify` |
 | **Lessons memory** | You correct Claude / a project pattern emerges | Appends a dated line to `.claude/lessons.md` (30-line cap) — see [Lessons Memory](#lessons-memory) |
-| **Freshness hook** | Session start | One line if `PROJECT_MAP.md` or a spec has drifted from the code; silent otherwise |
+| **Session hook** | Session start | Tells Claude the plugin root, injects the always-on rules unless installed as files, and prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
 
 ### 🔵 Auto-invoked — Claude picks the right skill
 
@@ -119,8 +123,11 @@ Configures shipkit for your specific project. Run it once when you start using s
    pragmatic exceptions), or `lightweight` (tests where they earn their keep)
 5. Creates a tailored CLAUDE.md that declares your choices; the workflow itself is defined
    once, in shipkit's always-on rules
-6. Installs stack-specific skills, rules, and knowledge bases
-7. Optionally creates `.claude/settings.json` with safe defaults
+6. Installs all nine shipkit rules as files under `.claude/rules/shipkit/` — Claude Code only
+   loads rules from a project, so this is what makes the path-scoped rules work
+7. Installs stack-specific skills, rules, and knowledge bases (into `.claude/skills/` and
+   `.claude/rules/shipkit/<stack>/`), filling every `{{placeholder}}` from detection
+8. Optionally creates `.claude/settings.json` with safe defaults
 
 **How backups work:**
 - Everything is copied to `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at project root
@@ -276,8 +283,9 @@ uv tool install mempalace        # or: pipx install mempalace
 claude mcp add --scope user mempalace mempalace-mcp
 
 # 3. Backfill a project's history from your Claude transcripts.
-#    Claude transcripts are keyed by the DIRECTORY you ran Claude in, under ~/.claude/projects/
-#    (not by repo name — find the dir whose sessions hold the decisions you want recalled).
+#    Claude transcripts are keyed by the DIRECTORY you ran Claude in, under ~/.claude/projects/,
+#    with EVERY non-alphanumeric character replaced by "-" (~/code/my_app → -Users-you-code-my-app;
+#    not by repo name — find the dir whose sessions hold the decisions you want recalled).
 #    NOTE: run `mempalace split <dir>` first if transcripts are concatenated mega-files.
 mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject --dry-run
 mempalace mine ~/.claude/projects/-Users-you-code-myproject --mode convos --wing myproject
@@ -723,7 +731,9 @@ Both agents: read-only, cap at 20 files per task, report confidence levels.
 
 ## Knowledge Bases
 
-Loaded on demand by skills — not always in context.
+Shipped as skills with `user-invocable: false`: their one-line description is always known to
+Claude, the body loads only when a skill or rule points at them or Claude reaches for one. Not
+always in context.
 
 ### code-review-standards
 
@@ -742,7 +752,9 @@ Backs `/shipkit:ui-ux` with cross-platform accessibility standards, design princ
 
 ## Path-Scoped Rules
 
-These auto-load when you edit matching files. No action needed.
+Installed into `.claude/rules/shipkit/` by `/shipkit:setup` (Claude Code only loads rules from a
+project, never from a plugin). After that they auto-load when you edit matching files — no
+action needed. Re-run `/shipkit:setup` after a plugin upgrade to refresh the copies.
 
 | Rule | When It Loads | What It Enforces |
 |------|--------------|-----------------|
@@ -755,7 +767,10 @@ These auto-load when you edit matching files. No action needed.
 
 ### Always-on rules
 
-These are not path-scoped — they apply to the work itself, not to a file type.
+These are not path-scoped — they apply to the work itself, not to a file type. The session
+hook injects them (together with `shipkit.md`, the workflow + commit-discipline rule) at the
+start of every session; once `/shipkit:setup` has installed them as files the hook stops
+injecting and they load from `.claude/rules/shipkit/` like any project rule.
 
 | Rule | Applies To | What It Enforces |
 |------|-----------|-----------------|
@@ -956,12 +971,10 @@ your specs and decisions are yours to keep.)
 
 1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
 
-2. **Use `/clear` between skills.** Each skill works best with a fresh context window.
+2. **Skills adapt to your stack.** You don't need to specify your test framework or language — skills detect it automatically.
 
-3. **Skills adapt to your stack.** You don't need to specify your test framework or language — skills detect it automatically.
+3. **Arguments are optional.** Every skill has sensible defaults. Add arguments only to narrow scope.
 
-4. **Arguments are optional.** Every skill has sensible defaults. Add arguments only to narrow scope.
+4. **Path-scoped rules are automatic once installed.** `/shipkit:setup` copies them into `.claude/rules/shipkit/`; from then on they load when you edit matching files.
 
-5. **Path-scoped rules are automatic.** You don't invoke them — they load when you edit matching files.
-
-6. **Stack-specific content needs /setup.** Base skills and rules work instantly. Stack-specific skills (like `/new-feature` for Rails) require running `/shipkit:setup` first.
+5. **Stack-specific content needs /setup.** Skills, agents, the hook and the always-on rules work instantly. Path-scoped rules and stack-specific skills (like `/new-feature` for Rails) require running `/shipkit:setup` first.

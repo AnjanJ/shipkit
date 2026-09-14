@@ -9,8 +9,8 @@ disable-model-invocation: true
 Run through all checks before deploying. Stop on any FAIL.
 
 ## Current State
-!`git log --oneline -5 2>/dev/null || echo "no git history"`
-!`bin/rails db:migrate:status 2>/dev/null | tail -5 || echo "no Rails migration status available"`
+!`f=$(git log --oneline -5 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no git history"`
+!`f=$(bin/rails db:migrate:status 2>/dev/null | tail -5); [ -n "$f" ] && echo "$f" || echo "no Rails migration status available"`
 
 ## Checks (in order)
 
@@ -57,6 +57,12 @@ bin/rails assets:precompile RAILS_ENV=production 2>&1 | tail -5
 - PASS: Assets compile successfully
 - FAIL: Asset compilation error — fix before deploying
 - SKIP: API-only app
+
+This check **writes** to `public/assets/` (and `tmp/cache/`). Clean up afterwards so the
+working tree is not left with production build output:
+```bash
+bin/rails assets:clobber RAILS_ENV=production
+```
 
 ### 7. Environment Variables
 Check that all required env vars referenced in code are set:

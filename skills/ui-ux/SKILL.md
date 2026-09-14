@@ -9,13 +9,13 @@ context: fork
 
 Mode: $ARGUMENTS (default: contextual — auto-detect what's needed)
 
-**Accessibility is the foundation.** If any output of this skill is not accessible, the skill has failed. See `ui-ux-standards` knowledge base Section 1.
+**Accessibility is the foundation.** If any output of this skill is not accessible, the skill has failed. Load the `ui-ux-standards` skill (the UI knowledge base) and see its Section 1.
 
-**Detect the platform** from the file: `.swift` = iOS/SwiftUI, `.kt` = Android/Compose, `.dart` = Flutter, `.native.tsx` = React Native, `.html`/`.vue`/`.svelte`/`.erb`/`.tsx`/`.jsx` = Web. Use platform-native APIs. See `ui-ux-standards` Section 5 for platform navigation patterns.
+**Detect the platform** from the file: `.swift` = iOS/SwiftUI, `.kt` = Android/Compose, `.dart` = Flutter, `.native.tsx` = React Native, `.html`/`.vue`/`.svelte`/`.erb`/`.tsx`/`.jsx` = Web. Use platform-native APIs. See the `ui-ux-standards` skill, Section 5, for platform navigation patterns.
 
 ## Before Anything: Understand the User
 
-1. **Who is the user?** Check CLAUDE.md, existing UI code, and ask if unknown. Include users with disabilities — they are not edge cases.
+1. **Who is the user?** Check CLAUDE.md and existing UI code (you run non-interactively — if it is not written down, use the most-constrained default below). Include users with disabilities — they are not edge cases.
 2. **What is their goal?** Not "click this button" — the real goal behind the action.
 3. **What's the context?** Mobile? Desktop? Both? Assistive technology? Rushed? Relaxed? First-time? Power user?
 4. **What's the emotional state?** Onboarding (curious), error (frustrated), checkout (anxious), success (happy).
@@ -33,7 +33,7 @@ When designing new UI (or asked to build a feature with a UI component):
 - **A11y:** Can a keyboard-only user complete this flow? Can a screen reader user understand each step?
 
 ### Step 2: Structure with Accessible Semantics
-Before visuals, establish accessible structure using platform-native APIs (see `ui-ux-standards` Section 1). Plan focus order, modal/sheet management, escape/back to dismiss. Structure comes before visual design because structure IS accessibility.
+Before visuals, establish accessible structure using platform-native APIs (see the `ui-ux-standards` skill, Section 1). Plan focus order, modal/sheet management, escape/back to dismiss. Structure comes before visual design because structure IS accessibility.
 
 ### Step 3: States — Design ALL of Them
 Every UI element has at minimum 5 states:
@@ -47,7 +47,7 @@ Also: **Success** (celebrate), **Offline** (cache aggressively on mobile), **Per
 
 ### Step 4: Visual Design
 - Visual hierarchy: what should the eye land on first? Generous whitespace.
-- No generic templates — design must fit the brand. See `ui-ux-standards` Section 4.
+- No generic templates — design must fit the brand. See the `ui-ux-standards` skill, Section 4.
 - Platform type systems, semantic color tokens, 4.5:1 contrast. Check both themes.
 - Focus indicators on every interactive element. Reduced-motion alternatives for animations.
 - Respect platform conventions: iOS feels like iOS, Android feels like Android.
@@ -57,7 +57,7 @@ Also: **Success** (celebrate), **Offline** (cache aggressively on mobile), **Per
 - Works on smallest target device? Inputs optimized? Drag alternatives? One-thumb completable?
 
 ### Step 6: Performance
-- Skeleton screens, optimistic UI, lazy loading, no layout shift. See `ui-ux-standards` Section 7.
+- Skeleton screens, optimistic UI, lazy loading, no layout shift. See the `ui-ux-standards` skill, Section 7.
 - Mobile: 60fps, no main thread blocking, platform image caching.
 
 ## Mode: Review Existing UI
@@ -66,6 +66,24 @@ When reviewing UI code (triggered by `/ui-ux review` or auto-detected):
 
 Apply the full review checklist — accessibility checks are BLOCKERS that gate everything else.
 See @review-checklist.md for the complete 24-point checklist and report format.
+
+## Mode: Audit the Whole UI Surface
+
+When asked for `/ui-ux audit` (no single file): apply the review checklist across every UI
+file in the project, not just one component.
+
+1. Glob the UI surface (`**/*.{tsx,jsx,vue,svelte,html,erb,heex}`, `**/*View.swift`,
+   `**/*Screen.kt`, `**/lib/screens/**`, etc. — same patterns as the `ui-ux` rule). Cap at
+   ~40 files; if larger, sample the highest-traffic screens (entry points, checkout, forms,
+   settings) and say which you skipped.
+2. Run the checklist silently on each file; do not write a per-file report.
+3. Report **by component/screen**, grouped: the accessibility gate result across the surface
+   (how many files BLOCKED, and the failing checks that recur), then the **top 10 findings**
+   ranked by severity × how many places they recur, each with `file:line` evidence.
+4. Close with the three systemic fixes that would clear the most findings at once (a shared
+   focus style, a form-label helper, a skeleton component).
+
+Same report format as Review, plus a one-line "Surface: N files audited, M sampled".
 
 ## Mode: Improve Existing UI
 

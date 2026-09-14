@@ -52,4 +52,4 @@ paths:
 - Accessibility is non-negotiable: semantic structure, 4.5:1 contrast, focus indicators, text scaling, reduced motion.
 - Handle all states: empty, loading (skeleton), error (never blame user), success.
 - Never: dark patterns, autoplay, `outline: none` without replacement, generic unstyled templates.
-- See `ui-ux-standards` knowledge base for full criteria and platform patterns.
+- Load the `ui-ux-standards` skill (shipkit's UI knowledge base, `user-invocable: false`) for full criteria and platform patterns.

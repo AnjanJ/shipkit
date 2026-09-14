@@ -17,7 +17,7 @@ Write a CLAUDE.md with this structure:
 - **Lint command:** `{detected command}`
 - **Build command:** `{detected command}`
 
-Detailed conventions, platform rules, and review standards live in `.claude/rules/` and `.claude/knowledge/` — read them on demand, not upfront.
+Detailed conventions and platform rules live in `.claude/rules/shipkit/` (installed by `/shipkit:setup`; path-scoped ones load when you edit matching files). Review standards are the on-demand `code-review-standards` skill — load it when reviewing, not upfront.
 
 ---
 
@@ -45,7 +45,7 @@ Never say "done" without proving it works:
 - Bug fix → reproduce before/after
 - New feature → run the feature + related tests
 - Refactor → full test suite passes
-- Before any commit → review the diff against `.claude/knowledge/code-review-standards` (or run Claude Code's built-in `/code-review`)
+- Before any commit → review the diff against the `code-review-standards` skill (or run Claude Code's built-in `/code-review`)
 
 ### 5. Autonomous Bug Fixing
 When tests fail, read the error, read the source, fix the root cause.

@@ -1,11 +1,11 @@
 ---
-description: "Code review standards: 8 lenses, anti-pattern catalog, severity definitions"
+description: "Knowledge base (not a command): code review standards — 8 core lenses + 1 for AI/LLM code, anti-pattern catalog, severity definitions. Load when reviewing a diff or PR, via Claude Code's built-in /code-review or a manual pass. Do not load for ordinary editing."
 user-invocable: false
 ---
 
 # Code Review Standards
 
-Knowledge base of detailed review criteria — load it when reviewing a diff, whether via Claude Code's built-in `/code-review` or a manual review pass.
+Knowledge base of detailed review criteria — load it when reviewing a diff, whether via Claude Code's built-in `/code-review` or a manual review pass. It is shipped as a `user-invocable: false` skill so it registers and loads on demand.
 
 ## 8 Review Lenses
 

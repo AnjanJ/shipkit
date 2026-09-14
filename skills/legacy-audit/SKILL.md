@@ -73,7 +73,7 @@ Report: `| Source File | Test File | Last Test Update | Coverage |`
 ## Summary Report
 
 ```
-Legacy Audit Report — {{PROJECT_NAME}}
+Legacy Audit Report — <project name>
 Date: [today]
 
 Dependency Health:  X CRITICAL / Y STALE / Z AGING / W CURRENT

@@ -7,7 +7,7 @@ For each major architectural decision, present in ADR format:
 - **Decision:** What was chosen?
 - **Trade-offs:** What was gained? What was sacrificed? What alternatives existed?
 - **Consequences:** What followed from this decision?
-- **Confidence:** VERIFIED (code evidence), INFERRED (indirect evidence), UNCERTAIN (needs user input)
+- **Confidence:** VERIFIED (code evidence), INFERRED (indirect evidence), UNCERTAIN (no evidence found — must be resolved or cut before the final doc)
 - **Revisit-when:** Under what conditions should this decision be reconsidered?
 
 ## Phase 4: Verification Loop — Detailed Steps
@@ -23,17 +23,22 @@ AI-generated text: break claims into atomic facts and verify each independently.
 
 Extract every factual claim from Phases 1-3 into a table (~30-40 entries max). Each claim needs: source file(s), confidence level (VERIFIED/INFERRED/UNCERTAIN), status.
 
-### Step 4.2 — Present to User
+### Step 4.2 — Sort and Re-Verify (self-enforced — there is no user to ask mid-run)
 
-Present sorted: UNCERTAIN first (need user input), then INFERRED (need confirmation), then VERIFIED (for transparency).
+Sort the table UNCERTAIN first, then INFERRED, then VERIFIED. For every UNCERTAIN and INFERRED
+claim, go back to source: re-read the specific file, verify "X calls Y" claims against
+imports/references, and promote what you can confirm to VERIFIED with a `file:line`.
 
-### Step 4.3 — Re-Verify and Cross-Reference
+### Step 4.3 — Resolve What Remains
 
-After user feedback: re-read source files for corrected claims, verify "X calls Y" claims against imports/references, promote confirmed INFERRED to VERIFIED.
+Anything still UNCERTAIN after re-verification is either **cut** from the document or
+rewritten as an explicit open question under "Unverified / open questions" — never stated as
+fact. INFERRED claims that survive are tagged *[inferred]* inline.
 
 ### Step 4.4 — Gate: Zero UNCERTAIN in Final Doc
 
-**Not optional.** All UNCERTAIN claims must be resolved or marked "*[Not confirmed from code]*".
+**Not optional.** No claim in the returned document carries UNCERTAIN status; the claims
+table in your output shows what was cut or demoted so the caller can audit it.
 
 ## Phase 5: Document Structure Template (100-200 lines)
 

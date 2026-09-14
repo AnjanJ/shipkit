@@ -2,7 +2,7 @@
 ## Go-Specific
 
 ### Architecture
-<!-- setup.sh replaces this based on detection -->
+<!-- /shipkit:setup fills these in from detection -->
 - **Framework:** {{GO_FRAMEWORK}} <!-- stdlib net/http / Gin / Echo / Chi / Fiber -->
 - **API style:** {{API_STYLE}} <!-- REST / gRPC / GraphQL -->
 - **Module path:** {{MODULE_PATH}} <!-- from go.mod -->

@@ -1,11 +1,11 @@
 ---
-description: "UI/UX design standards: empathy-driven design, modern patterns, accessibility, performance as UX, emotional design"
+description: "Knowledge base (not a command): UI/UX standards — WCAG 2.2 accessibility, empathy-first design, platform patterns (web, iOS, Android, Flutter, RN), performance as UX. Load when designing, building, or reviewing UI, or when the ui-ux rule points here. Do not load for non-UI code."
 user-invocable: false
 ---
 
 # UI/UX Design Standards
 
-Reference knowledge base for UI files. Accessibility is the foundation — not a phase. Empathize first, design second. Reduce friction ruthlessly.
+Reference knowledge base for UI files, shipped as a `user-invocable: false` skill so it registers and loads on demand. Accessibility is the foundation — not a phase. Empathize first, design second. Reduce friction ruthlessly.
 
 ---
 

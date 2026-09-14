@@ -15,8 +15,10 @@ Alternatives, Case for, Case against, Decision + **falsifiability clause** — a
 `.shipkit/decisions/NNNN-<slug>.md`. This is the "why" the elders read, the counterpart to the
 map's "what/where".
 
-Governed by `rules/decisions.md` (the format and the concrete-falsifiability requirement). This
-skill runs the interview that produces one record.
+Governed by the `decisions` rule (the format and the concrete-falsifiability requirement) —
+in your context via the shipkit session hook or `.claude/rules/shipkit/decisions.md`; the
+template itself is in @../spec/reference.md, so this skill works either way. This skill runs
+the interview that produces one record.
 
 **Capture real decisions only.** A record needs a genuine fork — **≥2 real alternatives**. A
 forced default is not a decision; note it in a commit and move on. If the decision is scoped to a

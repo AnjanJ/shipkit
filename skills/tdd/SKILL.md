@@ -12,7 +12,9 @@ argument-hint: "[feature|bugfix|refactor]"
 
 This is the **opt-in strict mode** of the shipkit Default Coding Workflow rule — the
 `strict-tdd` workflow style. Invoked explicitly, or automatically when the project's
-CLAUDE.md declares `Workflow style: strict-tdd`.
+CLAUDE.md declares `Workflow style: strict-tdd`. (The workflow rule is in your context via the
+shipkit session hook or `.claude/rules/shipkit/shipkit.md`; this skill is self-contained
+either way.)
 
 Write the test first. Watch it fail. Write minimal code to pass. Refactor.
 

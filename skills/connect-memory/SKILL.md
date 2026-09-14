@@ -75,11 +75,13 @@ User scope is required: plugin subagents can't declare their own MCP server, so 
 
 **Derive the transcript directory** — do not ask the user for it (this is the fiddly step the
 manual docs leave to them). Claude keys transcripts by the *directory* you ran Claude in, under
-`~/.claude/projects/`, with `/` replaced by `-`:
+`~/.claude/projects/`, with **every non-alphanumeric character** replaced by `-` (per the
+Claude Code sessions docs — not just `/`; `_`, `.` and spaces become `-` too, so
+`~/code/office_bestie` lives at `-Users-you-code-office-bestie`):
 
 ```bash
-# transcript dir = ~/.claude/projects/<cwd with every "/" turned into "-">
-TDIR=~/.claude/projects/$(pwd | sed 's|/|-|g')
+# transcript dir = ~/.claude/projects/<cwd with every non-alphanumeric char turned into "-">
+TDIR=~/.claude/projects/$(pwd | sed 's/[^A-Za-z0-9]/-/g')
 ls "$TDIR" >/dev/null 2>&1 || echo "no transcripts for this dir — nothing to backfill yet"
 ```
 

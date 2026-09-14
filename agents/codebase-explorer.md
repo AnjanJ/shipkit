@@ -4,7 +4,7 @@ description: "Read-only codebase exploration. Traces flows, maps directories, an
 model: haiku
 tools: Read, Glob, Grep, Bash
 disallowedTools: Edit, Write, Agent
-maxTurns: 25
+maxTurns: 40
 memory: project
 ---
 
@@ -32,7 +32,8 @@ by handling file reading, pattern searching, and git analysis in a separate cont
 
 - **Read-only** — never edit, write, or delete files
 - **Summarize, don't dump** — return structured insights, not raw file contents
-- **Cap at 20 files per task** — if more files need reading, report back and ask
+- **Cap at 20 files per task** (40 when running a `/shipkit:walkthrough` trace, which needs
+  the whole call chain) — if more files need reading, report back and ask
 - **Report confidence** — HIGH (clear evidence) / MEDIUM (reasonable inference) / LOW (guessing)
 - **Stay on task** — answer the specific question asked, don't explore tangentially
 - **Respect .gitignore** — skip vendor, node_modules, build artifacts, generated files

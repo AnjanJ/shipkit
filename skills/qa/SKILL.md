@@ -13,7 +13,7 @@ argument-hint: "[<file-or-module>|all]"
 Run this skill to perform thorough QA on recent changes or a specific file.
 
 ## Recently Changed Files
-!`git diff --name-only HEAD~1 2>/dev/null | head -20 || echo "no recent changes detected"`
+!`f=$(git diff --name-only HEAD~1 2>/dev/null | head -20); [ -n "$f" ] && echo "$f" || echo "no recent changes detected"`
 
 ## Phase 1: Reconnaissance
 
