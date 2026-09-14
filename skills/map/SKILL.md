@@ -22,7 +22,8 @@ Mode: `$ARGUMENTS` (default: build if no map exists, else refresh)
 ## How to run it
 
 1. **Delegate to the `archivist` agent** via the Agent tool. Tell it the mode and the working
-   directory. Do not map the project yourself in the main context.
+   directory. Do not map the project yourself in the main context. The archivist carries its
+   own output template; nothing else needs to be passed.
 2. The agent writes `PROJECT_MAP.md` (repo root, or `docs/` if that is the convention) and
    returns a 5-line summary: what it wrote, line count, HEAD sha, any unverified sections.
 3. Relay that summary. Do not echo the whole map.
