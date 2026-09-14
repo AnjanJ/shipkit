@@ -39,7 +39,8 @@ work that's already been done — build on it.
 
 ### 1.1 Read Foundation Files
 
-Read (via `codebase-explorer` agent for heavy reading):
+Read directly — you run as a forked, non-interactive researcher with no subagents of your
+own, so you ARE the reader (summarize as you go; do not keep raw file contents around):
 - README, CLAUDE.md, docs/ directory
 - Dependency files (Gemfile, package.json, mix.exs, go.mod, etc.)
 - Config files (database.yml, docker-compose.yml, CI configs)
@@ -82,7 +83,8 @@ Identify: web app, background workers, databases, cache, message queue, CDN/stor
 
 ### 2.3 Component Level — Internal Structure
 
-Use `codebase-explorer` agent to trace 2-3 primary flows through internal components:
+Trace 2-3 primary flows through internal components yourself (Grep the entry points, Read
+only the files on the path):
 - What are the major internal boundaries? (modules, engines, contexts, packages)
 - How do components communicate? (method calls, events, queues, HTTP)
 - Where are the sync vs async boundaries?
