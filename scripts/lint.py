@@ -295,6 +295,18 @@ if hooks_json.exists():
             err(path, "always-on rule (no paths: frontmatter) is not injected by any "
                       "inject-rule.sh hook command in hooks/hooks.json")
 
+# --- 8b. Shipped scripts must exist and be executable ------------------------
+for name in ("session-start.sh", "inject-rule.sh", "install-rules.sh", "install-stack.sh",
+             "smoke.sh", "lint.sh"):
+    s = ROOT / "scripts" / name
+    if not s.exists():
+        err(s, "required script is missing")
+    elif not (s.stat().st_mode & 0o111):
+        err(s, "script is not executable")
+if not (ROOT / "scripts" / "lib-rules-sha.sh").exists():
+    err(ROOT / "scripts" / "lib-rules-sha.sh", "shared helper is missing (install-rules.sh and "
+                                               "session-start.sh both source it)")
+
 # --- 9. Placeholders --------------------------------------------------------
 # {{NAME}} placeholders may only appear under stacks/ (filled by /setup), and
 # every one used there must be listed in setup's substitution table so it is
