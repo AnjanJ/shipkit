@@ -6,16 +6,20 @@
 
 **[User Guide](GUIDE.md)** — detailed docs for every skill, agent, setup/unsetup, and common workflows. &nbsp;·&nbsp; **[Changelog](CHANGELOG.md)** — what's new. &nbsp;·&nbsp; **[Roadmap](ROADMAP.md)** — where this is going.
 
-**New in 2.8:** **the automatic tier now actually runs.** An audit found that Claude Code does not
-load a plugin's `rules/` or `knowledge/` directories, so the rules and knowledge bases had never
-entered a session. The session hook now injects the always-on rules (spec-driven, decisions,
-commit discipline) at session start, `/shipkit:setup` installs all nine rules as files under
-`.claude/rules/shipkit/` (which is what makes the path-scoped ones load), and the knowledge bases
-are on-demand skills. Also fixed: a template that registered as a bogus agent, the
-`connect-memory` transcript path for projects with `_` or `.` in their path, and setup's missing
-path to the stack overlays. See the [Changelog](CHANGELOG.md).
+**New in 2.9:** **deterministic installs and a lighter touch.** `/shipkit:setup` now installs
+rules and stack overlays through two shipped scripts (same result every run, no placeholder ever
+left unfilled, install stamped with the plugin version so the session hook can tell you when a
+plugin upgrade has made your copies stale). A `scripts/smoke.sh` checks the platform behaviour
+the plugin depends on in a real session. The `spec-driven` rule now honours a `lightweight`
+workflow style, setup's CLAUDE.md is project facts only (conventions live in the rules), the
+`lessons.md` experiment is retired in favour of Claude Code's own memory, and
+`/shipkit:walkthrough` runs on a new `tracer` agent with the budget a real trace needs. See the
+[Changelog](CHANGELOG.md).
 
-*(2.6 added **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/` (requirements in EARS, design as **decision records** with a concrete **falsifiability clause**) and `/shipkit:decide` captures standalone project-wide decisions to `.shipkit/decisions/`. The elders read both — including *"which past decisions are now falsified?"* — `eve` sees open specs across the portfolio, and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.)*
+*(2.8 made the automatic tier real: Claude Code does not load a plugin's `rules/` or `knowledge/`
+directories, so the session hook now injects the always-on rules, `/shipkit:setup` installs all
+nine rules as files under `.claude/rules/shipkit/`, and the knowledge bases are on-demand skills.
+2.6 added **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/` (requirements in EARS, design as **decision records** with a concrete **falsifiability clause**) and `/shipkit:decide` captures standalone project-wide decisions to `.shipkit/decisions/`. The elders read both — including *"which past decisions are now falsified?"* — `eve` sees open specs across the portfolio, and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.)*
 
 *(2.1 added two portfolio reports for `eve`: `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo, and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. 2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
 
@@ -97,7 +101,7 @@ invoke any of them by name:
 | `/shipkit:migration-plan` | Plan major dependency upgrades |
 | `/shipkit:ui-ux` | Empathy-driven UI/UX design, review, and audit (web + mobile) |
 
-**5 agents** — subagents that do heavy work in their own context so yours stays thin:
+**6 agents** — subagents that do heavy work in their own context so yours stays thin:
 
 | Agent | What It Does |
 |-------|-------------|
@@ -105,7 +109,8 @@ invoke any of them by name:
 | `eve` | Answers questions **across all** your registered projects (the 360° view) |
 | `archivist` | Builds/refreshes the `PROJECT_MAP.md` that grandfather and eve read |
 | `test-analyzer` | Auto-diagnoses test failures |
-| `codebase-explorer` | Read-only exploration: traces flows, maps architecture |
+| `codebase-explorer` | Read-only exploration: maps directories, answers bounded questions cheaply |
+| `tracer` | Read-only deep trace of one feature end-to-end, `file:line`-cited — behind `/shipkit:walkthrough` |
 
 ### The project elders — ask, don't pollute
 
@@ -198,8 +203,8 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 1. **Snapshots your current state** — copies `CLAUDE.md` + `.claude/` to `.shipkit-backup-<timestamp>/`
 2. **Auto-detects** your stack, test framework, and package manager
 3. **Creates CLAUDE.md** with your project info and workflow rules
-4. **Installs shipkit's 9 rules** as files under `.claude/rules/shipkit/` — the path-scoped ones only work this way
-5. **Installs stack-specific** skills, rules, and knowledge bases, with every `{{placeholder}}` filled from detection
+4. **Installs shipkit's 9 rules** as files under `.claude/rules/shipkit/` (via `scripts/install-rules.sh`, stamped with the plugin version) — the path-scoped ones only work this way
+5. **Installs stack-specific** skills, rules, and knowledge bases (via `scripts/install-stack.sh`), with every `{{placeholder}}` filled from detection — the script refuses to leave one unfilled
 6. **Creates settings.json** with safe permission defaults
 
 ### Stack-Specific Additions

@@ -13,7 +13,7 @@ A complete guide to using every skill, agent, and feature in shipkit.
 5. [Episodic Memory (MemPalace)](#episodic-memory-mempalace)
 6. [Skills Reference](#skills-reference)
 7. [Spec-Driven Development](#spec-driven-development)
-8. [Lessons Memory](#lessons-memory)
+8. [Memory](#memory)
 9. [Agents](#agents)
 10. [Knowledge Bases](#knowledge-bases)
 11. [Path-Scoped Rules](#path-scoped-rules) — automatic + always-on
@@ -52,7 +52,7 @@ once you know which is which.
 
 You never call these. How they reach a session matters, because Claude Code does **not** load a
 plugin's `rules/` directory: the always-on rules and the hook work as soon as the plugin is
-loaded (the session hook injects the rules); the path-scoped rules and lessons memory need
+loaded (the session hook injects the rules); the path-scoped rules need
 `/shipkit:setup` once per project, which installs every rule as a file under
 `.claude/rules/shipkit/`.
 
@@ -62,7 +62,6 @@ loaded (the session hook injects the rules); the path-scoped rules and lessons m
 | **`spec-driven` rule** | You start **non-trivial** feature work | Puts the three questions (what/how/done) + EARS + TDD-first in effect — see [Spec-Driven Development](#spec-driven-development) |
 | **`decisions` rule** | You make a real choice (≥2 alternatives) | Prompts a five-part decision record with a falsifiability clause |
 | **Commit discipline** | Any commit | Atomic commits, message scaled to the change, no `git add .`, no `--no-verify` |
-| **Lessons memory** | You correct Claude / a project pattern emerges | Appends a dated line to `.claude/lessons.md` (30-line cap) — see [Lessons Memory](#lessons-memory) |
 | **Session hook** | Session start | Tells Claude the plugin root, injects the always-on rules unless installed as files, and prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
 
 ### 🔵 Auto-invoked — Claude picks the right skill
@@ -123,11 +122,17 @@ Configures shipkit for your specific project. Run it once when you start using s
    pragmatic exceptions), or `lightweight` (tests where they earn their keep)
 5. Creates a tailored CLAUDE.md that declares your choices; the workflow itself is defined
    once, in shipkit's always-on rules
-6. Installs all nine shipkit rules as files under `.claude/rules/shipkit/` — Claude Code only
-   loads rules from a project, so this is what makes the path-scoped rules work
-7. Installs stack-specific skills, rules, and knowledge bases (into `.claude/skills/` and
-   `.claude/rules/shipkit/<stack>/`), filling every `{{placeholder}}` from detection
+6. Installs all nine shipkit rules as files under `.claude/rules/shipkit/` via
+   `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
+   makes the path-scoped rules work. The install is stamped with the plugin version; the session
+   hook tells you when a plugin upgrade has made the copies stale, and re-running setup refreshes them
+7. Installs stack-specific skills, rules, and knowledge bases via `scripts/install-stack.sh`
+   (into `.claude/skills/` and `.claude/rules/shipkit/<stack>/`), filling every
+   `{{placeholder}}` from detection — the script refuses to leave one unfilled
 8. Optionally creates `.claude/settings.json` with safe defaults
+
+The CLAUDE.md it writes is short on purpose — project facts (purpose, stack, commands, key
+paths, workflow style). Conventions live in the rules, so no generic boilerplate is restated.
 
 **How backups work:**
 - Everything is copied to `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at project root
@@ -649,40 +654,22 @@ map already gets. Silent when fresh.
 
 ---
 
-## Lessons Memory
+## Memory
 
-Shipkit includes a lightweight project memory system via `.claude/lessons.md`.
+Shipkit keeps three kinds of durable, *verified* knowledge and leaves the rest to Claude Code:
 
-### How it works
+| Kind | Where | Who maintains it |
+|------|-------|------------------|
+| Structure — what exists and where | `PROJECT_MAP.md` | `archivist`, via `/shipkit:map` |
+| Intent and why — specs and decision records | `.shipkit/specs/`, `.shipkit/decisions/` | you, via `/shipkit:spec` and `/shipkit:decide` |
+| Conversation history (optional) | MemPalace | `/shipkit:connect-memory` |
 
-- When you correct Claude or it discovers a project-specific pattern, it writes a one-line entry to `.claude/lessons.md` with the date
-- At the start of every session, Claude reads this file to avoid repeating mistakes
-- The file has a **30-line limit** — when exceeded, Claude alerts you and suggests consolidating
-
-### Why 30 lines?
-
-Research shows frontier LLMs have a ~150-200 effective instruction limit. CLAUDE.md uses ~130 lines, path-scoped rules add ~15-30 when active. Lessons.md needs to stay small to avoid crowding out useful context. 30 lines gives enough room for project-specific corrections without degrading performance.
-
-### The graduation cycle
-
-```
-Correction → lessons.md (short-term memory)
-        ↓ repeats
-/update-rules → CLAUDE.md (permanent rule)
-        ↓ lessons entry removed
-```
-
-Lessons that keep recurring should become proper rules via `/shipkit:update-rules`. This keeps lessons.md lean and CLAUDE.md authoritative.
-
-### Example
-
-```markdown
-# Lessons Learned
-
-- 2026-03-11: Use `factory_bot` not fixtures — project convention
-- 2026-03-11: API responses must include `request_id` header
-- 2026-03-12: Don't use `after_save` for email notifications — use a job
-```
+Corrections and preferences ("use factory_bot, not fixtures") belong in Claude Code's own
+per-project memory or, when they are real conventions, in a rule via `/shipkit:update-rules`.
+Shipkit ≤ 2.8 kept a `.claude/lessons.md` for this; it is retired. If your project still has
+one, Claude reads it at session start and offers to migrate its entries into rules — then delete
+it. The elder agents deliberately carry no private memory of their own: the map, the registry
+and `.shipkit/` *are* their memory, and every one of them is a file you can read and check.
 
 ---
 
@@ -725,7 +712,16 @@ Read-only exploration agent. Traces call chains, maps directories, analyzes sche
 
 Used by `/shipkit:qa` and plan-mode research for heavy reading. Or reference directly: "use the codebase-explorer agent to map the services directory."
 
-Both agents: read-only, cap at 20 files per task, report confidence levels.
+### tracer
+
+Deep, single-feature traces: follows one call chain from trigger through every layer to the
+datastore and back, reads the tests for the edge cases, and returns a `file:line`-cited
+walkthrough. Sonnet, 40 turns, up to 40 files — the budget a real trace needs, which the
+explorer's bounded budget is not meant for.
+
+Used by `/shipkit:walkthrough`. Or reference directly: "use the tracer agent to trace the checkout flow."
+
+All three: read-only, report confidence levels, keep no private memory between runs.
 
 ---
 
@@ -903,8 +899,8 @@ where spec-driven development pays off in brownfield without drowning you in cer
 **What you get:** an impact analysis and a step-by-step execution plan for a major/breaking
 upgrade — before you start, not halfway through.
 
-**From here:** as you learn non-obvious things, they graduate into `.claude/lessons.md`
-automatically; refresh the map after big changes; capture the decisions you make with
+**From here:** as you learn non-obvious things, turn the real conventions into rules with
+`/shipkit:update-rules`; refresh the map after big changes; capture the decisions you make with
 `/shipkit:decide` so the next person (or you in six months) inherits the *why* you didn't have.
 
 ---
@@ -978,3 +974,5 @@ your specs and decisions are yours to keep.)
 4. **Path-scoped rules are automatic once installed.** `/shipkit:setup` copies them into `.claude/rules/shipkit/`; from then on they load when you edit matching files.
 
 5. **Stack-specific content needs /setup.** Skills, agents, the hook and the always-on rules work instantly. Path-scoped rules and stack-specific skills (like `/new-feature` for Rails) require running `/shipkit:setup` first.
+
+6. **Releasing shipkit itself** (for contributors): `./scripts/lint.sh` checks the files the plugin ships and runs in CI; `./scripts/smoke.sh` checks that Claude Code still behaves the way the plugin assumes (rules inject, the per-hook cap, the agent set, the install scripts) — it needs a logged-in `claude`, so run it locally before tagging.
