@@ -5,7 +5,6 @@ model: sonnet
 tools: Read, Glob, Grep, Bash, Write
 disallowedTools: Agent
 maxTurns: 40
-memory: project
 ---
 
 # Archivist Agent
@@ -89,7 +88,8 @@ map is the front door to shipkit's forward-looking (specs) and why (decisions) a
 the backward-looking structure. One line each; do not summarize their contents, just point.
 
 ## Constraints
-- **One write only** — `PROJECT_MAP.md`. Touch nothing else.
+- **One write only** — `PROJECT_MAP.md`. Touch nothing else. The map *is* your memory between
+  runs (on `refresh`, read the old one first); you keep no private notes.
 - **Pointers must resolve** — a path in the map must exist on disk at write time.
 - **No invented history** — if git is shallow or absent, say "evolution: limited history available."
 - **Summarize, never dump** — no pasted schemas or full file listings.

@@ -3,10 +3,10 @@ description: "Trace one feature end-to-end (trigger → DB → back) and return 
 user-invocable: true
 argument-hint: "[<feature-name> [surface|deep]]"
 context: fork
-agent: codebase-explorer
+agent: tracer
 ---
 
-<!-- FIRE-AND-FORGET FORK: runs non-interactively as the read-only codebase-explorer
+<!-- FIRE-AND-FORGET FORK: runs non-interactively as the read-only tracer
      agent. It cannot ask the user anything mid-run and cannot write files. It traces
      end-to-end and RETURNS the walkthrough; the main session presents it and writes
      docs/code-walkthrough/<feature>.md only after the user approves. -->

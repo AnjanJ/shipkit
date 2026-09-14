@@ -25,7 +25,7 @@ Rule to apply: $ARGUMENTS
    - Session habits → "Session Discipline" section
    - Stack-specific → the stack-specific section (if it exists)
 4. **Add/update the rule** — match the formatting of surrounding rules (bullet style, heading level)
-5. **Check line count** — if CLAUDE.md exceeds 200 lines after the edit, warn the user and suggest what to move to a separate file (`.claude/lessons.md` or a knowledge base)
+5. **Check line count** — if CLAUDE.md exceeds 200 lines after the edit, warn the user and suggest what to move into a path-scoped rule under `.claude/rules/` (conventions that only apply to some files) or an on-demand skill
 6. **Show the diff** — display what changed so the user can verify
 
 ## Examples

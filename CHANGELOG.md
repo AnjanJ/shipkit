@@ -2,6 +2,56 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.9.0] — 2026-09-14
+
+### Added — deterministic installs, a smoke test, and a stale-rules nudge
+
+- **`scripts/install-rules.sh` and `scripts/install-stack.sh`** now do the copying for
+  `/shipkit:setup`. The rules install stamps `.claude/rules/shipkit/.installed` with the plugin
+  version and a digest of the rules; the stack install copies rules/skills, appends the stack
+  section to `CLAUDE.md` once (marker-guarded, so re-runs are safe), substitutes every
+  `{{…}}` placeholder from `KEY=value` arguments, and **fails before writing anything** if a placeholder you did
+  not pass. Setup still does the detection and the interview; the result on disk is now the
+  same every time.
+- **`scripts/smoke.sh`** — the platform-assumption harness from the 2.7.0 audit, scripted:
+  eight checks (rules inject, no double-inject, plugin-root line, exact agent set, knowledge-base
+  skills registered, the ~10K per-hook cap, the install scripts, the stale-rules nudge) against
+  a scratch copy in a fresh `claude --plugin-dir` session. Needs a logged-in `claude`; run it
+  after `./scripts/lint.sh` before tagging.
+- **Stale installed-rules nudge.** The session hook compares the installed stamp with the
+  plugin's current rules and prints one line when they differ (or when the directory has no
+  stamp — a 2.8 install): "run /shipkit:setup to refresh". Same closed-loop treatment the map
+  and specs already get.
+- **`tracer` agent** — a Sonnet, read-only, 40-turn agent for deep single-feature traces.
+  `/shipkit:walkthrough` runs on it; `codebase-explorer` returns to its 25-turn / 20-file
+  budget (the 2.8 bump was a stopgap). 6 agents.
+
+### Changed
+
+- **`spec-driven` honours the workflow style.** `lightweight` projects answer the three
+  questions inline and write `.shipkit/specs/` only when asked (or via `/shipkit:spec`); the
+  `decisions` rule still applies in full. `strict-tdd` / `test-first` unchanged.
+- **Setup's CLAUDE.md is project facts only** (purpose, stack, commands, key paths, workflow
+  style, team conventions; ≤ 40 lines before the stack section). The generic workflow
+  boilerplate it used to carry — verification-before-done, investigate-before-fixing,
+  docs-first for unfamiliar libraries, minimal impact, ask-before-destructive-operations —
+  moved into the always-on `shipkit` rule, so every project gets it whether injected or
+  installed and no LLM-written context file restates it. This is what the research the README
+  cites recommends.
+- **`lessons.md` retired.** Claude Code's own per-project memory covers corrections; shipkit's
+  durable knowledge is the map, specs and decision records. Setup no longer creates
+  `.claude/lessons.md`; if one exists the rule offers to migrate it into CLAUDE.md rules.
+- **Agent `memory:` fields removed** from `archivist`, `grandfather`, `eve` and
+  `codebase-explorer`. The field auto-loads a private `MEMORY.md` into the agent prompt, which
+  contradicted "each call you start blank", "read-only" and "one write only", and runs against
+  shipkit's verified-over-recalled stance. An existing `.claude/agent-memory/` directory is
+  harmless and can be deleted.
+
+### Fixed
+
+- `.gitignore` ignored `.claude/` at every depth, which also hid `stacks/*/.claude/**` from
+  `git add`. Now `/.claude/` (repo root only).
+
 ## [2.8.0] — 2026-09-14
 
 ### Fixed — the "automatic" tier now actually runs

@@ -18,6 +18,20 @@ Before building something non-trivial, answer three questions — in order:
 For a small-but-non-trivial change these can be a few lines each — scale the spec to the work. A
 full spec folder is for features and multi-file changes, not every branch.
 
+## Honour the project's workflow style
+
+The project's CLAUDE.md may declare a `Workflow style:` (set by `/shipkit:setup`; absent means
+`test-first`). It governs how much of this rule applies:
+
+- **`strict-tdd` / `test-first`** — as written here: non-trivial work answers the three questions,
+  and features / multi-file changes get the `.shipkit/specs/<feature>/` folder.
+- **`lightweight`** — answer the three questions **inline in the conversation**, a few lines each,
+  and write `.shipkit/specs/` only when the user asks for a spec or invokes `/shipkit:spec`. The
+  `decisions` rule still applies in full: a real fork still gets a record — it is cheap, and it is
+  the part the elders need most.
+
+Invoking `/shipkit:spec` by name always writes the files, whatever the style.
+
 ## Where specs live
 
 Under the shipkit artifact root, one folder per feature:

@@ -1,7 +1,26 @@
 # Shipkit
 
-- If `.claude/lessons.md` exists, read it at session start. On corrections, append a dated one-liner. Alert user at 30 lines to consolidate via `/shipkit:update-rules`.
 - If no CLAUDE.md exists and user asks about project setup, suggest `/shipkit:setup`.
+- If `.claude/lessons.md` exists (created by shipkit ≤ 2.8), read it at session start and offer to
+  migrate its entries into CLAUDE.md rules via `/shipkit:update-rules`; do not append to it.
+  Claude Code's own project memory now covers corrections; shipkit's durable knowledge is the
+  map, the specs and the decision records.
+
+## Verification and Care
+
+- **Never say "done" without proving it.** Code change → run the tests. Bug fix → reproduce
+  before and after. New feature → run it plus the related tests. Refactor → full suite green.
+- **When tests fail, investigate first**: read the error, read the source, fix the root cause.
+  Ask only if genuinely stuck. If an approach isn't working after 2-3 attempts, stop and reconsider.
+- **Unfamiliar library or API** → read its current documentation first (WebFetch or the project's
+  docs tooling). Never guess at an API.
+- **Minimal impact**: change only what the task needs; don't refactor neighbours; no TODOs or
+  stubs left behind; prefer editing existing files over creating new ones.
+- **Ask before anything destructive**, every time: dropping tables/columns or deleting
+  migrations (present a rollback first); deleting files, `rm -rf`, overwriting uncommitted work;
+  force-push, `reset --hard`, amending published commits, deleting branches; major dependency
+  upgrades; calls to external APIs that cost money or hit rate limits. Never stage `.env`,
+  credentials, keys or tokens.
 
 ## Default Coding Workflow
 
@@ -12,7 +31,7 @@ the CLAUDE.md written by `/shipkit:setup` defer to it.
 `/shipkit:setup`), honor it:
 - `strict-tdd` — iron-law red-green-refactor; follow `/shipkit:tdd` for every change.
 - `test-first` — the default below.
-- `lightweight` — plan and implement; write tests where they earn their keep, when the user wants them.
+- `lightweight` — plan and implement; write tests where they earn their keep, when the user wants them. Also relaxes the spec-driven rule to inline answers (see `spec-driven.md`).
 
 **The default (`test-first`).** When the user asks to build, add, implement, or change
 something — assess first:

@@ -10,7 +10,7 @@ Thumbs.db
 .idea/
 
 # Claude Code local state
-.claude/
+/.claude/
 
 # Environment
 .env

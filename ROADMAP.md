@@ -7,11 +7,12 @@ Newest thinking wins — treat this as a living document, not a contract.
 knowledge layer for Claude Code** — map + elders (grandfather/eve/archivist) + registry +
 lessons — with the generic workflow content demoted or split out.
 
-**Status (as of 2026-09-14, v2.8.0):** the north star is largely realized. The repositioning
+**Status (as of 2026-09-14, v2.9.0):** the north star is largely realized. The repositioning
 (1.3, 2.0) shipped; the knowledge layer then grew **forward** with spec-driven development and
 decision records (2.5), and its optional decision-recall (MemPalace) got one-command setup (2.7).
-2.8 fixed the audit findings that showed the "automatic" tier was not actually loading.
-Everything below through 2.8 is shipped; treat the rest as living direction.
+2.8 fixed the audit findings that showed the "automatic" tier was not actually loading; 2.9 made
+the installs deterministic, added a smoke test for the platform assumptions, and lightened the
+discipline. Everything below through 2.9 is shipped; treat the rest as living direction.
 
 Platform facts that shaped this plan, each verified against the official Claude Code docs and,
 since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):
@@ -283,6 +284,29 @@ lint gained checks for every bug class the audit found. Full list in the CHANGEL
 **Positioning held.** Nothing was added to the skill surface. The audit's scope recommendations
 (the methodology skills that dilute the knowledge-layer identity; the two-plugin split from
 item 6) remain open and are the natural next release.
+
+---
+
+## 2.9 — Deterministic installs, smoke test, lighter discipline — ✅ SHIPPED 2026-09-14 as 2.9.0
+
+**The gap.** After 2.8 the installs still depended on the model following a 20-row table by
+hand; the platform assumptions the plugin rests on (10K per-hook cap, recursive `agents/`,
+`.claude/rules/` loading) were checked only by one-off nonce tests in a chat; installed rule
+copies rotted after a plugin upgrade; spec-driven ceremony fired at full strength even for
+`lightweight` projects; setup's CLAUDE.md was mostly generic boilerplate the rules already
+carried; and four small inconsistencies remained (agent `memory:` fields, `.gitignore`,
+`lessons.md` duplicating native memory, walkthrough on the Haiku explorer).
+
+**What shipped.** `install-rules.sh` / `install-stack.sh` (copy + substitute + fail on leftover
+placeholders + version stamp); `scripts/smoke.sh` (eight live checks, run before tagging); the
+stale-installed-rules nudge in the session hook; `spec-driven` honours `Workflow style:
+lightweight`; a project-facts-only CLAUDE.md template with the generic guidance moved into the
+always-on `shipkit` rule; `lessons.md` retired in favour of Claude Code's native memory; agent
+`memory:` fields dropped; the `tracer` agent for `/shipkit:walkthrough`; `.gitignore` scoped to
+the repo root.
+
+**Still open.** The two-plugin split (item 6) and the methodology-skill scope question. The
+commit rule's no-trailer stance was deliberately left as is.
 
 ---
 
