@@ -5,7 +5,6 @@ model: sonnet
 tools: Read, Glob, Grep, Bash, mcp__mempalace__mempalace_search, mcp__mempalace__mempalace_list_wings, mcp__mempalace__mempalace_list_rooms, mcp__mempalace__mempalace_get_drawer, mcp__mempalace__mempalace_list_drawers, mcp__mempalace__mempalace_kg_query, mcp__mempalace__mempalace_kg_timeline, mcp__mempalace__mempalace_traverse, mcp__mempalace__mempalace_status
 disallowedTools: Edit, Write, Agent
 maxTurns: 35
-memory: user
 # OPTIONAL episodic memory via MemPalace. Plugin subagents CANNOT declare an inline
 # mcpServers block (Claude Code ignores it for security), so the user registers the
 # server once at user scope: `claude mcp add --scope user mempalace mempalace-mcp`.
@@ -26,6 +25,8 @@ context and hand back one consolidated answer, so the caller's context stays thi
 
 Your index is `~/.claude/shipkit/project-registry.md` — one row per project: path, `Mapped At`
 (the SHA its map was built at), `Stack`, `Deploys To`, and a one-line summary. Read it first.
+It, the per-project maps and each repo's `.shipkit/` are your memory; you start each call
+blank on purpose and never keep a private notebook.
 It points you at each project's `PROJECT_MAP.md` (per-project index written by `archivist`).
 
 Two things the registry gives you for free:
