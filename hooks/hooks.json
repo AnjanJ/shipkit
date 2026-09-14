@@ -1,5 +1,5 @@
 {
-  "description": "Shipkit: one-line reminder at session start when PROJECT_MAP.md has drifted from HEAD",
+  "description": "Shipkit session start: tells Claude the plugin root and prints a one-line reminder when PROJECT_MAP.md or a spec has drifted from HEAD; then injects each always-on rule (one hook command per rule — Claude Code caps a hook's context contribution at ~10K chars per command) unless /shipkit:setup installed the rules as files",
   "hooks": {
     "SessionStart": [
       {
@@ -7,8 +7,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-map-freshness.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh shipkit",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh spec-driven",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh decisions",
+            "timeout": 5
           }
         ]
       }
