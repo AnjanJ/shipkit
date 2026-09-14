@@ -1,0 +1,11 @@
+
+## LiveView
+
+- **Frontend:** Phoenix LiveView
+- **PubSub topics:** {{PUBSUB_TOPICS}} <!-- e.g. "user:<id>", "org:<id>" — or "none" -->
+- **LiveView tests:** `{{LIVEVIEW_TEST_COMMAND}}`
+
+### Conventions
+`mount/3` runs twice (guard with `connected?/1`), `stream/4` for collections, `handle_params/3`
+for URL state, function components over nested LiveViews.
+Full rules: `.claude/rules/shipkit/liveview/`.

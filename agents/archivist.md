@@ -41,6 +41,11 @@ You receive one of:
 - Identify framework: Rails, Phoenix/Elixir, React/TS, etc. Use stack conventions to know
   where to look (Rails → `app/`, `config/routes.rb`, `db/schema.rb`; Phoenix → `lib/<app>`,
   `lib/<app>_web`, contexts; React → `src/`, routing, state).
+- Identify the **frontend interaction model** — how UI updates reach the browser:
+  `turbo-rails`/`stimulus-rails`/`importmap.rb` → Hotwire; `:phoenix_live_view` → LiveView;
+  `inertia_rails`/`vite_rails` → React inside Rails; a standalone `src/` SPA → client-rendered.
+- Identify **data/ML signals** if present: `torch`/`tensorflow`/`jax`/`scikit-learn`/
+  `transformers` in deps, `*.ipynb`, `notebooks/`, `data/`, `models/`, `mlruns/`, `wandb/`.
 
 ### 2. Map the structure (cap ~30 files read)
 - Top-level layout and what each major dir is for.
@@ -116,6 +121,20 @@ Write this structure. Grandfather reads it. Keep it 120-220 lines.
 - **Datastore:** <PostgreSQL / ...>  **Cache/queue:** <Redis, Sidekiq, Oban, ...>
 - **Deploy:** <Hetzner / AWS / Cloudflare Pages — and how>
 - **Test:** <RSpec / ExUnit / Vitest> — run with `<command>`
+
+## Frontend interaction model   ← only if the project renders a UI
+- **Model:** <Hotwire (Turbo + Stimulus) / LiveView / React SPA / Inertia + React / server-rendered>
+- **Where UI state lives:** <server-side assigns / component state / a store>
+- **How updates reach the browser:** <Turbo Streams over ActionCable / LiveView diffs over the
+  socket / fetch + client render / full page loads>
+- **Entry points:** <`app/javascript/controllers/`, `lib/<app>_web/live/`, `app/frontend/`>
+
+## Data & models   ← only if the project trains, evaluates, or ships models
+- **Datasets:** <what they are, where they live, how they are fetched, provenance>
+- **Pipelines:** <ingest → features → train → eval, and the entry point for each>
+- **Training entry points:** <`train.py`, a notebook, a job>
+- **Artifacts:** <where weights/checkpoints are written, and what is versioned>
+- **Experiment tracking:** <MLflow / W&B / files / none>
 
 ## Layout (where things live)
 | Path | Purpose |

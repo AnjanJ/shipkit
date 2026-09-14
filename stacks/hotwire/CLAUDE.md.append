@@ -1,0 +1,11 @@
+
+## Hotwire
+
+- **Frontend:** Hotwire (Turbo + Stimulus)
+- **JS bundling:** {{JS_BUNDLING}} <!-- importmap / esbuild / vite / webpack -->
+- **Stimulus controllers:** {{STIMULUS_PATH}} <!-- app/javascript/controllers/ or app/frontend/controllers/ -->
+- **System tests:** `{{SYSTEM_TEST_COMMAND}}`
+
+### Conventions
+Drive by default, Frames for scoped navigation, Streams for multi-region or broadcast updates.
+Stimulus for no-round-trip interactions only. Full rules: `.claude/rules/shipkit/hotwire/`.

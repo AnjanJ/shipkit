@@ -1,0 +1,14 @@
+
+## ML / Data
+
+- **Datasets:** {{DATASETS}} <!-- where they live and how to fetch them -->
+- **Train:** `{{TRAIN_COMMAND}}`
+- **Evaluate:** `{{EVAL_COMMAND}}`
+- **Notebooks:** `{{NOTEBOOK_COMMAND}}`
+- **Experiment tracker:** {{TRACKER}} <!-- MLflow / Weights & Biases / none -->
+- **Hardware:** {{HARDWARE}} <!-- CPU / CUDA / MPS -->
+- **Model artifacts:** {{ARTIFACT_PATH}} <!-- where trained weights are written -->
+
+### Conventions
+Seeds set and logged, runs recorded with config + git SHA, never evaluate on training data,
+raw data and weights stay out of git. Full rules: `.claude/rules/shipkit/ml/`.

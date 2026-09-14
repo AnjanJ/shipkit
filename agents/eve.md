@@ -79,6 +79,8 @@ the grep is ambiguous. Never escalate the other way (you cannot un-spend a 20-ma
    | Framework + version | `Gemfile.lock`, `package.json`, `mix.exs`, `go.mod`, `pyproject.toml`, `Cargo.toml`, `composer.json` | the one version line — grep it, don't read the file |
    | Payments / billing | dependency manifests + `grep -ril` source | `stripe`, `paddle`, `braintree`, `lemonsqueezy` |
    | Datastores / infra | `docker-compose.yml`, `database.yml`, `.env.example`, config dirs | `postgres`, `mysql`, `redis`, `sqlite`, `kafka`, `s3` |
+   | Frontend interaction model | `Gemfile`, `package.json`, `mix.exs`, `config/importmap.rb` | `turbo-rails`, `stimulus-rails`, `@hotwired/`, `phoenix_live_view`, `inertia_rails`, `vite_rails`, `next`, `react` |
+   | ML / data projects | `pyproject.toml`/`requirements.txt`, repo layout | `torch`, `tensorflow`, `jax`, `scikit-learn`, `transformers`, `pandas`, `polars`; dirs `notebooks/`, `data/`, `models/`, `mlruns/`, `wandb/` |
 
    Prefer a single `rg` with a file-glob over many per-project reads.
 3. The grep hits ARE your evidence (path + matched line). Only open a file when a hit is

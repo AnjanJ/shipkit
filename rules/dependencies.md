@@ -8,6 +8,8 @@ paths:
   - "**/pnpm-lock.yaml"
   - "**/bun.lockb"
   - "**/pyproject.toml"
+  - "**/uv.lock"
+  - "**/poetry.lock"
   - "**/requirements*.txt"
   - "**/Pipfile"
   - "**/setup.py"
@@ -16,6 +18,7 @@ paths:
   - "**/go.sum"
   - "**/mix.exs"
   - "**/mix.lock"
+  - "**/importmap.rb"
 ---
 
 # Dependency Management Rules

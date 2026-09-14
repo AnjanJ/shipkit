@@ -13,7 +13,7 @@ LLM-written context files hurt; a short file of things only this project can tel
 ## Project Info
 
 - **Purpose:** {project purpose or "TODO: describe what this project does"}
-- **Stack:** {detected stack, e.g. Rails 7.1 / PostgreSQL / Hotwire}
+- **Stack:** {the full overlay set, e.g. Rails 7.1 + Hotwire + React / PostgreSQL}
 - **Language:** {language + version if known}
 - **Package manager:** {detected}
 - **Test:** `{test command}` ({framework})

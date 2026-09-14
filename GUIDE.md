@@ -788,6 +788,19 @@ injecting and they load from `.claude/rules/shipkit/` like any project rule.
 | `elixir` | Elixir | Context boundaries, OTP patterns, formatter/Credo |
 | `mix-deps` | Elixir | Version constraints, hex audit |
 
+Add-on overlays install alongside their base — a Rails app with Turbo installs both `rails` and
+`hotwire`:
+
+| Rule | Add-on (requires) | What It Enforces |
+|------|-------------------|-----------------|
+| `hotwire` | Hotwire (Rails) | Drive by default, Frames for scoped navigation, Streams for multi-region/broadcast updates; Stimulus values/targets/outlets over `querySelector`; `disconnect()` cleanup; cache and morph safety; system tests for every Turbo flow |
+| `react` | React (Rails/Elixir) | Inertia props as the API contract, routing stays in Rails, server-owned auth and flash, asset build before the suite |
+| `liveview` | LiveView (Elixir) | `mount/3` runs twice (guard with `connected?/1`), `stream/4` for collections, `handle_params/3` for URL state, scoped PubSub topics, function components over nested LiveViews, LiveViewTest coverage |
+| `jobs` | Oban (Elixir) | Idempotent `perform/1`, IDs as args, `unique:` deduplication, `{:cancel, _}` vs `{:error, _}`, queues by priority |
+| `notebooks` | ML (Python) | Exploration only, promote reused code to modules, clear outputs, no secrets in cells |
+| `experiments` | ML (Python) | Seeds set and logged, runs recorded with config + git SHA, explicit device, never evaluate on training data, metrics saved beside weights |
+| `data` | ML (Python) | Raw data and weights out of git, documented provenance and licence, pinned dataset versions, schema checks on load |
+
 ---
 
 ## Common Workflows

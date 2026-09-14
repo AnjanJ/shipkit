@@ -6,6 +6,9 @@ paths:
   - "**/auth/**"
   - "**/middleware/**"
   - "**/lib/*_web/**"
+  - "**/live/**"
+  - "**/views.py"
+  - "**/serializers.py"
 ---
 # Security Rules
 - Never hardcode secrets, API keys, or credentials

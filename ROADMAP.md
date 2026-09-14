@@ -310,6 +310,33 @@ commit rule's no-trailer stance was deliberately left as is.
 
 ---
 
+## 2.10 — Composable stacks — ✅ SHIPPED 2026-09-14 as 2.10.0
+
+Full design: [`docs/design/two-plugin-split.md`](docs/design/two-plugin-split.md) §3, written
+2026-09-14 alongside the split plan and shipped first because it is non-breaking.
+
+**The gap.** `/shipkit:setup` assumed a project had exactly **one** stack, and the overlays were
+web-framework shaped. A Rails + Hotwire + React app got whichever overlay matched first. Worse,
+the three stacks doing the most work in practice had no rules at all: **Hotwire** (no rule fired
+when editing a Stimulus controller or a Turbo Stream template), **LiveView** (nothing on `.heex`
+or `lib/*_web/live/**`, so the lifecycle traps went unmentioned), and **ML/AI in Python** (no
+notebook, experiment, or data-handling rules whatsoever).
+
+**What shipped.** Overlays became composable — one base plus any number of add-ons, detected as
+a set and installed with one `install-stack.sh` run each (no script change was needed). Four new
+overlays: `hotwire`, `liveview`, `oban`, `ml`. `react` became an add-on whose primary pairing is
+Rails, with an Inertia/Vite integration section. The elders learned the matching signals and the
+map gained two optional sections (*Frontend interaction model*, *Data & models*). Full list in
+the CHANGELOG.
+
+**Positioning held.** No new skills, no new agents, no learning content — system design and
+DS&A theory belong to the separate `bodhikit` tutor plugin, while shipkit's contribution is
+verified explanations of *real* systems via `/shipkit:explain-system` and `/shipkit:walkthrough`.
+
+**Next.** 3.0 — the two-plugin split (item 6), per the same design doc §1–2 and §4.
+
+---
+
 ## Origin
 
 This roadmap came out of an honest design review (2026-07-03) whose seven findings map to the

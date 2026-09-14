@@ -79,7 +79,7 @@ if [ -n "$MAP" ]; then
         echo "shipkit: $MAP is $COUNT commits behind HEAD — run /shipkit:map refresh so the elders stay accurate."
       else
         MANIFEST=$(git diff --name-only "$SHA"..HEAD 2>/dev/null \
-          | grep -m1 -E '(^|/)(Gemfile|Gemfile\.lock|mix\.exs|package\.json|go\.mod|pyproject\.toml|requirements\.txt|Cargo\.toml|composer\.json|build\.gradle|pom\.xml)$')
+          | grep -m1 -E '(^|/)(Gemfile|Gemfile\.lock|mix\.exs|package\.json|go\.mod|pyproject\.toml|uv\.lock|poetry\.lock|importmap\.rb|requirements\.txt|Cargo\.toml|composer\.json|build\.gradle|pom\.xml)$')
         if [ -n "$MANIFEST" ]; then
           echo "shipkit: dependencies changed since $MAP was built ($MANIFEST) — consider /shipkit:map refresh."
         fi

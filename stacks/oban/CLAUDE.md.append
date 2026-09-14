@@ -1,0 +1,9 @@
+
+## Background Jobs (Oban)
+
+- **Queues:** {{OBAN_QUEUES}} <!-- e.g. "default: 10, mailers: 20" -->
+- **Testing mode:** `Oban.Testing`, `:manual`
+
+### Conventions
+Idempotent `perform/1`, args are IDs, `unique:` to dedupe, `{:cancel, _}` for permanent
+failures. Full rules: `.claude/rules/shipkit/oban/`.

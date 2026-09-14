@@ -209,14 +209,29 @@ Run `/shipkit:setup` to tailor the plugin to your project. It backs up your exis
 
 ### Stack-Specific Additions
 
-| Stack | Extra Skills | Extra Rules | Extra KBs |
+Overlays are **composable**: a project gets one base stack plus every add-on whose signal is
+present, so a Rails + Hotwire + React app installs all three.
+
+**Bases** (one):
+
+| Base | Extra Skills | Extra Rules | Extra KBs |
 |-------|-------------|-------------|-----------|
 | Rails | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | gemfile, rails | code-review-standards-rails, ai-rails |
-| React | `/component` | package-json, react | — |
+| React (standalone SPA) | `/component` | package-json, react | — |
 | Python | `/new-feature` | pyproject, python | — |
 | Go | `/new-feature` | go-mod, go | — |
 | Elixir | `/new-feature` | mix-deps, elixir | — |
 | Static | `/audit` | — | — |
+
+**Add-ons** (any number, detected from your dependencies):
+
+| Add-on | Requires | Extra Rules | What it covers |
+|--------|----------|-------------|----------------|
+| Hotwire | Rails | hotwire | Drive/Frames/Streams, Stimulus discipline, Turbo caching and morphing, system tests |
+| React | Rails / Elixir | package-json, react | Inertia props as the API contract, routing stays server-side, asset build in CI |
+| LiveView | Elixir | liveview | `mount/3` running twice, `stream/4` vs `assign`, `handle_params/3`, PubSub scoping, LiveViewTest |
+| Oban | Elixir | jobs | Idempotent `perform/1`, args as IDs, `unique:`, cancel vs retry classification |
+| ML | Python | notebooks, experiments, data | Notebook hygiene, seeds and run logging, never eval on train data, data provenance and licensing |
 
 ## Optional: Episodic memory (MemPalace)
 

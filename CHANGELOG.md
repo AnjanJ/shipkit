@@ -2,6 +2,56 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [2.10.0] — 2026-09-14
+
+### Added — composable stacks: Hotwire, LiveView, Oban, ML
+
+- **Overlays are now composable.** A project has one **base** stack and any number of
+  **add-ons**; `/shipkit:setup` detects the whole set, confirms it in one question, and runs
+  `install-stack.sh` once per overlay. A Rails + Hotwire + React app now installs all three
+  instead of whichever one matched first. No script change was needed: rules already land in
+  `.claude/rules/shipkit/<overlay>/` and each overlay's `CLAUDE.md` section has its own marker,
+  so sibling overlays and re-runs never collide.
+- **`hotwire` overlay** (add-on to `rails`) — the missing half of every Rails app the author
+  ships. Drive by default, Frames for scoped navigation, Streams only for multi-region or
+  broadcast updates; Stimulus with `values`/`targets`/`outlets` instead of `querySelector`,
+  cleanup in `disconnect()`, no inline handlers; Turbo cache and morphing safety (stable ids,
+  `data-turbo-cache="false"` for transient UI); a system test for every Turbo flow.
+- **`liveview` overlay** (add-on to `elixir`) — the lifecycle traps that cause most LiveView
+  bugs: `mount/3` running twice (guard with `connected?/1`), `stream/4` for collections instead
+  of a list in an assign, `handle_params/3` for URL state, `push_patch` vs `push_navigate`,
+  scoped PubSub topics, function components over nested LiveViews, and `LiveViewTest` for every
+  interaction including the disconnected render.
+- **`oban` overlay** (add-on to `elixir`) — at-least-once means idempotent `perform/1`; args are
+  IDs and primitives, never structs; `unique:` to deduplicate at enqueue time; the return-value
+  contract (`{:cancel, _}` for permanent failures vs `{:error, _}` to retry); queues by priority.
+- **`ml` overlay** (add-on to `python`) — three rules for the work that was previously
+  unaddressed. `notebooks`: exploration only, promote reused code to modules, clear outputs,
+  no secrets in cells, assume out-of-order execution. `experiments`: seeds set and logged, every
+  run recorded with its config and git SHA, explicit device selection, never evaluate on
+  training data, metrics saved beside the weights they describe, a named baseline.
+  `data`: raw data and weights stay out of git, provenance and licence documented, dataset
+  versions pinned, schema checks on load, personal data identified before use.
+- **`react` is now an add-on** whose primary pairing is Rails (it still installs alone for a
+  standalone SPA). Its rule gained a Rails-integration section: one component root, Inertia
+  props as the API contract, routing stays in `config/routes.rb`, server-owned auth and flash,
+  and the asset build running before the suite.
+
+### Changed
+
+- **The elders learned the new signals.** `archivist` detects the frontend interaction model
+  (Hotwire / LiveView / Inertia / SPA) and ML signals, and `PROJECT_MAP.md` gained two optional
+  sections — *Frontend interaction model* (where UI state lives, how updates reach the browser)
+  and *Data & models* (datasets, pipelines, training entry points, artifacts, tracker) — written
+  only when those signals are present. `eve`'s cheat-sheet gained matching rows so portfolio
+  sweeps like "which apps use LiveView?" answer from one grep.
+- **Path-scoped rules widened**: `security` now covers Django (`views.py`, `serializers.py`) and
+  LiveView (`**/live/**`); `dependencies` covers `uv.lock`, `poetry.lock` and `importmap.rb`.
+  The session hook's dependency-change nudge watches the same three new manifests.
+- **Lint** gained an overlay check: an add-on must name an existing base with
+  `<!-- requires: <base> -->`, and an overlay rule with no `paths:` (which loads in every
+  session of the installed project) warns past a 2,000-byte budget.
+
 ## [2.9.0] — 2026-09-14
 
 ### Added — deterministic installs, a smoke test, and a stale-rules nudge

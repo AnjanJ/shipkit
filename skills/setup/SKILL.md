@@ -1,7 +1,7 @@
 ---
 description: "Configure shipkit for your project"
 user-invocable: true
-argument-hint: "[rails|react|python|go|elixir|static]"
+argument-hint: "[<base> <add-on>… e.g. rails hotwire react]"
 ---
 
 <!-- Runs INLINE (no context: fork) on purpose: this skill interviews the user
@@ -35,14 +35,34 @@ must exist.
 
 ## Phase 1: Detect Project
 
-1. **Detect stack** from `$ARGUMENTS` or by reading project files:
-   - `Gemfile` → Rails
-   - `mix.exs` → Elixir
-   - `go.mod` → Go
-   - `manage.py` or `pyproject.toml` with django/fastapi/flask → Python
-   - `package.json` with `"react"` → React
-   - `index.html` or `package.json` → Static
-   - Ask the user if ambiguous
+1. **Detect the overlay set** from `$ARGUMENTS` or by reading project files. A project has
+   **one base** stack and **zero or more add-ons** — detect all of them, not just the first
+   match. `$ARGUMENTS` may name several (`rails hotwire react`).
+
+   **Base stacks** (pick one):
+
+   | Signal | Base |
+   |--------|------|
+   | `Gemfile` with `rails` | `rails` |
+   | `mix.exs` | `elixir` |
+   | `go.mod` | `go` |
+   | `manage.py`, or `pyproject.toml`/`requirements.txt` with django/fastapi/flask | `python` |
+   | `package.json` with `"react"` and no server framework above | `react` (standalone SPA) |
+   | `index.html` or a bare `package.json` | `static` |
+
+   **Add-ons** (install every one whose signal is present):
+
+   | Signal | Add-on | Requires base |
+   |--------|--------|---------------|
+   | `turbo-rails`, `stimulus-rails` or `importmap-rails` in Gemfile, or `@hotwired/*` in package.json | `hotwire` | `rails` |
+   | `react` in package.json **and** a base of `rails` or `elixir` (usually with `inertia_rails`, `vite_rails` or `jsbundling-rails`) | `react` | `rails` / `elixir` |
+   | `:phoenix_live_view` in `mix.exs` | `liveview` | `elixir` |
+   | `:oban` in `mix.exs` | `oban` | `elixir` |
+   | `torch`, `tensorflow`, `jax`, `scikit-learn`, `transformers`, `pandas`, `polars` or `jupyter` in deps, or any of `*.ipynb` / `notebooks/` / `data/` present | `ml` | `python` |
+
+   Then **confirm the whole set in one question**: "Detected: rails + hotwire + react. Install
+   these overlays?" Let the user add or remove one. Ask only if detection is ambiguous or the
+   set is empty.
 
 2. **Detect test framework:**
    - Rails: RSpec (if in Gemfile) or Minitest
@@ -81,9 +101,23 @@ must exist.
 | `{{ROUTER}}` | React Router / Next.js / Expo Router, from `package.json` |
 | `{{BUNDLER}}` | None / Vite / Webpack / Parcel, from `package.json` |
 | `{{DEV_SERVER}}` | None / `npx serve` / `vite dev`, from `package.json` scripts |
+| `{{JS_BUNDLING}}` | importmap / esbuild / vite / webpack, from Gemfile + `package.json` (hotwire) |
+| `{{STIMULUS_PATH}}` | `app/javascript/controllers/` or `app/frontend/controllers/`, whichever exists (hotwire) |
+| `{{SYSTEM_TEST_COMMAND}}` | the system/feature test command (e.g. `bin/rails test:system`, `bundle exec rspec spec/system`) (hotwire) |
+| `{{PUBSUB_TOPICS}}` | topic shapes from `lib/*_web/live/` and contexts, or `none` (liveview) |
+| `{{LIVEVIEW_TEST_COMMAND}}` | e.g. `mix test test/<app>_web/live` (liveview) |
+| `{{OBAN_QUEUES}}` | the `queues:` list from `config/config.exs` (oban) |
+| `{{DATASETS}}` | where datasets live and how they are fetched (ml) |
+| `{{TRAIN_COMMAND}}` | e.g. `python train.py --config configs/base.yaml` (ml) |
+| `{{EVAL_COMMAND}}` | e.g. `python eval.py --checkpoint <path>` (ml) |
+| `{{NOTEBOOK_COMMAND}}` | e.g. `jupyter lab`, `uv run jupyter lab` (ml) |
+| `{{TRACKER}}` | MLflow / Weights & Biases / none, from deps and config (ml) |
+| `{{HARDWARE}}` | CPU / CUDA / MPS, from config or code (ml) |
+| `{{ARTIFACT_PATH}}` | where trained weights are written, e.g. `checkpoints/` (ml) |
 
-   Only the placeholders the chosen stack uses matter (`grep -oh '{{[A-Z_]*}}' <root>/stacks/<stack> -r | sort -u`
-   lists them). A value you cannot detect becomes `TODO: <the hint from the HTML comment next to it>`.
+   Only the placeholders the overlays you are installing actually use matter — run
+   `grep -oh '{{[A-Z_]*}}' <root>/stacks/<overlay> -r | sort -u` per overlay. A value you
+   cannot detect becomes `TODO: <the hint from the HTML comment next to it>`.
 
 5. **Ask the user:**
    - One-line project purpose (e.g., "SaaS billing platform for freelancers")
@@ -151,30 +185,48 @@ twice. If the script exits non-zero, show its message and stop.
 
 ## Phase 5: Install Stack-Specific Content
 
-Run the install script once, passing every placeholder value detected in Phase 1 step 4:
+Run the install script **once per overlay**, base first, then each add-on. Pass only the
+placeholders that overlay uses (Phase 1 step 4):
 
 ```bash
-"<root>/scripts/install-stack.sh" "<root>" <stack> \
+# base
+"<root>/scripts/install-stack.sh" "<root>" rails \
   TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL \
-  RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND="TODO: check config/application.rb"
+  RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire
+
+# add-ons
+"<root>/scripts/install-stack.sh" "<root>" hotwire \
+  JS_BUNDLING=importmap STIMULUS_PATH="app/javascript/controllers/" \
+  SYSTEM_TEST_COMMAND="bundle exec rspec spec/system"
 ```
 
-It copies `<root>/stacks/<stack>/.claude/rules/*` → `.claude/rules/shipkit/<stack>/`,
-`.claude/skills/*` → `.claude/skills/`, appends `CLAUDE.md.append` to `CLAUDE.md` once (guarded
-by a marker, so re-runs are safe), substitutes the placeholders, and **fails with exit 2 listing
-any placeholder you did not pass** — pass a `TODO: …` value rather than omitting one. Relay its
-manifest in the summary.
+Each run copies `<root>/stacks/<overlay>/.claude/rules/*` → `.claude/rules/shipkit/<overlay>/`,
+`.claude/skills/*` → `.claude/skills/`, appends that overlay's `CLAUDE.md.append` to `CLAUDE.md`
+once (guarded by its own marker, so re-runs and sibling overlays never collide), substitutes the
+placeholders, and **fails with exit 2 listing any placeholder you did not pass** — pass a
+`TODO: …` value rather than omitting one. If one overlay fails, fix it and re-run that overlay;
+the others are already installed. Relay every manifest in the summary.
 
-What each stack installs:
+**Bases:**
 
-| Stack | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
+| Base | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
 |-------|--------|-------|---------|
-| Rails | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
-| React | `/component` | `package-json.md`, `react.md` | — |
-| Python | `/new-feature` | `pyproject.md`, `python.md` | — |
-| Go | `/new-feature` | `go-mod.md`, `go.md` | — |
-| Elixir | `/new-feature` | `mix-deps.md`, `elixir.md` | — |
-| Static | `/audit` | — | — |
+| `rails` | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
+| `react` (standalone) | `/component` | `package-json.md`, `react.md` | — |
+| `python` | `/new-feature` | `pyproject.md`, `python.md` | — |
+| `go` | `/new-feature` | `go-mod.md`, `go.md` | — |
+| `elixir` | `/new-feature` | `mix-deps.md`, `elixir.md` | — |
+| `static` | `/audit` | — | — |
+
+**Add-ons:**
+
+| Add-on | Requires | Skills | Rules |
+|--------|----------|--------|-------|
+| `hotwire` | `rails` | — | `hotwire.md` |
+| `react` | `rails` / `elixir` | `/component` | `package-json.md`, `react.md` (its Rails-integration section applies when the base is `rails`) |
+| `liveview` | `elixir` | — | `liveview.md` |
+| `oban` | `elixir` | — | `jobs.md` |
+| `ml` | `python` | — | `notebooks.md`, `experiments.md`, `data.md` |
 
 ## Phase 6: Install Settings (Optional)
 
@@ -185,11 +237,11 @@ Ask the user if they want `.claude/settings.json` with safe defaults. See @refer
 Report what was installed:
 - Backup location (`.shipkit-backup-<ts>/`)
 - CLAUDE.md line count
-- Stack detected, workflow style chosen
+- Overlay set installed (base + add-ons), workflow style chosen
 - Shipkit rules installed under `.claude/rules/shipkit/` (the install script's line, including
   the version stamp) — note the hook will no longer inject the always-on ones
-- Stack skills, rules, knowledge bases installed (the install script's manifest) and any
-  `TODO:` values the user should fill in
+- Skills, rules and knowledge bases installed per overlay (each install script's
+  manifest) and any `TODO:` values the user should fill in
 - Settings created (if applicable)
 
 Suggest next steps:

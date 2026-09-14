@@ -341,6 +341,32 @@ for path in skill_files:
             warn(path, f"!`…` injection has a dead `|| echo` fallback (line {i}) — "
                        "guard on output emptiness instead")
 
+# --- 12. Stack overlays: structure and add-on bases ---------------------------
+# An overlay rule with no paths: becomes an always-on rule in the project that installs it.
+# That is intentional for the language-convention rules (rails.md, python.md, ...), but it
+# costs context in every session of that project, so keep them short — warn past a budget.
+# Every add-on must name an existing base overlay via `<!-- requires: <base> -->` so
+# /shipkit:setup can order the installs (base first, then add-ons).
+
+OVERLAY_ALWAYS_ON_MAX = 2000   # bytes; these load in every session of the installed project
+
+overlay_dirs = sorted(d for d in (ROOT / "stacks").glob("*") if d.is_dir())
+overlay_names = {d.name for d in overlay_dirs}
+for d in overlay_dirs:
+    for rule in sorted(d.glob(".claude/rules/*.md")):
+        text = rule.read_text(encoding="utf-8")
+        fm_text, _ = split_frontmatter(rule)
+        fm = parse_frontmatter(rule, fm_text) if fm_text else {}
+        if "paths" not in (fm or {}):
+            size = rule.stat().st_size
+            if size > OVERLAY_ALWAYS_ON_MAX:
+                warn(rule, f"overlay rule has no paths: so it loads in every session of the "
+                           f"installed project, and is {size} bytes (budget "
+                           f"{OVERLAY_ALWAYS_ON_MAX}) — scope it with paths: or trim it")
+        m = re.search(r"<!--\s*requires:\s*([a-z0-9_-]+)\s*-->", text)
+        if m and m.group(1) not in overlay_names:
+            err(rule, f"declares `requires: {m.group(1)}` but stacks/{m.group(1)}/ does not exist")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

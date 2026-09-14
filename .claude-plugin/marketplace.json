@@ -4,15 +4,15 @@
     "name": "AJ"
   },
   "metadata": {
-    "description": "The project knowledge layer for Claude Code — project maps, elder agents (grandfather/eve/archivist), cross-project registry, spec-driven development, a session hook that injects the always-on rules and nudges on drift, plus opt-in workflow skills",
-    "version": "2.9.0"
+    "description": "The project knowledge layer for Claude Code \u2014 project maps, elder agents (grandfather/eve/archivist), cross-project registry, spec-driven development, a session hook that injects the always-on rules and nudges on drift, composable stack overlays (Rails+Hotwire, Phoenix+LiveView, Python+ML), plus opt-in workflow skills",
+    "version": "2.10.0"
   },
   "plugins": [
     {
       "name": "shipkit",
       "source": "./",
-      "description": "20 skills (8 core + 12 opt-in), 6 agents, 2 knowledge bases (on-demand skills), 9 rules (3 always-on, injected by the session hook; all 9 installed as files by /shipkit:setup's deterministic install scripts, which is what makes the 6 path-scoped ones load; the hook nudges when installed copies are older than the plugin). Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. /shipkit:unsetup reverts.",
-      "version": "2.9.0",
+      "description": "20 skills (8 core + 12 opt-in), 6 agents, 2 knowledge bases (on-demand skills), 9 rules (3 always-on, injected by the session hook; all 9 installed as files by /shipkit:setup's deterministic install scripts, which is what makes the 6 path-scoped ones load; the hook nudges when installed copies are older than the plugin). 10 composable stack overlays (one base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML) installed per project by /shipkit:setup. Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. /shipkit:unsetup reverts.",
+      "version": "2.10.0",
       "keywords": [
         "claude-code",
         "developer-tools",
