@@ -138,6 +138,11 @@ The unsetup fixtures assert on the *script*, which is where the deletions happen
 interactive confirmation is verified by reading, not by test — a forked skill cannot prompt, so
 the flow stays inline and untested by construction.
 
+The `namespaces` smoke check is still model self-report and cannot read registration metadata
+directly — the weakness the 3.0.0 review named. It now asks about one skill per invocation,
+which is the minimum honest improvement, but a failure there means *investigate*, not *proven
+broken*.
+
 ## [3.0.0] — 2026-09-14
 
 ### Changed — BREAKING: shipkit is now two plugins

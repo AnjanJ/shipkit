@@ -51,6 +51,55 @@ Ordered by risk. Each task cites the requirement it satisfies. One atomic commit
       9, 10, 11) all pass when run under `/bin/sh`. The model-dependent checks (1–7) need a
       logged-in `claude` CLI and were **not** run here — `./scripts/smoke.sh` before tagging.
 
+## Fixture corrected during the final smoke run
+
+The full suite surfaced `rules-skip` failing. It was **not** a regression: the fixture built an
+empty `.claude/rules/shipkit/` with `mkdir` and asserted no injection, which only held because
+3.0's `inject-rule.sh` tested `[ -d ]`. That directory-only test *is* finding 2 — an interrupted
+install or a deleted rule suppressed injection with nothing to notice it.
+
+Confirmed by direct probe before touching the test, so a real regression could not be laundered
+into a green suite:
+
+| Case | Behaviour | Verdict |
+|------|-----------|---------|
+| Rules properly installed | all three inject 0 bytes | no double-inject ✅ |
+| One rule deleted from a complete install | only the missing one injects (4138 bytes) | REQ-5 ✅ |
+| Empty directory | injects | intended change — an empty dir is an *incomplete* install |
+
+**It took three attempts, and the first two diagnoses were wrong.** Installing for real still
+failed, because the check used ONE codeword: the plugin's `decisions.md` carries `ZEBRA-1001`,
+`install-rules.sh` copies that file into the project, and Claude Code then loads it from
+`.claude/rules/` — so the codeword arrives whether the hook injects or not. Proven by deleting
+`inject-rule.sh` outright and watching `ZEBRA-1001` still reach context.
+
+The check now uses two codewords: `ZEBRA-1001` in the plugin's copy, `ZEBRA-2002` stamped into
+the installed copy. Seeing 2002 and *not* 1001 proves the rule loaded from disk with the hook
+silent. `rules-fallback` pins the other half — delete the disk copy and 1001 reappears, proving
+the hook steps back in.
+
+Worth remembering when writing fixtures against the always-on rules: **anything the hook injects
+is also loadable from disk**, so a single marker cannot attribute which path delivered it.
+
+## The `namespaces` check was asking a bad question
+
+The final run failed `namespaces` with `YES, NO`. The 3.0.0 review had already flagged this
+check as unreliable model self-report, and it had passed on an earlier run — so "flaky, ignore
+it" was the tempting read. It is wrong, and the truth is more useful:
+
+| Prompt form | Result |
+|-------------|--------|
+| Both skills in one two-part question | `YES, NO` — **4 of 4 runs**, deterministic |
+| Each skill asked separately | `YES` and `YES` |
+
+Both plugins register correctly. The combined question systematically loses its second half on
+haiku, so the earlier PASS was the unreliable reading, not the failure. Split into one question
+per skill.
+
+It remains model self-report and cannot see registration metadata — the weakness the review
+named. A failure here means *investigate*, not *proven broken*: confirm against `--plugin-dir`
+registration first, as the isolated probe did.
+
 ## Note for whoever runs the fixtures
 
 `smoke.sh` is `#!/bin/sh` and must be executed, not sourced into an interactive zsh: zsh does

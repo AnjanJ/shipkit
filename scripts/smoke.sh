@@ -46,11 +46,40 @@ out=$(ask "$COPY" "$CW_Q")
 case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh session via the hook)";;
   *) failc "rules-inject" "codeword not seen: $out";; esac
 
-# 2. rules-skip: with .claude/rules/shipkit present the hook does not inject
-mkdir -p "$PROJ/.claude/rules/shipkit"
+# 2. rules-skip: a rule INSTALLED AS A FILE is not ALSO injected by the hook.
+#
+# This needs TWO codewords. The plugin's decisions.md carries ZEBRA-1001 (appended above); the
+# project's installed copy gets ZEBRA-2002 stamped into it after install. Both reach context as
+# plain text, so a single codeword cannot say WHICH path delivered it — verified directly:
+# with inject-rule.sh deleted outright, ZEBRA-1001 still arrived, because Claude Code had loaded
+# the project's own rule file. Two codewords make the assertion precise:
+#
+#   sees ZEBRA-2002 (disk copy) and NOT ZEBRA-1001 (hook copy)  ->  hook correctly silent
+#
+# The earlier version built an empty .claude/rules/shipkit/ with mkdir and passed only because
+# 3.0's inject-rule.sh tested `[ -d ]` — the directory's mere existence suppressed injection.
+# That directory-only test IS review finding 2: an interrupted install left the rule absent from
+# disk AND from context, silently. An empty directory is an INCOMPLETE install, not an installed
+# one, so the fixture installs for real.
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$PROJ" >/dev/null 2>&1
+sed 's/ZEBRA-1001/ZEBRA-2002/' "$PROJ/.claude/rules/shipkit/decisions.md" > "$PROJ/.dec.tmp" \
+  && mv "$PROJ/.dec.tmp" "$PROJ/.claude/rules/shipkit/decisions.md"
 out=$(ask "$COPY" "$CW_Q")
-case "$out" in *ZEBRA-1001*) failc "rules-skip" "hook injected although .claude/rules/shipkit exists";;
-  *) pass "rules-skip (no double-inject when rules are installed as files)";; esac
+case "$out" in
+  *ZEBRA-1001*) failc "rules-skip" "hook injected the plugin's copy although the rule is installed: $out";;
+  *ZEBRA-2002*) pass "rules-skip (installed rule loads from disk; hook does not double-inject)";;
+  *) failc "rules-skip" "neither codeword reached context — the installed rule did not load: $out";;
+esac
+
+# 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
+# always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
+# Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
+rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
+out=$(ask "$COPY" "$CW_Q")
+case "$out" in
+  *ZEBRA-1001*) pass "rules-fallback (a rule deleted from disk is re-injected, not lost)";;
+  *) failc "rules-fallback" "a rule missing from disk was not injected: $out";;
+esac
 rm -rf "$PROJ/.claude"
 
 # 3. plugin-root: the root line is in context and names the scratch copy
@@ -70,13 +99,27 @@ case "$out" in *code-review-standards*) pass "kb-skills (knowledge base register
   *) failc "kb-skills" "got: $out";; esac
 
 # 5b. namespaces: the two plugins register under distinct prefixes, no collision.
-# Ask about two SPECIFIC skills rather than asking for an enumeration — a small model
-# listing "every skill" truncates unreliably and produced false failures here.
-out=$(cd "$PROJ" && claude --plugin-dir "$COPY" --plugin-dir "$ROOT/plugins/shipkit-workflows" --model haiku -p 'Answer with exactly two words separated by a comma: whether a skill named "shipkit:map" is available (YES or NO), then whether a skill named "shipkit-workflows:tdd" is available (YES or NO). Do not use tools.' 2>/dev/null | tail -5)
-case "$out" in
-  *YES*YES*) pass "namespaces (both plugins register under distinct prefixes)";;
-  *) failc "namespaces" "expected YES,YES — got: $out";;
-esac
+#
+# Ask about ONE skill per invocation. Asking both in a single two-part question returns
+# "YES, NO" on haiku — deterministically, 4 runs out of 4, with BOTH plugins registered
+# correctly. Asked separately the same model answers YES for each. So the combined form was
+# not flaky, it was systematically wrong: the second half of a two-part membership question
+# gets dropped. An earlier PASS on that prompt was the unreliable reading, not this one.
+#
+# NOTE: this is still model self-report, which the 3.0.0 review rightly called out as the weak
+# part of this check — it cannot see registration metadata directly. Treat a failure here as
+# "investigate", not "proven broken": confirm against `--plugin-dir` registration before
+# concluding anything, the way the isolated probe did.
+ns_ok=1
+for pair in "shipkit:map" "shipkit-workflows:tdd"; do
+  out=$(cd "$PROJ" && claude --plugin-dir "$COPY" --plugin-dir "$ROOT/plugins/shipkit-workflows" \
+    --model haiku -p "Is a skill named \"$pair\" available to you? Reply with exactly YES or NO. Do not use tools." 2>/dev/null | tail -3)
+  case "$out" in
+    *YES*) ;;
+    *) failc "namespaces" "skill '$pair' not reported as available — got: $out"; ns_ok=0;;
+  esac
+done
+[ "$ns_ok" -eq 1 ] && pass "namespaces (both plugins register under distinct prefixes)"
 
 # 6. hook-cap: 9,500 chars of hook output is seen; 11,000 is not (informational if it now is)
 mkhook() {  # mkhook <dir> <chars> <codeword>
