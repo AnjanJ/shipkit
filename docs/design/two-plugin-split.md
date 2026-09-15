@@ -193,7 +193,9 @@ Still to nonce-test in a real session (docs and behaviour have disagreed before)
   repo-level. The "N skills / N agents" description-count check becomes per plugin.
 - `smoke.sh`: point at `plugins/shipkit`; add the namespace check. Its `agents` expectation
   reads `plugins/shipkit/agents/*.md`.
-- `.woodpecker.yml`: unchanged (it runs `lint.py`).
+- `.woodpecker.yml`: unchanged (it runs `lint.py`). *(Superseded in 3.1.0: the project moved to
+  GitHub, so the Codeberg pipeline ran nowhere and was removed. Lint now runs via
+  `.github/workflows/lint.yml`. The layout above is the 3.0 design as written, kept as a record.)*
 - Every `rsync`/`tar` scratch copy and `${CLAUDE_PLUGIN_ROOT}` use is already root-relative;
   `session-start.sh`'s fallback (`dirname $0/..`) still resolves to the core root.
 
