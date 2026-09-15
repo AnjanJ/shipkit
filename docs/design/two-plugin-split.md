@@ -124,7 +124,7 @@ shipkit/                                  ← the repo = the marketplace
 Install becomes:
 
 ```
-/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
+/plugin marketplace add https://github.com/AnjanJ/shipkit.git
 /plugin install shipkit@shipkit                # the knowledge layer
 /plugin install shipkit-workflows@shipkit      # optional: the methodology skills
 ```

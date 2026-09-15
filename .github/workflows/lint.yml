@@ -1,0 +1,28 @@
+name: lint
+
+# Replaces the Woodpecker pipeline that ran on Codeberg. That repository is archived
+# (its README redirects here), so .woodpecker.yml no longer runs anywhere — this is the
+# same check, on the host the project actually lives on now.
+#
+# Structural lint only, matching .woodpecker.yml exactly. The behavioural suite
+# (./scripts/smoke.sh) needs a logged-in `claude` CLI and real model calls, so it stays a
+# pre-release step run by hand.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+      - name: Run lint
+        run: python3 scripts/lint.py

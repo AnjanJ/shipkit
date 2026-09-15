@@ -27,7 +27,7 @@ A complete guide to using every skill, agent, and feature in shipkit.
 Shipkit ships as **two plugins from one marketplace**. Install either or both:
 
 ```
-/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
+/plugin marketplace add https://github.com/AnjanJ/shipkit.git
 /plugin install shipkit@shipkit                # the knowledge layer
 /plugin install shipkit-workflows@shipkit      # optional: the engineering workflows
 ```

@@ -77,7 +77,7 @@ Dependency-free `scripts/lint.sh` (bash + small python for YAML). Checks:
 - Rule `paths:` globs are valid.
 - Fork-interactivity rule from item 1.
 
-Wire into Woodpecker CI on Codeberg (`.woodpecker.yml`); document `./scripts/lint.sh` as the
+Wire into CI (`.github/workflows/lint.yml`); document `./scripts/lint.sh` as the
 pre-release step.
 
 ### 3. Map-freshness hook
@@ -129,9 +129,10 @@ landed with `Stack` / `Deploys To` columns. The portfolio version/dependency mat
 consolidation report shipped as **2.1.0** (`/shipkit:ask --all matrix <target>` and
 `--all consolidate`) — the review's seven findings are now fully addressed.
 
-Still open (not yet scheduled): Woodpecker CI is configured (`.woodpecker.yml`) but Codeberg
-CI access is invite-gated — request access via Codeberg's Community tracker, then enable the
-repo at ci.codeberg.org. Until then, run `./scripts/lint.sh` before each release.
+Resolved in 3.1.0: the project moved to GitHub (the Codeberg repo is archived and redirects),
+so the invite-gated Woodpecker plan is moot. Structural lint now runs on every push and PR via
+`.github/workflows/lint.yml`. The behavioural suite (`./scripts/smoke.sh`) needs a logged-in
+`claude` CLI and real model calls, so it remains a pre-release step run by hand.
 
 ### 6. Triage the 21 skills
 

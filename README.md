@@ -29,12 +29,12 @@ directories, so the session hook now injects the always-on rules, `/shipkit:setu
 nine rules as files under `.claude/rules/shipkit/`, and the knowledge bases are on-demand skills.
 2.6 added **spec-driven development** — the knowledge layer now looks *forward*. Two always-on rules drive the three questions (*what are we building / how should it work / how will we know it's done*) on non-trivial work; `/shipkit:spec <feature>` writes durable spec artifacts to `.shipkit/specs/` (requirements in EARS, design as **decision records** with a concrete **falsifiability clause**) and `/shipkit:decide` captures standalone project-wide decisions to `.shipkit/decisions/`. The elders read both — including *"which past decisions are now falsified?"* — `eve` sees open specs across the portfolio, and a freshness hook nudges when a spec drifts from its code. See the [Spec-Driven Development](#spec-driven-development) section.)*
 
-*(2.1 added two portfolio reports for `eve`: `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo, and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. 2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) if you relied on them.)*
+*(2.1 added two portfolio reports for `eve`: `/shipkit:ask --all matrix <lib>` builds a dependency/version matrix across every registered repo, and `/shipkit:ask --all consolidate` finds patterns you're maintaining in N repos that should exist once. 2.0 refocused shipkit on the knowledge layer: five generic workflow skills — `/plan`, `/review-my-code`, `/test`, `/use-library`, `/onboard` — were removed because Claude Code does those natively. See the [Changelog](CHANGELOG.md) for the native equivalents, or pin [`v1.3.0`](https://github.com/AnjanJ/shipkit/releases/tag/v1.3.0) if you relied on them.)*
 
 ## Install
 
 ```
-/plugin marketplace add https://codeberg.org/AnjanJ/shipkit.git
+/plugin marketplace add https://github.com/AnjanJ/shipkit.git
 /plugin install shipkit@shipkit                # the knowledge layer
 /plugin install shipkit-workflows@shipkit      # optional: opinionated engineering workflows
 ```

@@ -127,6 +127,22 @@ you destroy the only true baseline permanently, silently, as a side effect of ru
 - **The delete branch is gone.** Freeing a directory is not worth an unrecoverable loss.
 - `/setup` offers to git-ignore the three snapshot artifacts — they can contain local settings.
 
+### Changed — the project moved to GitHub
+
+Development now happens at **https://github.com/AnjanJ/shipkit**. The Codeberg repository is
+archived and its README redirects here; it stopped receiving releases after `v2.7.0`, so anyone
+who installed from it is several versions behind.
+
+**If you installed from Codeberg, re-add the marketplace:**
+
+```
+/plugin marketplace add https://github.com/AnjanJ/shipkit.git
+```
+
+Install instructions, both plugins' `repository` metadata, and the version-pin links now point
+at GitHub. Structural lint moved from the Codeberg Woodpecker pipeline (which no longer runs
+anywhere) to `.github/workflows/lint.yml`, on every push and PR.
+
 ### Known gaps
 
 Not addressed here, and named rather than implied: there is still no behavioral evaluation suite
@@ -154,6 +170,9 @@ The repo is a **marketplace** holding two plugins. Install either or both:
 /plugin install shipkit@shipkit                # the knowledge layer
 /plugin install shipkit-workflows@shipkit      # optional: the engineering workflows
 ```
+
+> **Note added in 3.1.0:** the URL above is the one 3.0.0 shipped with, kept as a record. That
+> Codeberg repo is now archived — use `https://github.com/AnjanJ/shipkit.git` instead.
 
 - **`shipkit`** — the project knowledge layer: `map`, `ask`, `setup`, `unsetup`,
   `connect-memory`, `commit`, `update-rules`, `context-audit`, `spec`, `decide`,
@@ -196,7 +215,7 @@ installed.
   `tdd`, `debug`, `humanize`, `legacy-audit`, `migration-plan`.
 - `.claude/rules/shipkit/` installs are unaffected (rules did not move), but the rules digest
   changed, so the session hook nudges once — run `/shipkit:setup` to refresh.
-- Pin [`v2.10.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v2.10.0) for the single-plugin
+- Pin [`v2.10.0`](https://github.com/AnjanJ/shipkit/releases/tag/v2.10.0) for the single-plugin
   layout, or `v2.9.0` for the layout before composable stacks.
 
 ### Internal
@@ -511,7 +530,7 @@ Two named report shapes for `eve`, completing the roadmap's "double down on eve"
 Shipkit is now **the project knowledge layer for Claude Code**: project maps, the elders,
 the cross-project registry, and freshness automation. The generic workflow skills that
 duplicated what Claude Code does natively are gone; the remaining workflow skills are
-opt-in. If you relied on a removed skill, pin the [`v1.3.0`](https://codeberg.org/AnjanJ/shipkit/src/tag/v1.3.0) tag.
+opt-in. If you relied on a removed skill, pin the [`v1.3.0`](https://github.com/AnjanJ/shipkit/releases/tag/v1.3.0) tag.
 
 ### Removed (use the native equivalent)
 
