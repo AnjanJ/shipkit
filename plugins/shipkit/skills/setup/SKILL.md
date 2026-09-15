@@ -133,35 +133,66 @@ must exist.
 
 Before writing ANY files, snapshot the current state so `/unsetup` can restore it.
 
-### Step 1: Check for existing backup
+Two **different** artifacts, for two different questions. Conflating them was a real bug:
+re-running `/setup` used to overwrite the "pre-shipkit" snapshot with an already-configured
+shipkit install, so `/unsetup` restored shipkit onto itself and called that the original state.
 
-Look for any existing `.shipkit-backup-*` directory at the project root.
+| Artifact | Answers | Written |
+|----------|---------|---------|
+| `.shipkit-baseline/` | *What did this project look like before shipkit ever touched it?* | **Once, ever.** Never overwritten. |
+| `.shipkit-backup-<ts>/` | *What did it look like before this particular setup run?* | Every run. |
 
-If one exists, ask the user:
-> "Found an existing shipkit backup from `<timestamp>`. Do you want to preserve it or delete it?"
+### Step 1: Capture the baseline — once, ever
 
-- **Preserve:** The old backup will be saved inside the new backup directory (as `previous-backup/`), so `/unsetup` restores everything including the old backup.
-- **Delete:** Remove the old backup directory before proceeding.
+Look for `.shipkit-baseline/` at the project root.
 
-### Step 2: Create the backup directory
+- **If it exists, do not touch it.** Not a refresh, not a merge, not "just this once". It is the
+  only record of the pre-shipkit project, and a later `/setup` is exactly the event that would
+  corrupt it. Say: "Baseline already captured — leaving it untouched."
+- **If it does not exist**, create it and copy in whatever exists now:
+  - `CLAUDE.md` → `.shipkit-baseline/CLAUDE.md`
+  - `.claude/` (entire directory) → `.shipkit-baseline/.claude/`
+  - Write `.shipkit-baseline/.captured` containing the ISO-8601 timestamp, the git SHA if the
+    project is a repo, and the shipkit version capturing it.
 
-Create `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at the project root.
+  One caveat to state honestly when you create it: if shipkit was already set up in this project
+  *before* this version, this baseline captures a shipkit-era state, not a pristine one. Write
+  `pre-existing-shipkit=true` into `.captured` when `.claude/rules/shipkit/` already exists, so
+  `/unsetup` can say so rather than overclaim.
 
-### Step 3: Snapshot everything
+### Step 2: Snapshot this run
 
-Copy the following into the backup directory (only files/dirs that exist):
-- `CLAUDE.md` → `.shipkit-backup-<ts>/CLAUDE.md`
-- `.claude/` (entire directory) → `.shipkit-backup-<ts>/.claude/`
+Create `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at the project root and copy into it (only what
+exists): `CLAUDE.md` and the entire `.claude/` directory.
 
-If the user chose to preserve an existing backup (Step 1), move it into:
-- `.shipkit-backup-<ts>/previous-backup/` (the entire old `.shipkit-backup-*` directory)
+If an older `.shipkit-backup-*` directory exists, move it inside the new one as
+`previous-backup/` (nesting, as before) and remove it from the project root.
 
-Then delete the old backup from the project root (it now lives inside the new one).
+**Never offer to delete an existing backup.** The old preserve-or-delete prompt is gone: the
+delete branch silently destroyed the only record of an earlier state, and "free up a directory"
+is not worth an unrecoverable loss. If the user asks to clean them up, they can delete the
+directories themselves — deliberately, not as a side effect of running setup.
+
+### Step 3: Keep the snapshots out of git
+
+These directories can contain an entire `.claude/`, including local settings. Check the
+project's `.gitignore` for the three shipkit artifacts:
+
+```
+.shipkit-baseline/
+.shipkit-backup-*/
+.shipkit-recovery-*/
+```
+
+If the project has a `.gitignore` and any are missing, offer to add them. If it has none, say so
+and let the user decide — do not create a `.gitignore` uninvited. If they decline, warn once that
+a snapshot may be committed.
 
 ### Step 4: Confirm to user
 
-Tell the user:
-> "Backed up current state to `.shipkit-backup-<ts>/`. You can restore it anytime with `/unsetup`."
+> "Backed up current state to `.shipkit-backup-<ts>/`. You can restore it anytime with
+> `/unsetup`." — and, only when you created it this run: "Captured the pre-shipkit baseline to
+> `.shipkit-baseline/`."
 
 ## Phase 3: Create CLAUDE.md
 
@@ -236,7 +267,8 @@ Ask the user if they want `.claude/settings.json` with safe defaults. See @refer
 ## Phase 7: Summary
 
 Report what was installed:
-- Backup location (`.shipkit-backup-<ts>/`)
+- Backup location (`.shipkit-backup-<ts>/`), and the baseline (`.shipkit-baseline/`) — say
+  whether you captured it this run or found it already there
 - CLAUDE.md line count
 - Overlay set installed (base + add-ons), workflow style chosen
 - Shipkit rules installed under `.claude/rules/shipkit/` (the install script's line, including

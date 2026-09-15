@@ -14,6 +14,23 @@ Reverses what `/setup` did. Restores your project's CLAUDE.md and `.claude/` dir
 
 **This only undoes `/setup`.** Uninstalling the plugin itself is done via `/plugin uninstall shipkit@shipkit`.
 
+## Step 0: Take a recovery snapshot — before anything else
+
+**Do this before reading backups, before asking anything, before touching a single file.**
+
+Copy the **current** `CLAUDE.md` and `.claude/` to `.shipkit-recovery-<YYYYMMDD-HHMMSS>/`.
+
+Why first: everything below removes or overwrites files, and `.claude/` is commonly
+git-ignored — so git is not a safety net here. Without this, configuration added since
+`/setup`, or a wrong-snapshot restore, is gone with no route back. `/unsetup` is precisely the
+moment a user discovers they wanted something they just deleted.
+
+Tell them it exists, and that deleting it is safe once they are happy:
+> "Recovery snapshot written to `.shipkit-recovery-<ts>/` — if this goes wrong, everything you
+> had a moment ago is in there. Safe to delete once you're happy."
+
+If the copy fails, **stop**. Do not proceed with an unrecoverable removal.
+
 ## Step 1: Find the Backup
 
 Look for a `.shipkit-backup-*` directory at the project root.
@@ -29,12 +46,21 @@ If multiple `.shipkit-backup-*` directories exist (shouldn't happen, but be safe
 
 Read the backup contents and tell the user exactly what will be restored:
 
-> **Restoring from `.shipkit-backup-<ts>/`:**
-> - CLAUDE.md will be restored (if backup contains one) / deleted (if backup has none)
-> - .claude/ directory will be restored to its pre-shipkit state
+> **Restoring from `.shipkit-backup-<ts>/`** (snapshot taken `<date>`):
+> - CLAUDE.md will be restored (if the backup contains one) / deleted (if it does not)
+> - `.claude/` will be replaced with the contents of that snapshot — **anything added to it
+>   since then is removed**, including files shipkit never installed
+> - `.shipkit/` is untouched (your specs and decision records)
 > - [If backup contains `previous-backup/`:] An older shipkit backup will also be restored to the project root
 >
+> Already saved to `.shipkit-recovery-<ts>/`, and kept afterwards: everything you have right now.
+>
 > **Continue? (yes/no)**
+
+Say plainly what the snapshot *is*, rather than calling it "pre-shipkit": if
+`.shipkit-baseline/.captured` records `pre-existing-shipkit=true`, or there is no baseline,
+add: "Note: shipkit may already have been set up when this snapshot was taken, so it is not
+necessarily a pristine pre-shipkit state."
 
 **Do NOT proceed without explicit "yes" confirmation.**
 
@@ -56,14 +82,26 @@ Read the backup contents and tell the user exactly what will be restored:
 3. **Restore nested backup (if present):**
    - If the backup contains a `previous-backup/` directory, move it back to the project root with its original name (`.shipkit-backup-<original-ts>/`)
 
-4. **Delete the backup directory** (`.shipkit-backup-<ts>/`) — it's been fully restored.
+4. **Keep the backup directory.** Do not delete `.shipkit-backup-<ts>/` — it is the only record
+   of the state you just restored from, and removing it as a side effect of a command the user
+   ran for a different reason is exactly the silent, unrecoverable loss this flow is meant to
+   avoid. Tell them it is there and that deleting it is safe once they are happy.
 
 ## Step 4: Summary
 
 Report what was done:
 - Files restored (CLAUDE.md, .claude/ contents)
 - Whether an older backup was also restored
-- Current state: "Your project is back to its pre-shipkit state."
+- **The two directories still on disk**, and that both are safe to delete:
+  `.shipkit-recovery-<ts>/` (everything you had before this command ran) and
+  `.shipkit-backup-<ts>/` (what you restored from)
+- Current state — and be accurate about which state it is:
+  - If `.shipkit-baseline/.captured` exists **without** `pre-existing-shipkit=true`:
+    "Your project is back to its pre-shipkit state."
+  - If it records `pre-existing-shipkit=true`, or there is no baseline at all: say what you
+    actually did — "Restored from the snapshot taken at `<ts>`." — and add: "Shipkit was already
+    set up in this project before the baseline was captured, so this is that earlier configured
+    state, not a pristine pre-shipkit one." Do not claim more than the artifacts support.
 
 Remind the user:
 > "To fully remove shipkit, also run `/plugin uninstall shipkit@shipkit`."

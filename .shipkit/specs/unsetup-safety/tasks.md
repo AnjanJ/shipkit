@@ -5,18 +5,28 @@
 Ordered so that nothing destructive ships before the thing that makes it recoverable.
 Each task cites the requirement it satisfies. One atomic commit per task.
 
-## Tranche 1 — recoverability first
+## Tranche 1 — recoverability first ✅
 
 Nothing in later tranches is safe to land without these.
 
-- [ ] **U-1** Write `.shipkit-recovery-<ts>/` (current `CLAUDE.md` + `.claude/`) before any
+- [x] **U-1** Write `.shipkit-recovery-<ts>/` (current `CLAUDE.md` + `.claude/`) before any
       destructive step; name it in the summary and state it is safe to delete → REQ-6 (DR-3)
-- [ ] **U-2** `/setup`: capture an immutable `.shipkit-baseline/` on first setup only; never
+      *(added as `/unsetup` Step 0 — before reading backups or asking anything; aborts if the
+      copy fails rather than proceeding unrecoverably)*
+- [x] **U-2** `/setup`: capture an immutable `.shipkit-baseline/` on first setup only; never
       overwrite it on later runs → REQ-9 (DR-2)
-- [ ] **U-3** `/setup`: remove the *delete* branch that destroys the only true baseline;
+      *(records `pre-existing-shipkit=true` in `.captured` when `.claude/rules/shipkit/` already
+      exists, so REQ-11 can say so instead of overclaiming)*
+- [x] **U-3** `/setup`: remove the *delete* branch that destroys the only true baseline;
       keep rolling snapshots nesting as they do → REQ-10 (DR-2)
-- [ ] **U-4** `/setup`: ensure `.shipkit-backup-*`, `.shipkit-baseline/` and
+- [x] **U-4** `/setup`: ensure `.shipkit-backup-*`, `.shipkit-baseline/` and
       `.shipkit-recovery-*` are git-ignored, or warn that they are not → REQ-12
+      *(offers to add them; never creates a `.gitignore` uninvited)*
+
+**Verification note.** These are skill-prose changes with no executable path, so they are
+verified by lint plus review of the documented steps — not by fixtures. The destructive
+fixtures (U-13) belong with Tranche 2, where surgical removal actually lands and there is
+something to assert on.
 
 ## Tranche 2 — surgical removal
 
