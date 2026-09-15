@@ -243,6 +243,104 @@ case "$out" in
   *) failc "spec-staleness" "the most-stale spec was not reported: $out";;
 esac
 
+# 17. unsetup surgical removal (spec: .shipkit/specs/unsetup-safety/, DR-1).
+# These define the contract for scripts/unsetup-remove.sh BEFORE it is written: removal is
+# driven by the installation manifest, so it takes out what shipkit owns and nothing else.
+# Every check builds a scratch project and asserts on the SURVIVORS — the destructive path
+# is never run against anything real.
+UNSETUP="$COPY/scripts/unsetup-remove.sh"
+
+# Build a realistic project: core rules + an overlay + files shipkit must never touch.
+mkproj() {  # mkproj <dir>
+  _p="$1"; mkdir -p "$_p"; printf '# demo\n' > "$_p/CLAUDE.md"
+  sh "$COPY/scripts/install-rules.sh" "$COPY" "$_p" >/dev/null 2>&1
+  # shellcheck disable=SC2086
+  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$_p" TEST_COMMAND=pytest \
+    API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI \
+    TEST_FRAMEWORK=pytest >/dev/null 2>&1
+  mkdir -p "$_p/.claude/agents" "$_p/.shipkit/decisions"
+  printf 'another tool\n'  > "$_p/.claude/agents/my-agent.md"
+  printf '{"x":1}\n'       > "$_p/.claude/settings.local.json"
+  printf '# decision\n'    > "$_p/.shipkit/decisions/0001-x.md"
+}
+
+if [ ! -f "$UNSETUP" ]; then
+  failc "unsetup-remove" "scripts/unsetup-remove.sh does not exist (fixtures written first, by design)"
+else
+  # 17a. owned files go; unowned files under .claude/ stay (REQ-1, REQ-3).
+  UP="$WORK/unset-a"; mkproj "$UP"
+  sh "$UNSETUP" "$UP" --yes >/dev/null 2>&1
+  survivors=$(find "$UP/.claude" -type f 2>/dev/null | sed "s#^$UP/##" | sort | tr '\n' ' ')
+  gone=0
+  [ -f "$UP/.claude/rules/shipkit/shipkit.md" ] && gone=1
+  [ -f "$UP/.claude/rules/shipkit/python/python.md" ] && gone=1
+  [ -f "$UP/.claude/skills/new-feature/SKILL.md" ] && gone=1
+  kept=1
+  [ -f "$UP/.claude/agents/my-agent.md" ] || kept=0
+  [ -f "$UP/.claude/settings.local.json" ] || kept=0
+  if [ "$gone" -eq 0 ] && [ "$kept" -eq 1 ]; then
+    pass "unsetup-remove (owned files removed, foreign files under .claude/ survive)"
+  else
+    failc "unsetup-remove" "gone=$gone kept=$kept survivors=[$survivors]"
+  fi
+  # the manifest cannot own itself, so removal must take it out explicitly — otherwise the
+  # session hook warns about an incomplete install forever, against an orphan manifest.
+  if [ -f "$UP/.claude/rules/shipkit/.installed" ]; then
+    failc "unsetup-remove" "the manifest itself was left behind"
+  else pass "unsetup-remove (manifest removed last, no orphan left)"; fi
+  # empty dirs shipkit emptied are pruned; dirs holding foreign files are not
+  if [ -d "$UP/.claude/rules/shipkit" ]; then
+    failc "unsetup-remove" ".claude/rules/shipkit/ left behind empty"
+  elif [ ! -d "$UP/.claude/agents" ]; then
+    failc "unsetup-remove" "pruned .claude/agents/, which holds a foreign file"
+  else pass "unsetup-remove (empty dirs pruned, populated ones kept)"; fi
+
+  # 17b. .shipkit/ is the user's work product and is never touched (REQ-4).
+  if [ -f "$UP/.shipkit/decisions/0001-x.md" ]; then
+    pass "unsetup-remove (.shipkit/ untouched)"
+  else failc "unsetup-remove" ".shipkit/ was modified or removed"; fi
+
+  # 17c. a modified owned file is reported and NOT removed without consent (REQ-2).
+  UP2="$WORK/unset-b"; mkproj "$UP2"
+  printf '\nUSER EDIT\n' >> "$UP2/.claude/rules/shipkit/testing.md"
+  out=$(sh "$UNSETUP" "$UP2" --yes 2>&1)
+  if [ -f "$UP2/.claude/rules/shipkit/testing.md" ] \
+     && printf '%s\n' "$out" | grep -q 'testing.md'; then
+    pass "unsetup-remove (locally modified owned file is reported and kept)"
+  else
+    failc "unsetup-remove" "a modified owned file was removed without consent"
+  fi
+  # ...and --force removes it, since the user then asked explicitly
+  sh "$UNSETUP" "$UP2" --yes --force >/dev/null 2>&1
+  if [ -f "$UP2/.claude/rules/shipkit/testing.md" ]; then
+    failc "unsetup-remove" "--force did not remove the modified file"
+  else pass "unsetup-remove (--force removes a modified file on explicit request)"; fi
+
+  # 17d. a pre-3.1 legacy stamp owns nothing: refuse, exit non-zero, remove NOTHING (REQ-5).
+  UP3="$WORK/unset-c"; mkproj "$UP3"
+  printf 'version=3.0.0\nsha=deadbeef\n' > "$UP3/.claude/rules/shipkit/.installed"
+  before=$(find "$UP3/.claude" -type f | wc -l | tr -d ' ')
+  out=$(sh "$UNSETUP" "$UP3" --yes 2>&1); rc=$?
+  after=$(find "$UP3/.claude" -type f | wc -l | tr -d ' ')
+  if [ "$rc" -ne 0 ] && [ "$before" -eq "$after" ] \
+     && printf '%s\n' "$out" | grep -qi 'cannot prove\|legacy\|pre-3.1'; then
+    pass "unsetup-remove (legacy stamp: refuses, removes nothing, says why)"
+  else
+    failc "unsetup-remove" "legacy stamp: rc=$rc files $before->$after (expected non-zero, unchanged)"
+  fi
+
+  # 17e. dry run is the DEFAULT: without --yes it reports and changes nothing (REQ-7).
+  UP4="$WORK/unset-d"; mkproj "$UP4"
+  before=$(find "$UP4/.claude" -type f | wc -l | tr -d ' ')
+  out=$(sh "$UNSETUP" "$UP4" 2>&1)
+  after=$(find "$UP4/.claude" -type f | wc -l | tr -d ' ')
+  if [ "$before" -eq "$after" ] && printf '%s\n' "$out" | grep -q 'shipkit.md'; then
+    pass "unsetup-remove (dry run by default: lists the removal set, changes nothing)"
+  else
+    failc "unsetup-remove" "dry run changed files ($before->$after) or printed no path list"
+  fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

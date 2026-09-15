@@ -356,6 +356,7 @@ if hooks_json.exists():
 # --- 8b. Shipped scripts must exist and be executable ------------------------
 for name, base in [("session-start.sh", CORE), ("inject-rule.sh", CORE),
                    ("install-rules.sh", CORE), ("install-stack.sh", CORE),
+                   ("unsetup-remove.sh", CORE),
                    ("smoke.sh", ROOT), ("lint.sh", ROOT)]:
     sp = base / "scripts" / name
     if not sp.exists():

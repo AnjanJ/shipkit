@@ -28,39 +28,66 @@ verified by lint plus review of the documented steps — not by fixtures. The de
 fixtures (U-13) belong with Tranche 2, where surgical removal actually lands and there is
 something to assert on.
 
-## Tranche 2 — surgical removal
+## Tranche 2 — surgical removal ✅
 
-- [ ] **U-5** `/unsetup`: read the manifest; build the removal set from `manifest_paths`
-      → REQ-1 (DR-1)
-- [ ] **U-6** Compare each owned file's `file_sha` against its recorded digest; list modified
-      files individually and ask before removing them → REQ-2 (DR-1)
-- [ ] **U-7** Never remove a path outside the manifest; leave `.shipkit/` untouched (already
-      correct — preserve it) → REQ-3, REQ-4
-- [ ] **U-8** No manifest or a legacy stamp → snapshot-restore fallback, stating plainly that
-      ownership cannot be proven → REQ-5 (DR-1)
-- [ ] **U-9** Confirmation shows the grouped path list + a `CLAUDE.md` diff; modified files
-      always listed individually → REQ-7 (DR-4)
-- [ ] **U-10** Keep the mandatory explicit confirmation and the inline (non-forked) skill
-      → REQ-8
+Implemented as `plugins/shipkit/scripts/unsetup-remove.sh`, written **after** the fixtures so
+the contract was fixed first.
 
-## Tranche 3 — honest documentation
+- [x] **U-5** Removal set built from `manifest_paths`; `/unsetup` Step 3 now calls the script
+      instead of deleting `.claude/` by hand → REQ-1 (DR-1)
+- [x] **U-6** `file_sha` vs the recorded digest splits owned files into clean/modified;
+      modified files are listed individually and **kept** unless `--force` → REQ-2 (DR-1)
+- [x] **U-7** Never steps outside the manifest; `.shipkit/` untouched → REQ-3, REQ-4
+- [x] **U-8** No manifest or a legacy stamp → exit 2, remove nothing, say plainly that
+      ownership cannot be proven; the skill falls back to the snapshot path and asks rather
+      than choosing the destructive option → REQ-5 (DR-1)
+- [x] **U-9** Dry run is the **default**: the script prints the grouped removal set and changes
+      nothing unless `--yes` is passed → REQ-7 (DR-4)
+- [x] **U-10** Mandatory confirmation and the inline (non-forked) skill preserved → REQ-8
 
-- [ ] **U-11** `/unsetup` says so explicitly when the true baseline cannot be established,
-      rather than presenting a shipkit-era snapshot as the pre-shipkit state → REQ-11 (DR-2)
-- [ ] **U-12** Correct the restore promise where it overstates: README:220, README:312,
-      README:316 ("goes back to exactly how it was"), GUIDE.md:128, GUIDE.md:149,
-      GUIDE.md:170 → REQ-13
+## Tranche 3 — honest documentation ✅
+
+- [x] **U-11** `/unsetup` reports which state it actually restored, keyed on
+      `pre-existing-shipkit=true` in `.shipkit-baseline/.captured` → REQ-11 (DR-2)
+      *(landed with Tranche 1)*
+- [x] **U-12** Corrected the overstated restore promise: README:316 ("goes back to exactly how
+      it was"), README:312, GUIDE.md:128, the "How backups work" block (which still described
+      the removed preserve-or-delete prompt), and the `/unsetup` step list (which still said it
+      deletes `.claude/` wholesale and deletes the backup afterwards) → REQ-13
 
 ## Verification
 
-- [ ] **U-13** Scratch-project fixtures in `smoke.sh`, each asserting on survivors → DR-5:
-      - manifest-owned files removed, co-installed files under `.claude/` survive (REQ-1, REQ-3)
-      - a modified owned file is reported and not removed without consent (REQ-2)
-      - legacy stamp → fallback path, with the honest message (REQ-5)
-      - recovery snapshot exists and contains the pre-removal state (REQ-6)
-      - `.shipkit/` present before and after (REQ-4)
-- [ ] **U-14** `lint.py` green; CHANGELOG entry; version lockstep across `plugin.json` ×2 +
-      `marketplace.json`
+- [x] **U-13** Scratch-project fixtures in `smoke.sh` (check 17), written **before** the
+      implementation so the contract is fixed first → DR-5. Each builds a project and asserts
+      on survivors:
+      - 17a owned files removed, foreign files under `.claude/` survive (REQ-1, REQ-3);
+        the manifest itself removed last (it cannot own itself — an orphan would make the
+        session hook warn "incomplete install" forever); empty dirs pruned, populated ones kept
+      - 17b `.shipkit/` untouched (REQ-4)
+      - 17c a locally modified owned file is reported and kept; `--force` removes it (REQ-2)
+      - 17d legacy stamp → refuse, non-zero exit, remove nothing, say why (REQ-5)
+      - 17e dry run is the default; `--yes` is required to remove (REQ-7)
+
+      **Contract these fix for `scripts/unsetup-remove.sh`:** `unsetup-remove.sh <proj>
+      [--yes] [--force]`, dry-run by default, non-zero exit on a legacy stamp, manifest
+      deleted last, prune only genuinely-empty directories.
+
+      *Verified failing first:* run against the current tree, check 17 reports
+      "scripts/unsetup-remove.sh does not exist (fixtures written first, by design)".
+- [x] **U-14** `lint.py` 0 errors / 0 warnings; CHANGELOG sections added to the (unreleased)
+      3.1.0 entry — no new version invented, nothing is tagged yet — and its "Known gaps"
+      paragraph corrected, since it claimed `/unsetup` still deletes `.claude/`. Version
+      lockstep unchanged at 3.1.0 across `plugin.json` ×2 + `marketplace.json`.
+      `unsetup-remove.sh` added to lint's required-scripts list so a missing executable bit
+      cannot ship silently.
+
+## Gap found and closed during implementation
+
+`/unsetup` referenced `"<root>/scripts/unsetup-remove.sh"` but had no way to resolve `<root>` —
+unlike `/setup`, it has no "locate the plugin" phase, so the skill was telling Claude to run a
+path it could not construct. Added Step 0a with the same three-step resolution `/setup` Phase 0
+uses (hook context line → `~/.claude/shipkit/plugin-root` → stop, do not guess), sanity-checked
+against `unsetup-remove.sh` so an older installed plugin falls back to the snapshot path.
 
 ## Risk note
 

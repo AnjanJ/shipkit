@@ -84,13 +84,59 @@ findings were that one defect:
   `sha=` tamper was replaced: a v1 manifest has no `sha=` line, so that assertion had quietly
   become a no-op.
 
+### Fixed — `/unsetup` removes shipkit's files, not your directory
+
+The ninth review finding, specced in
+[`.shipkit/specs/unsetup-safety/`](.shipkit/specs/unsetup-safety/) and implemented here.
+
+`/unsetup` used to delete `CLAUDE.md` and the **entire** `.claude/` directory, then copy a
+snapshot back over the top. That discarded everything added since `/setup` — another plugin's
+agents, your `settings.local.json`, any configuration you had built up — and it had no undo.
+
+- **Removal is now driven by the installation manifest.** New
+  `scripts/unsetup-remove.sh` takes out exactly the paths shipkit recorded installing, prunes
+  only the directories it emptied, and never steps outside that list. Dry run is the default;
+  `--yes` is required to remove anything.
+- **A file you edited since installation is reported and kept**, unless you explicitly pass
+  `--force`. Detected by comparing content digests against the manifest.
+- **The manifest is removed last** — it cannot own itself, and an orphan would leave the session
+  hook reporting an incomplete install forever.
+- **Where shipkit cannot prove ownership** (no manifest, or a pre-3.1 version stamp) it exits
+  non-zero, removes **nothing**, and the skill asks rather than choosing the destructive option.
+- **`/unsetup` takes a recovery snapshot first** (`.shipkit-recovery-<ts>/`), before reading or
+  touching anything, and aborts if that copy fails. `.claude/` is commonly git-ignored, so git
+  is no safety net for what this removes.
+- **It no longer deletes the backup it restored from.** Destroying the record of the state you
+  just came from, as a side effect of a command run for another reason, is the same silent loss
+  this work exists to remove.
+- **`.shipkit/`** — your specs and decision records — remains untouched, as before.
+
+### Fixed — `/setup` stops overwriting the pre-shipkit baseline
+
+`/setup` snapshotted `.claude/` *as it currently was*, so running it a second time captured an
+already-configured shipkit install as the "pre-shipkit baseline" — and `/unsetup` then restored
+shipkit onto itself and called that your original state. Its preserve-or-delete prompt also let
+you destroy the only true baseline permanently, silently, as a side effect of running setup.
+
+- **`.shipkit-baseline/` is captured once and never overwritten.** Separate from the rolling
+  `.shipkit-backup-<ts>/`, because "before shipkit ever touched this project" and "before this
+  setup run" are different questions.
+- Where shipkit was already installed before this version, `.captured` records
+  `pre-existing-shipkit=true` so `/unsetup` reports what it actually restored instead of
+  overclaiming.
+- **The delete branch is gone.** Freeing a directory is not worth an unrecoverable loss.
+- `/setup` offers to git-ignore the three snapshot artifacts — they can contain local settings.
+
 ### Known gaps
 
-Not addressed here, and named rather than implied: `/unsetup` still deletes `.claude/` before
-restoring a snapshot (own spec pending); there is still no behavioral evaluation suite measuring
-whether the elders admit gaps instead of answering confidently; and the net-context-efficiency
-claim remains unmeasured — moving research into a subagent hides those reads from the parent
-context, it does not eliminate their tokens or latency.
+Not addressed here, and named rather than implied: there is still no behavioral evaluation suite
+measuring whether the elders admit gaps instead of answering confidently; and the
+net-context-efficiency claim remains unmeasured — moving research into a subagent hides those
+reads from the parent context, it does not eliminate their tokens or latency.
+
+The unsetup fixtures assert on the *script*, which is where the deletions happen. The skill's
+interactive confirmation is verified by reading, not by test — a forked skill cannot prompt, so
+the flow stays inline and untested by construction.
 
 ## [3.0.0] — 2026-09-14
 

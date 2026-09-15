@@ -309,11 +309,13 @@ memory* for wings/rooms, repair, and the recall-is-a-claim caveat.
 
 **Users who ran `/setup`**: run `/shipkit:unsetup` first to restore your project, then uninstall the plugin.
 ```
-/shipkit:unsetup          # restores CLAUDE.md and .claude/ from .shipkit-backup-<timestamp>/
+/shipkit:unsetup          # removes only the files shipkit installed; keeps your own
 /plugin uninstall shipkit@shipkit
 ```
 
-`/setup` snapshots your entire `CLAUDE.md` and `.claude/` directory to `.shipkit-backup-<timestamp>/` before making any changes. `/unsetup` restores from that snapshot — your project goes back to exactly how it was.
+`/setup` writes two snapshots before making any changes: `.shipkit-baseline/` (captured **once**, the state before shipkit ever touched the project — never overwritten by a later setup) and a rolling `.shipkit-backup-<timestamp>/` for that particular run.
+
+`/unsetup` takes a recovery snapshot first, then removes **only the files shipkit installed**, using the installation manifest that records them. Another plugin's agents, your `settings.local.json`, anything you added after setup — all left alone. A file you edited since installation is reported and kept unless you ask for it to go. Where shipkit *cannot* prove which files are its own (a project set up before 3.1), it says so and asks rather than deleting `.claude/` wholesale.
 
 ## Research
 

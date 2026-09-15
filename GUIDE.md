@@ -125,7 +125,9 @@ memory", but you'd normally just call it.)
 Configures shipkit for your specific project. Run it once when you start using shipkit in a new codebase.
 
 **What it does:**
-1. Snapshots your current `CLAUDE.md` + `.claude/` directory to `.shipkit-backup-<timestamp>/`
+1. Snapshots your current `CLAUDE.md` + `.claude/` — once to `.shipkit-baseline/` (the state
+   before shipkit ever touched this project, never overwritten again) and to a rolling
+   `.shipkit-backup-<timestamp>/` for this run
 2. Detects your stack (Rails, React, Python, Go, Elixir, static)
 3. Detects test framework and package manager
 4. Asks for your project purpose, team conventions, and **workflow style** — `strict-tdd`
@@ -146,9 +148,22 @@ The CLAUDE.md it writes is short on purpose — project facts (purpose, stack, c
 paths, workflow style). Conventions live in the rules, so no generic boilerplate is restated.
 
 **How backups work:**
-- Everything is copied to `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at project root
-- If an older shipkit backup already exists, you're asked to preserve or delete it
-- Preserved old backups are nested inside the new one and restored automatically by `/unsetup`
+
+Two artifacts, answering two different questions:
+
+| Artifact | Answers | Written |
+|----------|---------|---------|
+| `.shipkit-baseline/` | What did this project look like *before shipkit ever touched it*? | **Once, ever** — never overwritten |
+| `.shipkit-backup-<ts>/` | What did it look like before *this* setup run? | Every run |
+
+- Keeping them separate matters: re-running `/setup` used to overwrite the "pre-shipkit"
+  snapshot with an already-configured shipkit install, so `/unsetup` restored shipkit onto
+  itself and called that your original state.
+- An older backup is nested inside the new one as `previous-backup/`. Shipkit **never offers to
+  delete one** — freeing a directory is not worth an unrecoverable loss. Delete them yourself
+  when you're ready.
+- `/setup` offers to add all three (`.shipkit-baseline/`, `.shipkit-backup-*/`,
+  `.shipkit-recovery-*/`) to your `.gitignore` — they can contain your local settings.
 
 **Usage:**
 ```
@@ -164,16 +179,29 @@ paths, workflow style). Conventions live in the rules, so no generic boilerplate
 
 ### /shipkit:unsetup
 
-Reverses everything `/setup` did. Restores your project to its pre-shipkit state.
+Reverses what `/setup` did — removing **shipkit's files, and only shipkit's files**.
 
 **What it does:**
-1. Finds the `.shipkit-backup-<timestamp>/` directory
-2. Shows you exactly what will be restored
-3. Asks for confirmation before proceeding
-4. Removes current `CLAUDE.md` and `.claude/` directory
-5. Restores everything from the backup snapshot
-6. If the backup contained a nested older backup, restores that too
-7. Deletes the backup directory after successful restore
+1. Takes a recovery snapshot to `.shipkit-recovery-<timestamp>/` **first**, before reading or
+   touching anything — so the unsetup itself can be undone. `.claude/` is commonly gitignored,
+   so git is no safety net here.
+2. Finds the `.shipkit-backup-<timestamp>/` directory
+3. Shows you the actual removal set — the concrete list of paths, plus a diff for `CLAUDE.md`
+4. Asks for confirmation before proceeding
+5. Removes only the paths recorded in the installation manifest, then prunes the directories it
+   emptied. Another plugin's agents, your `settings.local.json`, anything you added after setup
+   — all untouched. A file **you** edited since installation is reported and kept unless you
+   explicitly ask for it to go.
+6. Restores `CLAUDE.md` (and anything else missing) from the backup; if the backup contained a
+   nested older backup, restores that too
+7. **Keeps** both `.shipkit-recovery-<ts>/` and `.shipkit-backup-<ts>/` and tells you they're
+   safe to delete — it will not destroy the record of what you just came from
+
+`.shipkit/` — your specs and decision records — is never touched. That's your work product, not
+shipkit's configuration.
+
+**If shipkit can't prove ownership** (a project set up before 3.1, so there's a version stamp
+rather than a manifest) it says so and asks, rather than deleting `.claude/` wholesale.
 
 **Usage:**
 ```
