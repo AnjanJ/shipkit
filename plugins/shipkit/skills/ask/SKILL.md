@@ -40,6 +40,14 @@ Question: `$ARGUMENTS`
    one line of your own framing. Do not re-verify the agent's findings in the main context —
    that re-pollutes what you just kept clean.
 
+   What this does and does not guarantee: the elders are *instructed* to cite file:line and to
+   label uncertainty, and `grandfather` verifies the specific claim it is about to state against
+   live source. There is no independent validator checking that a citation supports the claim.
+   So relaying unverified is a deliberate context trade, not a proof of correctness — pass the
+   citations through to the user so they can check, and keep the confidence label the agent gave
+   (`eve` answers some questions straight from the registry at MEDIUM confidence; those are
+   attributed snapshots, not live reads).
+
 ## When NOT to use this
 
 - You are mid-edit and need a fact to *continue coding right now* — a subagent round-trip is

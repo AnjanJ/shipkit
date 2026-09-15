@@ -11,7 +11,7 @@ Audit scope: $ARGUMENTS (default: `all`)
 
 ## Phase 1: Dependency Age Audit
 
-!`ls Gemfile.lock package-lock.json yarn.lock pnpm-lock.yaml poetry.lock Pipfile.lock go.sum mix.lock 2>/dev/null`
+!`f=$(ls Gemfile.lock package-lock.json yarn.lock pnpm-lock.yaml poetry.lock Pipfile.lock go.sum mix.lock 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no lockfile found"`
 
 ### Check dependency freshness:
 - **Ruby:** `bundle outdated --strict`

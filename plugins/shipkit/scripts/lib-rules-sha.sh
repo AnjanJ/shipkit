@@ -3,9 +3,14 @@
 #   rules_sha <rules-dir>      → one hex digest over every *.md in the dir, sorted by name
 #   plugin_version <root>      → the "version" from <root>/.claude-plugin/plugin.json
 #
-# Used by scripts/install-rules.sh (to stamp .claude/rules/shipkit/.installed) and by
-# scripts/session-start.sh (to notice when the installed copies are older than the plugin).
-# Both must compute the digest the same way, which is why it lives here.
+# `plugin_version` is used by install-rules.sh, install-stack.sh and session-start.sh.
+#
+# `rules_sha` is LEGACY and describes the plugin's own rules/ directory — what was *shipped*,
+# never what landed in a project. That is precisely why it could not detect an incomplete
+# install, reconcile a rule upstream had dropped, or cover overlays and skills: one digest
+# over the wrong side of the copy. Installation state now lives in a per-file manifest (see
+# lib-manifest.sh). `rules_sha` is kept only to read pre-3.1 `.installed` stamps during the
+# upgrade window — do not use it for new checks.
 
 rules_sha() {
   _d="$1"

@@ -23,7 +23,7 @@ Scaffold: $ARGUMENTS
 If an existing file can handle this, say so.
 
 ## Framework Detection
-!`ls manage.py pyproject.toml requirements.txt setup.py 2>/dev/null`
+!`f=$(ls manage.py pyproject.toml requirements.txt setup.py 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no Python project files found"`
 !`f=$(grep -E "django|fastapi|flask" requirements.txt pyproject.toml 2>/dev/null | head -5); [ -n "$f" ] && echo "$f" || echo "no framework detected"`
 
 Check CLAUDE.md for the framework, or auto-detect:

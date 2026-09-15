@@ -53,6 +53,15 @@ Write one minimal test showing what should happen.
 
 ### 2. Verify RED — Watch It Fail
 
+<!-- The absolutism here is deliberate, and is NOT an inconsistency to "fix" against
+     code-review-standards, which was softened from MUST to SHOULD/CONSIDER on purpose.
+     The asymmetry is about how each skill loads: code-review-standards loads on every
+     review, so a blanket MUST there is applied to code it has never seen. This skill is
+     invoked BY NAME and its DO NOT TRIGGER clause excludes ordinary coding — someone who
+     types /shipkit-workflows:tdd is asking for the iron law. Softening an opt-in enforcer
+     into "contextual signals" removes its reason to exist. See
+     .shipkit/specs/install-lifecycle/design.md DR-6. -->
+
 **MANDATORY. Never skip.**
 
 Run the test. Confirm:

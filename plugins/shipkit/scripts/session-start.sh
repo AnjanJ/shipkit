@@ -35,18 +35,59 @@ fi
 # /shipkit:setup (install-rules.sh) stamps .claude/rules/shipkit/.installed with the plugin
 # version and a digest of the rules as shipped. If the plugin's rules have changed since, the
 # project's copies are stale — nudge once. A directory without a stamp is a 2.8-era install.
-if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-rules-sha.sh" ]; then
-  if . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null; then
-    cur=$(rules_sha "$ROOT/rules" 2>/dev/null)
+if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-manifest.sh" ]; then
+  if . "$ROOT/scripts/lib-manifest.sh" 2>/dev/null \
+     && . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null; then
     ver=$(plugin_version "$ROOT")
-    if [ -f .claude/rules/shipkit/.installed ]; then
-      isha=$(sed -n 's/^sha=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+    if [ ! -f .claude/rules/shipkit/.installed ]; then
+      echo "shipkit: installed rules have no version stamp (installed by shipkit ≤ 2.8) and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+    elif manifest_is_legacy .; then
       iver=$(sed -n 's/^version=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
+      cur=$(rules_sha "$ROOT/rules" 2>/dev/null)
+      isha=$(sed -n 's/^sha=//p' .claude/rules/shipkit/.installed 2>/dev/null | head -1)
       if [ -n "$cur" ] && [ "$isha" != "$cur" ]; then
         echo "shipkit: installed rules are from shipkit ${iver:-?} and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      else
+        echo "shipkit: installed rules use the pre-3.1 stamp — run /shipkit:setup once so shipkit can track which files it owns (nothing will be removed)."
       fi
     else
-      echo "shipkit: installed rules have no version stamp (installed by shipkit ≤ 2.8) and the plugin is ${ver:-?} — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      # MISSING owned files first: an incomplete install is the one state that silently
+      # disabled the always-on fallback in 3.0 (rule absent from disk AND from context).
+      # inject-rule.sh now covers the context half; this names the file so it gets fixed.
+      miss=$(manifest_missing . 2>/dev/null | head -3)
+      if [ -n "$miss" ]; then
+        nmiss=$(manifest_missing . 2>/dev/null | wc -l | tr -d ' ')
+        echo "shipkit: $nmiss installed file(s) are missing — the install is incomplete. Run /shipkit:setup to repair:"
+        printf '%s\n' "$miss" | while read -r m; do [ -n "$m" ] && echo "shipkit:   missing $m"; done
+      fi
+      # Per-file drift against what the plugin now ships.
+      drift=0
+      for f in "$ROOT"/rules/*.md; do
+        [ -f "$f" ] || continue
+        b=$(basename "$f")
+        inst=".claude/rules/shipkit/$b"
+        [ -f "$inst" ] || continue
+        if [ "$(file_sha "$f" 2>/dev/null)" != "$(file_sha "$inst" 2>/dev/null)" ]; then
+          drift=$((drift + 1))
+        fi
+      done
+      # Rules the project still has but the plugin no longer ships.
+      obsolete=0
+      for inst in .claude/rules/shipkit/*.md; do
+        [ -f "$inst" ] || continue
+        b=$(basename "$inst")
+        [ -f "$ROOT/rules/$b" ] || obsolete=$((obsolete + 1))
+      done
+      iver=$(manifest_version . 2>/dev/null)
+      if [ "$drift" -gt 0 ] || [ "$obsolete" -gt 0 ]; then
+        note=""
+        [ "$drift" -gt 0 ] && note="$drift rule(s) changed upstream"
+        if [ "$obsolete" -gt 0 ]; then
+          [ -n "$note" ] && note="$note, "
+          note="$note$obsolete no longer shipped"
+        fi
+        echo "shipkit: installed rules are from shipkit ${iver:-?} and the plugin is ${ver:-?} ($note) — run /shipkit:setup to refresh .claude/rules/shipkit/."
+      fi
     fi
   fi
 fi
@@ -78,8 +119,11 @@ if [ -n "$MAP" ]; then
       if [ "$COUNT" -ge "$THRESHOLD" ]; then
         echo "shipkit: $MAP is $COUNT commits behind HEAD — run /shipkit:map refresh so the elders stay accurate."
       else
+        # Lockfiles count as much as manifests: a dependency bump often touches only the
+        # lockfile (mix.lock, package-lock.json), which is precisely when the map's recorded
+        # versions go stale.
         MANIFEST=$(git diff --name-only "$SHA"..HEAD 2>/dev/null \
-          | grep -m1 -E '(^|/)(Gemfile|Gemfile\.lock|mix\.exs|package\.json|go\.mod|pyproject\.toml|uv\.lock|poetry\.lock|importmap\.rb|requirements\.txt|Cargo\.toml|composer\.json|build\.gradle|pom\.xml)$')
+          | grep -m1 -E '(^|/)(Gemfile|Gemfile\.lock|mix\.exs|mix\.lock|package\.json|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb|go\.mod|go\.sum|pyproject\.toml|uv\.lock|poetry\.lock|Pipfile|Pipfile\.lock|importmap\.rb|requirements\.txt|Cargo\.toml|Cargo\.lock|composer\.json|composer\.lock|build\.gradle|pom\.xml)$')
         if [ -n "$MANIFEST" ]; then
           echo "shipkit: dependencies changed since $MAP was built ($MANIFEST) — consider /shipkit:map refresh."
         fi
@@ -91,20 +135,59 @@ fi
 # Spec drift — an accepted spec whose code has moved on since acceptance. Each spec.md
 # is stamped by /shipkit:spec: > Spec accepted at commit `abc1234` on main.
 SPEC_THRESHOLD="${SHIPKIT_SPEC_STALE_COMMITS:-15}"
+SPEC_CAP=3
 if [ -d .shipkit/specs ]; then
-  printed=0
-  for spec in .shipkit/specs/*/spec.md; do
+  # Collect every stale spec first, then report. Reporting inside the scan (capped at 3, in
+  # glob order) permanently starved specs 4..n: with N equally-stale specs the same first
+  # three were printed every session and the rest were never seen. Sort most-stale-first,
+  # then rotate the starting offset per run so the tail is reachable, and always print the
+  # total so an omission is visible rather than silent.
+  # Sort by staleness descending, then by path, so equal-staleness ordering is stable
+  # rather than glob-dependent.
+  STALE=$(for spec in .shipkit/specs/*/spec.md; do
     [ -f "$spec" ] || continue
-    [ "$printed" -ge 3 ] && break
     s_sha=$(stamp_sha 'accepted at commit' "$spec")
     [ -n "$s_sha" ] || continue
     git cat-file -e "$s_sha^{commit}" 2>/dev/null || continue
     s_count=$(git rev-list --count "$s_sha"..HEAD 2>/dev/null) || continue
     [ -n "$s_count" ] || continue
-    if [ "$s_count" -ge "$SPEC_THRESHOLD" ]; then
-      echo "shipkit: $spec is $s_count commits behind HEAD — the code may have drifted from the spec."
-      printed=$((printed + 1))
+    [ "$s_count" -ge "$SPEC_THRESHOLD" ] && printf '%s\t%s\n' "$s_count" "$spec"
+  done | sort -t"$(printf '\t')" -k1,1rn -k2,2)
+
+  if [ -n "$STALE" ]; then
+    total=$(printf '%s\n' "$STALE" | wc -l | tr -d ' ')
+    # Line 1 (the MOST stale spec) is always shown — rotating the worst offender out of
+    # view would trade one starvation bug for another. Only the remaining slots rotate,
+    # over lines 2..total, so the tail is still reachable across sessions.
+    show_line() {
+      line=$(printf '%s\n' "$STALE" | sed -n "$1p")
+      [ -n "$line" ] || return 0
+      c=${line%%"$(printf '\t')"*}
+      s=${line#*"$(printf '\t')"}
+      [ -n "$s" ] && echo "shipkit: $s is $c commits behind HEAD — the code may have drifted from the spec."
+    }
+    # Index the sorted list in the PARENT shell: `… | while read` runs the loop in a
+    # subshell, where the counter never escapes and `break` cannot stop the parent.
+    show_line 1
+    if [ "$total" -gt 1 ]; then
+      rest=$(( total - 1 ))                      # rotatable lines: 2..total
+      slots=$(( SPEC_CAP - 1 ))
+      [ "$rest" -lt "$slots" ] && slots="$rest"
+      if [ "$rest" -le "$slots" ]; then
+        offset=0
+      else
+        # Rotate between sessions (stable within one) so lines 2..total all surface.
+        offset=$(( $(date +%j 2>/dev/null || echo 0) % rest ))
+      fi
+      k=0
+      while [ "$k" -lt "$slots" ]; do
+        show_line $(( (offset + k) % rest + 2 ))
+        k=$((k + 1))
+      done
     fi
-  done
+    if [ "$total" -gt "$SPEC_CAP" ]; then
+      echo "shipkit: ($SPEC_CAP of $total stale specs shown — run /shipkit:spec to review, or set SHIPKIT_SPEC_STALE_COMMITS higher.)"
+    fi
+  fi
 fi
 exit 0

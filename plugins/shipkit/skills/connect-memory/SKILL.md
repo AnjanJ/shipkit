@@ -66,10 +66,18 @@ available, show the user the install command and ask them to install one, then r
 claude mcp add --scope user mempalace mempalace-mcp
 ```
 
-User scope is required: plugin subagents can't declare their own MCP server, so the elders'
-`tools:` allowlist grants `mcp__mempalace__*` to *only* `grandfather`/`eve`. Confirm with
+User scope is required: plugin subagents can't declare their own MCP server. Confirm with
 `claude mcp list` (look for `✔ Connected`). **The server only loads after a Claude Code restart**
 — note this now; the user will restart at the end.
+
+**What the allowlist does and does not do.** `grandfather` and `eve` declare
+`mcp__mempalace__*` in their `tools:` so they *can* reach the server. That is a grant to those
+two agents — it is not an exclusion of anyone else. A user-scope MCP server is available to the
+main session and inherited by subagents that do not narrow their own tools, so "only the elders
+can access MemPalace" would be wrong. The accurate claim: **the elders are the agents configured
+to use it**, and they are where the recall behaviour lives. If you want the server genuinely
+restricted, that is a Claude Code permissions question (scope it to a project, or deny the tools
+in settings), not something this plugin's agent frontmatter can enforce.
 
 ### 4. Backfill this project's history
 

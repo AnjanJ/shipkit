@@ -7,22 +7,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh shipkit",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh\" shipkit",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh spec-driven",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh\" spec-driven",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh decisions",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh\" decisions",
             "timeout": 5
           }
         ]

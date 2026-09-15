@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Two plugins from one repo: shipkit, the project knowledge layer (project maps, elder agents, cross-project registry, spec-driven development, composable stack overlays, a session hook that injects the always-on rules); and shipkit-workflows, the opinionated engineering workflows. Install either or both.",
-    "version": "3.0.0"
+    "version": "3.1.0"
   },
   "plugins": [
     {
       "name": "shipkit",
       "source": "./plugins/shipkit",
       "description": "12 skills, 5 agents, 9 rules (3 always-on, injected by the session hook; all 9 installed as files by /shipkit:setup's deterministic install scripts, which is what makes the 6 path-scoped ones load; the hook nudges when installed copies are older than the plugin). 10 composable stack overlays (one base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML). Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. /shipkit:unsetup reverts.",
-      "version": "3.0.0",
+      "version": "3.1.0",
       "keywords": [
         "claude-code",
         "developer-tools",
@@ -25,7 +25,7 @@
       "name": "shipkit-workflows",
       "source": "./plugins/shipkit-workflows",
       "description": "6 skills + 1 knowledge base (on-demand skill), 1 agent. QA, strict TDD, root-cause debugging, legacy audits, migration plans, prose humanizing. Optional companion to the shipkit knowledge layer; each works without the other.",
-      "version": "3.0.0",
+      "version": "3.1.0",
       "keywords": [
         "claude-code",
         "developer-tools",
