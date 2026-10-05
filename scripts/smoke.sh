@@ -303,6 +303,29 @@ if [ "$mine" -eq 1 ] && [ "$owned" -eq 0 ] && [ "$forced" -eq 0 ] && [ "$sk" -gt
   pass "skill-collision (user's same-named skill kept and unowned; replaced only on request)"
 else failc "skill-collision" "kept=$mine owned=$owned after-force=$forced own-refresh=$sk (want 1 0 0 >0)"; fi
 
+# 9c. an edit INSIDE the managed CLAUDE.md block is not overwritten without asking (REQ-10).
+# Check 9 proved an untouched section refreshes; here the user has written inside the markers,
+# so a rerun with a new value must leave the block alone, print the diff, and replace it only
+# when told to. Mutates $PY, so it runs after 9b.
+awk 'index($0,"<!-- /shipkit:stack:python -->"){print "USER-EDIT-INSIDE"} {print}' \
+  "$PY/CLAUDE.md" > "$PY/CLAUDE.md.new" && mv "$PY/CLAUDE.md.new" "$PY/CLAUDE.md"
+# shellcheck disable=SC2086
+err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs 2>&1 >/dev/null)
+kept=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
+early=$(count 'poetry run pytest' "$PY/CLAUDE.md")
+case "$err" in *"-USER-EDIT-INSIDE"*SHIPKIT_REFRESH_CLAUDE_MD*) diffed=1;; *) diffed=0;; esac
+# shellcheck disable=SC2086
+SHIPKIT_REFRESH_CLAUDE_MD=1 sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs >/dev/null 2>&1
+gone=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
+late=$(count 'poetry run pytest' "$PY/CLAUDE.md")
+a=$(count 'PROSE-AFTER' "$PY/CLAUDE.md")
+if [ "$kept" -eq 1 ] && [ "$early" -eq 0 ] && [ "$diffed" -eq 1 ] \
+   && [ "$gone" -eq 0 ] && [ "$late" -gt 0 ] && [ "$a" -eq 1 ]; then
+  pass "claude-md-edit (in-block edit kept and diffed; replaced only on request)"
+else
+  failc "claude-md-edit" "kept=$kept early=$early diffed=$diffed gone=$gone late=$late after=$a (want 1 0 1 0 >0 1)"
+fi
+
 # 11b. spec staleness on a zero-padded day of year. `date +%j` prints "008", which shell
 # arithmetic reads as invalid octal; the rotation then aborted the hook with exit 1 and a
 # stderr error on 36 days of the year. A stub `date` pins the day so this runs any day.

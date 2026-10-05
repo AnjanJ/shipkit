@@ -161,8 +161,41 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
     rm -f "$SECTION"; die "internal: placeholders survived substitution in the CLAUDE.md section"
   fi
 
+  # What shipkit last wrote between the markers, as a digest in shipkit's own namespace. It
+  # is the only way to tell "the value went stale" (safe to refresh) from "the user edited
+  # inside the block" (REQ-10: never overwritten without showing a diff and asking). With no
+  # record — a section written before this existed — the block is treated as edited: asking
+  # once too often is the cheap failure, eating someone's notes is not.
+  SECSHA="$PROJ/.claude/rules/shipkit/.section-$STACK.sha"
+  sec_sha() {
+    if [ "$HAVE_MANIFEST" = "1" ]; then file_sha "$1"; else cksum "$1" | cut -d' ' -f1; fi
+  }
+  inner() {  # the lines between the markers of file $1
+    awk -v s="$MARK" -v e="$ENDMARK" '
+      index($0,s){inb=1; next} index($0,e){inb=0; next} inb{print}
+    ' "$1"
+  }
+  NEW=$(mktemp) || die "mktemp failed"
+  inner "$SECTION" > "$NEW"
+  record_section() {
+    mkdir -p "$(dirname "$SECSHA")" && sec_sha "$NEW" > "$SECSHA" && note "$SECSHA"
+  }
+  replace_section() {  # swap the managed block for $SECTION, leaving everything outside it
+    OUT=$(mktemp) || die "mktemp failed"
+    # cat, not mv: CLAUDE.md keeps its own mode instead of inheriting mktemp's 0600
+    awk -v s="$MARK" -v e="$ENDMARK" -v f="$SECTION" '
+      index($0,s){inb=1; while((getline l < f)>0) print l; next}
+      index($0,e){inb=0; next}
+      !inb{print}
+    ' "$CM" > "$OUT" && cat "$OUT" > "$CM" || { rm -f "$OUT"; die "cannot refresh $CM"; }
+    rm -f "$OUT"
+    record_section
+    note "$CM (stack section refreshed)"
+  }
+
   if [ ! -f "$CM" ] || ! grep -qF "$MARK" "$CM"; then
     cat "$SECTION" >> "$CM" || die "cannot append to $CM"
+    record_section
     note "$CM (stack section appended)"
   elif ! grep -qF "$ENDMARK" "$CM"; then
     # A 3.0-era section: opening marker, no terminator, so its extent is unknown — it may run
@@ -172,49 +205,36 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
     echo "  Add '$ENDMARK' after the stack section to let shipkit refresh it in place." >&2
     note "$CM (legacy unterminated section — left unchanged)"
   else
-    # Replace between the markers, preserving everything outside them.
     CUR=$(mktemp) || die "mktemp failed"
-    awk -v s="$MARK" -v e="$ENDMARK" '
-      index($0,s){inb=1; next} index($0,e){inb=0; next} inb{print}
-    ' "$CM" > "$CUR"
-    NEW=$(mktemp) || die "mktemp failed"
-    awk -v s="$MARK" -v e="$ENDMARK" '
-      index($0,s){inb=1; next} index($0,e){inb=0; next} inb{print}
-    ' "$SECTION" > "$NEW"
+    inner "$CM" > "$CUR"
     if cmp -s "$CUR" "$NEW"; then
+      record_section
       note "$CM (stack section already current — unchanged)"
-      rm -f "$CUR" "$NEW"
+    elif [ "${SHIPKIT_REFRESH_CLAUDE_MD:-0}" = "1" ]; then
+      replace_section
+    elif [ "$NONINTERACTIVE" = "1" ]; then
+      echo "install-stack: $CM's '$STACK' section is out of date." >&2
+      echo "  Re-run through /shipkit:setup to refresh it (it will show the diff first)," >&2
+      echo "  or set SHIPKIT_REFRESH_CLAUDE_MD=1 to replace the section now." >&2
+      note "$CM (stack section stale — not refreshed; see the warning above)"
+    elif [ -s "$SECSHA" ] && [ "$(sec_sha "$CUR")" = "$(cat "$SECSHA" 2>/dev/null)" ]; then
+      # Byte-for-byte what shipkit wrote last time: only the values moved. Safe to refresh.
+      replace_section
     else
-      # Did the user edit inside the managed block? Compare against what WE would have
-      # written at install time; if it differs from both, their edits are at stake.
-      if [ "$NONINTERACTIVE" = "1" ]; then
-        echo "install-stack: $CM's '$STACK' section is out of date." >&2
-        echo "  Re-run through /shipkit:setup to refresh it (it will show the diff first)," >&2
-        echo "  or set SHIPKIT_REFRESH_CLAUDE_MD=1 to replace the section now." >&2
-        if [ "${SHIPKIT_REFRESH_CLAUDE_MD:-0}" = "1" ]; then
-          OUT=$(mktemp) || die "mktemp failed"
-          awk -v s="$MARK" -v e="$ENDMARK" -v f="$SECTION" '
-            index($0,s){inb=1; while((getline l < f)>0) print l; next}
-            index($0,e){inb=0; next}
-            !inb{print}
-          ' "$CM" > "$OUT" && mv "$OUT" "$CM" || die "cannot refresh $CM"
-          note "$CM (stack section refreshed)"
-        else
-          note "$CM (stack section stale — not refreshed; see the warning above)"
-        fi
+      if [ -s "$SECSHA" ]; then
+        echo "install-stack: $CM's '$STACK' section was edited since shipkit wrote it — left unchanged." >&2
       else
-        OUT=$(mktemp) || die "mktemp failed"
-        awk -v s="$MARK" -v e="$ENDMARK" -v f="$SECTION" '
-          index($0,s){inb=1; while((getline l < f)>0) print l; next}
-          index($0,e){inb=0; next}
-          !inb{print}
-        ' "$CM" > "$OUT" && mv "$OUT" "$CM" || die "cannot refresh $CM"
-        note "$CM (stack section refreshed)"
+        echo "install-stack: $CM's '$STACK' section has no record of what shipkit wrote (installed before" >&2
+        echo "  shipkit tracked it), so it may hold your edits — left unchanged." >&2
       fi
-      rm -f "$CUR" "$NEW"
+      echo "  Refreshing would change it like this (- current, + shipkit's):" >&2
+      diff -u "$CUR" "$NEW" 2>/dev/null | sed '1,2d; s/^/    /' >&2
+      echo "  Set SHIPKIT_REFRESH_CLAUDE_MD=1 to replace the section." >&2
+      note "$CM (stack section has local edits — not refreshed; see the diff above)"
     fi
+    rm -f "$CUR"
   fi
-  rm -f "$SECTION"
+  rm -f "$SECTION" "$NEW"
 fi
 
 # --- safety net over the files this run copied (never the user's whole CLAUDE.md) ---------

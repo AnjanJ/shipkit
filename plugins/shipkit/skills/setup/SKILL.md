@@ -244,6 +244,12 @@ the others are already installed. Relay every manifest in the summary.
 user which overlay skill was skipped and ask whether to keep theirs (the default) or replace it.
 Only on an explicit yes, re-run that overlay with `SHIPKIT_OVERWRITE_SKILLS=1`.
 
+The same goes for the overlay's section in `CLAUDE.md`. A section still exactly as shipkit wrote
+it is refreshed in place. If the script instead reports the section "was edited" or "has no
+record", it left the section alone and printed a diff: show the user that diff, ask whether to
+replace the section, and only on an explicit yes re-run that overlay with
+`SHIPKIT_REFRESH_CLAUDE_MD=1`.
+
 **Bases:**
 
 | Base | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
