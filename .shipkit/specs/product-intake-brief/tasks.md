@@ -30,7 +30,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "brief-verify" (allowed only, one extra, one untracked; written first)
   - After: T4
   - Done when: the brief-verify smoke checks → all PASS
-- [ ] **T6** Tell Claude when to use the brief (S3-T6) → REQ-27, REQ-28
+- [x] **T6** Tell Claude when to use the brief (S3-T6) → REQ-27, REQ-28
   - Files: plugins/shipkit/rules/spec-driven.md, plugins/shipkit/skills/spec/SKILL.md, GUIDE.md
   - Test: scripts/lint.py check 8a (the always-on byte budget)
   - After: T3, T5

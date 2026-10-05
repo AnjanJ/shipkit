@@ -102,5 +102,30 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
 3. Tell the user the spec is ready and that implementation can begin task by task — the default
    workflow (`rules/shipkit.md`) takes over from here.
 
+## Handing a task to an agent
+
+The always-on rule says it in one line; this is the whole of it. `brief.sh` and
+`brief-verify.sh` are in `<plugin root>/scripts/` (the root is in the
+`shipkit: plugin root is …` context line).
+
+1. **The brief is the script's output, unchanged.** Before starting an agent on a spec task,
+   note the commit you are on (`git rev-parse HEAD`), then run
+   `sh "<plugin root>/scripts/brief.sh" . <feature-slug> <task-id>` and give the agent exactly
+   what it prints. Context the agent also needs goes **below** the brief, never in place of
+   any part of it — the requirement must reach the agent word for word.
+2. **The agent's report is a claim, not proof.** When it reports back, run
+   `sh "<plugin root>/scripts/brief-verify.sh" . <feature-slug> <task-id> <that commit>`, and
+   run the task's `Done when` command **yourself**. An `OUTSIDE` line, or a `Done when` that
+   does not show what it should, means the task is not done, whatever the report says.
+3. **Tasks that do not depend on each other may run at the same time,** each in its own git
+   worktree: a task whose `After` is `none`, or whose predecessors (see "Already done" in its
+   brief) are all finished. Two tasks that share a file are never in that position — the
+   sharing rule orders them.
+4. **Match the team to the work.** Trivial change: no agent. One task: at most one
+   implementing agent. A research question: the elders (`/shipkit:ask`). Do not start agents
+   "in case" — each costs tokens before it has shown it was needed.
+
+No agent starts another agent: every agent is started by the main session.
+
 See @reference.md for the EARS quick-reference, the decision-record template, and the file
 templates for `spec.md` / `design.md` / `tasks.md`.
