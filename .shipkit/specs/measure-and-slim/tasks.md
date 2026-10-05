@@ -3,7 +3,7 @@
 One commit per task, test and code together. The steps, files and "Check first" experiments
 for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** (S1-T1) Prove the eval tool works: the `hello` case, `scripts/evals.sh`, and
+- [x] **T1** (S1-T1) Prove the eval tool works: the `hello` case, `scripts/evals.sh`, and
       `evals/README.md` with the working format and what graders can check
       → REQ-1, REQ-2, REQ-3, REQ-4
 - [ ] **T2** (S1-T2) Build the fixture project and `FACTS.md` (F1 to F4)
