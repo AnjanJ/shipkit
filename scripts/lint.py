@@ -475,6 +475,22 @@ for d in overlay_dirs:
         if m and m.group(1) not in overlay_names:
             err(rule, f"declares `requires: {m.group(1)}` but stacks/{m.group(1)}/ does not exist")
 
+# --- 13. Rails overlay points at the ship gate --------------------------------
+# Proves review-and-ship/REQ-19: the Rails overlay's deploy-check and release skills each
+# carry the line that sends a feature with a spec through /shipkit:ship before it deploys.
+# Without it the gate exists but nothing on the deploy path mentions it.
+
+SHIP_GATE_LINE = "If this feature has a spec, run `/shipkit:ship <slug>` first."
+
+for name in ("deploy-check", "release"):
+    skill = CORE / "stacks" / "rails" / ".claude" / "skills" / name / "SKILL.md"
+    if not skill.is_file():
+        err(skill, "Rails overlay skill is missing — it must exist and point at the ship gate")
+        continue
+    lines = [ln.strip() for ln in skill.read_text(encoding="utf-8").splitlines()]
+    if SHIP_GATE_LINE not in lines:
+        err(skill, f"missing the ship-gate line: {SHIP_GATE_LINE}")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

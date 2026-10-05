@@ -19,7 +19,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: eval case escape/missing-req (names the cause `requirement missing`, proposes a new REQ)
   - After: T2
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh --case 'escape-*'` → passes
-- [ ] **T4** Link the Rails overlay to the gate (S4-T4) → REQ-19
+- [x] **T4** Link the Rails overlay to the gate (S4-T4) → REQ-19
   - Files: plugins/shipkit/stacks/rails/.claude/skills/deploy-check/SKILL.md, plugins/shipkit/stacks/rails/.claude/skills/release/SKILL.md, scripts/lint.py
   - Test: scripts/lint.py check "13. Rails overlay points at the ship gate" (an error when either skill lacks the line; written first)
   - After: none
