@@ -5,4 +5,4 @@
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
   --model "${EVALS_MODEL:-sonnet}" --threshold 0.66 \
-  --output-dir "${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}" "$@" --scaffold --allow-tools Bash
+  --output-dir "${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}" "$@" --scaffold --allow-tools Bash Write Edit

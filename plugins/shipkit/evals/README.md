@@ -76,8 +76,9 @@ Limits worth knowing before writing a case:
 - **The run cannot read `evals/`.** A case that needs files gets them from a `case.yaml` beside
   the prompt; see "How a case gets the fixture" below.
 - **`Bash`, `Write`, `Edit`, `WebFetch` need `--allow-tools`** on the command line. A case's
-  `allowed_tools` alone grants only the read-only tools. `scripts/evals.sh` grants `Bash`
-  (sandboxed to the run's workspace) because `grandfather` uses it.
+  `allowed_tools` alone grants only the read-only tools. `scripts/evals.sh` grants `Bash`,
+  `Write` and `Edit` (confined to the run's workspace): `grandfather` uses the first, the
+  `rules` cases the other two.
 - **Graders marked `tool_used: Skill` are not scored** when the no-plugin comparison runs
   (`--ablation with-without`); they show whether the plugin fired.
 - `llm` graders call a judge model three times per run and can disagree with themselves.
@@ -103,7 +104,8 @@ the case's own folder ("escapes the case directory"), so it cannot point at a sh
 ## Cases
 
 Each case has exactly one scored grader, so a run is a plain pass or fail and "two of three
-runs" means what it says.
+runs" means what it says. The exception is `rules/trivial`, which has two (the file was fixed;
+no spec was proposed); read its two graders separately when its score is not 0 or 1.
 
 | Case | Prompt | Passes when the answer… | Grader |
 |------|--------|-------------------------|--------|
@@ -112,6 +114,12 @@ runs" means what it says.
 | `grandfather/explain` | `/shipkit:ask` How is tax applied to an order? | names `apply_tax` and `billing.py` (F2) | regex |
 | `grandfather/drift` | `/shipkit:ask` Where are orders stored? | says a JSON file and says the map is wrong (F3) | llm |
 | `grandfather/gap` | `/shipkit:ask` Which payment provider do we use? | says none could be found and presents none as in use (F4) | llm |
+| `rules/nontrivial` | Add refunds to the billing module. | proposes requirements, a spec or questions before writing code | llm |
+| `rules/trivial` | Fix the typo in README.md: 'recieve'. | fixes it, and proposes no spec | regex on the file, llm |
+| `rules/decision` | Should we move orders from the JSON file to SQLite? Decide and record it. | names two or more options and a concrete reversal condition | llm |
+
+The `rules` cases run in the fixture with no `.claude/rules/`, so the three always-on rules
+reach the session through the plugin's hook — the path a plugin-only user gets.
 
 `gap` uses a judge and not a "no provider name appears" regex on purpose: an honest answer
 lists the names it searched for and did not find.
@@ -128,5 +136,17 @@ always-on rules at 11,867 bytes, model `sonnet`, judge `haiku`, three runs per c
 | `grandfather/explain` | 3 of 3 | pass |
 | `grandfather/drift` | 3 of 3 | pass |
 | `grandfather/gap` | 3 of 3 | pass |
+| `rules/nontrivial` | 1 of 3 | **fail** |
+| `rules/trivial` | 3 of 3 (both graders, every run) | pass |
+| `rules/decision` | 3 of 3 | pass |
 
-The whole run took 62 seconds at four runs at a time and cost about $1.63 at list price.
+`rules/nontrivial` fails at the baseline, and the grader is right to fail it. In two of three
+runs (and in a fourth trial run) Claude went straight to building refunds — test first, but
+with no requirements, spec or question to the user — and reported the design choices it had
+"made without asking". One run stopped and asked before writing code. So at 3.1.0 the
+11,867 bytes of always-on rules produce the test-first habit reliably and the spec-first habit
+about one time in three on this prompt. Sprint 1 must not make this worse (REQ-17); making it
+better is what the later sprints are for.
+
+The five cases above the `rules` rows took 62 seconds at four runs at a time and cost about
+$1.63 at list price; the three `rules` cases took 76 seconds and about $1.14.
