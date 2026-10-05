@@ -1,6 +1,8 @@
 # Spec: Measure and slim (Sprint 1, release 3.2.0)
 
 > Spec accepted at commit `fc15929` on sprint-1/measure-and-slim.
+> Status: shipped
+> Paths: plugins/shipkit/evals/, plugins/shipkit/rules/, plugins/shipkit/scripts/guard-commit.sh, scripts/evals.sh, scripts/lint.py
 
 ## Purpose
 
@@ -33,17 +35,22 @@ requirement is one "Done when" line from that plan.
 - **REQ-4.** `plugins/shipkit/evals/README.md` shall state the case format that works on this
   machine and, under "What graders can check", whether a grader can check (a) which tools were
   called and (b) a file the run wrote — each answer found by trying it.
+  [untested: README content, verified by reading]
 
 ### Fixture project (S1-T2)
 
 - **REQ-5.** `plugins/shipkit/evals/fixtures/FACTS.md` shall list the planted facts F1 to F4,
   each with its file and line.
+  [untested: fixture documentation, verified by reading]
 - **REQ-6.** The string `SQLite` shall appear in exactly one file under
   `fixtures/sample-app/`: `PROJECT_MAP.md`.
+  [untested: checked by hand with grep -rn at S1-T2; no standing check]
 - **REQ-7.** The `fixtures/` directory shall occupy at most 40 KB (`du -sk`) and `sample-app/`
   shall hold at most 20 files.
+  [untested: checked by hand with du and find at S1-T2; no standing check]
 - **REQ-8.** The files under `plugins/shipkit/evals/` shall total at most 100 KB, counted as the
   sum of file sizes in bytes (what a user downloads), not as disk blocks.
+  [untested: checked by hand at the 3.2.0 release (25,150 bytes); no standing check]
 
 ### Baselines (S1-T3, S1-T5)
 
@@ -101,6 +108,7 @@ requirement is one "Done when" line from that plan.
 
 - **REQ-27.** When Sprint 1 is complete, `bash scripts/lint.sh` shall report
   `0 error(s), 0 warning(s)` and `bash scripts/smoke.sh` shall report `smoke: all checks passed`.
+  [untested: the sprint exit checklist, run at the 3.2.0 release]
 - **REQ-28.** The 3.2.0 changelog entry shall list, under "Fixed", the three fixes merged in
   pull request #1 (the octal day-of-year abort, the same-named skill overwrite, the edited
   CLAUDE.md section overwrite). [untested: verified by reading]

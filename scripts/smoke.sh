@@ -72,6 +72,7 @@ case "$out" in
 esac
 
 # 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
+# Cites: install-lifecycle/REQ-5
 # always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
 # Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
 rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
@@ -176,6 +177,7 @@ case "$out" in *"run /shipkit:setup to refresh"*) pass "stale-nudge (hook flags 
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null   # back to a clean install
 
 # 8b. incomplete-install: a deleted rule is reported BY NAME and re-injected (review finding 2).
+# Cites: install-lifecycle/REQ-5 install-lifecycle/REQ-6
 # In 3.0 this was the silent failure: absent from disk AND suppressed from context.
 rm -f "$IP/.claude/rules/shipkit/shipkit.md"
 out=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
@@ -190,6 +192,7 @@ else failc "incomplete-install" "double-inject of an installed rule ($n bytes)";
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
 
 # 8c. reconciliation: a rule upstream no longer ships is removed on reinstall (finding 3).
+# Cites: install-lifecycle/REQ-7
 cp "$COPY/rules/monorepo.md" "$WORK/monorepo.md.bak"
 rm -f "$COPY/rules/monorepo.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
@@ -217,6 +220,8 @@ case "$out" in *"no version stamp"*) pass "stale-nudge (unstamped 2.8-era instal
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
 
 # 9. CLAUDE.md stack section refreshes in place, preserving content outside it (finding 3a).
+# Cites: install-lifecycle/REQ-9 install-lifecycle/REQ-10 (and install-lifecycle/REQ-8, by the
+# manifest-overlays assertion at the end of this check)
 PY="$WORK/py-proj"; mkdir -p "$PY"
 printf '# demo\n\nPROSE-BEFORE\n' > "$PY/CLAUDE.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$PY" >/dev/null
@@ -253,6 +258,7 @@ if [ "$ov" -gt 0 ] && [ "$ov2" -gt 0 ]; then
 else failc "manifest-overlays" "overlay entries=$ov, overlay rules on disk after reinstall=$ov2"; fi
 
 # 10. freshness: a lockfile-only dependency bump is noticed (finding 6).
+# Cites: install-lifecycle/REQ-11
 FP="$WORK/fresh"; mkdir -p "$FP"
 (cd "$FP" && git init -q && printf 'x\n' > mix.lock \
   && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
@@ -265,6 +271,7 @@ case "$out" in *"dependencies changed"*) pass "freshness (lockfile-only bump is 
   *) failc "freshness" "lockfile bump not reported: $out";; esac
 
 # 11. spec staleness: the most-stale spec always shows, and the total is reported (finding 6).
+# Cites: install-lifecycle/REQ-12
 SP="$WORK/specs"; mkdir -p "$SP"
 (cd "$SP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
 i=1; while [ "$i" -le 40 ]; do
@@ -304,6 +311,7 @@ if [ "$mine" -eq 1 ] && [ "$owned" -eq 0 ] && [ "$forced" -eq 0 ] && [ "$sk" -gt
 else failc "skill-collision" "kept=$mine owned=$owned after-force=$forced own-refresh=$sk (want 1 0 0 >0)"; fi
 
 # 9c. an edit INSIDE the managed CLAUDE.md block is not overwritten without asking (REQ-10).
+# Cites: install-lifecycle/REQ-10
 # Check 9 proved an untouched section refreshes; here the user has written inside the markers,
 # so a rerun with a new value must leave the block alone, print the diff, and replace it only
 # when told to. Mutates $PY, so it runs after 9b.
@@ -339,6 +347,8 @@ if [ "$rc" -eq 0 ] && [ "$nlines" -eq 3 ]; then
 else failc "spec-staleness-octal" "rc=$rc lines=$nlines: $out"; fi
 
 # 17. unsetup surgical removal (spec: .shipkit/specs/unsetup-safety/, DR-1).
+# Cites: unsetup-safety/REQ-1 unsetup-safety/REQ-2 unsetup-safety/REQ-3 unsetup-safety/REQ-4
+# unsetup-safety/REQ-5 unsetup-safety/REQ-7 (17a to 17e below name the requirement each proves)
 # These define the contract for scripts/unsetup-remove.sh BEFORE it is written: removal is
 # driven by the installation manifest, so it takes out what shipkit owns and nothing else.
 # Every check builds a scratch project and asserts on the SURVIVORS — the destructive path
@@ -437,6 +447,8 @@ else
 fi
 
 # 18. commit guard (spec: .shipkit/specs/measure-and-slim/, REQ-21..REQ-26).
+# Cites: measure-and-slim/REQ-21 measure-and-slim/REQ-22 measure-and-slim/REQ-23
+# measure-and-slim/REQ-24 measure-and-slim/REQ-25 measure-and-slim/REQ-26
 # guard-commit.sh is a PreToolUse hook on Bash: it reads the hook's JSON on stdin and exits 2
 # (which blocks the call) when a `git commit` would include a secret-looking staged file.
 # Called directly with sample JSON — no claude needed. The JSON carries the project as `cwd`,

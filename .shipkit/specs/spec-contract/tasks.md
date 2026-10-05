@@ -25,8 +25,8 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "spec-new-format" (a spec written for "refunds" passes spec-check)
   - After: T1, T2, T3
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the three rules ≤ 3,000 bytes; the spec-new-format check → PASS
-- [ ] **T5** Bring this repository's own specs up to the new format (S2-T5) → REQ-23, REQ-24
-  - Files: .shipkit/specs/install-lifecycle/spec.md, .shipkit/specs/unsetup-safety/spec.md, .shipkit/specs/measure-and-slim/spec.md, scripts/smoke.sh, scripts/lint.py
+- [x] **T5** Bring this repository's own specs up to the new format (S2-T5) → REQ-23, REQ-24
+  - Files: .shipkit/specs/install-lifecycle/spec.md, .shipkit/specs/unsetup-safety/spec.md, .shipkit/specs/measure-and-slim/spec.md, scripts/smoke.sh, scripts/lint.py, scripts/evals.sh
   - Test: `sh plugins/shipkit/scripts/spec-check.sh .`
   - After: T1, T2, T3, T4
   - Done when: `sh plugins/shipkit/scripts/spec-check.sh .` → exit 0, no `MISSING-` line

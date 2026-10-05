@@ -1,6 +1,8 @@
 # Install Lifecycle & Verified Review Findings — Requirements
 
 > Spec accepted at commit `ce3ec19` on main.
+> Status: shipped
+> Paths: plugins/shipkit/scripts/, plugins/shipkit/hooks/, scripts/lint.py, scripts/smoke.sh
 
 Scope: the eight findings from the 3.0.0 external review that were reproduced against this
 working tree. Each requirement below has an observed failure behind it, not a reported one.
@@ -35,6 +37,7 @@ a deletion, and cannot cover overlays or skills.
   *Observed:* unquoted `${CLAUDE_PLUGIN_ROOT}/...` exits **127**; quoted exits **0**.
 - **REQ-4** — The README's local-testing command shall register both plugins.
   *Observed:* `~/code/shipkit` is the marketplace root; it registers neither plugin.
+  [untested: a README command, verified by reading]
 
 ### Installation ownership
 
@@ -73,8 +76,10 @@ a deletion, and cannot cover overlays or skills.
 - **REQ-13** — The MemPalace setup text shall distinguish "these agents are configured to use
   it" from "only these agents can access it". A user-scope MCP server is inherited by the main
   session; a subagent `tools:` allowlist restricts that subagent, it does not isolate the server.
+  [untested: documentation wording, verified by reading]
 - **REQ-14** — Claims of "verified memory" shall state what is verified against live source and
   what is an attributed snapshot (eve's registry-only answers are explicitly MEDIUM confidence).
+  [untested: documentation wording, verified by reading]
 
 ## Out of scope
 
@@ -85,3 +90,4 @@ a deletion, and cannot cover overlays or skills.
 - **REQ-15** — Review standards phrased as unconditional MUSTs where they are contextual
   signals shall be re-phrased. Applies to `code-review-standards` only.
 - Net-efficiency benchmarking and a behavioral evaluation suite — real, but a separate effort.
+  [untested: documentation wording, verified by reading]

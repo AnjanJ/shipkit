@@ -1,6 +1,8 @@
 # Unsetup Safety — Requirements
 
 > Spec accepted at commit `d5db719` on fix/install-lifecycle-and-verified-findings.
+> Status: shipped
+> Paths: plugins/shipkit/scripts/unsetup-remove.sh, plugins/shipkit/skills/unsetup/, plugins/shipkit/skills/setup/
 
 Scope: the ninth finding from the 3.0.0 external review, deferred from the
 [`install-lifecycle`](../install-lifecycle/spec.md) spec because redesigning a destructive
@@ -53,22 +55,27 @@ own, and keep the snapshot only as a fallback for what we cannot prove we own.**
   of the **current** `CLAUDE.md` and `.claude/`, so an unsetup can itself be undone.
   *Source:* today's flow has no undo; configuration added since `/setup` is discarded with no
   route back.
+  [untested: skill prose with no script behind it, verified by reading]
 - **REQ-7** — `/unsetup` shall show the actual removal set — the concrete list of paths, and a
   diff for `CLAUDE.md` — before asking for confirmation, rather than the current prose summary
   ("`.claude/` directory will be restored to its pre-shipkit state").
 - **REQ-8** — `/unsetup` shall require explicit confirmation before any destructive step. Already
   true (`unsetup/SKILL.md:39`); preserve it, and keep the skill inline (a forked skill cannot ask).
+  [untested: skill prose with no script behind it, verified by reading]
 
 ### Baseline integrity
 
 - **REQ-9** — When `/setup` runs on a project that already has a shipkit install, it shall
   preserve the **original** pre-shipkit baseline rather than snapshotting shipkit's own output
   over it. A baseline, once captured, is not overwritten by a later setup.
+  [untested: skill prose with no script behind it, verified by reading]
 - **REQ-10** — `/setup` shall not offer an option whose effect is the silent, permanent
   destruction of the only true baseline. *Source:* the *delete* branch at `setup/SKILL.md:144`.
+  [untested: skill prose with no script behind it, verified by reading]
 - **REQ-11** — Where the true baseline cannot be established (shipkit installed before this
   spec landed, baseline deleted), `/unsetup` shall say so explicitly instead of presenting a
   shipkit-era snapshot as "your pre-shipkit state".
+  [untested: skill prose with no script behind it, verified by reading]
 
 ### Hygiene
 
@@ -76,9 +83,11 @@ own, and keep the snapshot only as a fallback for what we cannot prove we own.**
   that it is not. *Observed:* nothing in `setup/` or `unsetup/` mentions gitignore, so a snapshot
   containing an entire `.claude/` directory — potentially including local settings — can be
   committed. This repo's own `.gitignore` covers `/.claude/` but says nothing about backups.
+  [untested: skill prose with no script behind it, verified by reading]
 - **REQ-13** — The documented promise shall match the behaviour. README:316 currently says
   "your project goes back to exactly how it was", which REQ-9/REQ-11 make conditional.
   *Also:* README:220, README:312, GUIDE.md:128, GUIDE.md:149, GUIDE.md:170.
+  [untested: documentation wording, verified by reading]
 
 ## Out of scope
 
