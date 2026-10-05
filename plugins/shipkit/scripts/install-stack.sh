@@ -11,7 +11,9 @@
 #
 # What it does:
 #   stacks/<stack>/.claude/rules/*.md   → <project>/.claude/rules/shipkit/<stack>/
-#   stacks/<stack>/.claude/skills/*     → <project>/.claude/skills/<name>/
+#   stacks/<stack>/.claude/skills/*     → <project>/.claude/skills/<name>/  (an existing file
+#                                         shipkit does not own is kept, with a warning, unless
+#                                         SHIPKIT_OVERWRITE_SKILLS=1)
 #   stacks/<stack>/CLAUDE.md.append     → appended to <project>/CLAUDE.md, once (guarded by a
 #                                         `<!-- shipkit:stack:<stack> -->` marker; re-runs skip it)
 # then substitutes every {{KEY}} in what it wrote, and FAILS (exit 2) listing any placeholder
@@ -115,9 +117,28 @@ if [ -d "$SRC/.claude/skills" ]; then
     mkdir -p "$SDEST" || die "cannot create $SDEST"
     for f in "$d"*; do
       [ -f "$f" ] || continue
-      cp "$f" "$SDEST/" || die "failed to copy $f"
-      subst "$SDEST/$(basename "$f")"
-      note "$SDEST/$(basename "$f")"
+      dest="$SDEST/$(basename "$f")"
+      # .claude/skills/ is shared with the user's own skills, and overlay skill names are
+      # generic (`new-feature`, `component`). Copying blindly replaced a same-named skill the
+      # user wrote and then recorded it in the manifest as shipkit's, so /shipkit:unsetup
+      # would delete it. Overwrite only what the manifest proves is ours, or what is already
+      # byte-identical to what we are about to write.
+      new=$(mktemp) || die "mktemp failed"
+      cp "$f" "$new" || die "failed to copy $f"
+      subst "$new"
+      if [ -f "$dest" ] && ! cmp -s "$new" "$dest" \
+         && [ "${SHIPKIT_OVERWRITE_SKILLS:-0}" != "1" ] \
+         && ! { [ "$HAVE_MANIFEST" = "1" ] && manifest_owns "$PROJ" "${dest#"${PROJ%/}"/}"; }; then
+        rm -f "$new"
+        echo "install-stack: $dest already exists and shipkit did not install it — kept yours." >&2
+        echo "  Rename it, or set SHIPKIT_OVERWRITE_SKILLS=1 to replace it with the '$STACK' overlay's." >&2
+        note "$dest (exists, not shipkit's — kept yours, not installed)"
+        continue
+      fi
+      # cat, not mv: the file gets the project's umask rather than mktemp's 0600
+      cat "$new" > "$dest" || die "failed to write $dest"
+      rm -f "$new"
+      note "$dest"
     done
   done
 fi

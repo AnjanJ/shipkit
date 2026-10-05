@@ -239,6 +239,11 @@ placeholders, and **fails with exit 2 listing any placeholder you did not pass**
 `TODO: …` value rather than omitting one. If one overlay fails, fix it and re-run that overlay;
 the others are already installed. Relay every manifest in the summary.
 
+`.claude/skills/` is shared with the user's own skills. If the script reports that a skill file
+"already exists and shipkit did not install it — kept yours", nothing was overwritten: tell the
+user which overlay skill was skipped and ask whether to keep theirs (the default) or replace it.
+Only on an explicit yes, re-run that overlay with `SHIPKIT_OVERWRITE_SKILLS=1`.
+
 **Bases:**
 
 | Base | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
