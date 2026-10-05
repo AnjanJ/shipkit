@@ -9,7 +9,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "spec-check" (six scratch-project checks, written first)
   - After: none
   - Done when: the spec-check smoke checks → all PASS; `sh -n plugins/shipkit/scripts/spec-check.sh` → clean
-- [ ] **T2** `spec-check.sh`, part two: the task format (S2-T2) → REQ-11, REQ-12, REQ-13, REQ-14
+- [x] **T2** `spec-check.sh`, part two: the task format (S2-T2) → REQ-11, REQ-12, REQ-13, REQ-14
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "spec-check-tasks" (one check per message, plus the old format)
   - After: T1

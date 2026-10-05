@@ -535,8 +535,8 @@ else
   else failc "spec-check" "uncited: exit $rc: $(cat "$WORK/sc.out")"; fi
   # ...and the same gap in an OPEN spec is not yet an error: tests are owed at ship time
   sed 's/^> Status: shipped/> Status: open/' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/spec.md"
-  rc=$(sc "$P")
-  if [ "$rc" -eq 0 ] && ! grep -q 'MISSING-TEST' "$WORK/sc.out"; then pass "spec-check (open spec is not asked for tests yet)"
+  rc=$(sc "$P")   # exit status not asserted: these one-line tasks are pre-3.3 format (section 20)
+  if ! grep -q 'MISSING-TEST\|MISSING-TASK' "$WORK/sc.out"; then pass "spec-check (open spec is not asked for tests yet)"
   else failc "spec-check" "open spec asked for tests: exit $rc: $(cat "$WORK/sc.out")"; fi
 
   # d. an excused requirement — the excuse sits on a wrapped continuation line
@@ -588,6 +588,58 @@ else
   rc=$(sc); rc2=$(sc "$WORK/no-such-project"); rc3=$(sc "$WORK/sc-a" no-such-spec)
   if [ "$rc" -eq 64 ] && [ "$rc2" -eq 64 ] && [ "$rc3" -eq 64 ]; then pass "spec-check (wrong usage → exit 64)"
   else failc "spec-check" "usage: no args $rc, missing dir $rc2, unknown slug $rc3 (want 64 64 64)"; fi
+fi
+
+# 20. spec-check, part two: the task format (spec: .shipkit/specs/spec-contract/).
+# For an OPEN spec that carries a Status line, every task needs Files / Test / After /
+# Done when, After must name real tasks, and two tasks sharing a file must be ordered by a
+# direct After. Reuses scspec and sc from section 19. Cites: spec-contract/REQ-11
+# spec-contract/REQ-12 spec-contract/REQ-13 spec-contract/REQ-14
+sctasks() {  # sctasks <proj> <slug> <after-of-T2> → tasks.md in the 3.3 format; T1 and T2 share one file
+  printf -- '- [ ] **T1** do b → REQ-1\n  - Files: app/a.py, tests/test_a.py\n  - Test: tests/test_a.py::test_b\n  - After: none\n  - Done when: `pytest` → all pass\n- [ ] **T2** do d → REQ-2\n  - Files: app/c.py, tests/test_a.py\n  - Test: tests/test_a.py::test_d\n  - After: %s\n  - Done when: `pytest` → all pass\n' "$3" \
+    > "$1/.shipkit/specs/$2/tasks.md"
+}
+if [ ! -f "$SC" ]; then
+  failc "spec-check-tasks" "scripts/spec-check.sh does not exist"
+else
+  # a. a well-formed open spec
+  P="$WORK/st-a"; scspec "$P" demo open; sctasks "$P" demo T1
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -Eq 'MISSING-|BAD-AFTER|CONFLICT' "$WORK/sc.out"; then pass "spec-check-tasks (well-formed tasks → exit 0)"
+  else failc "spec-check-tasks" "well-formed: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # b. a task missing fields
+  P="$WORK/st-b"; scspec "$P" demo open; sctasks "$P" demo T1
+  grep -v 'test_d\|Done when' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" \
+    && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-FIELD demo T2 Test$' "$WORK/sc.out" \
+     && grep -q '^MISSING-FIELD demo T2 Done-when$' "$WORK/sc.out" \
+     && grep -q '^MISSING-FIELD demo T1 Done-when$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-FIELD demo T1 Test' "$WORK/sc.out"; then
+    pass "spec-check-tasks (task without Test / Done when → MISSING-FIELD, exit 1)"
+  else failc "spec-check-tasks" "missing field: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # c. After names a task that does not exist
+  P="$WORK/st-c"; scspec "$P" demo open; sctasks "$P" demo "T1, T9"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^BAD-AFTER demo T2 T9$' "$WORK/sc.out" && ! grep -q 'CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (After names an unknown task → BAD-AFTER, exit 1)"
+  else failc "spec-check-tasks" "bad after: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d. the sharing rule: two tasks list the same file and the later one does not name the earlier
+  P="$WORK/st-d"; scspec "$P" demo open; sctasks "$P" demo none
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^CONFLICT demo T1 T2 tests/test_a.py$' "$WORK/sc.out"; then
+    pass "spec-check-tasks (shared file without After → CONFLICT, exit 1)"
+  else failc "spec-check-tasks" "conflict: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # e. a pre-3.3 spec — no Status line, one-line tasks — is left alone
+  P="$WORK/st-e"; scspec "$P" demo none
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -Eq 'MISSING-|BAD-AFTER|CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (old task format with no Status line → exit 0)"
+  else failc "spec-check-tasks" "old format: exit $rc: $(cat "$WORK/sc.out")"; fi
 fi
 
 echo
