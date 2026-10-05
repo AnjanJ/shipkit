@@ -3,9 +3,9 @@
 One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** The `reviewer` agent (S4-T1)
+- [x] **T1** The `reviewer` agent (S4-T1)
       → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8
-  - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/evals/reviewer/, plugins/shipkit/evals/README.md, .claude-plugin/marketplace.json
+  - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/evals/reviewer/, plugins/shipkit/evals/README.md, .claude-plugin/marketplace.json, scripts/smoke.sh
   - Test: eval case reviewer/missing-req (REQ-2 has no code → NOT MET and VERDICT: FAIL)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh --case 'reviewer-*'` → passes

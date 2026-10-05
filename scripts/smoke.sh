@@ -946,6 +946,16 @@ else
   else failc "brief-verify" "usage: missing arg $rc, unknown task $rc2, bad ref $rc3 (want 64 1 64)"; fi
 fi
 
+# 27. reviewer-tools: the reviewer agent can read and run git, and cannot change anything or
+# start another agent (spec: .shipkit/specs/review-and-ship/). Read from the file a session
+# loads. Cites: review-and-ship/REQ-7
+rv="$COPY/agents/reviewer.md"
+rv_tools=$(sed -n 's/^tools: *//p' "$rv" 2>/dev/null | tr -d ' ')
+rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
+if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
+  pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
+else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

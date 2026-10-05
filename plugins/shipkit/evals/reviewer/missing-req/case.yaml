@@ -1,0 +1,5 @@
+# Proves review-and-ship/REQ-2 and review-and-ship/REQ-6
+schema_version: "1.1"
+name: reviewer-missing-req
+context:
+  scaffold_script: fixture.sh
