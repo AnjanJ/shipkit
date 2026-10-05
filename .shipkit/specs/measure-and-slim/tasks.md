@@ -10,7 +10,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
       → REQ-5, REQ-6, REQ-7, REQ-8
 - [x] **T3** (S1-T3) Four `grandfather` cases; record the 3.1.0 baseline → REQ-9, REQ-11
       (after T1, T2)
-- [ ] **T4** (S1-T4) Measure with the map, without the map, and without the plugin; write
+- [x] **T4** (S1-T4) Measure with the map, without the map, and without the plugin; write
       `eval-results-3.2.md` and decision 0001 → REQ-12, REQ-13, REQ-14  (after T3)
 - [ ] **T5** (S1-T5) Three `rules` cases; record the 3.1.0 baseline → REQ-10, REQ-11
 - [ ] **T6** (S1-T6) Shrink the three always-on rules; move detail into the commit and spec
