@@ -30,6 +30,12 @@ One commit per task, test and code together. The steps for each task are in
   - Test: `sh plugins/shipkit/scripts/spec-check.sh .`
   - After: T1, T2, T3, T4
   - Done when: `sh plugins/shipkit/scripts/spec-check.sh .` → exit 0, no `MISSING-` line
+- [x] **T7** The sharing rule follows chains of After lines; cycles are reported (added
+      2026-10-05, owner-approved, after S2-T4 showed seven-name After lines) → REQ-13, REQ-27
+  - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, GUIDE.md, .shipkit/specs/spec-contract/spec.md, .shipkit/specs/spec-contract/design.md
+  - Test: scripts/smoke.sh section 20, checks d2 (chain) and d3 (cycle)
+  - After: T5
+  - Done when: smoke sections 19 and 20 → all PASS; `sh plugins/shipkit/scripts/spec-check.sh .` → exit 0
 - [ ] **T6** Run the check in CI (S2-T6) → REQ-25
   - Files: .github/workflows/lint.yml
   - Test: the pull request's `lint` check
@@ -38,5 +44,5 @@ One commit per task, test and code together. The steps for each task are in
 - [ ] **T-REL** Release 3.3.0 → REQ-26
   - Files: CHANGELOG.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/spec-contract/spec.md
   - Test: the sprint exit checklist
-  - After: T6
+  - After: T6, T7
   - Done when: the five checklist lines hold; the pull request is merged; tag `v3.3.0` exists

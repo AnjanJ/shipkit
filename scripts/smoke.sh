@@ -604,9 +604,10 @@ fi
 
 # 20. spec-check, part two: the task format (spec: .shipkit/specs/spec-contract/).
 # For an OPEN spec that carries a Status line, every task needs Files / Test / After /
-# Done when, After must name real tasks, and two tasks sharing a file must be ordered by a
-# direct After. Reuses scspec and sc from section 19. Cites: spec-contract/REQ-11
-# spec-contract/REQ-12 spec-contract/REQ-13 spec-contract/REQ-14
+# Done when, After must name real tasks, two tasks sharing a file must be ordered by After
+# (directly or through a chain), and After lines must not form a cycle. Reuses scspec and sc
+# from section 19. Cites: spec-contract/REQ-11 spec-contract/REQ-12 spec-contract/REQ-13
+# spec-contract/REQ-14 spec-contract/REQ-27
 sctasks() {  # sctasks <proj> <slug> <after-of-T2> → tasks.md in the 3.3 format; T1 and T2 share one file
   printf -- '- [ ] **T1** do b → REQ-1\n  - Files: app/a.py, tests/test_a.py\n  - Test: tests/test_a.py::test_b\n  - After: none\n  - Done when: `pytest` → all pass\n- [ ] **T2** do d → REQ-2\n  - Files: app/c.py, tests/test_a.py\n  - Test: tests/test_a.py::test_d\n  - After: %s\n  - Done when: `pytest` → all pass\n' "$3" \
     > "$1/.shipkit/specs/$2/tasks.md"
@@ -645,6 +646,24 @@ else
   if [ "$rc" -eq 1 ] && grep -q '^CONFLICT demo T1 T2 tests/test_a.py$' "$WORK/sc.out"; then
     pass "spec-check-tasks (shared file without After → CONFLICT, exit 1)"
   else failc "spec-check-tasks" "conflict: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d2. ...but a chain is enough: T3 shares the file with T1 and names only T2, which names T1
+  P="$WORK/st-d2"; scspec "$P" demo open; sctasks "$P" demo T1
+  printf -- '- [ ] **T3** do more → REQ-2\n  - Files: tests/test_a.py\n  - Test: tests/test_a.py::test_e\n  - After: T2\n  - Done when: `pytest` → all pass\n' \
+    >> "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -q 'CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (shared file ordered through a chain of After lines → exit 0)"
+  else failc "spec-check-tasks" "chain: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d3. After lines that form a cycle cannot be scheduled at all
+  P="$WORK/st-d3"; scspec "$P" demo open; sctasks "$P" demo T1
+  sed 's/  - After: none/  - After: T2/' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" \
+    && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^CYCLE demo T1$' "$WORK/sc.out" && grep -q '^CYCLE demo T2$' "$WORK/sc.out"; then
+    pass "spec-check-tasks (After lines in a cycle → CYCLE, exit 1)"
+  else failc "spec-check-tasks" "cycle: exit $rc: $(cat "$WORK/sc.out")"; fi
 
   # e. a pre-3.3 spec — no Status line, one-line tasks — is left alone
   P="$WORK/st-e"; scspec "$P" demo none

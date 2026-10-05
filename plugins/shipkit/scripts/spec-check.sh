@@ -13,7 +13,8 @@
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
 #   BAD-AFTER <slug> <task> <name>        a task's After names a task that does not exist
 #   CONFLICT <slug> <a> <b> <file>        tasks a and b both list the file, and b (the later
-#                                         one) does not name a in its After
+#                                         one) does not come after a
+#   CYCLE <slug> <task>                   the task's After lines lead back to itself
 #
 # How a spec is read:
 #   - Status comes from a "> Status: draft|open|shipped|dropped" line in spec.md. A spec with
@@ -27,13 +28,14 @@
 #   - The three task-format checks apply only to an OPEN spec that carries a Status line —
 #     that is, a spec written in the 3.3 format. A task is a line "- [ ] **T3** …" followed by
 #     indented "- Files:", "- Test:", "- After:", "- Done when:" lines. Files and After are
-#     comma-separated; After may be "none". The sharing rule is direct: every pair of tasks
-#     that list the same file needs the earlier one named on the later one's own After line.
-#     It is what makes it safe to hand tasks to agents working at the same time.
+#     comma-separated; After may be "none". The sharing rule: of two tasks that list the same
+#     file, the later one must come after the earlier one — named on its After line, or
+#     reached through a chain of After lines (T3 after T2, T2 after T1). It is what makes it
+#     safe to hand tasks to agents working at the same time.
 #
 # This checks that a citation EXISTS, not that the cited test passes or proves the requirement.
 #
-# Exit status: 0 no MISSING-, BAD-AFTER or CONFLICT line; 1 at least one; 64 wrong usage.
+# Exit status: 0 no MISSING-, BAD-AFTER, CONFLICT or CYCLE line; 1 at least one; 64 wrong usage.
 # POSIX sh + awk + git. No bash-only syntax, no python. Spec: .shipkit/specs/spec-contract/.
 
 usage() {
@@ -62,7 +64,7 @@ spec_status() {
   esac
 }
 
-# task_findings <slug> <tasks.md> → MISSING-FIELD / BAD-AFTER / CONFLICT lines
+# task_findings <slug> <tasks.md> → MISSING-FIELD / BAD-AFTER / CONFLICT / CYCLE lines
 task_findings() {
   awk -v slug="$1" '
     function trim(s) { gsub(/`/, "", s); sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
@@ -91,6 +93,14 @@ task_findings() {
           if (x in known) dep[t, x] = 1; else print "BAD-AFTER", slug, t, x
         }
       }
+      # "Comes after" follows chains: close dep[] over itself (tasks are few; n^3 is nothing).
+      for (k = 1; k <= nt; k++)
+        for (i = 1; i <= nt; i++)
+          if (dep[ids[i], ids[k]])
+            for (j = 1; j <= nt; j++)
+              if (dep[ids[k], ids[j]]) dep[ids[i], ids[j]] = 1
+      for (i = 1; i <= nt; i++)
+        if (dep[ids[i], ids[i]]) print "CYCLE", slug, ids[i]
       for (i = 1; i <= nt; i++)
         for (j = i + 1; j <= nt; j++) {
           a1 = ids[i]; b1 = ids[j]

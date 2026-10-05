@@ -74,14 +74,15 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
    it satisfies (`→ REQ-3`) and carrying four sub-lines — `Files` (the only files it may
    change), `Test` (the test that fails first), `After` (tasks that must be finished first, or
    `none`) and `Done when` (the command and what it must show). If two tasks list the same
-   file, the later one names the earlier one in `After`.
+   file, the later one comes after the earlier one: name it in `After`, or name a task that
+   already comes after it. Name only the nearest predecessor — do not list every earlier task.
    Prefer test-before-implementation per `rules/shipkit.md`. Traceability runs
    requirement → task → code → test, and the test cites its requirement as
    `<feature-slug>/REQ-N`.
 3. **Run the check and fix what it reports:**
    `sh "<plugin root>/scripts/spec-check.sh" . <feature-slug>` (the root is in the
-   `shipkit: plugin root is …` context line). Any `MISSING-TASK`, `MISSING-FIELD`, `BAD-AFTER`
-   or `CONFLICT` line is a defect in the spec you just wrote — correct `tasks.md` and run it
+   `shipkit: plugin root is …` context line). Any `MISSING-TASK`, `MISSING-FIELD`, `BAD-AFTER`,
+   `CONFLICT` or `CYCLE` line is a defect in the spec you just wrote — correct `tasks.md` and run it
    again until it exits 0. Do not hand the spec over with findings open.
 
 ## After the interview

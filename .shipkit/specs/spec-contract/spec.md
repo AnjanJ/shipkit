@@ -41,8 +41,8 @@ is written in them.
 - **REQ-6.** When a spec's status is `draft` or `dropped`, `spec-check.sh` shall print
   `SKIPPED <slug> (<status>)` and check nothing in it.
 - **REQ-7.** Where a spec has no `Status` line, `spec-check.sh` shall treat it as `open`.
-- **REQ-8.** `spec-check.sh` shall exit 1 if it printed any `MISSING-`, `BAD-AFTER` or
-  `CONFLICT` line, and 0 otherwise.
+- **REQ-8.** `spec-check.sh` shall exit 1 if it printed any `MISSING-`, `BAD-AFTER`,
+  `CONFLICT` or `CYCLE` line, and 0 otherwise.
 - **REQ-9.** A citation of one spec's requirement (`a/REQ-1`) shall not satisfy another spec's
   requirement of the same number (`b/REQ-1`).
 - **REQ-10.** `spec-check.sh` shall be POSIX `sh` and shall not need python on the user's machine.
@@ -53,10 +53,15 @@ is written in them.
   `After` or `Done when`, `spec-check.sh` shall print `MISSING-FIELD <slug> T<n> <field>`.
 - **REQ-12.** If a task's `After` line names a task that does not exist, then `spec-check.sh`
   shall print `BAD-AFTER <slug> T<n> <name>`.
-- **REQ-13.** If two tasks list the same file and the later one does not name the earlier one
-  in `After`, then `spec-check.sh` shall print `CONFLICT <slug> T<a> T<b> <file>`.
+- **REQ-13.** If two tasks list the same file and the later one does not come after the
+  earlier one — named in its `After`, or reached through a chain of `After` lines — then
+  `spec-check.sh` shall print `CONFLICT <slug> T<a> T<b> <file>`.
+  *(Reworded on 2026-10-05, owner-approved: the first wording required a direct name. See the
+  superseding decision in `design.md`.)*
 - **REQ-14.** Where a spec has no `Status` line and its tasks are in the pre-3.3 format,
   `spec-check.sh` shall report no task-format finding for it.
+- **REQ-27.** If a task's `After` lines lead back to itself, then `spec-check.sh` shall print
+  `CYCLE <slug> T<n>`. *(Added on 2026-10-05 with the reworded REQ-13.)*
 
 ### Drift measured on the right files (S2-T3)
 
@@ -108,6 +113,5 @@ is written in them.
 - Any new skill or agent.
 - Making `spec-check.sh` understand test results. It checks that a citation exists, not that
   the test passes; the ship gate (Sprint 4) runs the tests.
-- A transitive dependency graph between tasks. The sharing rule looks at direct `After` names.
 - Changing what any existing smoke or lint check does in order to cite a requirement.
 - Rewriting the two older specs' requirements. They gain status, paths and citations only.

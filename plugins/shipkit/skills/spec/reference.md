@@ -174,10 +174,12 @@ Every task has the four sub-lines:
 - **`After`** — the tasks that must be finished first, comma-separated, or `none`.
 - **`Done when`** — the command to run and what it must show.
 
-**The sharing rule:** if two tasks list the same file, the later one must name the earlier one
-on its own `After` line — directly, not through a chain. `T2` above shares both files with `T1`,
-so it says `After: T1`. This is what makes it safe to give tasks to agents working at the same
-time: two tasks with no file in common and no `After` between them can run together.
+**The sharing rule:** if two tasks list the same file, the later one must come after the
+earlier one — named on its `After` line, or reached through a chain (`T3` after `T2`, `T2`
+after `T1`). `T2` above shares both files with `T1`, so it says `After: T1`; a `T3` on the same
+files would need only `After: T2`. This is what makes it safe to give tasks to agents working
+at the same time: two tasks with no file in common and no `After` path between them can run
+together. `After` lines must not form a cycle.
 
 Order tasks so each leaves the build green. Every requirement must be mentioned by a task, and
 every requirement not marked `[untested: …]` must be cited by a test before the spec is `shipped`.
@@ -189,7 +191,7 @@ sh "<plugin root>/scripts/spec-check.sh" . <feature-slug>
 ```
 
 It prints one line per gap — `MISSING-TASK`, `MISSING-TEST`, `MISSING-FIELD`, `BAD-AFTER`,
-`CONFLICT` — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are information, not gaps.
+`CONFLICT`, `CYCLE` — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are information, not gaps.
 
 ---
 

@@ -66,6 +66,9 @@ sprint, more than two citations whose test does not exercise the cited requireme
 
 ## Decision: The sharing rule looks at direct `After` names only   (→ REQ-12, REQ-13)
 
+> **Superseded on 2026-10-05** by "The sharing rule follows chains of `After` lines", below.
+> Kept as written: it is the record of what was decided first and why it was reversed.
+
 **Context.** Tasks are to be handed to agents, sometimes at the same time. Two tasks that edit
 the same file must not run together. The check is done by a POSIX shell script.
 
@@ -91,11 +94,50 @@ tasks reaches a merged spec.
 
 ---
 
+## Decision: The sharing rule follows chains of `After` lines   (→ REQ-13, REQ-27)
+
+Supersedes "The sharing rule looks at direct `After` names only".
+
+**Context.** The direct-only rule was reversed four tasks after it was decided. S2-T4's smoke
+check had `/shipkit:spec` write a real spec for the fixture: eight tasks on two shared files.
+`spec-check.sh` passed it, and its last task read `After: T1, T2, T3, T4, T5, T6, T7`. The
+earlier record's reversal condition was "a task whose `After` line names more than five
+tasks". The spec was a throwaway, not one written for this plan, so the clause had not
+strictly fired — but any real feature of that size would fire it, and it showed the cost
+plainly: the line that should say "what must be finished first" had become a list of
+everything.
+
+**Alternatives.**
+1. Keep direct-only and accept long `After` lines.
+2. Follow chains: the later task must *come after* the earlier one, by a direct name or
+   through any chain of `After` lines; report a cycle.
+3. Keep direct-only but exempt test files from the sharing rule.
+
+**Case for (2).** It asks for exactly what safety needs: an order between two tasks that touch
+the same file. `After: T2` on T3 is enough when T2 already follows T1, which is how a person
+writes it. It also closes the hole the first record admitted, a cycle going unreported.
+Option 3 guesses which files are safe to edit at once, and a shared test file is precisely
+where two agents collide.
+
+**Case against (2).** One task's lines no longer tell the whole story: to see every task that
+must be finished first, a reader follows the chain. The script gains a closure over the task
+graph — a triple loop in awk, harmless at tens of tasks, slow at thousands. And "name only
+the nearest predecessor" is a habit the skill now has to teach.
+
+**Decision.** We chose (2). `spec-check.sh` closes the `After` relation before checking shared
+files and prints `CYCLE <slug> <task>` for a task that reaches itself.
+**Falsifiability.** We would reverse this — return to direct names — if a brief built from a
+task (Sprint 3's `brief.sh`) leads an agent to start before a task it depends on only through
+a chain, in any sprint of this plan; or if `spec-check.sh` takes more than one second on a
+real `tasks.md`.
+
+---
+
 ## Data / interface changes
 
 - New script `plugins/shipkit/scripts/spec-check.sh <project-dir> [slug]`; output lines
   `MISSING-TASK`, `MISSING-TEST`, `WAIVED`, `SKIPPED`, `MISSING-FIELD`, `BAD-AFTER`,
-  `CONFLICT`; exit 0, 1 or 64 — REQ-1 to REQ-14.
+  `CONFLICT`, `CYCLE`; exit 0, 1 or 64 — REQ-1 to REQ-14, REQ-27.
 - `spec.md` gains two optional lines, `> Status:` and `> Paths:` — REQ-6, REQ-7, REQ-16.
 - A requirement line may end with `[untested: <reason>]` — REQ-5.
 - `tasks.md` tasks gain `Files`, `Test`, `After`, `Done when` sub-lines — REQ-11.

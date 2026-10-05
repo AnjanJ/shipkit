@@ -652,8 +652,8 @@ Since 3.3 a spec is not only read, it is checked. Three small conventions make t
   (for example `refunds/REQ-3`) in a comment or its name. A requirement that is prose only is
   excused by ending it with `[untested: <reason>]`.
 - **Tasks name their files.** Each task lists `Files`, `Test`, `After` and `Done when`. Two
-  tasks that list the same file must be ordered by `After`, so tasks that share nothing can be
-  handed to agents at the same time.
+  tasks that list the same file must be ordered by `After` (directly or through a chain), so
+  tasks that share nothing can be handed to agents at the same time.
 
 Then one script reads all of it:
 
@@ -669,6 +669,7 @@ sh "<plugin root>/scripts/spec-check.sh" . refunds    # one spec
 | `MISSING-FIELD refunds T3 Test` | a task lacks one of its four lines |
 | `BAD-AFTER refunds T3 T9` | `After` names a task that does not exist |
 | `CONFLICT refunds T1 T2 app/refunds.py` | two tasks share a file and are not ordered |
+| `CYCLE refunds T2` | the task's `After` lines lead back to itself |
 | `WAIVED refunds REQ-4` | excused with `[untested: …]` — information, not a gap |
 | `SKIPPED refunds (draft)` | drafts and dropped specs are not checked |
 
