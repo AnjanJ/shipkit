@@ -286,6 +286,58 @@ case "$out" in
   *) failc "spec-staleness" "the most-stale spec was not reported: $out";;
 esac
 
+# 9b. a skill the user wrote under an overlay's name is not overwritten, and not claimed.
+# .claude/skills/ is shared; `new-feature` is a name a user plausibly already has. Reuses $PY
+# and $pyargs from check 9 — its new-feature skill is shipkit's, so that one must still refresh.
+UP="$WORK/user-skill"; mkdir -p "$UP/.claude/skills/new-feature"
+printf 'MY-OWN-SKILL\n' > "$UP/.claude/skills/new-feature/SKILL.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$UP" >/dev/null
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+mine=$(count 'MY-OWN-SKILL' "$UP/.claude/skills/new-feature/SKILL.md")
+owned=$(count 'skills/new-feature/SKILL.md' "$UP/.claude/rules/shipkit/.installed")
+# shellcheck disable=SC2086
+SHIPKIT_OVERWRITE_SKILLS=1 sh "$COPY/scripts/install-stack.sh" "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+forced=$(count 'MY-OWN-SKILL' "$UP/.claude/skills/new-feature/SKILL.md")
+if [ "$mine" -eq 1 ] && [ "$owned" -eq 0 ] && [ "$forced" -eq 0 ] && [ "$sk" -gt 0 ]; then
+  pass "skill-collision (user's same-named skill kept and unowned; replaced only on request)"
+else failc "skill-collision" "kept=$mine owned=$owned after-force=$forced own-refresh=$sk (want 1 0 0 >0)"; fi
+
+# 9c. an edit INSIDE the managed CLAUDE.md block is not overwritten without asking (REQ-10).
+# Check 9 proved an untouched section refreshes; here the user has written inside the markers,
+# so a rerun with a new value must leave the block alone, print the diff, and replace it only
+# when told to. Mutates $PY, so it runs after 9b.
+awk 'index($0,"<!-- /shipkit:stack:python -->"){print "USER-EDIT-INSIDE"} {print}' \
+  "$PY/CLAUDE.md" > "$PY/CLAUDE.md.new" && mv "$PY/CLAUDE.md.new" "$PY/CLAUDE.md"
+# shellcheck disable=SC2086
+err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs 2>&1 >/dev/null)
+kept=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
+early=$(count 'poetry run pytest' "$PY/CLAUDE.md")
+case "$err" in *"-USER-EDIT-INSIDE"*SHIPKIT_REFRESH_CLAUDE_MD*) diffed=1;; *) diffed=0;; esac
+# shellcheck disable=SC2086
+SHIPKIT_REFRESH_CLAUDE_MD=1 sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs >/dev/null 2>&1
+gone=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
+late=$(count 'poetry run pytest' "$PY/CLAUDE.md")
+a=$(count 'PROSE-AFTER' "$PY/CLAUDE.md")
+if [ "$kept" -eq 1 ] && [ "$early" -eq 0 ] && [ "$diffed" -eq 1 ] \
+   && [ "$gone" -eq 0 ] && [ "$late" -gt 0 ] && [ "$a" -eq 1 ]; then
+  pass "claude-md-edit (in-block edit kept and diffed; replaced only on request)"
+else
+  failc "claude-md-edit" "kept=$kept early=$early diffed=$diffed gone=$gone late=$late after=$a (want 1 0 1 0 >0 1)"
+fi
+
+# 11b. spec staleness on a zero-padded day of year. `date +%j` prints "008", which shell
+# arithmetic reads as invalid octal; the rotation then aborted the hook with exit 1 and a
+# stderr error on 36 days of the year. A stub `date` pins the day so this runs any day.
+FAKEBIN="$WORK/fakebin"; mkdir -p "$FAKEBIN"
+printf '#!/bin/sh\necho 008\n' > "$FAKEBIN/date"; chmod +x "$FAKEBIN/date"
+out=$(cd "$SP" && PATH="$FAKEBIN:$PATH" CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>&1)
+rc=$?
+nlines=$(printf '%s\n' "$out" | grep -c 'commits behind HEAD')
+if [ "$rc" -eq 0 ] && [ "$nlines" -eq 3 ]; then
+  pass "spec-staleness (zero-padded day of year: hook exits 0, all 3 slots shown)"
+else failc "spec-staleness-octal" "rc=$rc lines=$nlines: $out"; fi
+
 # 17. unsetup surgical removal (spec: .shipkit/specs/unsetup-safety/, DR-1).
 # These define the contract for scripts/unsetup-remove.sh BEFORE it is written: removal is
 # driven by the installation manifest, so it takes out what shipkit owns and nothing else.
