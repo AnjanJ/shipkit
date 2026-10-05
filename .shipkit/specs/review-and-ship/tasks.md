@@ -9,7 +9,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: eval case reviewer/missing-req (REQ-2 has no code → NOT MET and VERDICT: FAIL)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh --case 'reviewer-*'` → passes
-- [ ] **T2** `/shipkit:ship` (S4-T2) → REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15
+- [x] **T2** `/shipkit:ship` (S4-T2) → REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15
   - Files: plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md, plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, .claude-plugin/marketplace.json
   - Test: scripts/smoke.sh checks "spec-check --as-shipped" and "ship-gate" (READY; NOT READY naming step 3; no other file changed)
   - After: T1
