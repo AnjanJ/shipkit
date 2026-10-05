@@ -785,6 +785,19 @@ else
   failc "product-file" "headings=[$heads] goals=$goals lines=$plines — model said: $(tail -4 "$WORK/product.out")"
 fi
 
+# 24. registry-columns: the registry template and eve know the product columns and studio.md
+# (spec: .shipkit/specs/product-intake-brief/). No claude needed — these are the files a
+# session reads. Cites: product-intake-brief/REQ-8 product-intake-brief/REQ-10
+rc_head=$(grep -m1 '^| Project | Path ' "$COPY/skills/map/SKILL.md")
+case "$rc_head" in
+  *"| Product | Top Goal |"*) pass "registry-columns (registry template has Product and Top Goal)";;
+  *) failc "registry-columns" "the template header lacks the two columns: $rc_head";;
+esac
+if grep -q 'studio\.md' "$COPY/agents/eve.md" && grep -q '`Product`' "$COPY/agents/eve.md" \
+   && grep -q '`Top Goal`' "$COPY/agents/eve.md"; then
+  pass "registry-columns (eve names studio.md and both columns)"
+else failc "registry-columns" "agents/eve.md does not name studio.md, Product and Top Goal"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

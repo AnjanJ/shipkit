@@ -9,7 +9,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "product-file" (the skill, given its answers, writes seven headings and at most three goals)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the product-file check → PASS
-- [ ] **T2** Studio priorities and the registry (S3-T2) → REQ-7, REQ-8, REQ-9, REQ-10
+- [x] **T2** Studio priorities and the registry (S3-T2) → REQ-7, REQ-8, REQ-9, REQ-10
   - Files: plugins/shipkit/skills/product/SKILL.md, plugins/shipkit/skills/map/SKILL.md, plugins/shipkit/agents/eve.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check "registry-columns" (template has both columns; eve names studio.md)
   - After: T1

@@ -1,7 +1,7 @@
 ---
 description: "Write or update .shipkit/product.md: what the product is for, its users, up to three measurable goals this quarter, and what it deliberately does not do. TRIGGER when: the user wants to set or revisit product goals, non-goals or priorities. DO NOT TRIGGER when: specifying one feature (use /shipkit:spec)."
 user-invocable: true
-argument-hint: "[what changed, if you are updating]"
+argument-hint: "[--studio] [what changed, if you are updating]"
 ---
 
 <!-- Runs INLINE (no context: fork) on purpose: it interviews the user, and forked skills
@@ -14,7 +14,10 @@ what it is trying to achieve this quarter, and what it deliberately does not do.
 intent the rest of shipkit checks work against — `/shipkit:intake` reads its goals and
 non-goals before a spec is written. The file's exact shape is in @reference.md.
 
-Notes from the user (optional): $ARGUMENTS
+Arguments (optional): $ARGUMENTS
+
+If the arguments contain `--studio`, do **"Studio priorities"** at the end of this file instead
+of the procedure below.
 
 ## Procedure
 
@@ -46,6 +49,37 @@ Notes from the user (optional): $ARGUMENTS
 
 6. **Report** in three or four lines: where the file is, the goals as written, and any gap
    left open (`metric: none set`). Do not paste the file back.
+
+## Studio priorities (`--studio`)
+
+One product file per project says what each product is for. Someone with several products
+also has to say which of them comes first. `--studio` writes that, outside any one project:
+`~/.claude/shipkit/studio.md`.
+
+1. Read `~/.claude/shipkit/studio.md` if it exists (you are updating it) and
+   `~/.claude/shipkit/project-registry.md` if it exists (its `Product` and `Top Goal` columns
+   say what each registered product is trying to do).
+2. Ask the user to rank what matters most across **all** their products right now. At most
+   **five** priorities. If they give more, ask which five; the rest are not written.
+3. Each priority names the product it belongs to, using the project name from the registry
+   where there is one. A priority that belongs to no product ("hire a designer") is allowed:
+   write `(studio)` as its product.
+4. Write the file in this shape, with today's date, and nothing else:
+
+   ```markdown
+   # Studio priorities
+
+   > Studio reviewed on 2026-10-05.
+
+   1. **<product>** — <the priority, one line>
+   2. **<product>** — <the priority, one line>
+   ```
+
+5. Report the ranked list in a few lines. `eve` reads this file when asked which product needs
+   attention.
+
+Never write `studio.md` from a guess: the ranking is the user's call, not something to infer
+from which repository was touched last.
 
 ## Guardrails
 
