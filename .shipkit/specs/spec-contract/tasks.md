@@ -36,7 +36,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section 20, checks d2 (chain) and d3 (cycle)
   - After: T5
   - Done when: smoke sections 19 and 20 → all PASS; `sh plugins/shipkit/scripts/spec-check.sh .` → exit 0
-- [ ] **T6** Run the check in CI (S2-T6) → REQ-25
+- [x] **T6** Run the check in CI (S2-T6) → REQ-25
   - Files: .github/workflows/lint.yml
   - Test: the pull request's `lint` check
   - After: T5
