@@ -1,7 +1,7 @@
 # Spec: The spec is a contract (Sprint 2, release 3.3.0)
 
 > Spec accepted at commit `65941bf` on sprint-2/spec-contract.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/scripts/session-start.sh, plugins/shipkit/skills/spec/, plugins/shipkit/rules/spec-driven.md, .github/workflows/lint.yml
 
 ## Purpose

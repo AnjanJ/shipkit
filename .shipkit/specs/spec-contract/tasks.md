@@ -41,8 +41,8 @@ One commit per task, test and code together. The steps for each task are in
   - Test: the pull request's `lint` check
   - After: T5
   - Done when: the pull request's `lint` check runs the new step and passes
-- [ ] **T-REL** Release 3.3.0 → REQ-26
-  - Files: CHANGELOG.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/spec-contract/spec.md
+- [x] **T-REL** Release 3.3.0 → REQ-26
+  - Files: CHANGELOG.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/spec-contract/spec.md, .github/workflows/lint.yml
   - Test: the sprint exit checklist
   - After: T6, T7
   - Done when: the five checklist lines hold; the pull request is merged; tag `v3.3.0` exists

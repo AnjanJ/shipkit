@@ -28,5 +28,6 @@ jobs:
       # Every spec under .shipkit/specs/: each requirement has a task, each requirement of a
       # shipped spec has a cited test or an [untested: reason], and open specs' tasks are
       # well formed. POSIX sh + awk + git; no model calls.
+      # Proves spec-contract/REQ-23: this repository passes its own check.
       - name: Check specs
         run: sh plugins/shipkit/scripts/spec-check.sh .
