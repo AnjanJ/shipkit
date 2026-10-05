@@ -3,7 +3,7 @@
 One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** `spec-check.sh`, part one: requirements and tests (S2-T1)
+- [x] **T1** `spec-check.sh`, part one: requirements and tests (S2-T1)
       → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "spec-check" (six scratch-project checks, written first)

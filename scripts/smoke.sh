@@ -486,6 +486,110 @@ else
   else failc "guard-commit" "error paths: not-a-repo exit $rc, empty stdin exit $rc2, want 0 0"; fi
 fi
 
+# 19. spec-check, part one: requirements, tasks and tests (spec: .shipkit/specs/spec-contract/).
+# spec-check.sh reads a spec as plain text and prints one line per gap. Every check builds a
+# scratch project; no claude needed. Cites: spec-contract/REQ-1 spec-contract/REQ-2
+# spec-contract/REQ-3 spec-contract/REQ-4 spec-contract/REQ-5 spec-contract/REQ-6
+# spec-contract/REQ-7 spec-contract/REQ-8 spec-contract/REQ-9 spec-contract/REQ-10
+SC="$COPY/scripts/spec-check.sh"
+scspec() {  # scspec <proj> <slug> <status|none> → a spec with REQ-1 and REQ-2, each with a task and a cited test
+  _d="$1/.shipkit/specs/$2"; mkdir -p "$_d" "$1/tests"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n' "$2"
+    [ "$3" = none ] || printf '> Status: %s\n' "$3"
+    printf '\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n'
+    printf -- '- **REQ-2.** When c happens, the system shall do d.\n'; } > "$_d/spec.md"
+  printf -- '- [ ] **T1** do b → REQ-1\n- [ ] **T2** do d → REQ-2\n' > "$_d/tasks.md"
+  printf '# %s/REQ-1\n# %s/REQ-2\n' "$2" "$2" > "$1/tests/test_$2.py"
+}
+sc() {  # sc <proj> [slug] → output in $WORK/sc.out, prints the exit status
+  sh "$SC" "$@" > "$WORK/sc.out" 2>&1; echo $?
+}
+if [ ! -f "$SC" ]; then
+  failc "spec-check" "scripts/spec-check.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$SC" 2>/dev/null; then pass "spec-check (POSIX sh: sh -n is clean)"
+  else failc "spec-check" "sh -n reports a syntax error"; fi
+
+  # a. a complete shipped spec has nothing to report
+  P="$WORK/sc-a"; scspec "$P" demo shipped
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -q 'MISSING-' "$WORK/sc.out"; then pass "spec-check (complete shipped spec → exit 0)"
+  else failc "spec-check" "complete spec: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # b. a requirement no task mentions
+  P="$WORK/sc-b"; scspec "$P" demo open
+  printf -- '- [ ] **T1** do b → REQ-1\n' > "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-TASK demo REQ-1$' "$WORK/sc.out"; then pass "spec-check (requirement with no task → MISSING-TASK, exit 1)"
+  else failc "spec-check" "no task: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # c. a shipped spec with an uncited requirement; a citation in docs/ or a .md file does not count
+  P="$WORK/sc-c"; scspec "$P" demo shipped
+  printf '# demo/REQ-1\n' > "$P/tests/test_demo.py"
+  mkdir -p "$P/docs"; printf 'demo/REQ-2\n' > "$P/docs/notes.txt"; printf 'demo/REQ-2\n' > "$P/README.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-2$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-TEST demo REQ-1$' "$WORK/sc.out"; then pass "spec-check (shipped, uncited requirement → MISSING-TEST, exit 1)"
+  else failc "spec-check" "uncited: exit $rc: $(cat "$WORK/sc.out")"; fi
+  # ...and the same gap in an OPEN spec is not yet an error: tests are owed at ship time
+  sed 's/^> Status: shipped/> Status: open/' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -q 'MISSING-TEST' "$WORK/sc.out"; then pass "spec-check (open spec is not asked for tests yet)"
+  else failc "spec-check" "open spec asked for tests: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d. an excused requirement — the excuse sits on a wrapped continuation line
+  P="$WORK/sc-d"; scspec "$P" demo shipped
+  printf '# demo/REQ-1\n' > "$P/tests/test_demo.py"
+  printf '  It is prose only. [untested: verified by reading]\n' >> "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && grep -q '^WAIVED demo REQ-2$' "$WORK/sc.out" && ! grep -q 'MISSING-' "$WORK/sc.out"; then
+    pass "spec-check ([untested: …] requirement → WAIVED, exit 0)"
+  else failc "spec-check" "waived: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # e. dropped and draft specs are skipped, gaps and all
+  P="$WORK/sc-e"; scspec "$P" gone dropped; scspec "$P" early draft
+  : > "$P/.shipkit/specs/gone/tasks.md"; : > "$P/.shipkit/specs/early/tasks.md"; rm -f "$P"/tests/*.py
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && grep -q '^SKIPPED gone (dropped)$' "$WORK/sc.out" \
+     && grep -q '^SKIPPED early (draft)$' "$WORK/sc.out" && ! grep -q 'MISSING-' "$WORK/sc.out"; then
+    pass "spec-check (dropped and draft specs with gaps → SKIPPED, exit 0)"
+  else failc "spec-check" "skipped: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # f. two specs that both have REQ-1 do not satisfy each other; a slug limits the run to one spec
+  P="$WORK/sc-f"; scspec "$P" alpha shipped; scspec "$P" beta shipped
+  rm -f "$P/tests/test_beta.py"
+  rc=$(sc "$P"); out=$(cat "$WORK/sc.out"); rc2=$(sc "$P" alpha)
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^MISSING-TEST beta REQ-1$' \
+     && ! printf '%s\n' "$out" | grep -q 'MISSING-TEST alpha' && [ "$rc2" -eq 0 ]; then
+    pass "spec-check (alpha/REQ-1 does not satisfy beta/REQ-1; a slug checks one spec)"
+  else failc "spec-check" "two specs: exit $rc / alpha-only exit $rc2: $out"; fi
+
+  # g. REQ-1 is not satisfied by a citation of REQ-10
+  P="$WORK/sc-g"; scspec "$P" demo shipped
+  printf -- '- **REQ-10.** When e happens, the system shall do f.\n' >> "$P/.shipkit/specs/demo/spec.md"
+  printf -- '- [ ] **T3** do f → REQ-10\n' >> "$P/.shipkit/specs/demo/tasks.md"
+  printf '# demo/REQ-10\n# demo/REQ-2\n' > "$P/tests/test_demo.py"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-1$' "$WORK/sc.out" && ! grep -q 'REQ-10' "$WORK/sc.out"; then
+    pass "spec-check (a citation of REQ-10 does not satisfy REQ-1)"
+  else failc "spec-check" "REQ-1 vs REQ-10: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # h. no Status line means open: tasks are checked, tests are not
+  P="$WORK/sc-h"; scspec "$P" demo none
+  printf -- '- [ ] **T1** do b → REQ-1\n' > "$P/.shipkit/specs/demo/tasks.md"; rm -f "$P"/tests/*.py
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out" && ! grep -q 'MISSING-TEST' "$WORK/sc.out"; then
+    pass "spec-check (no Status line is treated as open)"
+  else failc "spec-check" "no status: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # i. wrong usage
+  rc=$(sc); rc2=$(sc "$WORK/no-such-project"); rc3=$(sc "$WORK/sc-a" no-such-spec)
+  if [ "$rc" -eq 64 ] && [ "$rc2" -eq 64 ] && [ "$rc3" -eq 64 ]; then pass "spec-check (wrong usage → exit 64)"
+  else failc "spec-check" "usage: no args $rc, missing dir $rc2, unknown slug $rc3 (want 64 64 64)"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
