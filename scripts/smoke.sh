@@ -642,6 +642,55 @@ else
   else failc "spec-check-tasks" "old format: exit $rc: $(cat "$WORK/sc.out")"; fi
 fi
 
+# 21. spec drift is measured on the spec's own files, and only for open specs
+# (spec: .shipkit/specs/spec-contract/). A spec with neither a Status nor a Paths line must
+# behave exactly as in 3.2.0 — that is what checks 11 and 11b above assert, unchanged.
+# Cites: spec-contract/REQ-15 spec-contract/REQ-16 spec-contract/REQ-17 spec-contract/REQ-18
+DP="$WORK/drift"; mkdir -p "$DP/a" "$DP/b"
+dcommit() {  # dcommit <dir> <n> → n commits, each touching only <dir>/f
+  _i=1; while [ "$_i" -le "$2" ]; do
+    printf '%s\n' "$_i" >> "$DP/$1/f"
+    (cd "$DP" && git add "$1/f" && git -c user.email=s@s -c user.name=s commit -q -m "$1 $_i"); _i=$((_i + 1))
+  done
+}
+dspec() {  # dspec <slug> <status|none> <paths|none> → a spec stamped at the current HEAD
+  mkdir -p "$DP/.shipkit/specs/$1"
+  { printf '# %s\n\n> Spec accepted at commit `%s` on main.\n' "$1" "$(cd "$DP" && git rev-parse --short HEAD)"
+    [ "$2" = none ] || printf '> Status: %s\n' "$2"
+    [ "$3" = none ] || printf '> Paths: %s\n' "$3"; } > "$DP/.shipkit/specs/$1/spec.md"
+}
+dhook() { (cd "$DP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>&1); }
+(cd "$DP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+dspec done-one shipped none; dspec gone-one dropped none; dspec early-one draft none
+dspec scoped open "a/, docs/"
+dcommit b 20
+out=$(dhook)
+case "$out" in
+  *done-one*|*gone-one*|*early-one*) failc "spec-drift-paths" "a shipped, dropped or draft spec was reported: $out";;
+  *) pass "spec-drift-paths (shipped, dropped and draft specs 20 commits old → silent)";;
+esac
+case "$out" in
+  *scoped*) failc "spec-drift-paths" "20 commits outside the spec's Paths were counted: $out";;
+  *) pass "spec-drift-paths (open spec, 20 commits that touch only other paths → silent)";;
+esac
+dcommit a 20
+out=$(dhook)
+n=$(printf '%s\n' "$out" | grep -c 'scoped')
+case "$out" in
+  *"scoped/spec.md: 20 commits have touched its paths since it was accepted"*)
+    if [ "$n" -eq 1 ]; then pass "spec-drift-paths (20 commits inside its Paths → one line, counting only those)"
+    else failc "spec-drift-paths" "expected one line for the spec, got $n: $out"; fi ;;
+  *) failc "spec-drift-paths" "the scoped spec was not reported with its own count: $out";;
+esac
+# an open spec with a Status line but no Paths still counts every commit, in the 3.2.0 wording
+dspec whole open none
+dcommit b 15
+out=$(dhook)
+case "$out" in
+  *"whole/spec.md is 15 commits behind HEAD"*) pass "spec-drift-paths (open spec with no Paths → counted as before)";;
+  *) failc "spec-drift-paths" "open spec with no Paths was not counted on the whole repository: $out";;
+esac
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

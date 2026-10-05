@@ -14,7 +14,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "spec-check-tasks" (one check per message, plus the old format)
   - After: T1
   - Done when: the spec-check-tasks smoke checks → all PASS
-- [ ] **T3** Drift measured on the right files (S2-T3) → REQ-15, REQ-16, REQ-17, REQ-18
+- [x] **T3** Drift measured on the right files (S2-T3) → REQ-15, REQ-16, REQ-17, REQ-18
   - Files: plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "spec-drift-paths" (four checks, written first)
   - After: T1, T2
