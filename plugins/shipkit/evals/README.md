@@ -73,18 +73,60 @@ Limits worth knowing before writing a case:
   a check in `scripts/smoke.sh`.
 - **Every run starts in an empty workspace** with a temporary home. Nothing from your own
   settings, `CLAUDE.md`, memory or other plugins loads. This plugin's hooks, skills and agents do.
-- **The run cannot read `evals/`.** A case that needs files names them in a `case.yaml` beside
-  the prompt (`context.add_dirs`, read-only) or builds them with a `context.scaffold_script`
-  (runs only with `--scaffold`).
+- **The run cannot read `evals/`.** A case that needs files gets them from a `case.yaml` beside
+  the prompt; see "How a case gets the fixture" below.
 - **`Bash`, `Write`, `Edit`, `WebFetch` need `--allow-tools`** on the command line. A case's
-  `allowed_tools` alone grants only the read-only tools.
+  `allowed_tools` alone grants only the read-only tools. `scripts/evals.sh` grants `Bash`
+  (sandboxed to the run's workspace) because `grandfather` uses it.
 - **Graders marked `tool_used: Skill` are not scored** when the no-plugin comparison runs
   (`--ablation with-without`); they show whether the plugin fired.
 - `llm` graders call a judge model three times per run and can disagree with themselves.
   Prefer `regex`, `tool_used` and `file_exists` where they can express the check.
 
+## How a case gets the fixture
+
+`fixtures/sample-app/` is a nine-file order service with known answers, listed in
+`fixtures/FACTS.md`. A case that needs it has two more files:
+
+```text
+grandfather/lookup/
+  prompt.md
+  case.yaml        names the scaffold script
+  fixture.sh       copies fixtures/sample-app into the run's workspace and commits it
+  graders/
+```
+
+The script runs before Claude starts, and only when the command passes `--scaffold`
+(`scripts/evals.sh` does). `context.add_dirs` cannot do this job: it refuses any path outside
+the case's own folder ("escapes the case directory"), so it cannot point at a shared fixture.
+
 ## Cases
 
-| Case | Checks |
-|------|--------|
-| `hello` | The harness itself: the plugin loads and a grader can read the reply. |
+Each case has exactly one scored grader, so a run is a plain pass or fail and "two of three
+runs" means what it says.
+
+| Case | Prompt | Passes when the answer… | Grader |
+|------|--------|-------------------------|--------|
+| `hello` | Which shipkit skill builds PROJECT_MAP.md? | contains `/shipkit:map` | regex |
+| `grandfather/lookup` | `/shipkit:ask` Where is the retry limit set? | names `jobs/retry.py` and the number 5 (F1) | regex |
+| `grandfather/explain` | `/shipkit:ask` How is tax applied to an order? | names `apply_tax` and `billing.py` (F2) | regex |
+| `grandfather/drift` | `/shipkit:ask` Where are orders stored? | says a JSON file and says the map is wrong (F3) | llm |
+| `grandfather/gap` | `/shipkit:ask` Which payment provider do we use? | says none could be found and presents none as in use (F4) | llm |
+
+`gap` uses a judge and not a "no provider name appears" regex on purpose: an honest answer
+lists the names it searched for and did not find.
+
+## Baseline 3.1.0
+
+Recorded 2026-10-05 with `bash scripts/evals.sh` on Claude Code 2.1.289, shipkit 3.1.0 with the
+always-on rules at 11,867 bytes, model `sonnet`, judge `haiku`, three runs per case.
+
+| Case | Runs passed | Result |
+|------|-------------|--------|
+| `hello` | 3 of 3 | pass |
+| `grandfather/lookup` | 3 of 3 | pass |
+| `grandfather/explain` | 3 of 3 | pass |
+| `grandfather/drift` | 3 of 3 | pass |
+| `grandfather/gap` | 3 of 3 | pass |
+
+The whole run took 62 seconds at four runs at a time and cost about $1.63 at list price.

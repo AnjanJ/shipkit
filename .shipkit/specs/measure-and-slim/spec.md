@@ -42,7 +42,8 @@ requirement is one "Done when" line from that plan.
   `fixtures/sample-app/`: `PROJECT_MAP.md`.
 - **REQ-7.** The `fixtures/` directory shall occupy at most 40 KB (`du -sk`) and `sample-app/`
   shall hold at most 20 files.
-- **REQ-8.** The `plugins/shipkit/evals/` directory shall occupy at most 100 KB.
+- **REQ-8.** The files under `plugins/shipkit/evals/` shall total at most 100 KB, counted as the
+  sum of file sizes in bytes (what a user downloads), not as disk blocks.
 
 ### Baselines (S1-T3, S1-T5)
 

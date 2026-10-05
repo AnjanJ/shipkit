@@ -8,7 +8,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
       → REQ-1, REQ-2, REQ-3, REQ-4
 - [x] **T2** (S1-T2) Build the fixture project and `FACTS.md` (F1 to F4)
       → REQ-5, REQ-6, REQ-7, REQ-8
-- [ ] **T3** (S1-T3) Four `grandfather` cases; record the 3.1.0 baseline → REQ-9, REQ-11
+- [x] **T3** (S1-T3) Four `grandfather` cases; record the 3.1.0 baseline → REQ-9, REQ-11
       (after T1, T2)
 - [ ] **T4** (S1-T4) Measure with the map, without the map, and without the plugin; write
       `eval-results-3.2.md` and decision 0001 → REQ-12, REQ-13, REQ-14  (after T3)
