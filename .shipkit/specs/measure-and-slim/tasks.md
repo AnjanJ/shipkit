@@ -6,7 +6,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
 - [x] **T1** (S1-T1) Prove the eval tool works: the `hello` case, `scripts/evals.sh`, and
       `evals/README.md` with the working format and what graders can check
       → REQ-1, REQ-2, REQ-3, REQ-4
-- [ ] **T2** (S1-T2) Build the fixture project and `FACTS.md` (F1 to F4)
+- [x] **T2** (S1-T2) Build the fixture project and `FACTS.md` (F1 to F4)
       → REQ-5, REQ-6, REQ-7, REQ-8
 - [ ] **T3** (S1-T3) Four `grandfather` cases; record the 3.1.0 baseline → REQ-9, REQ-11
       (after T1, T2)
