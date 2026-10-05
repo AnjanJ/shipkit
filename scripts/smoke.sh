@@ -436,6 +436,56 @@ else
   fi
 fi
 
+# 18. commit guard (spec: .shipkit/specs/measure-and-slim/, REQ-21..REQ-26).
+# guard-commit.sh is a PreToolUse hook on Bash: it reads the hook's JSON on stdin and exits 2
+# (which blocks the call) when a `git commit` would include a secret-looking staged file.
+# Called directly with sample JSON — no claude needed. The JSON carries the project as `cwd`,
+# and the checks run from $WORK, so a pass also proves the guard looks at the project the hook
+# names and not at whatever directory it happens to start in.
+GUARD="$COPY/scripts/guard-commit.sh"
+GP="$WORK/guard"; mkdir -p "$GP"
+(cd "$GP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+guard() {  # guard <command> [cwd]  → prints the exit status; stderr lands in $WORK/guard.err
+  printf '{"hook_event_name":"PreToolUse","cwd":"%s","tool_name":"Bash","tool_input":{"command":"%s"}}' \
+    "${2:-$GP}" "$1" | (cd "$WORK" && sh "$GUARD" 2>"$WORK/guard.err"); echo $?
+}
+if [ ! -f "$GUARD" ]; then
+  failc "guard-commit" "scripts/guard-commit.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$GUARD" 2>/dev/null; then pass "guard-commit (POSIX sh: sh -n is clean)"
+  else failc "guard-commit" "sh -n reports a syntax error"; fi
+  printf 'x\n' > "$GP/app.py"; (cd "$GP" && git add app.py)
+  rc=$(guard "git commit -m wip")
+  if [ "$rc" -eq 0 ]; then pass "guard-commit (clean commit → exit 0)"
+  else failc "guard-commit" "clean commit: exit $rc, want 0"; fi
+  printf 'KEY=1\n' > "$GP/.env"; (cd "$GP" && git add -f .env)
+  rc=$(guard "git commit -m wip")
+  if [ "$rc" -eq 2 ] && grep -q '\.env' "$WORK/guard.err" \
+     && grep -q 'unstage these or ask the owner' "$WORK/guard.err"; then
+    pass "guard-commit (staged .env → exit 2, file named, told what to do)"
+  else failc "guard-commit" "staged .env: exit $rc, stderr: $(cat "$WORK/guard.err")"; fi
+  # the same staged .env must not block a command that is not a commit
+  rc=$(guard "ls -la")
+  if [ "$rc" -eq 0 ]; then pass "guard-commit (a command that is not a commit → exit 0)"
+  else failc "guard-commit" "non-commit command: exit $rc, want 0"; fi
+  (cd "$GP" && git rm -q --cached .env && printf 'KEY=\n' > .env.example && git add -f .env.example)
+  rc=$(guard "git commit -m wip")
+  if [ "$rc" -eq 0 ]; then pass "guard-commit (staged .env.example → exit 0)"
+  else failc "guard-commit" ".env.example: exit $rc, want 0"; fi
+  # a secret in a subdirectory is matched on its file name, not its path
+  mkdir -p "$GP/config"; printf 'k\n' > "$GP/config/server.key"; (cd "$GP" && git add -f config/server.key)
+  rc=$(guard "git add -u && git commit -m wip")
+  if [ "$rc" -eq 2 ] && grep -q 'config/server.key' "$WORK/guard.err"; then
+    pass "guard-commit (nested *.key in a chained commit → exit 2)"
+  else failc "guard-commit" "nested key: exit $rc, stderr: $(cat "$WORK/guard.err")"; fi
+  # a broken guard must never block a session: not a repository, and no input at all
+  mkdir -p "$WORK/not-a-repo"
+  rc=$(guard "git commit -m wip" "$WORK/not-a-repo")
+  rc2=$( (cd "$WORK/not-a-repo" && sh "$GUARD" </dev/null 2>/dev/null); echo $?)
+  if [ "$rc" -eq 0 ] && [ "$rc2" -eq 0 ]; then pass "guard-commit (internal error → exit 0, never blocks)"
+  else failc "guard-commit" "error paths: not-a-repo exit $rc, empty stdin exit $rc2, want 0 0"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

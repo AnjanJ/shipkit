@@ -19,9 +19,9 @@ percentages.
 | Source | When it loads | Notes |
 |--------|---------------|-------|
 | `CLAUDE.md` (project root, `.claude/CLAUDE.md`, and parent dirs up to `~/.claude/CLAUDE.md`) | Every session, in full | The main always-on cost |
-| `.claude/rules/**/*.md` **without** `paths:` frontmatter | Every session, in full | Always-on rules (shipkit's `shipkit.md`, `spec-driven.md`, `decisions.md` if installed by `/setup`) |
+| `.claude/rules/**/*.md` **without** `paths:` frontmatter | Every session, in full | Always-on rules (shipkit's `shipkit.md`, `spec-driven.md`, `decisions.md` if installed by `/setup` — about 3,000 bytes, 42 lines, together) |
 | `.claude/rules/**/*.md` **with** `paths:` frontmatter | Only when Claude touches a matching file | Path-scoped; near-zero cost until triggered |
-| Shipkit session hook output | Every session | One `plugin root` line, plus the three always-on rules **only if** `.claude/rules/shipkit/` is not installed |
+| Shipkit session hook output | Every session | One `plugin root` line, plus the three always-on rules (about 3,000 bytes plus a four-line header each) **only if** `.claude/rules/shipkit/` is not installed |
 | Skill **descriptions** (every registered skill, plugin and project) | Every session | ~1 line each; shipkit's 20 skills ≈ 1.2k tokens |
 | Skill **bodies** (`SKILL.md` + its references) | Only when the skill is invoked | `user-invocable: false` knowledge bases behave the same — description always, body on demand |
 | MCP tool schemas | Deferred until first use (tool search) | Not a per-session cost |
@@ -35,7 +35,7 @@ percentages.
 | File | Lines | Loads | Status |
 |------|-------|-------|--------|
 | CLAUDE.md | 142 | every session | OK |
-| .claude/rules/shipkit/shipkit.md | 60 | every session | OK (installed by /setup) |
+| .claude/rules/shipkit/shipkit.md | 24 | every session | OK (installed by /setup) |
 | .claude/rules/shipkit/testing.md | 12 | on test files | path-scoped |
 | .claude/lessons.md | 41 | every session | legacy (shipkit ≤ 2.8) — migrate into rules, then delete |
 

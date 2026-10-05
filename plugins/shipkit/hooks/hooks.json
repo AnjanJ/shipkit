@@ -1,5 +1,5 @@
 {
-  "description": "Shipkit session start: tells Claude the plugin root and prints a one-line reminder when PROJECT_MAP.md or a spec has drifted from HEAD; then injects each always-on rule (one hook command per rule — Claude Code caps a hook's context contribution at ~10K chars per command) unless /shipkit:setup installed the rules as files",
+  "description": "Shipkit session start: tells Claude the plugin root and prints a one-line reminder when PROJECT_MAP.md or a spec has drifted from HEAD; then injects each always-on rule (one hook command per rule — Claude Code caps a hook's context contribution at ~10K chars per command) unless /shipkit:setup installed the rules as files. Before a Bash call: blocks a git commit that would include a staged file that looks like a secret (.env, *.pem, *.key, id_rsa*, credentials*.json)",
   "hooks": {
     "SessionStart": [
       {
@@ -23,6 +23,18 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/inject-rule.sh\" decisions",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/guard-commit.sh\"",
             "timeout": 5
           }
         ]

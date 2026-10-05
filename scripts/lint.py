@@ -353,6 +353,29 @@ if hooks_json.exists():
             err(path, "always-on rule (no paths: frontmatter) is not injected by any "
                       "inject-rule.sh hook command in hooks/hooks.json")
 
+# --- 8a. Always-on byte budget ------------------------------------------------
+# The core plugin's rules without paths: frontmatter are injected into EVERY session of every
+# project, so their total size is a cost each user pays before typing a word. Triggers (when
+# to act) belong in them; detail (how) belongs in a skill that loads on demand. The budget is
+# an error, not a warning: without a ceiling these files only grow.
+# (.shipkit/specs/measure-and-slim/, REQ-16. Stack overlay rules are not counted here — they
+# belong to the project that installs them and have their own budget in check 12.)
+
+ALWAYS_ON_BUDGET = 3000   # bytes, all core always-on rules together
+
+_always_on = []
+for path in sorted(CORE.glob("rules/*.md")):
+    fm_text, _ = split_frontmatter(path)
+    fm = parse_frontmatter(path, fm_text) if fm_text else {}
+    if "paths" not in fm:
+        _always_on.append(path)
+_always_on_total = sum(p.stat().st_size for p in _always_on)
+if _always_on_total > ALWAYS_ON_BUDGET:
+    err(CORE / "rules", f"always-on rules total {_always_on_total} bytes "
+                        f"({', '.join(f'{p.name} {p.stat().st_size}' for p in _always_on)}); "
+                        f"the budget is {ALWAYS_ON_BUDGET} — keep triggers in the rule and move "
+                        "detail into a skill that loads on demand")
+
 # --- 8b. Shipped scripts must exist and be executable ------------------------
 for name, base in [("session-start.sh", CORE), ("inject-rule.sh", CORE),
                    ("install-rules.sh", CORE), ("install-stack.sh", CORE),

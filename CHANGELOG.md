@@ -2,6 +2,71 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.2.0] — 2026-10-05
+
+Sprint 1 of the quality-gate plan ([`docs/plans/quality-gate-sprint-plan.md`](docs/plans/quality-gate-sprint-plan.md)):
+measure whether shipkit helps, then cut what every session pays for. Requirements and decision
+records in [`.shipkit/specs/measure-and-slim/`](.shipkit/specs/measure-and-slim/).
+
+### Added
+
+- **An eval suite.** `plugins/shipkit/evals/` holds eight cases run by `claude plugin eval`:
+  one harness check, four for the `grandfather` elder (a lookup, an explanation, a map that is
+  wrong, a question with no answer) and three for the always-on rules (non-trivial work,
+  trivial work, a decision). `bash scripts/evals.sh` runs them all and exits non-zero if a case
+  fails. They make real model calls, so they run before a release, not in CI. The README there
+  records the case format that works, what graders can and cannot check, and the 3.1.0 baseline.
+- **A fixture project** for the cases, `evals/fixtures/sample-app/`: nine files of plain Python
+  with four planted facts listed in `fixtures/FACTS.md`.
+- **A commit guard.** A `PreToolUse` hook on the Bash tool (`scripts/guard-commit.sh`) blocks a
+  `git commit` when a staged file is named `.env`, `.env.*` (not `.env.example`), `*.pem`,
+  `*.key`, `id_rsa*` or `credentials*.json`, and tells Claude to unstage it or ask you. It
+  checks file names, not contents; it cannot see a file staged and committed in one command
+  (`git add .env && git commit`); and it exits 0 on any error, so it never blocks a session by
+  breaking.
+- **A lint budget for always-on rules.** The core plugin's rules without `paths:` may total at
+  most 3,000 bytes; more is an error.
+- **The first project-wide decision record**, `.shipkit/decisions/0001-project-map-default.md`,
+  and the measurements behind it in `docs/design/eval-results-3.2.md`.
+
+### Changed
+
+- **The three always-on rules shrank from 11,867 bytes to 2,960.** `shipkit.md`,
+  `spec-driven.md` and `decisions.md` now say *when* to act; the *how* moved to skills that
+  load on demand. The commit message format is in `/shipkit:commit`. The EARS patterns, the
+  five-part decision record with its ✅/❌ examples, and the full workflow-style definitions
+  are in the `/shipkit:spec` reference. The list of destructive actions to ask about is
+  unchanged. If you installed the rules with `/shipkit:setup`, the session hook will tell you
+  your copies are stale; run `/shipkit:setup` again to refresh them.
+- `/shipkit:context-audit` describes the smaller rules.
+
+### Fixed
+
+Three bugs fixed in pull request #1, merged after 3.1.0 without a release:
+
+- **The session hook aborted on 36 days of the year.** `date +%j` prints a zero-padded day
+  (`008`), which shell arithmetic reads as invalid octal; the stale-spec rotation then exited 1
+  with an error. Leading zeros are stripped first.
+- **`install-stack.sh` overwrote a skill you already had under the same name.** Overlay skill
+  names are generic (`new-feature`, `component`). A file under `.claude/skills/` that shipkit
+  did not install is now kept and reported, and is replaced only with
+  `SHIPKIT_OVERWRITE_SKILLS=1`.
+- **`install-stack.sh` overwrote edits inside the managed CLAUDE.md stack section.** A section
+  you edited is now left alone with a diff on stderr, and replaced only with
+  `SHIPKIT_REFRESH_CLAUDE_MD=1`.
+
+### What the measurements showed
+
+- **The smaller rules behave like the old ones** on the three rules cases: trivial work 3 of 3
+  before and after, decisions 3 of 3 before and after.
+- **The spec-first rule mostly does not fire, at either size.** Asked to "add refunds to the
+  billing module", Claude built the feature test-first without stating requirements in most
+  runs: 1 of 10 runs put requirements first with the old rules, 1 of 9 with the new. The case
+  is recorded as failing. Fixing it is the job of the intake and spec work in later sprints.
+- **On a nine-file fixture the project map bought nothing**: the same correct answers with and
+  without it, and 4% fewer tool calls. Decision 0001 records this, says how little a fixture
+  that small can show, and changes nothing yet.
+
 ## [3.1.0] — 2026-09-14
 
 Response to an external review of 3.0.0. Nine findings were raised; eight reproduced against
