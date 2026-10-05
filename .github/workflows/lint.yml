@@ -4,7 +4,7 @@ name: lint
 # (its README redirects here), so the old pipeline ran nowhere and was removed in 3.1.0 —
 # this is the same check, on the host the project actually lives on now.
 #
-# Structural lint only. The behavioural suite (./scripts/smoke.sh) needs a logged-in
+# Structural lint, then the spec check. The behavioural suite (./scripts/smoke.sh) needs a logged-in
 # `claude` CLI and real model calls, so it stays a pre-release step run by hand.
 
 on:
@@ -25,3 +25,9 @@ jobs:
         run: pip install --quiet pyyaml
       - name: Run lint
         run: python3 scripts/lint.py
+      # Every spec under .shipkit/specs/: each requirement has a task, each requirement of a
+      # shipped spec has a cited test or an [untested: reason], and open specs' tasks are
+      # well formed. POSIX sh + awk + git; no model calls.
+      # Proves spec-contract/REQ-23: this repository passes its own check.
+      - name: Check specs
+        run: sh plugins/shipkit/scripts/spec-check.sh .

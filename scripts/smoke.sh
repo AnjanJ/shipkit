@@ -72,6 +72,7 @@ case "$out" in
 esac
 
 # 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
+# Cites: install-lifecycle/REQ-5
 # always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
 # Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
 rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
@@ -176,6 +177,7 @@ case "$out" in *"run /shipkit:setup to refresh"*) pass "stale-nudge (hook flags 
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null   # back to a clean install
 
 # 8b. incomplete-install: a deleted rule is reported BY NAME and re-injected (review finding 2).
+# Cites: install-lifecycle/REQ-5 install-lifecycle/REQ-6
 # In 3.0 this was the silent failure: absent from disk AND suppressed from context.
 rm -f "$IP/.claude/rules/shipkit/shipkit.md"
 out=$(cd "$IP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh")
@@ -190,6 +192,7 @@ else failc "incomplete-install" "double-inject of an installed rule ($n bytes)";
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
 
 # 8c. reconciliation: a rule upstream no longer ships is removed on reinstall (finding 3).
+# Cites: install-lifecycle/REQ-7
 cp "$COPY/rules/monorepo.md" "$WORK/monorepo.md.bak"
 rm -f "$COPY/rules/monorepo.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
@@ -217,6 +220,8 @@ case "$out" in *"no version stamp"*) pass "stale-nudge (unstamped 2.8-era instal
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null
 
 # 9. CLAUDE.md stack section refreshes in place, preserving content outside it (finding 3a).
+# Cites: install-lifecycle/REQ-9 install-lifecycle/REQ-10 (and install-lifecycle/REQ-8, by the
+# manifest-overlays assertion at the end of this check)
 PY="$WORK/py-proj"; mkdir -p "$PY"
 printf '# demo\n\nPROSE-BEFORE\n' > "$PY/CLAUDE.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$PY" >/dev/null
@@ -253,6 +258,7 @@ if [ "$ov" -gt 0 ] && [ "$ov2" -gt 0 ]; then
 else failc "manifest-overlays" "overlay entries=$ov, overlay rules on disk after reinstall=$ov2"; fi
 
 # 10. freshness: a lockfile-only dependency bump is noticed (finding 6).
+# Cites: install-lifecycle/REQ-11
 FP="$WORK/fresh"; mkdir -p "$FP"
 (cd "$FP" && git init -q && printf 'x\n' > mix.lock \
   && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
@@ -265,6 +271,7 @@ case "$out" in *"dependencies changed"*) pass "freshness (lockfile-only bump is 
   *) failc "freshness" "lockfile bump not reported: $out";; esac
 
 # 11. spec staleness: the most-stale spec always shows, and the total is reported (finding 6).
+# Cites: install-lifecycle/REQ-12
 SP="$WORK/specs"; mkdir -p "$SP"
 (cd "$SP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
 i=1; while [ "$i" -le 40 ]; do
@@ -304,6 +311,7 @@ if [ "$mine" -eq 1 ] && [ "$owned" -eq 0 ] && [ "$forced" -eq 0 ] && [ "$sk" -gt
 else failc "skill-collision" "kept=$mine owned=$owned after-force=$forced own-refresh=$sk (want 1 0 0 >0)"; fi
 
 # 9c. an edit INSIDE the managed CLAUDE.md block is not overwritten without asking (REQ-10).
+# Cites: install-lifecycle/REQ-10
 # Check 9 proved an untouched section refreshes; here the user has written inside the markers,
 # so a rerun with a new value must leave the block alone, print the diff, and replace it only
 # when told to. Mutates $PY, so it runs after 9b.
@@ -339,6 +347,8 @@ if [ "$rc" -eq 0 ] && [ "$nlines" -eq 3 ]; then
 else failc "spec-staleness-octal" "rc=$rc lines=$nlines: $out"; fi
 
 # 17. unsetup surgical removal (spec: .shipkit/specs/unsetup-safety/, DR-1).
+# Cites: unsetup-safety/REQ-1 unsetup-safety/REQ-2 unsetup-safety/REQ-3 unsetup-safety/REQ-4
+# unsetup-safety/REQ-5 unsetup-safety/REQ-7 (17a to 17e below name the requirement each proves)
 # These define the contract for scripts/unsetup-remove.sh BEFORE it is written: removal is
 # driven by the installation manifest, so it takes out what shipkit owns and nothing else.
 # Every check builds a scratch project and asserts on the SURVIVORS — the destructive path
@@ -437,6 +447,8 @@ else
 fi
 
 # 18. commit guard (spec: .shipkit/specs/measure-and-slim/, REQ-21..REQ-26).
+# Cites: measure-and-slim/REQ-21 measure-and-slim/REQ-22 measure-and-slim/REQ-23
+# measure-and-slim/REQ-24 measure-and-slim/REQ-25 measure-and-slim/REQ-26
 # guard-commit.sh is a PreToolUse hook on Bash: it reads the hook's JSON on stdin and exits 2
 # (which blocks the call) when a `git commit` would include a secret-looking staged file.
 # Called directly with sample JSON — no claude needed. The JSON carries the project as `cwd`,
@@ -485,6 +497,261 @@ else
   if [ "$rc" -eq 0 ] && [ "$rc2" -eq 0 ]; then pass "guard-commit (internal error → exit 0, never blocks)"
   else failc "guard-commit" "error paths: not-a-repo exit $rc, empty stdin exit $rc2, want 0 0"; fi
 fi
+
+# 19. spec-check, part one: requirements, tasks and tests (spec: .shipkit/specs/spec-contract/).
+# spec-check.sh reads a spec as plain text and prints one line per gap. Every check builds a
+# scratch project; no claude needed. Cites: spec-contract/REQ-1 spec-contract/REQ-2
+# spec-contract/REQ-3 spec-contract/REQ-4 spec-contract/REQ-5 spec-contract/REQ-6
+# spec-contract/REQ-7 spec-contract/REQ-8 spec-contract/REQ-9 spec-contract/REQ-10
+SC="$COPY/scripts/spec-check.sh"
+scspec() {  # scspec <proj> <slug> <status|none> → a spec with REQ-1 and REQ-2, each with a task and a cited test
+  _d="$1/.shipkit/specs/$2"; mkdir -p "$_d" "$1/tests"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n' "$2"
+    [ "$3" = none ] || printf '> Status: %s\n' "$3"
+    printf '\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n'
+    printf -- '- **REQ-2.** When c happens, the system shall do d.\n'; } > "$_d/spec.md"
+  printf -- '- [ ] **T1** do b → REQ-1\n- [ ] **T2** do d → REQ-2\n' > "$_d/tasks.md"
+  printf '# %s/REQ-1\n# %s/REQ-2\n' "$2" "$2" > "$1/tests/test_$2.py"
+}
+sc() {  # sc <proj> [slug] → output in $WORK/sc.out, prints the exit status
+  sh "$SC" "$@" > "$WORK/sc.out" 2>&1; echo $?
+}
+if [ ! -f "$SC" ]; then
+  failc "spec-check" "scripts/spec-check.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$SC" 2>/dev/null; then pass "spec-check (POSIX sh: sh -n is clean)"
+  else failc "spec-check" "sh -n reports a syntax error"; fi
+
+  # a. a complete shipped spec has nothing to report
+  P="$WORK/sc-a"; scspec "$P" demo shipped
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -q 'MISSING-' "$WORK/sc.out"; then pass "spec-check (complete shipped spec → exit 0)"
+  else failc "spec-check" "complete spec: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # b. a requirement no task mentions
+  P="$WORK/sc-b"; scspec "$P" demo open
+  printf -- '- [ ] **T1** do b → REQ-1\n' > "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-TASK demo REQ-1$' "$WORK/sc.out"; then pass "spec-check (requirement with no task → MISSING-TASK, exit 1)"
+  else failc "spec-check" "no task: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # c. a shipped spec with an uncited requirement; a citation in docs/ or a .md file does not count
+  P="$WORK/sc-c"; scspec "$P" demo shipped
+  printf '# demo/REQ-1\n' > "$P/tests/test_demo.py"
+  mkdir -p "$P/docs"; printf 'demo/REQ-2\n' > "$P/docs/notes.txt"; printf 'demo/REQ-2\n' > "$P/README.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-2$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-TEST demo REQ-1$' "$WORK/sc.out"; then pass "spec-check (shipped, uncited requirement → MISSING-TEST, exit 1)"
+  else failc "spec-check" "uncited: exit $rc: $(cat "$WORK/sc.out")"; fi
+  # ...and the same gap in an OPEN spec is not yet an error: tests are owed at ship time
+  sed 's/^> Status: shipped/> Status: open/' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sc "$P")   # exit status not asserted: these one-line tasks are pre-3.3 format (section 20)
+  if ! grep -q 'MISSING-TEST\|MISSING-TASK' "$WORK/sc.out"; then pass "spec-check (open spec is not asked for tests yet)"
+  else failc "spec-check" "open spec asked for tests: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d. an excused requirement — the excuse sits on a wrapped continuation line
+  P="$WORK/sc-d"; scspec "$P" demo shipped
+  printf '# demo/REQ-1\n' > "$P/tests/test_demo.py"
+  printf '  It is prose only. [untested: verified by reading]\n' >> "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && grep -q '^WAIVED demo REQ-2$' "$WORK/sc.out" && ! grep -q 'MISSING-' "$WORK/sc.out"; then
+    pass "spec-check ([untested: …] requirement → WAIVED, exit 0)"
+  else failc "spec-check" "waived: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # e. dropped and draft specs are skipped, gaps and all
+  P="$WORK/sc-e"; scspec "$P" gone dropped; scspec "$P" early draft
+  : > "$P/.shipkit/specs/gone/tasks.md"; : > "$P/.shipkit/specs/early/tasks.md"; rm -f "$P"/tests/*.py
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && grep -q '^SKIPPED gone (dropped)$' "$WORK/sc.out" \
+     && grep -q '^SKIPPED early (draft)$' "$WORK/sc.out" && ! grep -q 'MISSING-' "$WORK/sc.out"; then
+    pass "spec-check (dropped and draft specs with gaps → SKIPPED, exit 0)"
+  else failc "spec-check" "skipped: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # f. two specs that both have REQ-1 do not satisfy each other; a slug limits the run to one spec
+  P="$WORK/sc-f"; scspec "$P" alpha shipped; scspec "$P" beta shipped
+  rm -f "$P/tests/test_beta.py"
+  rc=$(sc "$P"); out=$(cat "$WORK/sc.out"); rc2=$(sc "$P" alpha)
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^MISSING-TEST beta REQ-1$' \
+     && ! printf '%s\n' "$out" | grep -q 'MISSING-TEST alpha' && [ "$rc2" -eq 0 ]; then
+    pass "spec-check (alpha/REQ-1 does not satisfy beta/REQ-1; a slug checks one spec)"
+  else failc "spec-check" "two specs: exit $rc / alpha-only exit $rc2: $out"; fi
+
+  # g. REQ-1 is not satisfied by a citation of REQ-10
+  P="$WORK/sc-g"; scspec "$P" demo shipped
+  printf -- '- **REQ-10.** When e happens, the system shall do f.\n' >> "$P/.shipkit/specs/demo/spec.md"
+  printf -- '- [ ] **T3** do f → REQ-10\n' >> "$P/.shipkit/specs/demo/tasks.md"
+  printf '# demo/REQ-10\n# demo/REQ-2\n' > "$P/tests/test_demo.py"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-1$' "$WORK/sc.out" && ! grep -q 'REQ-10' "$WORK/sc.out"; then
+    pass "spec-check (a citation of REQ-10 does not satisfy REQ-1)"
+  else failc "spec-check" "REQ-1 vs REQ-10: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # h. no Status line means open: tasks are checked, tests are not
+  P="$WORK/sc-h"; scspec "$P" demo none
+  printf -- '- [ ] **T1** do b → REQ-1\n' > "$P/.shipkit/specs/demo/tasks.md"; rm -f "$P"/tests/*.py
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out" && ! grep -q 'MISSING-TEST' "$WORK/sc.out"; then
+    pass "spec-check (no Status line is treated as open)"
+  else failc "spec-check" "no status: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # i. wrong usage
+  rc=$(sc); rc2=$(sc "$WORK/no-such-project"); rc3=$(sc "$WORK/sc-a" no-such-spec)
+  if [ "$rc" -eq 64 ] && [ "$rc2" -eq 64 ] && [ "$rc3" -eq 64 ]; then pass "spec-check (wrong usage → exit 64)"
+  else failc "spec-check" "usage: no args $rc, missing dir $rc2, unknown slug $rc3 (want 64 64 64)"; fi
+fi
+
+# 20. spec-check, part two: the task format (spec: .shipkit/specs/spec-contract/).
+# For an OPEN spec that carries a Status line, every task needs Files / Test / After /
+# Done when, After must name real tasks, two tasks sharing a file must be ordered by After
+# (directly or through a chain), and After lines must not form a cycle. Reuses scspec and sc
+# from section 19. Cites: spec-contract/REQ-11 spec-contract/REQ-12 spec-contract/REQ-13
+# spec-contract/REQ-14 spec-contract/REQ-27
+sctasks() {  # sctasks <proj> <slug> <after-of-T2> → tasks.md in the 3.3 format; T1 and T2 share one file
+  printf -- '- [ ] **T1** do b → REQ-1\n  - Files: app/a.py, tests/test_a.py\n  - Test: tests/test_a.py::test_b\n  - After: none\n  - Done when: `pytest` → all pass\n- [ ] **T2** do d → REQ-2\n  - Files: app/c.py, tests/test_a.py\n  - Test: tests/test_a.py::test_d\n  - After: %s\n  - Done when: `pytest` → all pass\n' "$3" \
+    > "$1/.shipkit/specs/$2/tasks.md"
+}
+if [ ! -f "$SC" ]; then
+  failc "spec-check-tasks" "scripts/spec-check.sh does not exist"
+else
+  # a. a well-formed open spec
+  P="$WORK/st-a"; scspec "$P" demo open; sctasks "$P" demo T1
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -Eq 'MISSING-|BAD-AFTER|CONFLICT' "$WORK/sc.out"; then pass "spec-check-tasks (well-formed tasks → exit 0)"
+  else failc "spec-check-tasks" "well-formed: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # b. a task missing fields
+  P="$WORK/st-b"; scspec "$P" demo open; sctasks "$P" demo T1
+  grep -v 'test_d\|Done when' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" \
+    && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-FIELD demo T2 Test$' "$WORK/sc.out" \
+     && grep -q '^MISSING-FIELD demo T2 Done-when$' "$WORK/sc.out" \
+     && grep -q '^MISSING-FIELD demo T1 Done-when$' "$WORK/sc.out" \
+     && ! grep -q 'MISSING-FIELD demo T1 Test' "$WORK/sc.out"; then
+    pass "spec-check-tasks (task without Test / Done when → MISSING-FIELD, exit 1)"
+  else failc "spec-check-tasks" "missing field: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # c. After names a task that does not exist
+  P="$WORK/st-c"; scspec "$P" demo open; sctasks "$P" demo "T1, T9"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^BAD-AFTER demo T2 T9$' "$WORK/sc.out" && ! grep -q 'CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (After names an unknown task → BAD-AFTER, exit 1)"
+  else failc "spec-check-tasks" "bad after: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d. the sharing rule: two tasks list the same file and the later one does not name the earlier
+  P="$WORK/st-d"; scspec "$P" demo open; sctasks "$P" demo none
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^CONFLICT demo T1 T2 tests/test_a.py$' "$WORK/sc.out"; then
+    pass "spec-check-tasks (shared file without After → CONFLICT, exit 1)"
+  else failc "spec-check-tasks" "conflict: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d2. ...but a chain is enough: T3 shares the file with T1 and names only T2, which names T1
+  P="$WORK/st-d2"; scspec "$P" demo open; sctasks "$P" demo T1
+  printf -- '- [ ] **T3** do more → REQ-2\n  - Files: tests/test_a.py\n  - Test: tests/test_a.py::test_e\n  - After: T2\n  - Done when: `pytest` → all pass\n' \
+    >> "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -q 'CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (shared file ordered through a chain of After lines → exit 0)"
+  else failc "spec-check-tasks" "chain: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # d3. After lines that form a cycle cannot be scheduled at all
+  P="$WORK/st-d3"; scspec "$P" demo open; sctasks "$P" demo T1
+  sed 's/  - After: none/  - After: T2/' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" \
+    && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+  rc=$(sc "$P")
+  if [ "$rc" -eq 1 ] && grep -q '^CYCLE demo T1$' "$WORK/sc.out" && grep -q '^CYCLE demo T2$' "$WORK/sc.out"; then
+    pass "spec-check-tasks (After lines in a cycle → CYCLE, exit 1)"
+  else failc "spec-check-tasks" "cycle: exit $rc: $(cat "$WORK/sc.out")"; fi
+
+  # e. a pre-3.3 spec — no Status line, one-line tasks — is left alone
+  P="$WORK/st-e"; scspec "$P" demo none
+  rc=$(sc "$P")
+  if [ "$rc" -eq 0 ] && ! grep -Eq 'MISSING-|BAD-AFTER|CONFLICT' "$WORK/sc.out"; then
+    pass "spec-check-tasks (old task format with no Status line → exit 0)"
+  else failc "spec-check-tasks" "old format: exit $rc: $(cat "$WORK/sc.out")"; fi
+fi
+
+# 21. spec drift is measured on the spec's own files, and only for open specs
+# (spec: .shipkit/specs/spec-contract/). A spec with neither a Status nor a Paths line must
+# behave exactly as in 3.2.0 — that is what checks 11 and 11b above assert, unchanged.
+# Cites: spec-contract/REQ-15 spec-contract/REQ-16 spec-contract/REQ-17 spec-contract/REQ-18
+DP="$WORK/drift"; mkdir -p "$DP/a" "$DP/b"
+dcommit() {  # dcommit <dir> <n> → n commits, each touching only <dir>/f
+  _i=1; while [ "$_i" -le "$2" ]; do
+    printf '%s\n' "$_i" >> "$DP/$1/f"
+    (cd "$DP" && git add "$1/f" && git -c user.email=s@s -c user.name=s commit -q -m "$1 $_i"); _i=$((_i + 1))
+  done
+}
+dspec() {  # dspec <slug> <status|none> <paths|none> → a spec stamped at the current HEAD
+  mkdir -p "$DP/.shipkit/specs/$1"
+  { printf '# %s\n\n> Spec accepted at commit `%s` on main.\n' "$1" "$(cd "$DP" && git rev-parse --short HEAD)"
+    [ "$2" = none ] || printf '> Status: %s\n' "$2"
+    [ "$3" = none ] || printf '> Paths: %s\n' "$3"; } > "$DP/.shipkit/specs/$1/spec.md"
+}
+dhook() { (cd "$DP" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>&1); }
+(cd "$DP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+dspec done-one shipped none; dspec gone-one dropped none; dspec early-one draft none
+dspec scoped open "a/, docs/"
+dcommit b 20
+out=$(dhook)
+case "$out" in
+  *done-one*|*gone-one*|*early-one*) failc "spec-drift-paths" "a shipped, dropped or draft spec was reported: $out";;
+  *) pass "spec-drift-paths (shipped, dropped and draft specs 20 commits old → silent)";;
+esac
+case "$out" in
+  *scoped*) failc "spec-drift-paths" "20 commits outside the spec's Paths were counted: $out";;
+  *) pass "spec-drift-paths (open spec, 20 commits that touch only other paths → silent)";;
+esac
+dcommit a 20
+out=$(dhook)
+n=$(printf '%s\n' "$out" | grep -c 'scoped')
+case "$out" in
+  *"scoped/spec.md: 20 commits have touched its paths since it was accepted"*)
+    if [ "$n" -eq 1 ]; then pass "spec-drift-paths (20 commits inside its Paths → one line, counting only those)"
+    else failc "spec-drift-paths" "expected one line for the spec, got $n: $out"; fi ;;
+  *) failc "spec-drift-paths" "the scoped spec was not reported with its own count: $out";;
+esac
+# an open spec with a Status line but no Paths still counts every commit, in the 3.2.0 wording
+dspec whole open none
+dcommit b 15
+out=$(dhook)
+case "$out" in
+  *"whole/spec.md is 15 commits behind HEAD"*) pass "spec-drift-paths (open spec with no Paths → counted as before)";;
+  *) failc "spec-drift-paths" "open spec with no Paths was not counted on the whole repository: $out";;
+esac
+
+# 22. spec-new-format: a spec that /shipkit:spec writes passes spec-check
+# (spec: .shipkit/specs/spec-contract/). Cites: spec-contract/REQ-21 spec-contract/REQ-22
+# Plugin evals have no custom-code graders (they cannot run a script on what a run wrote), so
+# this lives here. It is the one check in this file that asks a model to do real work: it runs
+# the skill headless in a copy of the eval fixture, then runs spec-check.sh on the result
+# ITSELF — the model's own claim that the check passed is not what is asserted. Uses sonnet,
+# not haiku: the skill is a three-phase interview and the cheaper model does not finish it
+# reliably. Takes a few minutes.
+NF="$WORK/newfmt"; mkdir -p "$NF"; cp -R "$COPY/evals/fixtures/sample-app/." "$NF/"
+(cd "$NF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$NF" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
+  -p "/shipkit:spec refunds
+Feature: add refunds to the billing module. A charged order can be refunded in full or in part through the payment gateway; a refund larger than the original charge is rejected.
+This run is not interactive and you cannot ask me anything. Treat every approval gate as approved, make reasonable assumptions and note them in the spec, and do all three questions now: write spec.md, design.md and tasks.md, set the status and paths as the skill says for an accepted spec, and run the spec check as the skill says. Do not implement the feature." \
+  </dev/null >"$WORK/newfmt.out" 2>&1)
+nf_out=$(sh "$COPY/scripts/spec-check.sh" "$NF" refunds 2>&1); nf_rc=$?
+nf_spec="$NF/.shipkit/specs/refunds/spec.md"; nf_tasks="$NF/.shipkit/specs/refunds/tasks.md"
+nf_fields=0; [ -f "$nf_tasks" ] && nf_fields=$(grep -c '^ *- Files:' "$nf_tasks")
+if [ "$nf_rc" -eq 0 ] && grep -q '^> Status: open' "$nf_spec" 2>/dev/null \
+   && grep -q '^> Paths: .' "$nf_spec" 2>/dev/null && [ "$nf_fields" -gt 0 ]; then
+  pass "spec-new-format (/shipkit:spec wrote an open spec with paths; $nf_fields tasks in the new format; spec-check exits 0)"
+else
+  failc "spec-new-format" "spec-check exit $nf_rc, tasks with Files: $nf_fields — $nf_out — model said: $(tail -5 "$WORK/newfmt.out")"
+fi
+# the always-on rule tells every session how a test cites a requirement, inside the budget
+if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
+   && [ "$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')" -le 3000 ]; then
+  pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
+else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

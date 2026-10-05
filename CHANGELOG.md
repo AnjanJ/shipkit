@@ -2,6 +2,59 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.3.0] — 2026-10-05
+
+Sprint 2 of the quality-gate plan: a spec stops being a document someone promises to follow —
+a script checks it. Requirements and decision records in
+[`.shipkit/specs/spec-contract/`](.shipkit/specs/spec-contract/).
+
+### Added
+
+- **`spec-check.sh`** (`plugins/shipkit/scripts/spec-check.sh <project-dir> [slug]`). It reads
+  the specs under `.shipkit/specs/` as plain text and prints one line per gap: `MISSING-TASK`
+  (no task mentions a requirement), `MISSING-TEST` (a shipped spec has a requirement no test
+  cites), `MISSING-FIELD`, `BAD-AFTER`, `CONFLICT` and `CYCLE` (the task format, below). It
+  exits 1 when there is a gap, so it can run in CI — and now does, in this repository's `lint`
+  workflow. POSIX sh, awk and git; no model calls. It checks that a citation exists, not that
+  the cited test passes.
+- **A status and a scope for every spec.** Two optional lines under the acceptance stamp in
+  `spec.md`: `> Status: draft | open | shipped | dropped` and `> Paths: a/, b/`.
+- **Tests cite requirements** as `<slug>/REQ-N` (for example `refunds/REQ-3`), in a comment or
+  a test name. A requirement that is prose only is excused by ending it with
+  `[untested: <reason>]`.
+- **A task format a script can read.** Each task in `tasks.md` carries `Files` (the only files
+  it may change), `Test`, `After` and `Done when`. Two tasks that list the same file must be
+  ordered by `After`, directly or through a chain, so tasks that share nothing can be handed
+  to agents at the same time.
+
+### Changed
+
+- **The session hook only nags about open specs, and only for commits that touch them.**
+  `shipped`, `dropped` and `draft` specs are silent. With a `Paths` line, drift counts only the
+  commits that touch those paths, and the line reads "N commits have touched its paths since
+  it was accepted".
+- **`/shipkit:spec` writes the new format**: `Status: draft` while the requirements are being
+  written, `Status: open` and `Paths` on approval, tasks with the four sub-lines, and then it
+  runs `spec-check.sh` and fixes what it reports. The templates in its reference are updated.
+- **The `spec-driven` rule** says a requirement's test cites `<feature>/REQ-N`. The three
+  always-on rules total 2,990 bytes of their 3,000-byte budget.
+- This repository's three finished specs are marked `shipped`, with each requirement either
+  cited beside the check that proves it or marked `[untested: …]` with its reason.
+
+### Compatibility
+
+A spec written before 3.3 needs no change. With no `Status` line it is treated as `open`; with
+no `Paths` line drift is counted on the whole repository in the old wording; and its one-line
+tasks are not asked for the new format. To stop the hook nagging about a finished spec, add
+`> Status: shipped` under its stamp.
+
+### Decided, then reversed, in this sprint
+
+The file-sharing rule first required the later task to name the earlier one *directly*. The
+first spec `/shipkit:spec` wrote under it ended with `After: T1, T2, T3, T4, T5, T6, T7`,
+past the limit that decision had set for itself. The rule now follows chains and reports
+cycles; both records are in the spec's `design.md`.
+
 ## [3.2.0] — 2026-10-05
 
 Sprint 1 of the quality-gate plan ([`docs/plans/quality-gate-sprint-plan.md`](docs/plans/quality-gate-sprint-plan.md)):

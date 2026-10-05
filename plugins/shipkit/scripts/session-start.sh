@@ -135,6 +135,16 @@ fi
 # Spec drift — an accepted spec whose code has moved on since acceptance. Each spec.md
 # is stamped by /shipkit:spec: > Spec accepted at commit `abc1234` on main.
 SPEC_THRESHOLD="${SHIPKIT_SPEC_STALE_COMMITS:-15}"
+# Only an OPEN spec can nag. A shipped or dropped spec is finished business, and a draft was
+# never accepted; a spec with no "> Status:" line (anything written before 3.3) is open.
+# A function, not a case inside the $( … ) below: macOS /bin/sh (bash 3.2) misparses a case
+# pattern's closing parenthesis inside a command substitution.
+spec_is_closed() {
+  case "$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$1" | sed -n 1p)" in
+    shipped|dropped|draft) return 0 ;;
+  esac
+  return 1
+}
 SPEC_CAP=3
 if [ -d .shipkit/specs ]; then
   # Collect every stale spec first, then report. Reporting inside the scan (capped at 3, in
@@ -146,12 +156,24 @@ if [ -d .shipkit/specs ]; then
   # rather than glob-dependent.
   STALE=$(for spec in .shipkit/specs/*/spec.md; do
     [ -f "$spec" ] || continue
+    spec_is_closed "$spec" && continue
     s_sha=$(stamp_sha 'accepted at commit' "$spec")
     [ -n "$s_sha" ] || continue
     git cat-file -e "$s_sha^{commit}" 2>/dev/null || continue
-    s_count=$(git rev-list --count "$s_sha"..HEAD 2>/dev/null) || continue
+    # A "> Paths: a/, b/" line narrows the count to commits that touch those paths, so work
+    # elsewhere in the repository does not make this spec look stale. No Paths line means
+    # the whole repository, as before. (Paths are comma-separated and may not contain spaces.)
+    s_paths=$(sed -n 's/^> *Paths: *//p' "$spec" | sed -n 1p | tr ',' '\n' \
+      | sed 's/`//g; s/^[ \t]*//; s/[ \t]*$//' | grep -v '^$')
+    if [ -n "$s_paths" ]; then
+      s_kind=paths
+      s_count=$(printf '%s\n' "$s_paths" | xargs git rev-list --count "$s_sha"..HEAD -- 2>/dev/null) || continue
+    else
+      s_kind=all
+      s_count=$(git rev-list --count "$s_sha"..HEAD 2>/dev/null) || continue
+    fi
     [ -n "$s_count" ] || continue
-    [ "$s_count" -ge "$SPEC_THRESHOLD" ] && printf '%s\t%s\n' "$s_count" "$spec"
+    [ "$s_count" -ge "$SPEC_THRESHOLD" ] && printf '%s\t%s\t%s\n' "$s_count" "$spec" "$s_kind"
   done | sort -t"$(printf '\t')" -k1,1rn -k2,2)
 
   if [ -n "$STALE" ]; then
@@ -164,7 +186,14 @@ if [ -d .shipkit/specs ]; then
       [ -n "$line" ] || return 0
       c=${line%%"$(printf '\t')"*}
       s=${line#*"$(printf '\t')"}
-      [ -n "$s" ] && echo "shipkit: $s is $c commits behind HEAD — the code may have drifted from the spec."
+      kind=${s#*"$(printf '\t')"}
+      s=${s%%"$(printf '\t')"*}
+      [ -n "$s" ] || return 0
+      if [ "$kind" = paths ]; then
+        echo "shipkit: $s: $c commits have touched its paths since it was accepted — the code may have drifted from the spec."
+      else
+        echo "shipkit: $s is $c commits behind HEAD — the code may have drifted from the spec."
+      fi
     }
     # Index the sorted list in the PARENT shell: `… | while read` runs the loop in a
     # subshell, where the counter never escapes and `break` cannot stop the parent.

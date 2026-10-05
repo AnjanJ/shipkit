@@ -281,6 +281,8 @@ for path in shipped_text_files():
             err(path, f"machine-specific absolute path (line {i}: {line.strip()[:80]!r})")
 
 # --- 8. Directories/files Claude Code does not load --------------------------
+# (The hook-command checks in this section — quoting of ${CLAUDE_PLUGIN_ROOT}, the script
+# resolving and being executable — are what proves install-lifecycle/REQ-3.)
 # A plugin's knowledge/ and rules/ are not plugin components; rules/ is kept
 # because the session hook injects it and /setup installs it, but knowledge/
 # would be dead content. settings.json at plugin root is a documented file
@@ -354,6 +356,7 @@ if hooks_json.exists():
                       "inject-rule.sh hook command in hooks/hooks.json")
 
 # --- 8a. Always-on byte budget ------------------------------------------------
+# Cites: measure-and-slim/REQ-15 measure-and-slim/REQ-16
 # The core plugin's rules without paths: frontmatter are injected into EVERY session of every
 # project, so their total size is a cost each user pays before typing a word. Triggers (when
 # to act) belong in them; detail (how) belongs in a skill that loads on demand. The budget is
@@ -426,6 +429,7 @@ for path in skill_files:
                        "guard on output emptiness instead")
 
 # --- 11. Bare multi-operand `ls` in !`…` injections ---------------------------
+# Cites: install-lifecycle/REQ-1 install-lifecycle/REQ-2
 # `ls a b c 2>/dev/null` exits NONZERO if ANY operand is missing (exit 2 with one of
 # eight present). A skill whose dynamic-context command fails does not render at all:
 # Claude returns "Shell command failed for pattern" with zero model turns, so the
