@@ -25,7 +25,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "brief" (valid task, unknown task, old-format task; written first)
   - After: T2
   - Done when: the brief smoke checks → all PASS; `sh -n plugins/shipkit/scripts/brief.sh` → clean
-- [ ] **T5** `brief-verify.sh`: check what came back (S3-T5) → REQ-24, REQ-25, REQ-26
+- [x] **T5** `brief-verify.sh`: check what came back (S3-T5) → REQ-24, REQ-25, REQ-26
   - Files: plugins/shipkit/scripts/brief-verify.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "brief-verify" (allowed only, one extra, one untracked; written first)
   - After: T4

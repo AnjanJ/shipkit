@@ -901,6 +901,50 @@ else
   else failc "brief" "old format: exit $rc: $(cat "$WORK/brief.err")"; fi
 fi
 
+# 26. brief-verify: did the work stay inside the files the task was allowed to change?
+# (spec: .shipkit/specs/product-intake-brief/). Reuses the refunds spec from section 25.
+# Cites: product-intake-brief/REQ-24 product-intake-brief/REQ-25 product-intake-brief/REQ-26
+BV="$COPY/scripts/brief-verify.sh"
+if [ ! -f "$BV" ]; then
+  failc "brief-verify" "scripts/brief-verify.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$BV" 2>/dev/null; then pass "brief-verify (POSIX sh: sh -n is clean)"
+  else failc "brief-verify" "sh -n reports a syntax error"; fi
+  mkdir -p "$BP/app/billing" "$BP/tests"
+  (cd "$BP" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
+  bv_base=$(cd "$BP" && git rev-parse HEAD)
+  # a. only allowed files: one committed, one left uncommitted, plus the task's own tick box
+  printf 'x\n' > "$BP/app/billing/refunds.py"
+  (cd "$BP" && git add app/billing/refunds.py && git -c user.email=s@s -c user.name=s commit -q -m work)
+  printf 'y\n' > "$BP/tests/test_refunds.py"
+  sed 's/- \[ \] \*\*T3\*\*/- [x] **T3**/' "$BP/.shipkit/specs/refunds/tasks.md" > "$WORK/bv.tmp" && mv "$WORK/bv.tmp" "$BP/.shipkit/specs/refunds/tasks.md"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE'; then
+    pass "brief-verify (only allowed files changed, committed and not → exit 0)"
+  else failc "brief-verify" "allowed only: exit $rc: $out"; fi
+  # b. one extra tracked file
+  printf 'z\n' >> "$BP/.shipkit/specs/refunds/spec.md"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/refunds/spec.md$' \
+     && ! printf '%s\n' "$out" | grep -q 'OUTSIDE app/billing/refunds.py'; then
+    pass "brief-verify (a changed file outside the list → OUTSIDE, exit 1)"
+  else failc "brief-verify" "extra file: exit $rc: $out"; fi
+  (cd "$BP" && git checkout -q -- .shipkit/specs/refunds/spec.md)
+  # c. a new untracked file outside the list
+  printf 'n\n' > "$BP/app/notes.txt"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE app/notes.txt$'; then
+    pass "brief-verify (a new untracked file outside the list → OUTSIDE, exit 1)"
+  else failc "brief-verify" "untracked: exit $rc: $out"; fi
+  rm -f "$BP/app/notes.txt"
+  # d. wrong usage and an unknown task
+  sh "$BV" "$BP" refunds T3 >/dev/null 2>&1; rc=$?
+  sh "$BV" "$BP" refunds T9 "$bv_base" >/dev/null 2>&1; rc2=$?
+  sh "$BV" "$BP" refunds T3 no-such-ref >/dev/null 2>&1; rc3=$?
+  if [ "$rc" -eq 64 ] && [ "$rc2" -eq 1 ] && [ "$rc3" -eq 64 ]; then pass "brief-verify (missing argument or bad ref → 64; unknown task → 1)"
+  else failc "brief-verify" "usage: missing arg $rc, unknown task $rc2, bad ref $rc3 (want 64 1 64)"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
