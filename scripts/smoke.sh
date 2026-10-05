@@ -753,6 +753,38 @@ if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules
   pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
 else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
 
+# 23. product-file: /shipkit:product writes the product file in its fixed shape
+# (spec: .shipkit/specs/product-intake-brief/). Cites: product-intake-brief/REQ-1
+# product-intake-brief/REQ-2
+# Like check 22 this asks a model (sonnet) to do real work: the skill runs headless in a copy
+# of the eval fixture with its answers given up front — FOUR goals on purpose, one with no
+# metric — and the file it writes is then read here, not taken on the model's word.
+PF="$WORK/product"; mkdir -p "$PF"; cp -R "$COPY/evals/fixtures/sample-app/." "$PF/"
+(cd "$PF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$PF" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Skill \
+  -p "/shipkit:product
+This run is not interactive and you cannot ask me anything, so here are my answers.
+Users: owners of small online shops who take card payments.
+Goals for this quarter, in my order of importance: (1) cut failed charges to under 2 percent of all charges by 2026-12-31; (2) ship refunds, with 95 percent of refunds needing no manual step, by 2026-11-15; (3) make order totals correct to the cent in every region, zero tax rounding complaints, by 2026-12-15; (4) make the app faster.
+Non-goals: no multi-currency support; no storefront or cart.
+Metrics that matter: charge failure rate, refunds per week.
+Constraints: Python standard library only; one maintainer.
+Now: the retry job. Next: refunds. Later: a proper database." \
+  </dev/null >"$WORK/product.out" 2>&1)
+pf="$PF/.shipkit/product.md"
+if [ -f "$pf" ]; then
+  heads=$(grep '^## ' "$pf" | sed 's/^## //; s/[ \t]*$//' | tr '\n' '|')
+  goals=$(awk '/^## /{on=($0 ~ /^## Goals this quarter/)} on && /^(- |[0-9]+\. )/{n++} END{print n+0}' "$pf")
+  plines=$(wc -l < "$pf" | tr -d ' ')
+else heads=""; goals=0; plines=0; fi
+if [ "$heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ] \
+   && [ "$goals" -ge 1 ] && [ "$goals" -le 3 ] && [ "$plines" -le 60 ]; then
+  pass "product-file (seven headings in order; $goals goals from four offered; $plines lines)"
+else
+  failc "product-file" "headings=[$heads] goals=$goals lines=$plines — model said: $(tail -4 "$WORK/product.out")"
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

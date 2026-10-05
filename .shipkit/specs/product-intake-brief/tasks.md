@@ -3,9 +3,9 @@
 One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** The product file and `/shipkit:product` (S3-T1)
+- [x] **T1** The product file and `/shipkit:product` (S3-T1)
       → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6
-  - Files: plugins/shipkit/skills/product/SKILL.md, plugins/shipkit/skills/product/reference.md, scripts/smoke.sh
+  - Files: plugins/shipkit/skills/product/SKILL.md, plugins/shipkit/skills/product/reference.md, scripts/smoke.sh, .claude-plugin/marketplace.json
   - Test: scripts/smoke.sh check "product-file" (the skill, given its answers, writes seven headings and at most three goals)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the product-file check → PASS
@@ -15,7 +15,7 @@ One commit per task, test and code together. The steps for each task are in
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the registry-columns check → PASS
 - [ ] **T3** `/shipkit:intake` (S3-T3) → REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17
-  - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/evals/intake/, plugins/shipkit/evals/README.md
+  - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/evals/intake/, plugins/shipkit/evals/README.md, .claude-plugin/marketplace.json
   - Test: eval cases intake/nongoal, intake/trivial, intake/limit
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh --case 'intake-*'` → three cases pass

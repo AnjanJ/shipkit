@@ -11,7 +11,7 @@
     {
       "name": "shipkit",
       "source": "./plugins/shipkit",
-      "description": "12 skills, 5 agents, 9 rules (3 always-on, injected by the session hook; all 9 installed as files by /shipkit:setup's deterministic install scripts, which is what makes the 6 path-scoped ones load; the hook nudges when installed copies are older than the plugin). 10 composable stack overlays (one base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML). Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. /shipkit:unsetup reverts.",
+      "description": "13 skills, 5 agents, 9 rules (3 always-on, injected by the session hook; all 9 installed as files by /shipkit:setup's deterministic install scripts, which is what makes the 6 path-scoped ones load; the hook nudges when installed copies are older than the plugin). 10 composable stack overlays (one base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML). Spec-driven development via /shipkit:spec and /shipkit:decide; one-command episodic memory via /shipkit:connect-memory. /shipkit:unsetup reverts.",
       "version": "3.3.0",
       "keywords": [
         "claude-code",
