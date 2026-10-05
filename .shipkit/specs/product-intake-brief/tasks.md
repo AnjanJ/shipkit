@@ -19,7 +19,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: eval cases intake/nongoal, intake/trivial, intake/limit
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh --case 'intake-*'` → three cases pass
-- [ ] **T4** `brief.sh`: build a brief from a task (S3-T4)
+- [x] **T4** `brief.sh`: build a brief from a task (S3-T4)
       → REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23
   - Files: plugins/shipkit/scripts/brief.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "brief" (valid task, unknown task, old-format task; written first)

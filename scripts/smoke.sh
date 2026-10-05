@@ -798,6 +798,109 @@ if grep -q 'studio\.md' "$COPY/agents/eve.md" && grep -q '`Product`' "$COPY/agen
   pass "registry-columns (eve names studio.md and both columns)"
 else failc "registry-columns" "agents/eve.md does not name studio.md, Product and Top Goal"; fi
 
+# 25. brief: a task becomes a brief, built by a script from the spec, with no model
+# (spec: .shipkit/specs/product-intake-brief/). Cites: product-intake-brief/REQ-18
+# product-intake-brief/REQ-19 product-intake-brief/REQ-20 product-intake-brief/REQ-21
+# product-intake-brief/REQ-22 product-intake-brief/REQ-23
+BRIEF="$COPY/scripts/brief.sh"
+BP="$WORK/brief"; mkdir -p "$BP/.shipkit/specs/refunds" "$BP/.shipkit/specs/old"
+(cd "$BP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+cat > "$BP/.shipkit/specs/refunds/spec.md" <<'SPEC'
+# Spec: Refunds
+
+> Spec accepted at commit `abc1234` on main.
+> Status: open
+> Paths: app/billing/
+
+## Purpose
+A charged order can be refunded through the gateway.
+Shop owners ask for this weekly.
+
+## Requirements (EARS)
+- **REQ-1.** When a refund is requested, the system shall call the gateway.
+- **REQ-2.** If the refund is larger than the original charge, then the system shall
+  reject it with a clear error and leave the order unchanged.
+- **REQ-3.** The README shall describe refunds. [untested: prose]
+
+## Out of scope
+- Refunds in a second currency.
+SPEC
+cat > "$BP/.shipkit/specs/refunds/design.md" <<'SPEC'
+# Design: Refunds
+
+## Decision: Keep a ledger of refunds on the order   (→ REQ-2)
+
+**Decision.** We chose a ledger.
+
+## Decision: Old ledger idea   (→ REQ-2)
+
+> **Superseded on 2026-10-05** by the decision above.
+
+## Decision: Describe refunds in one README section   (→ REQ-3)
+
+**Decision.** One section.
+SPEC
+cat > "$BP/.shipkit/specs/refunds/tasks.md" <<'SPEC'
+# Tasks: Refunds
+
+- [ ] **T1** Refund a charge in full → REQ-1
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_full_refund
+  - After: none
+  - Done when: `pytest tests/test_refunds.py` → all pass
+- [ ] **T2** Record each refund on the order → REQ-1
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_refund_is_recorded
+  - After: T1
+  - Done when: `pytest tests/test_refunds.py` → all pass
+- [ ] **T3** Reject refunds larger than the charge
+      → REQ-2
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_refund_over_charge_is_rejected
+  - After: T2
+  - Done when: `pytest tests/test_refunds.py` → all pass
+SPEC
+printf '# Spec: Old\n\n## Purpose\nOld.\n\n## Requirements\n- **REQ-1.** The system shall x.\n' > "$BP/.shipkit/specs/old/spec.md"
+printf -- '- [ ] **T1** do x → REQ-1\n' > "$BP/.shipkit/specs/old/tasks.md"
+if [ ! -f "$BRIEF" ]; then
+  failc "brief" "scripts/brief.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$BRIEF" 2>/dev/null; then pass "brief (POSIX sh: sh -n is clean)"
+  else failc "brief" "sh -n reports a syntax error"; fi
+  out=$(sh "$BRIEF" "$BP" refunds T3 2>"$WORK/brief.err"); rc=$?
+  heads=$(printf '%s\n' "$out" | grep '^#' | sed 's/^# Brief:.*/# Brief/' | tr '\n' '|')
+  want='# Brief|## Goal|## Requirement|## You may edit|## Prove it with|## Already done|## Decisions that bind you|## Not in scope|## Report back in exactly this form|'
+  if [ "$rc" -eq 0 ] && [ "$heads" = "$want" ] \
+     && printf '%s\n' "$out" | grep -q '^# Brief: refunds / T3 — Reject refunds larger than the charge$'; then
+    pass "brief (valid task → title and the eight headings, in order)"
+  else failc "brief" "exit $rc, headings [$heads], stderr: $(cat "$WORK/brief.err")"; fi
+  if printf '%s\n' "$out" | grep -qF -- '- **REQ-2.** If the refund is larger than the original charge, then the system shall' \
+     && printf '%s\n' "$out" | grep -qF '  reject it with a clear error and leave the order unchanged.' \
+     && ! printf '%s\n' "$out" | grep -q 'REQ-1\.'; then
+    pass "brief (the cited requirement is copied word for word, wrapped line and all; others are left out)"
+  else failc "brief" "requirement text not copied exactly: $out"; fi
+  if printf '%s\n' "$out" | grep -q '^- T1 ' && printf '%s\n' "$out" | grep -q '^- T2 '; then
+    pass "brief (Already done lists T2 and, through the chain, T1)"
+  else failc "brief" "predecessors missing: $out"; fi
+  if printf '%s\n' "$out" | grep -q 'Keep a ledger of refunds on the order' \
+     && ! printf '%s\n' "$out" | grep -q 'Old ledger idea\|one README section' \
+     && printf '%s\n' "$out" | grep -q 'app/billing/refunds.py' \
+     && printf '%s\n' "$out" | grep -q 'test_refund_over_charge_is_rejected' \
+     && printf '%s\n' "$out" | grep -q 'Refunds in a second currency' \
+     && printf '%s\n' "$out" | grep -q 'Shop owners ask for this weekly' \
+     && printf '%s\n' "$out" | grep -q '^RESULT: done | blocked$'; then
+    pass "brief (goal, files, test, binding decision, scope and report form all present; superseded decision left out)"
+  else failc "brief" "a section is wrong: $out"; fi
+  sh "$BRIEF" "$BP" refunds T9 >/dev/null 2>"$WORK/brief.err"; rc=$?
+  if [ "$rc" -eq 1 ] && grep -q 'T9' "$WORK/brief.err" && grep -q 'refunds' "$WORK/brief.err"; then
+    pass "brief (unknown task → exit 1, naming the task and the spec)"
+  else failc "brief" "unknown task: exit $rc: $(cat "$WORK/brief.err")"; fi
+  sh "$BRIEF" "$BP" old T1 >/dev/null 2>"$WORK/brief.err"; rc=$?
+  if [ "$rc" -eq 1 ] && grep -q '3\.3 task format' "$WORK/brief.err"; then
+    pass "brief (task with no Files line → exit 1, says the spec must be in the 3.3 task format)"
+  else failc "brief" "old format: exit $rc: $(cat "$WORK/brief.err")"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
