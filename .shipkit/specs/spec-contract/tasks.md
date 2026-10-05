@@ -19,7 +19,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "spec-drift-paths" (four checks, written first)
   - After: T1, T2
   - Done when: the four new checks and the two existing `spec-staleness` checks → all PASS
-- [ ] **T4** Teach the spec skill and the rule the new formats (S2-T4)
+- [x] **T4** Teach the spec skill and the rule the new formats (S2-T4)
       → REQ-19, REQ-20, REQ-21, REQ-22
   - Files: plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, plugins/shipkit/rules/spec-driven.md, GUIDE.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check "spec-new-format" (a spec written for "refunds" passes spec-check)

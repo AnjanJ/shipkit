@@ -620,9 +620,9 @@ Everything lives under one root, **`.shipkit/`**, so a human always knows where 
 ```
 .shipkit/
   specs/<feature-slug>/
-    spec.md      # WHAT — requirements (EARS)
+    spec.md      # WHAT — requirements (EARS), plus a status and the paths it covers
     design.md    # HOW — approach, as decision records
-    tasks.md     # STEPS — ordered, each citing its requirement
+    tasks.md     # STEPS — ordered, each citing its requirement and naming its files
   decisions/
     NNNN-<slug>.md   # project-wide decision records (the "why" log)
 ```
@@ -642,6 +642,41 @@ event, or threshold — never a vague hedge). It makes decisions *queryable for 
 `grandfather` *"are any past decisions now falsified?"* and it checks each clause against current
 reality. A hollow clause is treated as a bug.
 
+### A spec is a contract a script checks
+
+Since 3.3 a spec is not only read, it is checked. Three small conventions make that possible:
+
+- **Status and paths.** Under its acceptance stamp, `spec.md` carries `> Status:` — `draft`,
+  `open`, `shipped` or `dropped` — and `> Paths:`, the files or folders the feature lives in.
+- **Tests cite requirements.** A test names the requirement it proves as `<slug>/REQ-N`
+  (for example `refunds/REQ-3`) in a comment or its name. A requirement that is prose only is
+  excused by ending it with `[untested: <reason>]`.
+- **Tasks name their files.** Each task lists `Files`, `Test`, `After` and `Done when`. Two
+  tasks that list the same file must be ordered by `After`, so tasks that share nothing can be
+  handed to agents at the same time.
+
+Then one script reads all of it:
+
+```sh
+sh "<plugin root>/scripts/spec-check.sh" .            # every spec
+sh "<plugin root>/scripts/spec-check.sh" . refunds    # one spec
+```
+
+| Line | Meaning |
+|------|---------|
+| `MISSING-TASK refunds REQ-2` | no task mentions the requirement |
+| `MISSING-TEST refunds REQ-2` | the spec is `shipped` and no test cites `refunds/REQ-2` |
+| `MISSING-FIELD refunds T3 Test` | a task lacks one of its four lines |
+| `BAD-AFTER refunds T3 T9` | `After` names a task that does not exist |
+| `CONFLICT refunds T1 T2 app/refunds.py` | two tasks share a file and are not ordered |
+| `WAIVED refunds REQ-4` | excused with `[untested: …]` — information, not a gap |
+| `SKIPPED refunds (draft)` | drafts and dropped specs are not checked |
+
+It exits 1 when there is a gap, so it can run in CI. It checks that a citation *exists*, not
+that the test passes — running the tests is still your job. `/shipkit:spec` writes specs in
+this format and runs the check itself. A spec written before 3.3, with none of the new lines,
+is treated as `open` and is not asked for the task format.
+
 ### How it ties into the elders
 
 - `grandfather` reads `.shipkit/decisions/` and specs to answer *why is X built this way?*,
@@ -653,9 +688,10 @@ reality. A hollow clause is treated as a bug.
 
 ### Freshness
 
-A `SessionStart` hook nudges once per accepted spec whose code has drifted ≥15 commits past its
+A `SessionStart` hook nudges once per **open** spec whose code has drifted ≥15 commits past its
 acceptance SHA (override with `SHIPKIT_SPEC_STALE_COMMITS`) — the same closed-loop treatment the
-map already gets. Silent when fresh.
+map already gets. With a `Paths` line, only commits that touch those paths count. Silent when
+fresh, and silent for `shipped`, `dropped` and `draft` specs.
 
 ---
 

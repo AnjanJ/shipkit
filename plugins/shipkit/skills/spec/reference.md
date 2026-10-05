@@ -97,6 +97,8 @@ identified") rather than faking one.
 # Spec: <feature name>
 
 > Spec accepted at commit `<sha>` on <branch>.
+> Status: open
+> Paths: app/billing/, tests/billing/
 
 ## Purpose
 <one or two lines: what this is and why we're building it>
@@ -108,10 +110,31 @@ identified") rather than faking one.
 - **REQ-1.** When <trigger>, the <system> shall <response>.
 - **REQ-2.** While <precondition>, the <system> shall <response>.
 - **REQ-3.** If <trigger>, then the <system> shall <response>.
+- **REQ-4.** The README shall describe <thing>. [untested: prose, verified by reading]
 
 ## Out of scope
 <what this deliberately does NOT do>
 ```
+
+The three lines under the title are read by scripts, so keep their exact form:
+
+- **The stamp** — written when the requirements are accepted. Before that, write
+  `> Spec not yet accepted.` in its place.
+- **`Status`** — one of `draft` (being written), `open` (accepted, work in progress),
+  `shipped` (done), `dropped` (abandoned). A spec with no `Status` line is treated as `open`.
+  Only an `open` spec is nagged about by the session hook; only a `shipped` one is asked for
+  tests by `spec-check.sh`.
+- **`Paths`** — a comma-separated list of the files or folders the feature lives in (no spaces
+  inside a path). Drift is then counted only on commits that touch them. No `Paths` line means
+  the whole repository.
+
+**How a test cites a requirement.** Anywhere in the test file — a comment or a test name —
+write the spec's folder name, a slash, and the requirement: `refunds/REQ-3`. The folder name
+is needed because every spec has its own `REQ-1`. A citation in a `.md` file, under `docs/` or
+under `.shipkit/` does not count.
+
+**How a requirement is excused from having a test.** End it with `[untested: <reason>]`, as
+`REQ-4` does above. Use it for requirements that are prose only, and give a real reason.
 
 ### `design.md` (Q2 — how, as decision records)
 
@@ -132,13 +155,41 @@ identified") rather than faking one.
 ```markdown
 # Tasks: <feature name>
 
-- [ ] **T1** <task> → REQ-1  (test first: <the behavior test that proves REQ-1>)
-- [ ] **T2** <task> → REQ-2
-- [ ] **T3** <task> → REQ-3
-
-Order tasks so each leaves the build green. Every requirement must be covered by a task and a
-test — an uncovered requirement is not done.
+- [ ] **T1** Refund a charge in full → REQ-1
+  - Files: app/billing/refunds.py, tests/billing/test_refunds.py
+  - Test: tests/billing/test_refunds.py::test_full_refund_returns_a_receipt
+  - After: none
+  - Done when: `pytest tests/billing/test_refunds.py` → all pass
+- [ ] **T2** Reject refunds larger than the original charge → REQ-2
+  - Files: app/billing/refunds.py, tests/billing/test_refunds.py
+  - Test: tests/billing/test_refunds.py::test_refund_over_charge_is_rejected
+  - After: T1
+  - Done when: `pytest tests/billing/test_refunds.py` → all pass
 ```
+
+Every task has the four sub-lines:
+
+- **`Files`** — the only files the task may change, comma-separated.
+- **`Test`** — the test that must fail before the work and pass after it.
+- **`After`** — the tasks that must be finished first, comma-separated, or `none`.
+- **`Done when`** — the command to run and what it must show.
+
+**The sharing rule:** if two tasks list the same file, the later one must name the earlier one
+on its own `After` line — directly, not through a chain. `T2` above shares both files with `T1`,
+so it says `After: T1`. This is what makes it safe to give tasks to agents working at the same
+time: two tasks with no file in common and no `After` between them can run together.
+
+Order tasks so each leaves the build green. Every requirement must be mentioned by a task, and
+every requirement not marked `[untested: …]` must be cited by a test before the spec is `shipped`.
+
+**Check it with the script**, not by eye:
+
+```sh
+sh "<plugin root>/scripts/spec-check.sh" . <feature-slug>
+```
+
+It prints one line per gap — `MISSING-TASK`, `MISSING-TEST`, `MISSING-FIELD`, `BAD-AFTER`,
+`CONFLICT` — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are information, not gaps.
 
 ---
 

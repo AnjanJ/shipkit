@@ -691,6 +691,37 @@ case "$out" in
   *) failc "spec-drift-paths" "open spec with no Paths was not counted on the whole repository: $out";;
 esac
 
+# 22. spec-new-format: a spec that /shipkit:spec writes passes spec-check
+# (spec: .shipkit/specs/spec-contract/). Cites: spec-contract/REQ-21 spec-contract/REQ-22
+# Plugin evals have no custom-code graders (they cannot run a script on what a run wrote), so
+# this lives here. It is the one check in this file that asks a model to do real work: it runs
+# the skill headless in a copy of the eval fixture, then runs spec-check.sh on the result
+# ITSELF — the model's own claim that the check passed is not what is asserted. Uses sonnet,
+# not haiku: the skill is a three-phase interview and the cheaper model does not finish it
+# reliably. Takes a few minutes.
+NF="$WORK/newfmt"; mkdir -p "$NF"; cp -R "$COPY/evals/fixtures/sample-app/." "$NF/"
+(cd "$NF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$NF" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
+  -p "/shipkit:spec refunds
+Feature: add refunds to the billing module. A charged order can be refunded in full or in part through the payment gateway; a refund larger than the original charge is rejected.
+This run is not interactive and you cannot ask me anything. Treat every approval gate as approved, make reasonable assumptions and note them in the spec, and do all three questions now: write spec.md, design.md and tasks.md, set the status and paths as the skill says for an accepted spec, and run the spec check as the skill says. Do not implement the feature." \
+  </dev/null >"$WORK/newfmt.out" 2>&1)
+nf_out=$(sh "$COPY/scripts/spec-check.sh" "$NF" refunds 2>&1); nf_rc=$?
+nf_spec="$NF/.shipkit/specs/refunds/spec.md"; nf_tasks="$NF/.shipkit/specs/refunds/tasks.md"
+nf_fields=0; [ -f "$nf_tasks" ] && nf_fields=$(grep -c '^ *- Files:' "$nf_tasks")
+if [ "$nf_rc" -eq 0 ] && grep -q '^> Status: open' "$nf_spec" 2>/dev/null \
+   && grep -q '^> Paths: .' "$nf_spec" 2>/dev/null && [ "$nf_fields" -gt 0 ]; then
+  pass "spec-new-format (/shipkit:spec wrote an open spec with paths; $nf_fields tasks in the new format; spec-check exits 0)"
+else
+  failc "spec-new-format" "spec-check exit $nf_rc, tasks with Files: $nf_fields — $nf_out — model said: $(tail -5 "$WORK/newfmt.out")"
+fi
+# the always-on rule tells every session how a test cites a requirement, inside the budget
+if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
+   && [ "$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')" -le 3000 ]; then
+  pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
+else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
