@@ -11,11 +11,49 @@ argument-hint: "[optional: what to emphasize, or a message]"
 # /commit — Atomic Commit, Message Scaled to the Change
 
 Produce one atomic commit whose message carries what a future reader (and the project elders)
-will need. The rules for atomicity and message depth live in the **Commit Discipline** section
-of the shipkit workflow rule — this skill applies them. That rule is already in your context:
-the shipkit session hook injects it, or `/shipkit:setup` installed it at
-`.claude/rules/shipkit/shipkit.md`. If you cannot find it in either place, read
-`<plugin root>/rules/shipkit.md` (the root is in the `shipkit: plugin root is …` context line).
+will need. The always-on `shipkit` rule carries the short form — atomic commits, stage files by
+name, never `--no-verify`, no co-author trailer — and points here for the rest. This skill is
+the single source of truth for the message format; the CLAUDE.md written by `/shipkit:setup`
+defers to it. Use the format for **every** substantive commit, not only when invoked by name.
+
+## Commit discipline
+
+**Atomicity (always).** One logical change per commit — one behavior, one fix, or one refactor.
+Test and implementation land together. Never `git add .` / `git add -A`; stage the specific
+files. Each commit leaves the build/tests green. Never `--no-verify`.
+
+**Message depth scales to the change.** Do not force a template onto a one-liner.
+
+- **Trivial** (version bump, typo, formatting, a one-line doc/config change): a good imperative
+  subject line is enough. `chore: bump to 2.2.0`.
+
+- **Substantive** (a feature, fix, refactor, integration, or anything with a decision behind
+  it): subject line + a body with these sections. Include a section only when it has real
+  content — omit it rather than pad.
+
+  ```
+  <type>: <imperative subject, <=72 chars, the WHAT in one line>
+
+  What:  what changed, concretely (the surfaces touched).
+  Why:   the problem or goal this serves — the reason it exists.
+  How:   the approach, and the decisions made getting there.
+         Name alternatives you rejected and why ("chose X over Y because…") —
+         this is the highest-value line for a future reader.
+  Test plan: how this was verified — commands run and what you observed,
+         or why no test applies (docs/config/generated).
+
+  Risk/Rollback: (only if it touches data, config, or prod behavior) what could
+         break and how to undo it.
+  Follow-ups: (only if the commit deliberately leaves gaps) what's left for later.
+  Refs: (only if applicable) #issue / PR / link.
+  ```
+
+**Never** add a co-author/`Co-Authored-By` trailer unless the user explicitly asks. Never
+amend, squash, or force-push published commits without asking. When on the default branch for
+non-trivial work, branch first.
+
+A decision worth revisiting later belongs in a decision record (`/shipkit:decide`), not only in
+the commit's How line.
 
 Emphasis from the user (optional): $ARGUMENTS
 
@@ -31,7 +69,7 @@ Emphasis from the user (optional): $ARGUMENTS
    - Something you didn't expect in the tree (unrelated edits, a stray file, anything that
      looks like a secret or a destructive deletion) → stop and ask before committing it.
 
-3. **Judge trivial vs substantive** (per the rule):
+3. **Judge trivial vs substantive** (per "Commit discipline" above):
    - Trivial (version bump, typo, formatting, one-line doc/config) → a clear imperative
      subject line is the whole message. Don't manufacture a body.
    - Substantive (feature, fix, refactor, integration, a decision behind it) → write the body

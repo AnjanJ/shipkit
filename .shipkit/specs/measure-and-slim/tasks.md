@@ -13,7 +13,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
 - [x] **T4** (S1-T4) Measure with the map, without the map, and without the plugin; write
       `eval-results-3.2.md` and decision 0001 → REQ-12, REQ-13, REQ-14  (after T3)
 - [x] **T5** (S1-T5) Three `rules` cases; record the 3.1.0 baseline → REQ-10, REQ-11
-- [ ] **T6** (S1-T6) Shrink the three always-on rules; move detail into the commit and spec
+- [x] **T6** (S1-T6) Shrink the three always-on rules; move detail into the commit and spec
       skills; add the lint budget; fix the context-audit numbers
       → REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20  (after T5; test first: the lint budget
       check fails on the 11,867-byte rules before the shrink)
