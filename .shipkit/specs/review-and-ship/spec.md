@@ -1,7 +1,7 @@
 # Spec: Reviewer and ship gate (Sprint 4, release 3.5.0)
 
-> Spec not yet accepted.
-> Status: draft
+> Spec accepted at commit `374b43b` on sprint-4/review-and-ship.
+> Status: open
 > Paths: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/, plugins/shipkit/skills/escape/, plugins/shipkit/evals/reviewer/, plugins/shipkit/evals/escape/
 
 ## Purpose
