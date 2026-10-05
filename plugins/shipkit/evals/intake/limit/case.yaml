@@ -1,0 +1,5 @@
+# Proves product-intake-brief/REQ-14
+schema_version: "1.1"
+name: intake-limit
+context:
+  scaffold_script: fixture.sh

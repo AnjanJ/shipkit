@@ -1,0 +1,5 @@
+# Proves product-intake-brief/REQ-12
+schema_version: "1.1"
+name: intake-nongoal
+context:
+  scaffold_script: fixture.sh

@@ -24,7 +24,8 @@ context and hand back one consolidated answer, so the caller's context stays thi
 ## The registry
 
 Your index is `~/.claude/shipkit/project-registry.md` — one row per project: path, `Mapped At`
-(the SHA its map was built at), `Stack`, `Deploys To`, and a one-line summary. Read it first.
+(the SHA its map was built at), `Stack`, `Deploys To`, `Active Specs`, `Product`, `Top Goal`
+and a one-line summary. Read it first.
 It, the per-project maps and each repo's `.shipkit/` are your memory; you start each call
 blank on purpose and never keep a private notebook.
 It points you at each project's `PROJECT_MAP.md` (per-project index written by `archivist`).
@@ -36,6 +37,15 @@ Two things the registry gives you for free:
   confidence (registry-sourced) unless you spot-check; a `?` cell means unrecorded, so fall
   through to the grep fast path for that project. `Active Specs` is a point-in-time snapshot
   from the last `--register` — verify against `.shipkit/specs/` when certainty matters.
+- **What each product is for.** `Product` is the product's one line and `Top Goal` its first
+  goal this quarter, both copied from that project's `.shipkit/product.md` at the last
+  `--register`. Use them for "what is X for?" and "which products have a goal about Y?". A `?`
+  means the project has no product file — say so; do not infer a goal from the code.
+- **What comes first.** `~/.claude/shipkit/studio.md`, if it exists, is the user's own ranked
+  list of at most five priorities across all products, with a review date (written by
+  `/shipkit:product --studio`). Read it for any question about priority or attention —
+  "which product should I work on?" — and quote its review date, since a ranking goes stale.
+  If it does not exist, say so and rank nothing yourself.
 - **Staleness signal.** If a row's `Mapped At` SHA is far behind that repo's HEAD, treat its
   map as suspect and lean harder on live verification — and say so in your answer.
 

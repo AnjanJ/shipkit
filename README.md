@@ -85,7 +85,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 
 ## What You Get Instantly
 
-**The knowledge layer** (`shipkit`) — 12 skills, always at hand:
+**The knowledge layer** (`shipkit`) — 14 skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -98,11 +98,13 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-Four of those are reached for automatically when the work calls for it (each carries
+Six more are reached for automatically when the work calls for it (each carries
 `TRIGGER when: / DO NOT TRIGGER when:` guidance), or you can invoke any by name:
 
 | Skill | What It Does |
 |-------|-------------|
+| `/shipkit:product` | Write `.shipkit/product.md` — what the product is for, up to three measurable goals, and its non-goals; `--studio` ranks priorities across products |
+| `/shipkit:intake` | Check a request before it becomes a spec — conflicts with non-goals, open specs and past decisions, then at most four questions |
 | `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
 | `/shipkit:decide` | Capture a project decision as a five-part record with a falsifiability clause (`.shipkit/decisions/`) |
 | `/shipkit:explain-system` | Explore codebase and return verified system design docs |

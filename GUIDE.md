@@ -678,6 +678,28 @@ that the test passes — running the tests is still your job. `/shipkit:spec` wr
 this format and runs the check itself. A spec written before 3.3, with none of the new lines,
 is treated as `open` and is not asked for the task format.
 
+### Handing a task to an agent
+
+A task in the checked format already says everything an agent needs, so the brief is built by
+a script and the result is checked by one:
+
+```sh
+git rev-parse HEAD                                              # note where the work starts
+sh "<plugin root>/scripts/brief.sh" . refunds T3                # the brief — hand it over unchanged
+sh "<plugin root>/scripts/brief-verify.sh" . refunds T3 <sha>   # afterwards: which files changed?
+```
+
+- The brief carries the goal, the requirement **word for word**, the only files the task may
+  edit, the test and the `Done when` command, the tasks already done, the decisions that bind
+  it, what is out of scope, and a fixed form to report back in. Add context below it if the
+  agent needs more; never replace part of it.
+- `brief-verify.sh` prints `OUTSIDE <file>` for anything changed that the task did not list,
+  and exits 1. Then run the task's `Done when` command yourself — the agent's report is a
+  claim, not proof.
+- Tasks with no unfinished predecessor can run at the same time, each in its own git worktree.
+- Match the team to the work: no agent for a trivial change, one for one task, the elders for
+  a research question.
+
 ### How it ties into the elders
 
 - `grandfather` reads `.shipkit/decisions/` and specs to answer *why is X built this way?*,

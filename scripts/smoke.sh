@@ -748,10 +748,203 @@ else
   failc "spec-new-format" "spec-check exit $nf_rc, tasks with Files: $nf_fields — $nf_out — model said: $(tail -5 "$WORK/newfmt.out")"
 fi
 # the always-on rule tells every session how a test cites a requirement, inside the budget
+# (the same byte assertion is what proves product-intake-brief/REQ-28 after S3-T6's sentence)
 if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
    && [ "$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')" -le 3000 ]; then
   pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
 else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
+
+# 23. product-file: /shipkit:product writes the product file in its fixed shape
+# (spec: .shipkit/specs/product-intake-brief/). Cites: product-intake-brief/REQ-1
+# product-intake-brief/REQ-2
+# Like check 22 this asks a model (sonnet) to do real work: the skill runs headless in a copy
+# of the eval fixture with its answers given up front — FOUR goals on purpose, one with no
+# metric — and the file it writes is then read here, not taken on the model's word.
+PF="$WORK/product"; mkdir -p "$PF"; cp -R "$COPY/evals/fixtures/sample-app/." "$PF/"
+(cd "$PF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$PF" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Skill \
+  -p "/shipkit:product
+This run is not interactive and you cannot ask me anything, so here are my answers.
+Users: owners of small online shops who take card payments.
+Goals for this quarter, in my order of importance: (1) cut failed charges to under 2 percent of all charges by 2026-12-31; (2) ship refunds, with 95 percent of refunds needing no manual step, by 2026-11-15; (3) make order totals correct to the cent in every region, zero tax rounding complaints, by 2026-12-15; (4) make the app faster.
+Non-goals: no multi-currency support; no storefront or cart.
+Metrics that matter: charge failure rate, refunds per week.
+Constraints: Python standard library only; one maintainer.
+Now: the retry job. Next: refunds. Later: a proper database." \
+  </dev/null >"$WORK/product.out" 2>&1)
+pf="$PF/.shipkit/product.md"
+if [ -f "$pf" ]; then
+  heads=$(grep '^## ' "$pf" | sed 's/^## //; s/[ \t]*$//' | tr '\n' '|')
+  goals=$(awk '/^## /{on=($0 ~ /^## Goals this quarter/)} on && /^(- |[0-9]+\. )/{n++} END{print n+0}' "$pf")
+  plines=$(wc -l < "$pf" | tr -d ' ')
+else heads=""; goals=0; plines=0; fi
+if [ "$heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ] \
+   && [ "$goals" -ge 1 ] && [ "$goals" -le 3 ] && [ "$plines" -le 60 ]; then
+  pass "product-file (seven headings in order; $goals goals from four offered; $plines lines)"
+else
+  failc "product-file" "headings=[$heads] goals=$goals lines=$plines — model said: $(tail -4 "$WORK/product.out")"
+fi
+
+# 24. registry-columns: the registry template and eve know the product columns and studio.md
+# (spec: .shipkit/specs/product-intake-brief/). No claude needed — these are the files a
+# session reads. Cites: product-intake-brief/REQ-8 product-intake-brief/REQ-10
+rc_head=$(grep -m1 '^| Project | Path ' "$COPY/skills/map/SKILL.md")
+case "$rc_head" in
+  *"| Product | Top Goal |"*) pass "registry-columns (registry template has Product and Top Goal)";;
+  *) failc "registry-columns" "the template header lacks the two columns: $rc_head";;
+esac
+if grep -q 'studio\.md' "$COPY/agents/eve.md" && grep -q '`Product`' "$COPY/agents/eve.md" \
+   && grep -q '`Top Goal`' "$COPY/agents/eve.md"; then
+  pass "registry-columns (eve names studio.md and both columns)"
+else failc "registry-columns" "agents/eve.md does not name studio.md, Product and Top Goal"; fi
+
+# 25. brief: a task becomes a brief, built by a script from the spec, with no model
+# (spec: .shipkit/specs/product-intake-brief/). Cites: product-intake-brief/REQ-18
+# product-intake-brief/REQ-19 product-intake-brief/REQ-20 product-intake-brief/REQ-21
+# product-intake-brief/REQ-22 product-intake-brief/REQ-23
+BRIEF="$COPY/scripts/brief.sh"
+BP="$WORK/brief"; mkdir -p "$BP/.shipkit/specs/refunds" "$BP/.shipkit/specs/old"
+(cd "$BP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+cat > "$BP/.shipkit/specs/refunds/spec.md" <<'SPEC'
+# Spec: Refunds
+
+> Spec accepted at commit `abc1234` on main.
+> Status: open
+> Paths: app/billing/
+
+## Purpose
+A charged order can be refunded through the gateway.
+Shop owners ask for this weekly.
+
+## Requirements (EARS)
+- **REQ-1.** When a refund is requested, the system shall call the gateway.
+- **REQ-2.** If the refund is larger than the original charge, then the system shall
+  reject it with a clear error and leave the order unchanged.
+- **REQ-3.** The README shall describe refunds. [untested: prose]
+
+## Out of scope
+- Refunds in a second currency.
+SPEC
+cat > "$BP/.shipkit/specs/refunds/design.md" <<'SPEC'
+# Design: Refunds
+
+## Decision: Keep a ledger of refunds on the order   (→ REQ-2)
+
+**Decision.** We chose a ledger.
+
+## Decision: Old ledger idea   (→ REQ-2)
+
+> **Superseded on 2026-10-05** by the decision above.
+
+## Decision: Describe refunds in one README section   (→ REQ-3)
+
+**Decision.** One section.
+SPEC
+cat > "$BP/.shipkit/specs/refunds/tasks.md" <<'SPEC'
+# Tasks: Refunds
+
+- [ ] **T1** Refund a charge in full → REQ-1
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_full_refund
+  - After: none
+  - Done when: `pytest tests/test_refunds.py` → all pass
+- [ ] **T2** Record each refund on the order → REQ-1
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_refund_is_recorded
+  - After: T1
+  - Done when: `pytest tests/test_refunds.py` → all pass
+- [ ] **T3** Reject refunds larger than the charge
+      → REQ-2
+  - Files: app/billing/refunds.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::test_refund_over_charge_is_rejected
+  - After: T2
+  - Done when: `pytest tests/test_refunds.py` → all pass
+SPEC
+printf '# Spec: Old\n\n## Purpose\nOld.\n\n## Requirements\n- **REQ-1.** The system shall x.\n' > "$BP/.shipkit/specs/old/spec.md"
+printf -- '- [ ] **T1** do x → REQ-1\n' > "$BP/.shipkit/specs/old/tasks.md"
+if [ ! -f "$BRIEF" ]; then
+  failc "brief" "scripts/brief.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$BRIEF" 2>/dev/null; then pass "brief (POSIX sh: sh -n is clean)"
+  else failc "brief" "sh -n reports a syntax error"; fi
+  out=$(sh "$BRIEF" "$BP" refunds T3 2>"$WORK/brief.err"); rc=$?
+  heads=$(printf '%s\n' "$out" | grep '^#' | sed 's/^# Brief:.*/# Brief/' | tr '\n' '|')
+  want='# Brief|## Goal|## Requirement|## You may edit|## Prove it with|## Already done|## Decisions that bind you|## Not in scope|## Report back in exactly this form|'
+  if [ "$rc" -eq 0 ] && [ "$heads" = "$want" ] \
+     && printf '%s\n' "$out" | grep -q '^# Brief: refunds / T3 — Reject refunds larger than the charge$'; then
+    pass "brief (valid task → title and the eight headings, in order)"
+  else failc "brief" "exit $rc, headings [$heads], stderr: $(cat "$WORK/brief.err")"; fi
+  if printf '%s\n' "$out" | grep -qF -- '- **REQ-2.** If the refund is larger than the original charge, then the system shall' \
+     && printf '%s\n' "$out" | grep -qF '  reject it with a clear error and leave the order unchanged.' \
+     && ! printf '%s\n' "$out" | grep -q 'REQ-1\.'; then
+    pass "brief (the cited requirement is copied word for word, wrapped line and all; others are left out)"
+  else failc "brief" "requirement text not copied exactly: $out"; fi
+  if printf '%s\n' "$out" | grep -q '^- T1 ' && printf '%s\n' "$out" | grep -q '^- T2 '; then
+    pass "brief (Already done lists T2 and, through the chain, T1)"
+  else failc "brief" "predecessors missing: $out"; fi
+  if printf '%s\n' "$out" | grep -q 'Keep a ledger of refunds on the order' \
+     && ! printf '%s\n' "$out" | grep -q 'Old ledger idea\|one README section' \
+     && printf '%s\n' "$out" | grep -q 'app/billing/refunds.py' \
+     && printf '%s\n' "$out" | grep -q 'test_refund_over_charge_is_rejected' \
+     && printf '%s\n' "$out" | grep -q 'Refunds in a second currency' \
+     && printf '%s\n' "$out" | grep -q 'Shop owners ask for this weekly' \
+     && printf '%s\n' "$out" | grep -q '^RESULT: done | blocked$'; then
+    pass "brief (goal, files, test, binding decision, scope and report form all present; superseded decision left out)"
+  else failc "brief" "a section is wrong: $out"; fi
+  sh "$BRIEF" "$BP" refunds T9 >/dev/null 2>"$WORK/brief.err"; rc=$?
+  if [ "$rc" -eq 1 ] && grep -q 'T9' "$WORK/brief.err" && grep -q 'refunds' "$WORK/brief.err"; then
+    pass "brief (unknown task → exit 1, naming the task and the spec)"
+  else failc "brief" "unknown task: exit $rc: $(cat "$WORK/brief.err")"; fi
+  sh "$BRIEF" "$BP" old T1 >/dev/null 2>"$WORK/brief.err"; rc=$?
+  if [ "$rc" -eq 1 ] && grep -q '3\.3 task format' "$WORK/brief.err"; then
+    pass "brief (task with no Files line → exit 1, says the spec must be in the 3.3 task format)"
+  else failc "brief" "old format: exit $rc: $(cat "$WORK/brief.err")"; fi
+fi
+
+# 26. brief-verify: did the work stay inside the files the task was allowed to change?
+# (spec: .shipkit/specs/product-intake-brief/). Reuses the refunds spec from section 25.
+# Cites: product-intake-brief/REQ-24 product-intake-brief/REQ-25 product-intake-brief/REQ-26
+BV="$COPY/scripts/brief-verify.sh"
+if [ ! -f "$BV" ]; then
+  failc "brief-verify" "scripts/brief-verify.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$BV" 2>/dev/null; then pass "brief-verify (POSIX sh: sh -n is clean)"
+  else failc "brief-verify" "sh -n reports a syntax error"; fi
+  mkdir -p "$BP/app/billing" "$BP/tests"
+  (cd "$BP" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
+  bv_base=$(cd "$BP" && git rev-parse HEAD)
+  # a. only allowed files: one committed, one left uncommitted, plus the task's own tick box
+  printf 'x\n' > "$BP/app/billing/refunds.py"
+  (cd "$BP" && git add app/billing/refunds.py && git -c user.email=s@s -c user.name=s commit -q -m work)
+  printf 'y\n' > "$BP/tests/test_refunds.py"
+  sed 's/- \[ \] \*\*T3\*\*/- [x] **T3**/' "$BP/.shipkit/specs/refunds/tasks.md" > "$WORK/bv.tmp" && mv "$WORK/bv.tmp" "$BP/.shipkit/specs/refunds/tasks.md"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE'; then
+    pass "brief-verify (only allowed files changed, committed and not → exit 0)"
+  else failc "brief-verify" "allowed only: exit $rc: $out"; fi
+  # b. one extra tracked file
+  printf 'z\n' >> "$BP/.shipkit/specs/refunds/spec.md"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/refunds/spec.md$' \
+     && ! printf '%s\n' "$out" | grep -q 'OUTSIDE app/billing/refunds.py'; then
+    pass "brief-verify (a changed file outside the list → OUTSIDE, exit 1)"
+  else failc "brief-verify" "extra file: exit $rc: $out"; fi
+  (cd "$BP" && git checkout -q -- .shipkit/specs/refunds/spec.md)
+  # c. a new untracked file outside the list
+  printf 'n\n' > "$BP/app/notes.txt"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE app/notes.txt$'; then
+    pass "brief-verify (a new untracked file outside the list → OUTSIDE, exit 1)"
+  else failc "brief-verify" "untracked: exit $rc: $out"; fi
+  rm -f "$BP/app/notes.txt"
+  # d. wrong usage and an unknown task
+  sh "$BV" "$BP" refunds T3 >/dev/null 2>&1; rc=$?
+  sh "$BV" "$BP" refunds T9 "$bv_base" >/dev/null 2>&1; rc2=$?
+  sh "$BV" "$BP" refunds T3 no-such-ref >/dev/null 2>&1; rc3=$?
+  if [ "$rc" -eq 64 ] && [ "$rc2" -eq 1 ] && [ "$rc3" -eq 64 ]; then pass "brief-verify (missing argument or bad ref → 64; unknown task → 1)"
+  else failc "brief-verify" "usage: missing arg $rc, unknown task $rc2, bad ref $rc3 (want 64 1 64)"; fi
+fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

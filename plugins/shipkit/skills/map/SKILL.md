@@ -38,11 +38,17 @@ On `--register` (and offer it on first `build` of any project):
 2. Add or update this project's row. Use the project's path, the map's HEAD short SHA in
    `Mapped At`, and pull `Stack`, `Deploys To`, and the one-line `Summary` from the freshly
    written map (the archivist already verified them). For `Active Specs`, list the feature slugs
-   under `.shipkit/specs/*/` (or `—` if none) — this lets `eve` answer "which projects have an
-   open spec?" from the registry alone.
+   under `.shipkit/specs/*/` whose spec is open — no `> Status:` line, or `Status: open` — (or
+   `—` if none); this lets `eve` answer "which projects have an open spec?" from the registry
+   alone. For `Product` and `Top Goal`, read `.shipkit/product.md`: the text under "One line",
+   and the first bullet under "Goals this quarter". Write `?` in both if the file does not
+   exist — never guess them from the README.
 3. Keep it sorted, one project per line, deduped by path.
-4. On any `refresh`, update the row's `Mapped At` SHA — and `Stack`/`Deploys To`/`Active Specs`
-   if they changed (if the project is registered).
+4. **An existing registry without the `Product` and `Top Goal` columns:** add the two columns
+   to the header, and put `?` in them for every row you are not registering now. Change nothing
+   else in those rows — they are the user's, and their projects are not open in front of you.
+5. On any `refresh`, update the row's `Mapped At` SHA — and `Stack`/`Deploys To`/`Active Specs`/
+   `Product`/`Top Goal` if they changed (if the project is registered).
 
 Registry template:
 
@@ -50,10 +56,10 @@ Registry template:
 # Shipkit Project Registry
 > Portfolio index for `eve`. One row per project. Update via `/shipkit:map --register`.
 
-| Project | Path | Map | Mapped At | Stack | Deploys To | Active Specs | Summary |
-|---------|------|-----|-----------|-------|------------|--------------|---------|
-| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | ab12cd3 | Rails 8 / Postgres | Fly.io | billing-v2 | REST API for the Acme storefront |
-| acme-web | ~/projects/acme-web | PROJECT_MAP.md | 9f8e7d6 | Next.js / TS | Vercel | — | Customer-facing web app |
+| Project | Path | Map | Mapped At | Stack | Deploys To | Active Specs | Product | Top Goal | Summary |
+|---------|------|-----|-----------|-------|------------|--------------|---------|----------|---------|
+| acme-api | ~/projects/acme-api | docs/PROJECT_MAP.md | ab12cd3 | Rails 8 / Postgres | Fly.io | billing-v2 | Order API for small shops | Failed charges under 2% by 2026-12-31 | REST API for the Acme storefront |
+| acme-web | ~/projects/acme-web | PROJECT_MAP.md | 9f8e7d6 | Next.js / TS | Vercel | — | ? | ? | Customer-facing web app |
 ```
 
 Column notes:
@@ -66,6 +72,11 @@ Column notes:
   or `—` if none. Lets `eve` answer "which projects have an open spec?" / "what's in flight
   across the portfolio?" from the registry alone. This is a point-in-time snapshot — refresh it
   on `/shipkit:map --register`; treat it as a hint, and verify against the repo for certainty.
+
+- `Product` / `Top Goal` — what the product is for, and its first goal this quarter, copied from
+  the project's `.shipkit/product.md` (written by `/shipkit:product`). `?` means the project
+  has no product file yet. `Summary` says what the code is; `Product` says what it is for.
+  Together with `~/.claude/shipkit/studio.md` they let `eve` weigh one project against another.
 
 ## When to run
 
