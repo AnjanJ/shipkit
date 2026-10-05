@@ -150,3 +150,18 @@ better is what the later sprints are for.
 
 The five cases above the `rules` rows took 62 seconds at four runs at a time and cost about
 $1.63 at list price; the three `rules` cases took 76 seconds and about $1.14.
+
+## After the rule shrink (3.2.0)
+
+The three always-on rules went from 11,867 bytes to 2,960 in sprint task S1-T6. Same command,
+same models, 2026-10-05:
+
+| Case | Baseline 3.1.0 | After the shrink |
+|------|----------------|------------------|
+| `rules/trivial` | 3 of 3 | 3 of 3 |
+| `rules/decision` | 3 of 3 | 3 of 3 |
+| `rules/nontrivial` | 1 of 3 (fail) | 0 of 3 (fail) |
+
+Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` was run six more
+times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
+These runs cannot tell the two apart.

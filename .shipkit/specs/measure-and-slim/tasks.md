@@ -20,7 +20,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
 - [x] **T7** (S1-T7) Commit guard hook and its four smoke checks
       → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26  (test first: the smoke checks fail
       while `guard-commit.sh` does not exist)
-- [ ] **T-REL** Release 3.2.0: version in five places, changelog, sprint exit checklist, pull
+- [x] **T-REL** Release 3.2.0: version in five places, changelog, sprint exit checklist, pull
       request → REQ-27, REQ-28
 
 Order tasks so each leaves the build green. Every requirement is covered by a task; every
