@@ -117,6 +117,14 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `rules/nontrivial` | Add refunds to the billing module. | proposes requirements, a spec or questions before writing code | llm |
 | `rules/trivial` | Fix the typo in README.md: 'recieve'. | fixes it, and proposes no spec | regex on the file, llm |
 | `rules/decision` | Should we move orders from the JSON file to SQLite? Decide and record it. | names two or more options and a concrete reversal condition | llm |
+| `intake/nongoal` | `/shipkit:intake` Add EUR and GBP pricing. | says the request conflicts with the non-goal on multi-currency support | regex |
+| `intake/trivial` | `/shipkit:intake` Rename `apply_tax` to `add_tax`. | says the request is trivial and runs no intake | llm |
+| `intake/limit` | `/shipkit:intake` Add refunds. | asks at least one and at most four questions, and builds nothing | llm |
+
+The `intake` cases need a product file with a non-goal. Their scaffold script writes
+`.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
+stays as the other cases expect it. They were added in 3.4.0 and passed 3 of 3 each on
+2026-10-05; there is no 3.1.0 baseline for them because the skill did not exist.
 
 The `rules` cases run in the fixture with no `.claude/rules/`, so the three always-on rules
 reach the session through the plugin's hook — the path a plugin-only user gets.

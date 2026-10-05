@@ -43,6 +43,12 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
 
 ### Q1 — What are we building? → `spec.md`
 
+0. **Intake first.** If `.shipkit/specs/<feature-slug>/intake.md` does not exist, run
+   `/shipkit:intake` on the request before anything else: it checks the request against the
+   product's non-goals, open specs and past decisions, and asks the few questions that change
+   what gets built. If it says the request is trivial, stop — a trivial change gets no spec.
+   If `intake.md` exists, read it: its answers, assumptions and out-of-scope list feed the
+   requirements, and you do not ask those questions again.
 1. Ask the user for the feature's purpose and the user-facing behavior, if not already given.
 2. Write requirements in **EARS** (see @reference.md for the five patterns and worked examples),
    numbered `REQ-1`, `REQ-2`, … One testable behavior per requirement. Drop to a user story +

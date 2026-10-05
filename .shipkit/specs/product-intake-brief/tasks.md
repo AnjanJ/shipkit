@@ -14,7 +14,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "registry-columns" (template has both columns; eve names studio.md)
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the registry-columns check → PASS
-- [ ] **T3** `/shipkit:intake` (S3-T3) → REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17
+- [x] **T3** `/shipkit:intake` (S3-T3) → REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17
   - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/evals/intake/, plugins/shipkit/evals/README.md, .claude-plugin/marketplace.json
   - Test: eval cases intake/nongoal, intake/trivial, intake/limit
   - After: T1
