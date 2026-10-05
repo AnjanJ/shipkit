@@ -2,6 +2,54 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.4.0] — 2026-10-06
+
+Sprint 3 of the quality-gate plan: shipkit learns what the product is for, asks a few good
+questions before work starts, and turns a spec task into a brief any agent can follow.
+Requirements and decision records in
+[`.shipkit/specs/product-intake-brief/`](.shipkit/specs/product-intake-brief/).
+
+### Added
+
+- **`/shipkit:product`** writes `.shipkit/product.md`: one line, users, at most three goals
+  this quarter (each with a metric, a target and a date), non-goals, the metrics that matter,
+  constraints, and now / next / later. It fills in what `README.md`, `CLAUDE.md` and the map
+  already answer before asking, and writes `metric: none set` rather than invent a number.
+  `--studio` writes `~/.claude/shipkit/studio.md`, at most five ranked priorities across all
+  your products.
+- **`/shipkit:intake`** checks a request before it becomes a spec. It says "trivial — no
+  intake needed" and stops when that is true; otherwise it states any conflict with the
+  product's non-goals, an open spec or a past decision **before** asking anything, asks at
+  most four questions whose answers change what gets built, and writes
+  `.shipkit/specs/<slug>/intake.md`. `/shipkit:spec` runs it first when that file is missing.
+- **`brief.sh`** (`scripts/brief.sh <project-dir> <slug> <task-id>`) builds the brief for one
+  task from the spec's own files, with no model: the goal, the cited requirements word for
+  word, the only files the task may edit, the test and `Done when` command, every task
+  already done, the decisions that bind it, what is out of scope, and a fixed report form.
+- **`brief-verify.sh`** (`scripts/brief-verify.sh <project-dir> <slug> <task-id> <base-ref>`)
+  prints `OUTSIDE <file>` for anything changed since the base ref that the task did not
+  list — committed, uncommitted or newly untracked — and exits 1.
+- **Two columns in the project registry**, `Product` and `Top Goal`, filled by
+  `/shipkit:map --register` from the product file, or `?`. An existing registry gains the
+  columns; its other rows are not rewritten. `eve` reads both, and `studio.md`.
+- **Three eval cases** for the intake (`intake/nongoal`, `intake/trivial`, `intake/limit`),
+  all passing 3 of 3.
+
+### Changed
+
+- **The `spec-driven` rule** says to hand a spec task to an agent as `brief.sh` output,
+  unchanged, and to check it with `brief-verify.sh`. The four points in full — the brief
+  unchanged, the session verifying and running `Done when` itself, independent tasks in
+  parallel worktrees, the team matched to the work — are in `/shipkit:spec` and the guide.
+  Seven small wording cuts across the three rules pay for the sentence: 2,996 of 3,000 bytes.
+- `/shipkit:map --register` lists only **open** specs under `Active Specs`.
+- The core plugin now has 14 skills.
+
+### What using it for real showed
+
+The Sprint 4 spec was written with the intake and the checked format, and one of its tasks was
+handed to an agent with `brief.sh`. What was awkward is recorded in the sprint's pull request.
+
 ## [3.3.0] — 2026-10-05
 
 Sprint 2 of the quality-gate plan: a spec stops being a document someone promises to follow —

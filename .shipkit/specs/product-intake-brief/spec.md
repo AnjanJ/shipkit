@@ -1,7 +1,7 @@
 # Spec: Product, intake, brief (Sprint 3, release 3.4.0)
 
 > Spec accepted at commit `f1f95d2` on sprint-3/product-intake-brief.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/skills/product/, plugins/shipkit/skills/intake/, plugins/shipkit/scripts/brief.sh, plugins/shipkit/scripts/brief-verify.sh, plugins/shipkit/evals/intake/
 
 ## Purpose

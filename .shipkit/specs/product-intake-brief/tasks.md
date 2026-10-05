@@ -35,13 +35,13 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/lint.py check 8a (the always-on byte budget)
   - After: T3, T5
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the three rules total ≤ 3,000 bytes
-- [ ] **T7** Use it for real, once: the Sprint 4 spec and one handed-over task (S3-T7) → REQ-29
+- [x] **T7** Use it for real, once: the Sprint 4 spec and one handed-over task (S3-T7) → REQ-29
   - Files: .shipkit/specs/review-and-ship/
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . review-and-ship`
   - After: T6
   - Done when: the Sprint 4 spec exists and passes spec-check; one task was handed over with `brief.sh` and checked with `brief-verify.sh`; the observations are written down for the pull request
-- [ ] **T-REL** Release 3.4.0 → REQ-30
-  - Files: CHANGELOG.md, README.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/product-intake-brief/spec.md
+- [x] **T-REL** Release 3.4.0 → REQ-30
+  - Files: CHANGELOG.md, README.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/product-intake-brief/spec.md, scripts/smoke.sh
   - Test: the sprint exit checklist
   - After: T7
   - Done when: the five checklist lines hold; the pull request is merged; tag `v3.4.0` exists
