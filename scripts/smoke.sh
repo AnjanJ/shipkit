@@ -286,6 +286,18 @@ case "$out" in
   *) failc "spec-staleness" "the most-stale spec was not reported: $out";;
 esac
 
+# 11b. spec staleness on a zero-padded day of year. `date +%j` prints "008", which shell
+# arithmetic reads as invalid octal; the rotation then aborted the hook with exit 1 and a
+# stderr error on 36 days of the year. A stub `date` pins the day so this runs any day.
+FAKEBIN="$WORK/fakebin"; mkdir -p "$FAKEBIN"
+printf '#!/bin/sh\necho 008\n' > "$FAKEBIN/date"; chmod +x "$FAKEBIN/date"
+out=$(cd "$SP" && PATH="$FAKEBIN:$PATH" CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>&1)
+rc=$?
+nlines=$(printf '%s\n' "$out" | grep -c 'commits behind HEAD')
+if [ "$rc" -eq 0 ] && [ "$nlines" -eq 3 ]; then
+  pass "spec-staleness (zero-padded day of year: hook exits 0, all 3 slots shown)"
+else failc "spec-staleness-octal" "rc=$rc lines=$nlines: $out"; fi
+
 # 17. unsetup surgical removal (spec: .shipkit/specs/unsetup-safety/, DR-1).
 # These define the contract for scripts/unsetup-remove.sh BEFORE it is written: removal is
 # driven by the installation manifest, so it takes out what shipkit owns and nothing else.

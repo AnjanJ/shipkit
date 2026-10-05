@@ -177,7 +177,11 @@ if [ -d .shipkit/specs ]; then
         offset=0
       else
         # Rotate between sessions (stable within one) so lines 2..total all surface.
-        offset=$(( $(date +%j 2>/dev/null || echo 0) % rest ))
+        # `date +%j` is zero-padded ("008"), and a leading zero makes shell arithmetic
+        # read it as octal — "008" is then an error that aborts the hook non-zero. Strip
+        # the padding before doing arithmetic on it.
+        doy=$(date +%j 2>/dev/null | sed 's/^0*//')
+        offset=$(( ${doy:-0} % rest ))
       fi
       k=0
       while [ "$k" -lt "$slots" ]; do
