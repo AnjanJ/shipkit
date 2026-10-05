@@ -17,7 +17,7 @@ for each task are in `docs/plans/quality-gate-sprint-plan.md` under the same tas
       skills; add the lint budget; fix the context-audit numbers
       → REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20  (after T5; test first: the lint budget
       check fails on the 11,867-byte rules before the shrink)
-- [ ] **T7** (S1-T7) Commit guard hook and its four smoke checks
+- [x] **T7** (S1-T7) Commit guard hook and its four smoke checks
       → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26  (test first: the smoke checks fail
       while `guard-commit.sh` does not exist)
 - [ ] **T-REL** Release 3.2.0: version in five places, changelog, sprint exit checklist, pull
