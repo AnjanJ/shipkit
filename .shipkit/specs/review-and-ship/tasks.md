@@ -14,7 +14,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh checks "spec-check --as-shipped" and "ship-gate" (READY; NOT READY naming step 3; no other file changed)
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the two smoke checks → PASS
-- [ ] **T3** `/shipkit:escape` (S4-T3) → REQ-16, REQ-17, REQ-18
+- [x] **T3** `/shipkit:escape` (S4-T3) → REQ-16, REQ-17, REQ-18
   - Files: plugins/shipkit/skills/escape/SKILL.md, plugins/shipkit/evals/escape/, plugins/shipkit/evals/README.md, .claude-plugin/marketplace.json
   - Test: eval case escape/missing-req (names the cause `requirement missing`, proposes a new REQ)
   - After: T2
