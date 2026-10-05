@@ -29,7 +29,7 @@ architectural stance) that aren't tied to one feature.
 ## The interview
 
 Draw out each part; don't accept thin answers. See @../spec/reference.md for the decision-record
-template and `rules/decisions.md` for the ✅/❌ falsifiability examples.
+template, what each of the five parts is for, and the ✅/❌ falsifiability examples.
 
 1. **Context** — what situation forced this? What constraints were in play? (Ask until you have
    the real pressure behind the decision, not just "we needed a database.")

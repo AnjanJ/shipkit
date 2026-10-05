@@ -507,8 +507,9 @@ Builds one atomic commit whose message carries the reasoning a future reader (an
 will want. It inspects the working tree, splits or questions tangled changes rather than
 bundling them, stages the specific files, and writes a message whose depth matches the change.
 
-The format lives in the **Commit Discipline** section of the always-on shipkit rule, so Claude
-follows it on *any* commit it makes — not only when you invoke this skill by name.
+The always-on shipkit rule carries the short form (atomic commits, files staged by name, no
+`--no-verify`, no co-author trailer) and points to this skill for the message format, so Claude
+follows it on *any* substantive commit it makes — not only when you invoke the skill by name.
 
 - **Trivial** change (version bump, typo, one-line doc/config) → a clean imperative subject is
   the whole message.
