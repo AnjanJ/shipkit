@@ -5,6 +5,7 @@
 # The eval cases are Markdown and cannot carry a citation that spec-check counts, so the
 # requirements they prove are cited here: measure-and-slim/REQ-1 measure-and-slim/REQ-2
 # measure-and-slim/REQ-3 measure-and-slim/REQ-9 measure-and-slim/REQ-10 measure-and-slim/REQ-17
+# map-on-trial/REQ-8 (the five grandfather-xl cases scaffold the generated XL fixture)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
   --model "${EVALS_MODEL:-sonnet}" --threshold 0.66 \

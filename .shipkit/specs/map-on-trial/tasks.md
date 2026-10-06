@@ -10,7 +10,7 @@ branch and the owner says go.
   - Test: scripts/smoke.sh check "ledger-gen" (two generations are identical outside .git; ≥ 200 files; ≥ 25 commits; Redis only in the map; no email provider named; --no-map leaves no map and the same commit count; ≤ 16,384 bytes; standard-library imports only) and scripts/lint.py check 17 (evals ≤ 102,400 bytes) — both written first; the smoke check is red because the generator does not exist, the lint check is shown red against a scratch oversized file
   - After: none
   - Done when: the ledger-gen smoke check → PASS (its import check parses the file with `ast`, so a syntax error fails it; `py_compile` is not used because it leaves a `__pycache__` under evals/); `bash scripts/lint.sh` → 0 error(s), 0 warning(s)
-- [ ] **T2** Five XL cases and a trace counter (S8-T2) → REQ-8, REQ-9, REQ-10, REQ-11
+- [x] **T2** Five XL cases and a trace counter (S8-T2) → REQ-8, REQ-9, REQ-10, REQ-11
   - Files: plugins/shipkit/evals/grandfather-xl/, scripts/trace-tools.sh, scripts/evals.sh, scripts/smoke.sh, plugins/shipkit/evals/README.md
   - Test: scripts/smoke.sh checks "xl-scaffold" (each of the five fixture.sh scripts builds the fixture in a scratch directory; with SHIPKIT_EVAL_NO_MAP=1 no PROJECT_MAP.md) and "trace-tools" (on a kept trace, the printed tool-call count equals `grep -c '"type":"tool_use"'`; one line per run with five fields) — written first, red
   - After: T1
