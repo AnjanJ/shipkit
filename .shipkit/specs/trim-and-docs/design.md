@@ -86,7 +86,7 @@ answering the intake.
 **Case against (1).** The audit's most consequential row stays undecided for another sprint,
 and the map's upkeep cost — a nag line, an archivist run, a README claim — continues.
 
-**Decision.** We chose (1), unless the owner chooses (2) with the intake.
+**Decision.** We chose (1); the owner confirmed it with the intake on 2026-10-06.
 **Falsifiability.** We would reverse this — act on the record without the re-test — if the
 owner waives the condition in writing on the audit row.
 **Fired-if.** manual

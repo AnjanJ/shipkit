@@ -1,7 +1,7 @@
 # Spec: Trim and tell the story (Sprint 7, release 4.0.0 or 3.8.0)
 
-> Spec not yet accepted.
-> Status: draft
+> Spec accepted at commit `568338e` on sprint-7/trim-and-docs.
+> Status: open
 > Paths: docs/design/trim-audit-4.0.md, plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, README.md, GUIDE.md, ROADMAP.md
 
 ## Purpose
@@ -49,8 +49,7 @@ intake beside this file.
   listed in the changelog with what to use instead. [untested: documentation, verified by
   reading against the audit]
 - **REQ-9.** No script under `plugins/shipkit/scripts/` shall call `mktemp` without a
-  template, and the lint shall fail when one does. *(Pending the owner's answer to intake
-  question 2; dropped if the answer is "separate fix".)*
+  template, and the lint shall fail when one does.
 
 ### The README (S7-T3)
 

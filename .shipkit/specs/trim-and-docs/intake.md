@@ -28,7 +28,7 @@ None — this repository has no `.shipkit/product.md`.
   this sprint may add to them. Trims can only lower the number.
 
 ## Answers
-Asked of the owner with this intake; written here as unanswered until they are.
+Asked of the owner with this intake on 2026-10-06; answered the same day.
 
 1. **The map re-test.** Decision 0001's condition needs a fixture of 200 or more files and one
    question about the project's history. Three ways to meet it: (a) add a task before S7-T1
@@ -37,11 +37,14 @@ Asked of the owner with this intake; written here as unanswered until they are.
    the audit row carries the number; (b) carry the row as a proposal marked "pending re-test"
    and make no change to the map in this sprint; (c) act on the record as it stands.
    Recommended: (a) if a 200-file repository can be used as a fixture under 100 KB (A9), else (b).
+   **Answer: (b).** The audit row says "pending re-test"; nothing about the map changes this
+   sprint; the owner may schedule the re-test later.
 2. **Bare `mktemp`.** Sprint 6 found that a bare `mktemp` on macOS ignores `TMPDIR`; seven
    scripts still use it (`install-rules.sh`, `install-stack.sh`, `session-start.sh`,
    `lib-manifest.sh`, `unsetup-remove.sh`). Fold the fix into S7-T2 with a lint check that
    forbids a bare `mktemp` in `plugins/shipkit/scripts/`, or leave it for a separate fix?
    Recommended: fold it in; it is a trim of the same kind, and the lint check keeps it out.
+   **Answer: fold it into S7-T2.** REQ-9 stands.
 
 ## Assumptions made
 - The checks the plan asks for by hand in S7-T3's "Done when" (`grep` each skill name in the
