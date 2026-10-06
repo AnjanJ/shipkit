@@ -1,7 +1,7 @@
 # Spec: Briefing and handoff (Sprint 5, release 3.6.0)
 
 > Spec accepted at commit `ef84b16` on sprint-5/briefing-and-handoff.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/session-start.sh, plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/skills/handoff/, plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/hooks/hooks.json, scripts/smoke.sh, .claude-plugin/marketplace.json
 
 ## Purpose
