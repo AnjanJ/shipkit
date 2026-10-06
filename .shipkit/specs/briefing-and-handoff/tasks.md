@@ -18,7 +18,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "handoff-loop" (a fresh session asked "what should I do next?" repeats the Next step)
   - After: T2
   - Done when: the handoff-loop check → PASS
-- [ ] **T4** The reminder after compaction (S5-T4) → REQ-15, REQ-16
+- [x] **T4** The reminder after compaction (S5-T4) → REQ-15, REQ-16
   - Files: plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check "compact-reminder" (hook input with source compact → the line; source startup → no line)
   - After: T3
