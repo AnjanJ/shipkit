@@ -18,7 +18,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh checks 29 (the ship gate) still pass; reading
   - After: T2
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s)
-- [ ] **T4** `portfolio-digest.sh` (S6-T4) → REQ-12, REQ-13, REQ-14, REQ-15
+- [x] **T4** `portfolio-digest.sh` (S6-T4) → REQ-12, REQ-13, REQ-14, REQ-15
   - Files: plugins/shipkit/scripts/portfolio-digest.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "portfolio-digest" (a scratch registry with two projects and one missing path → a file with three sections, exit 0; written first)
   - After: T2

@@ -1233,6 +1233,79 @@ else
   else failc "decision-check" "a hook names decision-check: $(grep -rn 'decision-check' "$COPY/hooks" "$COPY/scripts/session-start.sh")"; fi
 fi
 
+# 36. portfolio-digest: one page across every registered project, written under
+# $SHIPKIT_HOME/digests/<date>.md from the files already on disk, with no model; a project whose
+# path is missing gets one line and the script goes on; decision commands run only with
+# --run-checks (spec: .shipkit/specs/decisions-and-digest/). No claude needed, and nothing is
+# written under ~/.claude: SHIPKIT_HOME points at a scratch directory. Cites:
+# decisions-and-digest/REQ-12 decisions-and-digest/REQ-13 decisions-and-digest/REQ-14
+# decisions-and-digest/REQ-15
+PDS="$COPY/scripts/portfolio-digest.sh"
+if [ ! -f "$PDS" ]; then
+  failc "portfolio-digest" "scripts/portfolio-digest.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$PDS" 2>/dev/null; then pass "portfolio-digest (POSIX sh: sh -n is clean)"
+  else failc "portfolio-digest" "sh -n reports a syntax error"; fi
+  PH="$WORK/shipkit-home"; mkdir -p "$PH"
+  # proj-a: a product file, an open spec, a Fired-if decision, an escape today, a map two
+  # commits old, one uncommitted file, no upstream
+  PA="$WORK/pd-a"; mkdir -p "$PA/.shipkit/decisions" "$PA/.shipkit/escapes"
+  (cd "$PA" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  bspec "$PA" alpha open 1 3; bspec "$PA" done-one shipped 2 2
+  printf '# alpha/REQ-1\n# done-one/REQ-1\n' > "$PA/t.py"
+  printf '# Product: a\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Cut failed charges — metric: share that fail; target: under 2%%; by: 2026-12-31\n\n## Non-goals\n- z\n' > "$PA/.shipkit/product.md"
+  dcrec "$PA/.shipkit/decisions/0001-fired.md" "Fired one" "the marker exists" '`touch pd-marker`'
+  dcrec "$PA/.shipkit/decisions/0002-manual.md" "Manual one" "users pass 1000" 'manual'
+  printf '# Escape 0001: over-refund\n\n> Recorded on %s.\n\n## What happened\nx\n\n## Cause\n`requirement missing` — y\n' "$(date +%Y-%m-%d)" > "$PA/.shipkit/escapes/0001-over-refund.md"
+  printf '# Escape 0002: old one\n\n> Recorded on 2020-01-01.\n\n## Cause\n`no spec` — y\n' > "$PA/.shipkit/escapes/0002-old.md"
+  printf '# Project map\n\n> Map generated at commit `%s` on main. Refresh with `/shipkit:map`.\n' "$(cd "$PA" && git rev-parse --short HEAD)" > "$PA/PROJECT_MAP.md"
+  (cd "$PA" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m two)
+  printf 'wip\n' > "$PA/wip.txt"
+  # proj-b: a bare project with no .shipkit/, registered with a ~ path
+  PB="$WORK/pd-b"; mkdir -p "$PB"; (cd "$PB" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  printf '# Shipkit Project Registry\n> Portfolio index for `eve`.\n\n| Project | Path | Map | Mapped At | Stack | Deploys To | Active Specs | Product | Top Goal | Summary |\n|---|---|---|---|---|---|---|---|---|---|\n| proj-a | %s | PROJECT_MAP.md | abc1234 | Python | — | alpha | a | Cut failed charges | first |\n| proj-b | ~/pd-b | — | ? | ? | ? | — | ? | ? | second |\n| proj-gone | %s/nowhere | — | ? | ? | ? | — | ? | ? | missing |\n' "$PA" "$WORK" > "$PH/project-registry.md"
+  pd_file="$PH/digests/$(date +%Y-%m-%d).md"
+  pd_own="$HOME/.claude/shipkit/digests/$(date +%Y-%m-%d).md"; pd_own_before=$([ -e "$pd_own" ] && echo yes || echo no)
+  pd_section() { awk -v p="## $1" '$0 ~ "^## " {on=(index($0, p)==1)} on' "$pd_file"; }
+  # a. default: the file, three sections, path not found, the seven lines, nothing run
+  pd_out=$(cd "$WORK" && HOME="$WORK" SHIPKIT_HOME="$PH" sh "$PDS" 2>"$WORK/pd.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ -f "$pd_file" ] && [ "$(grep -c '^## ' "$pd_file")" -eq 3 ] \
+     && [ ! -e "$PA/pd-marker" ] && [ ! -e "$WORK/pd-marker" ] \
+     && pd_section proj-gone | grep -q '^path not found$' \
+     && [ "$(pd_section proj-a | grep -c '^- ')" -eq 7 ] && [ "$(pd_section proj-b | grep -c '^- ')" -eq 7 ] \
+     && printf '%s\n' "$pd_out" | grep -q "digests/$(date +%Y-%m-%d)\.md"; then
+    pass "portfolio-digest (two projects and a missing path → one file, three sections, 'path not found', seven lines each, no command run, exit 0)"
+  else failc "portfolio-digest" "rc=$rc file=$([ -f "$pd_file" ] && echo yes || echo no) sections=$(grep -c '^## ' "$pd_file" 2>/dev/null) marker=$([ -e "$PA/pd-marker" ] && echo yes || echo no) out: $pd_out $(cat "$WORK/pd.err"; cat "$pd_file" 2>/dev/null)"; fi
+  # b. each line says what its file says
+  sa=$(pd_section proj-a); sb=$(pd_section proj-b)
+  if printf '%s\n' "$sa" | grep -q '^- Top goal: Cut failed charges.*reviewed on 2026-10-01' \
+     && printf '%s\n' "$sa" | grep -q '^- Open specs: alpha 1 of 3 tasks done, next T2' \
+     && ! printf '%s\n' "$sa" | grep -q 'done-one' \
+     && printf '%s\n' "$sa" | grep -q '^- Spec gaps: 0' \
+     && printf '%s\n' "$sa" | grep -q '^- Decisions: .*not run' && printf '%s\n' "$sa" | grep -q '^- Decisions: .*1 manual' \
+     && printf '%s\n' "$sa" | grep -q '^- Escapes (30 days): 1 — requirement missing 1$' \
+     && printf '%s\n' "$sa" | grep -q '^- Map: 2 commits old' \
+     && printf '%s\n' "$sa" | grep -q '^- Git: 1 uncommitted file(s), no upstream' \
+     && printf '%s\n' "$sb" | grep -q '^- Top goal: no product file' \
+     && printf '%s\n' "$sb" | grep -q '^- Open specs: none' \
+     && printf '%s\n' "$sb" | grep -q '^- Escapes (30 days): none' \
+     && printf '%s\n' "$sb" | grep -q '^- Map: no map'; then
+    pass "portfolio-digest (goal and review date, open spec progress, gaps, decisions, escapes by cause within 30 days, map age, git state; a ~ path expands)"
+  else failc "portfolio-digest" "lines: $sa $sb"; fi
+  # c. --run-checks runs the decision commands and reports what fired; still exit 0
+  pd_out=$(cd "$WORK" && HOME="$WORK" SHIPKIT_HOME="$PH" sh "$PDS" --run-checks 2>"$WORK/pd.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ -e "$PA/pd-marker" ] && pd_section proj-a | grep -q '^- Decisions: 1 fired, 0 hold, 1 manual, 0 error(s)'; then
+    pass "portfolio-digest (--run-checks → the command ran from the project; 'Decisions: 1 fired …'; exit 0)"
+  else failc "portfolio-digest" "run-checks: rc=$rc marker=$([ -e "$PA/pd-marker" ] && echo yes || echo no) $(pd_section proj-a | grep '^- Decisions') $(cat "$WORK/pd.err")"; fi
+  # d. an explicit registry file, and a missing one
+  pd_out=$(cd "$WORK" && SHIPKIT_HOME="$PH" sh "$PDS" "$PH/no-such-registry.md" 2>&1); rc=$?
+  if [ "$rc" -ne 0 ] && [ ! -d "$PH/digests/nowhere" ]; then pass "portfolio-digest (a missing registry → non-zero exit and a message: $pd_out)"
+  else failc "portfolio-digest" "missing registry: rc=$rc out: $pd_out"; fi
+  if [ "$pd_own_before" = yes ] || [ ! -e "$pd_own" ]; then
+    pass "portfolio-digest (nothing written under ~/.claude/shipkit/digests)"
+  else failc "portfolio-digest" "a digest appeared under ~/.claude/shipkit/digests"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
