@@ -60,3 +60,5 @@ Rules:
 - `Result` is `PASS`, `FAIL` or `SKIPPED` and nothing else.
 - When the first line is `READY`, leave out "To fix before shipping".
 - The evidence section is not optional: a result with no evidence under it is not a result.
+- Write the plugin's location as `<plugin root>` in commands, never the absolute path: the
+  report is committed, and a path from one machine is noise on every other.
