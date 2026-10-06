@@ -42,6 +42,13 @@ template, what each of the five parts is for, and the ✅/❌ falsifiability exa
    condition (a metric, event, or threshold). If the user offers a vague hedge ("if it doesn't
    work out"), ask for the observable signal that would actually make them reconsider. If there
    genuinely isn't one, record "no clear reversal condition identified" — don't fake it.
+6. **Fired-if** — ask: *can a command check this?* If the condition can be measured from the
+   repository (a line count, a file that exists, a dependency in a lockfile), write a
+   `**Fired-if.**` line after the clause holding a read-only shell command that **exits 0
+   once the condition has come true** — the command is the condition, so `test …` or
+   `grep -q …` follows from the sentence without inverting it. If it cannot be measured
+   from the repository (users, latency, cost), write `**Fired-if.** manual`. Both forms are
+   in @../spec/reference.md; `decision-check.sh` lists and, on request, runs them.
 
 ## Writing the record
 

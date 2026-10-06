@@ -50,6 +50,7 @@ Each `shall` maps to one acceptance test — that 1:1 mapping is the whole reaso
 **Decision.** We chose <option>.
 **Falsifiability.** We would reverse this if <concrete, checkable condition — a metric, event,
 or threshold>.
+**Fired-if.** `<command that exits 0 once the condition has come true>` — or `manual`; optional
 ```
 
 ### The five parts, and why each is there
@@ -77,6 +78,30 @@ later*. It **must** be an observable condition — a metric, an event, or a thre
 A vague hedge is not a falsifiability clause — rewrite it or the record is incomplete. If you
 genuinely cannot state a reversing condition, say so explicitly ("no clear reversal condition
 identified") rather than faking one.
+
+### The `Fired-if` line (optional)
+
+A clause is text, and nobody re-reads old records to check it. When the condition can be
+measured from the repository, add one line after the clause holding a shell command that
+**exits 0 once the condition has come true** — the command *is* the condition, so `test …`
+or `grep -q …` composes straight from the sentence. Exit 1 means it still holds; anything
+above 1 is an error.
+
+```markdown
+**Falsifiability.** We would reverse this if the routes file passes 500 lines.
+**Fired-if.** `test "$(wc -l < config/routes.rb)" -gt 500`
+```
+
+When it cannot be measured from the repository (user counts, latency, cost), write the word:
+
+```markdown
+**Fired-if.** manual
+```
+
+Read-only commands only. `decision-check.sh <project-dir>` lists every command with its
+record and runs nothing; `--run` runs them from the project directory and prints `FIRED`,
+`HOLDS`, `MANUAL` or `ERROR` for each decision. The commands come from the repository: read
+them before using `--run` in one you do not trust. Nothing runs them from a hook.
 
 ### Where records live
 

@@ -3,7 +3,7 @@
 One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** The `Fired-if` line (S6-T1) → REQ-1, REQ-2, REQ-3
+- [x] **T1** The `Fired-if` line (S6-T1) → REQ-1, REQ-2, REQ-3
   - Files: plugins/shipkit/skills/spec/reference.md, plugins/shipkit/skills/decide/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check "fired-if-template" (the template shows both forms); lint check 8a for the budget
   - After: none

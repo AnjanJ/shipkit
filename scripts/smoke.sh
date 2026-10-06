@@ -1154,6 +1154,22 @@ if printf '%s\n' "$cr_a" | grep -qF "$cr_line" && ! printf '%s\n' "$cr_b" | grep
   pass "compact-reminder (source compact → the line; startup or no input → no line, hook still runs)"
 else failc "compact-reminder" "compact: [$cr_a] startup: [$cr_b] none: [$cr_c]"; fi
 
+# 34. fired-if-template: the decision-record template shows the optional Fired-if line in
+# both forms — a command that exits 0 once the condition has come true, and `manual` — and
+# the three always-on rules still fit the budget (spec: .shipkit/specs/decisions-and-digest/).
+# No claude needed. Cites: decisions-and-digest/REQ-1 decisions-and-digest/REQ-3
+ft_ref="$COPY/skills/spec/reference.md"
+ft_cmd=$(grep -c '^\*\*Fired-if\.\*\* `test ' "$ft_ref")
+ft_man=$(grep -c '^\*\*Fired-if\.\*\* manual$' "$ft_ref")
+ft_after=$(awk '/^\*\*Falsifiability\.\*\*/{f=NR} /^\*\*Fired-if\.\*\* `test /{if (f && NR > f && NR - f <= 3) ok=1} END{print ok+0}' "$ft_ref")
+if [ "$ft_cmd" -ge 1 ] && [ "$ft_man" -ge 1 ] && [ "$ft_after" -eq 1 ]; then
+  pass "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
+else failc "fired-if-template" "command-form lines: $ft_cmd, manual-form lines: $ft_man, command after a clause: $ft_after"; fi
+# measured on $CORE, not $COPY: check 1 appended a codeword to the copy's decisions.md
+ft_bytes=$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')
+if [ "$ft_bytes" -le 3000 ]; then pass "fired-if-template (the three always-on rules total $ft_bytes bytes, at most 3000)"
+else failc "fired-if-template" "the three always-on rules total $ft_bytes bytes, over 3000"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
