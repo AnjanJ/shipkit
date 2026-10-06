@@ -4,7 +4,7 @@ One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number. **T1 ends with a stop:**
 the owner decides every `cut` row before T2 starts (A8).
 
-- [ ] **T1** The audit table (S7-T1) → REQ-1, REQ-2, REQ-3
+- [x] **T1** The audit table (S7-T1) → REQ-1, REQ-2, REQ-3
   - Files: docs/design/trim-audit-4.0.md
   - Test: reading — one row per item (6 + 16 + 7 + 1 = 30 rows), four columns, (c) marked where not measured, the map row cites decision 0001
   - After: none

@@ -2,7 +2,7 @@
 
 > Written 2026-10-06 against shipkit 3.7.0 at `568338e`. **This document proposes and changes
 > nothing.** Every `cut` row needs the owner's yes before S7-T2 touches it (A8). Spec:
-> `.shipkit/specs/trim-and-docs/` (REQ-1 to REQ-3).
+> `.shipkit/specs/trim-and-docs/` (REQ-1 to REQ-3). The owner's decisions are at the end.
 
 ## The rule for a line
 
@@ -92,6 +92,22 @@ loads when invoked. Sizes are all `.md` files in the skill's folder.
 30 rows. The 22 rules total 505 lines / 22,191 bytes today; after the proposed trims and cuts,
 about 190 lines. Every row's `trim` is applied in S7-T2 regardless; **only a `cut` row with the
 owner's yes is removed.** If none is approved, the release is 3.8.0.
+
+## The owner's decisions (2026-10-06)
+
+Every `cut` row was shown to the owner and answered the same day:
+
+| Row | Decision |
+|---|---|
+| `rules/security.md` | **yes, cut** |
+| `stacks/elixir/elixir.md` | **yes, cut** |
+| `stacks/go/go.md` | **yes, cut** |
+| `stacks/python/python.md` | **yes, cut** |
+| `shipkit-workflows/skills/code-review-standards/` | **yes, cut**; the AI/LLM-code lens moves to `GUIDE.md` |
+| the map as the default | not a cut this sprint; pending decision 0001's re-test |
+
+Five cuts approved, so Sprint 7 releases as **4.0.0**. S7-T2 applies these five and the
+sixteen trims, and nothing else.
 
 ## What this audit did not measure
 
