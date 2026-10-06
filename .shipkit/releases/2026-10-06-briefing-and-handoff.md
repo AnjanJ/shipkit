@@ -19,7 +19,7 @@ Requirements: 16 (4 waived as `[untested]`).
 ## Evidence
 
 ### 1. Spec check, as shipped
-`sh /Users/anjan/code/shipkit/plugins/shipkit/scripts/spec-check.sh . briefing-and-handoff --as-shipped` → exit 0
+`sh <plugin root>/scripts/spec-check.sh . briefing-and-handoff --as-shipped` → exit 0
 ```
 WAIVED briefing-and-handoff REQ-11
 WAIVED briefing-and-handoff REQ-12
