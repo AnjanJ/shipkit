@@ -19,6 +19,7 @@ NOT READY
 | 5 | Migration rollback | PASS | no migration in the diff |
 | 6 | Decisions | PASS | 1 decision, reversal condition concrete |
 | 7 | Clean tree | PASS | nothing uncommitted |
+| 8 | Decisions fired | PASS | 1 Fired-if command, HOLDS |
 
 Requirements: 3 (1 waived as `[untested]`).
 
@@ -52,11 +53,15 @@ Requirements: 3 (1 waived as `[untested]`).
 `git status --porcelain`, captured before step 1
 <its output, or "empty">
 <a note on any files the gate's own test run left behind>
+
+### 8. Decisions fired
+`sh <plugin root>/scripts/decision-check.sh . --run` → exit 0
+<the script's output: every FIRED, HOLDS, MANUAL and ERROR line, and its summary line>
 ```
 
 Rules:
 
-- One row per step, always all seven, numbered 1 to 7 in the first column.
+- One row per step, always all eight, numbered 1 to 8 in the first column.
 - `Result` is `PASS`, `FAIL` or `SKIPPED` and nothing else.
 - When the first line is `READY`, leave out "To fix before shipping".
 - The evidence section is not optional: a result with no evidence under it is not a result.

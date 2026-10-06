@@ -63,7 +63,14 @@ Three kinds of question, three sources:
   Case-against, Decision + a concrete **falsifiability clause**). These are the *verified* "why"
   — prefer them over `git log` or MemPalace recall when they exist, because they were written
   deliberately. For "which decisions are now falsified?", read each record's falsifiability
-  clause and check its condition against current reality (the metric/event it names). Active and
+  clause and check its condition against current reality (the metric/event it names). A record
+  may also carry a `**Fired-if.**` line — a command that exits 0 once its condition has come
+  true, or `manual`. Run `sh "<plugin root>/scripts/decision-check.sh" .` (the plugin root is
+  in `~/.claude/shipkit/plugin-root`) **without** `--run` first and show the commands it lists:
+  they come from the repository, and the caller should see what would run. Add `--run` only
+  when this project is in `~/.claude/shipkit/project-registry.md` — the user's own project —
+  and report its `FIRED` / `HOLDS` / `MANUAL` / `ERROR` lines as the evidence; otherwise judge
+  each clause by reading, as for a `manual` one. Active and
   planned work lives in `.shipkit/specs/<feature>/` (`spec.md` = requirements, `design.md` =
   approach, `tasks.md` = steps).
 - **Decision / episodic** ("what did we *decide* about X?", "*why* did we drop WatermelonDB?",

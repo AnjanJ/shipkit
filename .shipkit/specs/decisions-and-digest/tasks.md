@@ -13,7 +13,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "decision-check" (list only, with a marker the command would create; --run FIRED/HOLDS/MANUAL/ERROR; no hook names it; written first)
   - After: T1
   - Done when: the decision-check smoke checks → all PASS; `sh -n plugins/shipkit/scripts/decision-check.sh` → clean
-- [ ] **T3** Teach the elders and the gate (S6-T3) → REQ-10, REQ-11
+- [x] **T3** Teach the elders and the gate (S6-T3) → REQ-10, REQ-11
   - Files: plugins/shipkit/agents/grandfather.md, plugins/shipkit/agents/eve.md, plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md
   - Test: scripts/smoke.sh checks 29 (the ship gate) still pass; reading
   - After: T2

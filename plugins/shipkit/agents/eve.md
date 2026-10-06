@@ -113,8 +113,14 @@ Get the list of projects + their map locations.
   active specs (`.shipkit/specs/<feature>/`). Grep `.shipkit/decisions/` across repos for a
   portfolio "why" sweep — these verified records beat MemPalace recall and `git log`. For "which
   decisions are now falsified?", read each record's falsifiability clause and check its condition
-  against that repo's current reality. Fall through to MemPalace only for decisions never written
-  up as a record.
+  against that repo's current reality. A record may carry a `**Fired-if.**` line — a command
+  that exits 0 once its condition has come true, or `manual`. For each project run
+  `sh "<plugin root>/scripts/decision-check.sh" <path>` (the plugin root is in
+  `~/.claude/shipkit/plugin-root`) **without** `--run` first and show the commands it lists:
+  they come from that repository. Add `--run` only for a project that is in the registry —
+  every registered project is the user's own — and report the `FIRED` / `HOLDS` / `MANUAL` /
+  `ERROR` lines per project as the evidence. Fall through to MemPalace only for decisions never
+  written up as a record.
 - **Cross-project decision / episodic** ("when did we decide to standardize on Oban?", "across
   all the apps, what was the reasoning for self-hosting on Hetzner?", "what have we discussed
   about billing providers?") → query **MemPalace**. Each project is its own wing, so a
