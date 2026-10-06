@@ -8,7 +8,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "fired-if-template" (the template shows both forms); lint check 8a for the budget
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the fired-if-template check → PASS
-- [ ] **T2** `decision-check.sh` (S6-T2) → REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
+- [x] **T2** `decision-check.sh` (S6-T2) → REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
   - Files: plugins/shipkit/scripts/decision-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh section "decision-check" (list only, with a marker the command would create; --run FIRED/HOLDS/MANUAL/ERROR; no hook names it; written first)
   - After: T1

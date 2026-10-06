@@ -1170,6 +1170,69 @@ ft_bytes=$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rule
 if [ "$ft_bytes" -le 3000 ]; then pass "fired-if-template (the three always-on rules total $ft_bytes bytes, at most 3000)"
 else failc "fired-if-template" "the three always-on rules total $ft_bytes bytes, over 3000"; fi
 
+# 35. decision-check: Fired-if commands are listed by default and run only with --run; exit 0
+# from a command is FIRED, 1 is HOLDS, above 1 is ERROR, `manual` is MANUAL with the clause;
+# the script exits 1 only when something FIRED; no hook names it
+# (spec: .shipkit/specs/decisions-and-digest/). No claude needed. Cites: decisions-and-digest/REQ-4
+# decisions-and-digest/REQ-5 decisions-and-digest/REQ-6 decisions-and-digest/REQ-7
+# decisions-and-digest/REQ-8 decisions-and-digest/REQ-9
+DCS="$COPY/scripts/decision-check.sh"
+dcrec() {  # dcrec <file> <title> <clause> <fired-if payload> → one standalone decision record
+  printf '# %s\n\n**Context.** c\n\n**Alternatives.**\n1. a\n2. b\n\n**Case for a.** x\n\n**Case against a.** y\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if %s.\n**Fired-if.** %s\n' "$2" "$3" "$4" > "$1"
+}
+if [ ! -f "$DCS" ]; then
+  failc "decision-check" "scripts/decision-check.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$DCS" 2>/dev/null; then pass "decision-check (POSIX sh: sh -n is clean)"
+  else failc "decision-check" "sh -n reports a syntax error"; fi
+  if grep -q 'read them before\|read the commands before\|before using --run\|before `--run`' "$DCS" \
+     && sed -n 1,40p "$DCS" | grep -q 'come from the repository'; then
+    pass "decision-check (the header says the commands come from the repository and to read them before --run)"
+  else failc "decision-check" "the header comment lacks the warning about untrusted repositories"; fi
+  DC="$WORK/dc"; mkdir -p "$DC/.shipkit/decisions" "$DC/.shipkit/specs/demo"
+  (cd "$DC" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  dcrec "$DC/.shipkit/decisions/0001-fired.md" "Fired one" "the marker exists" '`touch dc-marker`'
+  dcrec "$DC/.shipkit/decisions/0002-holds.md" "Holds one" "a file called never appears" '`test -f never`'
+  dcrec "$DC/.shipkit/decisions/0003-manual.md" "Manual one" "the routes file passes 500 lines" 'manual'
+  printf '# Design: demo\n\n## Decision: Exit three   (→ REQ-1)\n\n**Context.** c\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if the tool breaks.\n**Fired-if.** `sh -c "exit 3"`\n\n## Decision: No line here   (→ REQ-2)\n\n**Decision.** We chose b.\n**Falsifiability.** We would reverse this if the sky falls.\n' > "$DC/.shipkit/specs/demo/design.md"
+  # a. no flag: every command and its record listed, nothing run, exit 0
+  out=$(sh "$DCS" "$DC" 2>"$WORK/dc.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ ! -e "$DC/dc-marker" ] \
+     && printf '%s\n' "$out" | grep -q '0001-fired\.md.*touch dc-marker' \
+     && printf '%s\n' "$out" | grep -q '0002-holds\.md.*test -f never' \
+     && printf '%s\n' "$out" | grep -q '0003-manual\.md.*manual' \
+     && printf '%s\n' "$out" | grep -q 'demo/design\.md.*Exit three.*exit 3' \
+     && ! printf '%s\n' "$out" | grep -q 'No line here' \
+     && ! printf '%s\n' "$out" | grep -q '^FIRED\|^HOLDS'; then
+    pass "decision-check (no flag → four commands listed with their records, none run, exit 0)"
+  else failc "decision-check" "list: rc=$rc marker=$([ -e "$DC/dc-marker" ] && echo yes || echo no) out: $out $(cat "$WORK/dc.err")"; fi
+  # b. --run: FIRED / HOLDS / MANUAL with the clause / ERROR with the exit status; exit 1
+  out=$(cd "$WORK" && sh "$DCS" "$DC" --run 2>"$WORK/dc.err"); rc=$?
+  if [ "$rc" -eq 1 ] && [ -e "$DC/dc-marker" ] \
+     && printf '%s\n' "$out" | grep -q '^FIRED .*0001-fired\.md' \
+     && printf '%s\n' "$out" | grep -q '^HOLDS .*0002-holds\.md' \
+     && printf '%s\n' "$out" | grep -q '^MANUAL .*0003-manual\.md.*the routes file passes 500 lines' \
+     && printf '%s\n' "$out" | grep -q '^ERROR .*demo/design\.md.*Exit three.*exit 3'; then
+    pass "decision-check (--run → FIRED, HOLDS, MANUAL with the clause, ERROR (exit 3); the command ran from the project; exit 1)"
+  else failc "decision-check" "run: rc=$rc marker=$([ -e "$DC/dc-marker" ] && echo yes || echo no) out: $out $(cat "$WORK/dc.err")"; fi
+  # c. nothing fired → exit 0, even with an ERROR and a MANUAL
+  rm -f "$DC/.shipkit/decisions/0001-fired.md"
+  out=$(sh "$DCS" "$DC" --run 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^FIRED'; then
+    pass "decision-check (--run with nothing fired → exit 0)"
+  else failc "decision-check" "nothing fired: rc=$rc out: $out"; fi
+  # d. a project with no records at all → exit 0 and no finding lines
+  DN="$WORK/dc-none"; mkdir -p "$DN"
+  out=$(sh "$DCS" "$DN" --run 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^FIRED\|^HOLDS\|^MANUAL\|^ERROR'; then
+    pass "decision-check (no .shipkit/ → exit 0, nothing found)"
+  else failc "decision-check" "no records: rc=$rc out: $out"; fi
+  # e. no hook calls it
+  if ! grep -rq 'decision-check' "$COPY/hooks" && ! grep -q 'decision-check' "$COPY/scripts/session-start.sh"; then
+    pass "decision-check (no hook and not the session hook names decision-check)"
+  else failc "decision-check" "a hook names decision-check: $(grep -rn 'decision-check' "$COPY/hooks" "$COPY/scripts/session-start.sh")"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
