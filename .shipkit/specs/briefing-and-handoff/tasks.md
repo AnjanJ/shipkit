@@ -13,7 +13,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh check "handoff-file" (the skill, run headless with the session's facts given, writes the five headings and a one-line Next step)
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the handoff-file check → PASS
-- [ ] **T3** Close the loop (S5-T3) → REQ-14
+- [x] **T3** Close the loop (S5-T3) → REQ-14
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check "handoff-loop" (a fresh session asked "what should I do next?" repeats the Next step)
   - After: T2

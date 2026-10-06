@@ -1127,6 +1127,21 @@ else
   failc "handoff-file" "headings=[$hf_heads] next-lines=$hf_next lines=$hf_lines written=$hf_written dirty=[$hf_dirty] — model said: $(tail -4 "$WORK/handoff.out")"
 fi
 
+# 32. handoff-loop: a fresh session in the project from check 31 is asked what to do next,
+# and answers from the note's Next step, which the briefing put in its context
+# (spec: .shipkit/specs/briefing-and-handoff/). Cites: briefing-and-handoff/REQ-14
+if [ -f "$hf" ]; then
+  hl_next=$(awk '/^## /{on=($0 ~ /^## Next step/); next} on && NF{print; exit}' "$hf")
+  hl_out=$(cd "$HF" && claude --plugin-dir "$COPY" --model haiku \
+    -p "What should I do next in this project? Answer in one or two sentences from what is already in your context. Do not use tools." </dev/null 2>/dev/null | tail -6)
+  case "$hl_out" in
+    *T2*test*|*test*T2*) pass "handoff-loop (a new session answers 'what next?' with the handoff's next step)";;
+    *) failc "handoff-loop" "next step was [$hl_next]; the reply was: $hl_out";;
+  esac
+else
+  failc "handoff-loop" "no state.md from check 31 to read"
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
