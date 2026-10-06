@@ -576,6 +576,19 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
+# --- 17. The eval budget: plugins/shipkit/evals/ stays under 100 KB ------------------
+# Proves map-on-trial/REQ-7. Decision A9 of the quality-gate plan set the ceiling in 3.2.0 and
+# nothing enforced it; the XL fixture of 4.1.0 is generated at scaffold time precisely to stay
+# inside, and a committed fixture would be the first thing to breach it.
+
+EVALS_MAX_BYTES = 102400
+
+_evals_dir = CORE / "evals"
+_evals_bytes = sum(p.stat().st_size for p in _evals_dir.rglob("*") if p.is_file())
+if _evals_bytes > EVALS_MAX_BYTES:
+    err(_evals_dir, f"{_evals_bytes:,} bytes; the limit is {EVALS_MAX_BYTES:,} — generate "
+                    "fixtures at scaffold time instead of committing them")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

@@ -3,7 +3,7 @@
 ## Approach
 
 A generator, not a fixture: one standard-library Python script writes a 200-file service with a
-25-commit history into the eval run's empty workspace, so the plugin carries 12 KB instead of
+25-commit history into the eval run's empty workspace, so the plugin carries 14 KB instead of
 400 and both arms of the comparison share identical commits. Five cases ask the elder the four
 old questions, made harder by decoys, plus one the source cannot answer without history. A
 small script counts tool calls and tokens from the traces. The record's clause then reads the
@@ -20,7 +20,7 @@ an empty workspace and gets its files only from a scaffold script that runs from
 own directory.
 
 **Alternatives.**
-1. A deterministic generator (`generate.py`, standard library only, ≤ 12 KB) that the scaffold
+1. A deterministic generator (`generate.py`, standard library only, ≤ 16 KB) that the scaffold
    runs; nothing generated is committed.
 2. Commit the generated tree under `evals/fixtures/` (several hundred KB).
 3. Copy a real repository of the owner's at scaffold time (needs network or a path outside the

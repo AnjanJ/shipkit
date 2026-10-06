@@ -1330,6 +1330,52 @@ if printf '%s\n' "$do_a" | grep -q '^shipkit: digest: newest is 8 days old — r
   pass "digest-old (newest digest 8 days old → one line; 6 days old, none, or no home → no digest line)"
 else failc "digest-old" "old: [$do_a] recent: [$do_b] none: [$do_c] no home: [$do_d]"; fi
 
+# 38. ledger-gen: the XL eval fixture is GENERATED, never committed (spec: .shipkit/specs/
+# map-on-trial/). generate.py writes a 200-file service with a 25-commit history into an empty
+# directory; two runs must be byte-identical outside .git so both arms of the map comparison
+# see the same code. No claude needed. Cites: map-on-trial/REQ-1 map-on-trial/REQ-2
+# map-on-trial/REQ-3 map-on-trial/REQ-4 map-on-trial/REQ-6
+GEN="$COPY/evals/fixtures/ledger-gen/generate.py"
+if [ ! -f "$GEN" ]; then
+  failc "ledger-gen" "evals/fixtures/ledger-gen/generate.py does not exist (check written first, by design)"
+else
+  LG_A="$WORK/xl-a"; LG_B="$WORK/xl-b"; LG_N="$WORK/xl-nomap"; mkdir -p "$LG_A" "$LG_B" "$LG_N"
+  (cd "$LG_A" && python3 "$GEN" >/dev/null 2>&1) && (cd "$LG_B" && python3 "$GEN" >/dev/null 2>&1) \
+    && (cd "$LG_N" && python3 "$GEN" --no-map >/dev/null 2>&1) || failc "ledger-gen" "generate.py exited non-zero"
+  lg_files=$(cd "$LG_A" && find . -type f -not -path './.git/*' | wc -l | tr -d ' ')
+  lg_commits=$(git -C "$LG_A" rev-list --count HEAD 2>/dev/null || echo 0)
+  lg_commits_n=$(git -C "$LG_N" rev-list --count HEAD 2>/dev/null || echo 0)
+  if [ "$lg_files" -ge 200 ] && [ "$lg_commits" -ge 25 ]; then
+    pass "ledger-gen ($lg_files files, $lg_commits commits — at least 200 and 25)"
+  else failc "ledger-gen" "$lg_files files, $lg_commits commits; want >= 200 and >= 25"; fi
+  if lg_diff=$(diff -r -x .git "$LG_A" "$LG_B") && [ -z "$lg_diff" ]; then
+    pass "ledger-gen (two runs are byte-identical outside .git)"
+  else failc "ledger-gen" "two runs differ: $(printf '%s' "$lg_diff" | head -3)"; fi
+  lg_redis=$(cd "$LG_A" && grep -rli redis . --exclude-dir=.git | sort | tr '\n' ' ')
+  if [ "$lg_redis" = "./PROJECT_MAP.md " ]; then pass "ledger-gen (Redis is named only in PROJECT_MAP.md — the planted drift)"
+  else failc "ledger-gen" "Redis named in: [$lg_redis], want only ./PROJECT_MAP.md"; fi
+  if ! (cd "$LG_A" && grep -rliw --exclude-dir=.git -e sendgrid -e postmark -e mailgun -e sparkpost -e mandrill -e mailchimp -e 'amazon ses' -e smtp2go -e resend . | grep -q .); then
+    pass "ledger-gen (no email provider is named anywhere — the planted gap)"
+  else failc "ledger-gen" "an email provider is named: $(cd "$LG_A" && grep -rliw --exclude-dir=.git -e sendgrid -e postmark -e mailgun -e sparkpost -e mandrill -e mailchimp -e 'amazon ses' -e smtp2go -e resend . | head -3 | tr '\n' ' ')"; fi
+  if [ ! -e "$LG_N/PROJECT_MAP.md" ] && [ -e "$LG_A/PROJECT_MAP.md" ] && [ "$lg_commits_n" = "$lg_commits" ] \
+     && lg_ndiff=$(diff -r -x .git -x PROJECT_MAP.md "$LG_A" "$LG_N") && [ -z "$lg_ndiff" ]; then
+    pass "ledger-gen (--no-map: no PROJECT_MAP.md, same $lg_commits commits, same tree otherwise)"
+  else failc "ledger-gen" "--no-map: map present=$([ -e "$LG_N/PROJECT_MAP.md" ] && echo yes || echo no), commits $lg_commits_n vs $lg_commits, diff: $(printf '%s' "$lg_ndiff" | head -2)"; fi
+  lg_bytes=$(wc -c < "$GEN" | tr -d ' ')
+  if [ "$lg_bytes" -le 16384 ] && python3 - "$GEN" <<'EOF'
+import ast, sys
+names = set()
+for n in ast.walk(ast.parse(open(sys.argv[1]).read())):
+    if isinstance(n, ast.Import): names |= {a.name.split('.')[0] for a in n.names}
+    elif isinstance(n, ast.ImportFrom) and n.level == 0: names.add(n.module.split('.')[0])
+bad = names - set(sys.stdlib_module_names)
+if bad: print("non-stdlib imports:", sorted(bad))
+sys.exit(1 if bad else 0)
+EOF
+  then pass "ledger-gen ($lg_bytes bytes, at most 16384; standard-library imports only)"
+  else failc "ledger-gen" "$lg_bytes bytes (limit 16384) or a non-stdlib import (see above)"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

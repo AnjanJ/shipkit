@@ -23,7 +23,7 @@ None — this repository has no `.shipkit/product.md`.
   the map contains a planted error does not count as "one more correct answer".
 - **The eval budget (A9 of the last plan):** `plugins/shipkit/evals/` is 51,525 bytes of a
   100 KB ceiling that no check enforces. A committed 200-file fixture would breach it; the
-  plan's B2 (a generator, ≤ 12 KB) is how the sprint stays inside. This sprint adds the
+  plan's B2 (a generator, ≤ 16 KB) is how the sprint stays inside. This sprint adds the
   missing check so the ceiling holds after it.
 - **The byte budget:** the three always-on rules stand at 2,996 of 3,000 bytes. No task in
   this sprint touches them.

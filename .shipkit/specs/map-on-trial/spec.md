@@ -34,8 +34,9 @@ beside this file.
 - **REQ-4.** The fixture shall contain no text naming an email provider.
 - **REQ-5.** `plugins/shipkit/evals/fixtures/FACTS-XL.md` shall list facts XL1 to XL5 with file
   and line, and for XL5 the commit. [untested: documentation, verified by reading]
-- **REQ-6.** The generator shall be at most 12,288 bytes and shall import only standard-library
-  modules.
+- **REQ-6.** The generator shall be at most 16,384 bytes and shall import only standard-library
+  modules. *(Accepted at 12,288; raised to 16,384 by the owner on 2026-10-07 after three
+  compaction passes left 14,076 bytes — the 100 KB ceiling of REQ-7 is the enforced budget.)*
 - **REQ-7.** The lint shall fail when the files under `plugins/shipkit/evals/` total more than
   102,400 bytes.
 

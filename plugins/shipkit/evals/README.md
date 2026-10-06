@@ -101,6 +101,17 @@ The script runs before Claude starts, and only when the command passes `--scaffo
 (`scripts/evals.sh` does). `context.add_dirs` cannot do this job: it refuses any path outside
 the case's own folder ("escapes the case directory"), so it cannot point at a shared fixture.
 
+### The XL fixture is generated, not copied
+
+`fixtures/ledger-gen/generate.py` writes `ledger` — a 224-file, 27-commit plain-Python service
+— into the run's empty workspace. Decision 0001 asked for a fixture of 200+ files with a
+history question before the map's default is judged; committing one would breach the 100 KB
+budget for this directory (lint check 17), so the fixture costs 14 KB of generator instead.
+It is deterministic (fixed dates, no clock): two runs are byte-identical outside `.git`, which
+the `ledger-gen` smoke check proves. `--no-map` omits `PROJECT_MAP.md`; the map is left
+untracked in both arms so the git history is the same with and without it. The five planted
+facts, their decoys and the rules for editing the generator are in `fixtures/FACTS-XL.md`.
+
 ## Cases
 
 Each case has exactly one scored grader, so a run is a plain pass or fail and "two of three

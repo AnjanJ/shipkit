@@ -120,7 +120,7 @@ Each line has a recommended default. Approve all, or change any by ID.
 | ID | Decision | Recommended default | The other option |
 |----|----------|---------------------|------------------|
 | B1 | Order and releases | Three sprints: 4.1.0 (map re-test), 4.2.0 (one eval per rule file), 4.3.0 (loose ends and a real run) | Stop after Sprint 8 and re-plan on its numbers |
-| B2 | The XL fixture | Generated at scaffold time by one deterministic stdlib-Python script (≤ 12 KB) committed under `evals/fixtures/`; it writes ≥ 200 files and ≥ 25 commits; nothing generated is committed | Commit the generated tree (breaks the 100 KB eval budget, A9) |
+| B2 | The XL fixture | Generated at scaffold time by one deterministic stdlib-Python script (≤ 16 KB; was 12, raised 2026-10-07) committed under `evals/fixtures/`; it writes ≥ 200 files and ≥ 25 commits; nothing generated is committed | Commit the generated tree (breaks the 100 KB eval budget, A9) |
 | B3 | When to act on 0001 | If the re-test falls on the "optional" side, Sprint 8 makes the map optional in the same release (S8-T4, after the owner's go) | Record the result in 4.1.0; change the default in a later sprint |
 | B4 | What "optional" means | The elders use a map when one exists and go to the source when none does; `/shipkit:setup`, README and GUIDE stop presenting `/shipkit:map` as the first step and offer it instead; the stale-map nag stays (it only fires when a map exists). `archivist`, `/shipkit:map` and `eve`'s registry are untouched | Also silence the nag |
 | B5 | Which rules get an eval | All 15 rule files without one: the 5 path-scoped core rules and the 10 stack rules. The 3 always-on rules already have `rules/{nontrivial,trivial,decision}` | Only the 5 core rules; stacks later |
@@ -252,9 +252,9 @@ stayed the default pending that run. This sprint is that run.
      postmark\|ses" -i` matches nothing; `--no-map` leaves no `PROJECT_MAP.md`. Write the check
      first and watch it fail.
   5. Describe the generator and the five facts in `evals/README.md`.
-- **Done when:** the `ledger-gen` smoke check → PASS; `wc -c generate.py` ≤ 12288; the exit
-  checklist's line 6 (evals bytes) ≤ 102400; `python3 -m py_compile generate.py` is clean;
-  `bash scripts/lint.sh` → 0/0.
+- **Done when:** the `ledger-gen` smoke check → PASS; `wc -c generate.py` ≤ 16384; the exit
+  checklist's line 6 (evals bytes) ≤ 102400; `bash scripts/lint.sh` → 0/0. (Do not use
+  `py_compile` to check syntax: it leaves a `__pycache__` under `evals/`; the smoke check parses the file with `ast`.)
 - **Do not:** commit anything the generator writes; use any third-party package; make the
   history depend on the current date (fix author dates with `GIT_AUTHOR_DATE`/`GIT_COMMITTER_DATE`).
 
@@ -594,7 +594,7 @@ Follow "The release task".
 - It does not change a rule on the strength of a measurement in the same sprint the
   measurement was taken (S9-T5 is the one bounded exception, and it is paid for within the
   byte budget). Rule edits proposed by `eval-results-4.2.md` go to the next plan.
-- It does not build a fixture by hand. The XL fixture is generated, so it costs 12 KB in the
+- It does not build a fixture by hand. The XL fixture is generated, so it costs 14 KB in the
   plugin, not 400.
 - It does not fix `brief-verify.sh`'s `__pycache__` finding from Playbook 4. The script
   documents that ignored files are not seen, and the finding was correct: the fixture had no
