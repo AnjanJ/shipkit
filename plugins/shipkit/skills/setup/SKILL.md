@@ -176,13 +176,19 @@ directories themselves — deliberately, not as a side effect of running setup.
 ### Step 3: Keep the snapshots out of git
 
 These directories can contain an entire `.claude/`, including local settings. Check the
-project's `.gitignore` for the three shipkit artifacts:
+project's `.gitignore` for the three shipkit artifacts, and for the handoff note:
 
 ```
 .shipkit-baseline/
 .shipkit-backup-*/
 .shipkit-recovery-*/
+.shipkit/state.md
 ```
+
+`.shipkit/state.md` is the note `/shipkit:handoff` leaves for the next session on this
+machine. It is ignored by default — it describes uncommitted work and may mention things that
+do not belong in the repository — and a user who wants it to follow them across machines
+simply leaves it out of `.gitignore`; say so when you offer.
 
 If the project has a `.gitignore` and any are missing, offer to add them. If it has none, say so
 and let the user decide — do not create a `.gitignore` uninvited. If they decline, warn once that

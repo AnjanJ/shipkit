@@ -2,6 +2,46 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.6.0] — 2026-10-06
+
+Sprint 5 of the quality-gate plan: a session starts by knowing where things stand and ends by
+leaving a note. Requirements and decision records in
+[`.shipkit/specs/briefing-and-handoff/`](.shipkit/specs/briefing-and-handoff/).
+
+### Added
+
+- **A briefing at session start.** The session hook now ends with at most eight lines
+  (`scripts/briefing.sh`, 800 bytes at most): each open spec with its tasks done and the next
+  one (up to three), a `spec-check` gap count when there is one, the top goal from
+  `.shipkit/product.md`, and the last handoff's date, age in commits and next step. Nothing is
+  printed for a project without `.shipkit/`. It uses no model and never fails the hook.
+- **`/shipkit:handoff`** writes `.shipkit/state.md` — what is in flight and where, what got
+  done, exactly one next step, open questions, traps — in at most 30 lines, replacing the
+  previous note. `/shipkit:setup` offers to add it to `.gitignore`; it is for the next session
+  on this machine, and a user who wants it to travel leaves it out of the ignore list.
+- **After a compaction the hook says so:** `shipkit: context was just compacted — run
+  /shipkit:handoff if work is in flight.` A reminder *before* compaction was not built: the
+  `PreCompact` hook's output does not reach the model (stderr goes to the user, and its
+  system message is discarded), while `SessionStart` runs again after compaction with
+  `source: "compact"` and its output does. The decision record in the spec says what would
+  move it.
+
+### Changed
+
+- `spec-check.sh` reads `tasks.md` in the same `awk` pass as `spec.md` instead of running a
+  `grep` per requirement: the briefing runs it at every session start, and fifty open specs
+  now take about half a second.
+- The session hook reads the one line of JSON Claude Code sends it, with a half-second limit,
+  so a wrapper that gives it a silent pipe cannot hang it.
+- The core plugin has 17 skills.
+
+### What using it for real showed
+
+The gate's first run on this sprint answered `NOT READY` on one requirement: the changelog
+entry it asked for did not exist yet. The release files were written first and the gate run
+again. The handoff loop was closed once for real: a note written by `/shipkit:handoff`, then
+a fresh session asked "what should I do next?" that answered from it.
+
 ## [3.5.0] — 2026-10-06
 
 Sprint 4 of the quality-gate plan: a second pair of eyes that has not seen the implementer's

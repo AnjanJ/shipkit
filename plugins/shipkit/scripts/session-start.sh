@@ -17,6 +17,44 @@
 #      commits behind HEAD (default 20) or a dependency manifest changed since it was
 #      built; one line per accepted spec >= $SHIPKIT_SPEC_STALE_COMMITS (default 15)
 #      commits stale, capped at 3. Silent when fresh.
+#
+#   3. THE BRIEFING, last: scripts/briefing.sh — open specs and their next task, spec-check
+#      gaps, the top goal, the last handoff. At most eight lines, 800 bytes, and nothing
+#      when the project has no .shipkit/. Runs last so its lines are the freshest thing in
+#      context, and runs even when the project is not a git repository.
+
+# briefing.sh is the last thing printed, on every exit path below.
+briefing() {
+  [ -n "$ROOT" ] && [ -f "$ROOT/scripts/briefing.sh" ] && sh "$ROOT/scripts/briefing.sh" 2>/dev/null
+  return 0
+}
+
+# --- 0. Why this session started -------------------------------------------------------
+# Claude Code sends the hook one line of JSON on stdin, with "source": "startup" | "resume"
+# | "clear" | "compact" | "fork". After a compaction the session has just lost its detail,
+# so that is the moment to say "write or read the handoff note". Read one line only, and
+# only when stdin is not a terminal (a person running this by hand must never be left
+# waiting); anything unexpected is simply no line.
+# A plain `read` would hang forever on a pipe nobody writes to (a wrapper script, a test
+# harness), so the read runs in the background and is given half a second.
+HOOK_INPUT=""
+if [ ! -t 0 ]; then
+  _hi=$(mktemp 2>/dev/null) && {
+    # A background job's stdin is /dev/null by default; hand it the real one on fd 3.
+    exec 3<&0
+    ( IFS= read -r _l <&3 2>/dev/null; printf '%s' "$_l" > "$_hi" ) &
+    _rp=$!
+    _i=0
+    while [ "$_i" -lt 5 ] && kill -0 "$_rp" 2>/dev/null; do sleep 0.1; _i=$((_i + 1)); done
+    kill "$_rp" 2>/dev/null; wait "$_rp" 2>/dev/null
+    exec 3<&-
+    HOOK_INPUT=$(cat "$_hi" 2>/dev/null); rm -f "$_hi"
+  }
+fi
+case "$HOOK_INPUT" in
+  *'"source":"compact"'*|*'"source": "compact"'*) COMPACTED=1 ;;
+  *) COMPACTED=0 ;;
+esac
 
 # --- 1. Plugin root ----------------------------------------------------------------
 ROOT="${CLAUDE_PLUGIN_ROOT:-}"
@@ -26,6 +64,7 @@ if [ -z "$ROOT" ]; then
 fi
 if [ -n "$ROOT" ] && [ -d "$ROOT/rules" ]; then
   echo "shipkit: plugin root is $ROOT"
+  [ "$COMPACTED" -eq 1 ] && echo "shipkit: context was just compacted — run /shipkit:handoff if work is in flight."
   if mkdir -p "$HOME/.claude/shipkit" 2>/dev/null; then
     printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root" 2>/dev/null || true
   fi
@@ -93,7 +132,7 @@ if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-man
 fi
 
 # --- 2. Freshness nudges (git only) -------------------------------------------------
-git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+git rev-parse --git-dir >/dev/null 2>&1 || { briefing; exit 0; }
 
 THRESHOLD="${SHIPKIT_MAP_STALE_COMMITS:-20}"
 
@@ -223,4 +262,5 @@ if [ -d .shipkit/specs ]; then
     fi
   fi
 fi
+briefing
 exit 0
