@@ -523,6 +523,33 @@ for sp in sorted((CORE / "scripts").glob("*.sh")):
             err(sp, f"line {i}: bare `mktemp` ignores TMPDIR on macOS — pass a template: "
                     "mktemp \"${TMPDIR:-/tmp}/shipkit.XXXXXX\"")
 
+# --- 15. The README: short, current, and naming only skills that exist -----------
+# Proves trim-and-docs/REQ-10 (no version history above Install), trim-and-docs/REQ-12 (every
+# command named exists) and trim-and-docs/REQ-13 (250 lines or fewer). History belongs in the
+# changelog; a README that names a cut skill is the first thing a new user tries and the first
+# thing that fails.
+
+README_MAX_LINES = 250
+
+readme = ROOT / "README.md"
+readme_lines = readme.read_text(encoding="utf-8").splitlines()
+if len(readme_lines) > README_MAX_LINES:
+    err(readme, f"{len(readme_lines)} lines; the limit is {README_MAX_LINES} — move history to "
+                "CHANGELOG.md and detail to GUIDE.md")
+install_at = next((i for i, ln in enumerate(readme_lines) if ln.startswith("## Install")), None)
+if install_at is None:
+    err(readme, "no '## Install' heading")
+else:
+    for i, ln in enumerate(readme_lines[:install_at], 1):
+        if re.search(r"\bNew in \d|\(\d\.\d+ (added|made|refocused)", ln):
+            err(readme, f"line {i}: version history above the Install section — it belongs in "
+                        "CHANGELOG.md")
+_skill_dirs = {p.parent.name for r in PLUGIN_ROOTS for p in r.glob("skills/*/SKILL.md")}
+for i, ln in enumerate(readme_lines, 1):
+    for m in re.finditer(r"/shipkit(?:-workflows)?:([a-z][a-z0-9-]*)", ln):
+        if m.group(1) not in _skill_dirs:
+            err(readme, f"line {i}: names `{m.group(0)}` but no such skill exists")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

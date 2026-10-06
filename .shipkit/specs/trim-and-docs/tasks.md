@@ -14,7 +14,7 @@ the owner decides every `cut` row before T2 starts (A8).
   - Test: scripts/lint.py checks for the 40-line, 300-character and bare-mktemp limits (written first, red on today's tree: 2 rules over 40 lines, 8 descriptions over 300 characters, 7 scripts with bare mktemp)
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh -j 4` → no case below its 3.7.0 result; `cat plugins/shipkit/rules/{shipkit,spec-driven,decisions}.md | wc -c` ≤ 3000
-- [ ] **T3** Rewrite the README (S7-T3) → REQ-10, REQ-11, REQ-12, REQ-13, REQ-14
+- [x] **T3** Rewrite the README (S7-T3) → REQ-10, REQ-11, REQ-12, REQ-13, REQ-14
   - Files: README.md, scripts/lint.py
   - Test: scripts/lint.py checks that every skill named in README.md exists, README.md is ≤ 250 lines, and no "New in" line sits above the Install heading (written first, red on today's README: 348 lines, "New in 2.9" above Install)
   - After: T2
