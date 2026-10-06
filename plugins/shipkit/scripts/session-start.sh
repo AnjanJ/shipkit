@@ -17,6 +17,17 @@
 #      commits behind HEAD (default 20) or a dependency manifest changed since it was
 #      built; one line per accepted spec >= $SHIPKIT_SPEC_STALE_COMMITS (default 15)
 #      commits stale, capped at 3. Silent when fresh.
+#
+#   3. THE BRIEFING, last: scripts/briefing.sh — open specs and their next task, spec-check
+#      gaps, the top goal, the last handoff. At most eight lines, 800 bytes, and nothing
+#      when the project has no .shipkit/. Runs last so its lines are the freshest thing in
+#      context, and runs even when the project is not a git repository.
+
+# briefing.sh is the last thing printed, on every exit path below.
+briefing() {
+  [ -n "$ROOT" ] && [ -f "$ROOT/scripts/briefing.sh" ] && sh "$ROOT/scripts/briefing.sh" 2>/dev/null
+  return 0
+}
 
 # --- 1. Plugin root ----------------------------------------------------------------
 ROOT="${CLAUDE_PLUGIN_ROOT:-}"
@@ -93,7 +104,7 @@ if [ -n "$ROOT" ] && [ -d .claude/rules/shipkit ] && [ -f "$ROOT/scripts/lib-man
 fi
 
 # --- 2. Freshness nudges (git only) -------------------------------------------------
-git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+git rev-parse --git-dir >/dev/null 2>&1 || { briefing; exit 0; }
 
 THRESHOLD="${SHIPKIT_MAP_STALE_COMMITS:-20}"
 
@@ -223,4 +234,5 @@ if [ -d .shipkit/specs ]; then
     fi
   fi
 fi
+briefing
 exit 0

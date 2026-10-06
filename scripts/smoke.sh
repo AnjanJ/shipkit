@@ -1013,6 +1013,88 @@ else
   failc "ship-gate" "first line [$sg_first]; step 3 row: $(grep -E '^\| *3 *\|' "$sg_report" 2>/dev/null) — model said: $(tail -6 "$WORK/ship.out")"
 fi
 
+# 30. briefing: a few lines at session start saying where things stand
+# (spec: .shipkit/specs/briefing-and-handoff/). No claude needed. Cites: briefing-and-handoff/REQ-1
+# briefing-and-handoff/REQ-2 briefing-and-handoff/REQ-3 briefing-and-handoff/REQ-4
+# briefing-and-handoff/REQ-5 briefing-and-handoff/REQ-6 briefing-and-handoff/REQ-7
+# briefing-and-handoff/REQ-8 briefing-and-handoff/REQ-9
+BRF="$COPY/scripts/briefing.sh"
+brief() { (cd "$1" && sh "$BRF" 2>"$WORK/brief.err"); echo "rc=$?" >> "$WORK/brief.err"; }
+bspec() {  # bspec <proj> <slug> <status|none> <done> <total> → an open spec with N ticked tasks of M
+  _d="$1/.shipkit/specs/$2"; mkdir -p "$_d"
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n' "$2"; [ "$3" = none ] || printf '> Status: %s\n' "$3"
+    printf '\n## Requirements\n\n- **REQ-1.** The system shall x.\n'; } > "$_d/spec.md"
+  _i=1; : > "$_d/tasks.md"
+  while [ "$_i" -le "$5" ]; do
+    if [ "$_i" -le "$4" ]; then _b='x'; else _b=' '; fi
+    if [ "$_i" -eq 1 ]; then _a=none; else _a="T$((_i - 1))"; fi
+    printf -- '- [%s] **T%s** Do step %s → REQ-1\n  - Files: a.py\n  - Test: t\n  - After: %s\n  - Done when: x\n' "$_b" "$_i" "$_i" "$_a" >> "$_d/tasks.md"
+    _i=$((_i + 1))
+  done
+}
+if [ ! -f "$BRF" ]; then
+  failc "briefing" "scripts/briefing.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$BRF" 2>/dev/null; then pass "briefing (POSIX sh: sh -n is clean)"
+  else failc "briefing" "sh -n reports a syntax error"; fi
+  # a. no .shipkit/ at all → nothing
+  BA="$WORK/brief-a"; mkdir -p "$BA"; (cd "$BA" && git init -q)
+  out=$(brief "$BA")
+  if [ -z "$out" ] && grep -q '^rc=0$' "$WORK/brief.err"; then pass "briefing (no .shipkit/ → prints nothing, exit 0)"
+  else failc "briefing" "no .shipkit/: [$out] $(cat "$WORK/brief.err")"; fi
+  # b. two open specs, one shipped, a product file and a handoff two commits old
+  BB="$WORK/brief-b"; mkdir -p "$BB"
+  (cd "$BB" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  bspec "$BB" alpha open 1 3; bspec "$BB" beta none 0 2; bspec "$BB" done-one shipped 2 2
+  printf '# alpha/REQ-1\n' > "$BB/t.py"; printf '# beta/REQ-1\n' >> "$BB/t.py"; printf '# done-one/REQ-1\n' >> "$BB/t.py"
+  mkdir -p "$BB/.shipkit"
+  printf '# Product: demo\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Cut failed charges — metric: share that fail; target: under 2%%; by: 2026-12-31\n- Second goal\n\n## Non-goals\n- z\n' > "$BB/.shipkit/product.md"
+  hsha=$(cd "$BB" && git rev-parse --short HEAD)
+  printf '# Handoff\n\n> Written 2026-10-01 at commit `%s` on main.\n\n## In flight\n- alpha T2\n\n## Done this session\n- T1\n\n## Next step\nFinish alpha T2 and run its test.\n\n## Open questions\n- none\n\n## Do not forget\n- x\n' "$hsha" > "$BB/.shipkit/state.md"
+  (cd "$BB" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m two)
+  out=$(brief "$BB")
+  if printf '%s\n' "$out" | grep -q '^shipkit: alpha: 1 of 3 tasks done, next T2 — Do step 2$' \
+     && printf '%s\n' "$out" | grep -q '^shipkit: beta: 0 of 2 tasks done, next T1 — Do step 1$' \
+     && ! printf '%s\n' "$out" | grep -q 'done-one' \
+     && printf '%s\n' "$out" | grep -q '^shipkit: top goal: Cut failed charges — metric: share that fail; target: under 2%; by: 2026-12-31$' \
+     && printf '%s\n' "$out" | grep -q '^shipkit: last handoff (2026-10-01, 2 commits ago): Finish alpha T2 and run its test\.$' \
+     && ! printf '%s\n' "$out" | grep -q 'spec-check:' \
+     && [ "$(printf '%s\n' "$out" | grep -vc '^shipkit: ')" -eq 0 ]; then
+    pass "briefing (open specs with progress and next task, top goal, last handoff; shipped spec silent; no gap line)"
+  else failc "briefing" "lines: $out $(cat "$WORK/brief.err")"; fi
+  # ...and a gap makes the spec-check line appear
+  : > "$BB/.shipkit/specs/alpha/tasks.md"
+  out=$(brief "$BB")
+  if printf '%s\n' "$out" | grep -q '^shipkit: spec-check: 1 gap(s) — run spec-check.sh$'; then
+    pass "briefing (a spec-check gap → one gap line)"
+  else failc "briefing" "no gap line: $out"; fi
+  # c. fifty open specs: at most eight lines, at most 800 bytes, under a second
+  BC="$WORK/brief-c"; mkdir -p "$BC"; (cd "$BC" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  i=1; while [ "$i" -le 50 ]; do bspec "$BC" "spec-$i-with-a-rather-long-name-to-fill-the-line" open 1 4; i=$((i + 1)); done
+  bt=$(python3 -c "import subprocess,sys,time; a=time.time(); subprocess.run(['sh','$BRF'],cwd='$BC',stdout=open('$WORK/brief50.out','w'),stderr=subprocess.DEVNULL); print(round(time.time()-a,2))")
+  bl=$(grep -c . "$WORK/brief50.out"); bb=$(wc -c < "$WORK/brief50.out" | tr -d ' ')
+  if [ "$bl" -le 8 ] && [ "$bb" -le 800 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -eq 0 ]; then
+    pass "briefing (50 open specs → $bl lines, $bb bytes, ${bt}s)"
+  else failc "briefing" "50 specs: $bl lines, $bb bytes, ${bt}s (want ≤8, ≤800, <1)"; fi
+  # d. a tasks.md that is not a task list, and a state.md with no Next step: no error, exit 0
+  BD="$WORK/brief-d"; mkdir -p "$BD/.shipkit/specs/odd"; (cd "$BD" && git init -q)
+  printf '# Spec: odd\n\n- **REQ-1.** x\n' > "$BD/.shipkit/specs/odd/spec.md"
+  head -c 300 /dev/urandom > "$BD/.shipkit/specs/odd/tasks.md"
+  printf 'not a handoff\n' > "$BD/.shipkit/state.md"
+  out=$(brief "$BD")
+  if grep -q '^rc=0$' "$WORK/brief.err" && [ "$(grep -vc '^rc=' "$WORK/brief.err")" -eq 0 ]; then
+    pass "briefing (unreadable tasks.md and state.md → exit 0, nothing on stderr)"
+  else failc "briefing" "broken input: $(cat "$WORK/brief.err")"; fi
+  # e. the session hook prints the briefing last
+  out=$(cd "$BB" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>/dev/null)
+  last=$(printf '%s\n' "$out" | tail -1)
+  case "$last" in
+    "shipkit: last handoff"*|"shipkit: top goal"*|"shipkit: spec-check"*|"shipkit: alpha"*|"shipkit: beta"*)
+      pass "briefing (session-start.sh prints it last)";;
+    *) failc "briefing" "the hook's last line is not from the briefing: $last";;
+  esac
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

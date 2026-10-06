@@ -3,8 +3,8 @@
 One commit per task, test and code together. The steps for each task are in
 `docs/plans/quality-gate-sprint-plan.md` under the same task number.
 
-- [ ] **T1** `briefing.sh` (S5-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
-  - Files: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh
+- [x] **T1** `briefing.sh` (S5-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
+  - Files: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh, plugins/shipkit/scripts/spec-check.sh
   - Test: scripts/smoke.sh section "briefing" (no .shipkit → empty; two open specs and a state.md → the right lines; 50 specs → ≤ 8 lines, ≤ 800 bytes, under a second; broken tasks.md → exit 0; written first)
   - After: none
   - Done when: the briefing smoke checks → all PASS; `sh -n plugins/shipkit/scripts/briefing.sh` → clean

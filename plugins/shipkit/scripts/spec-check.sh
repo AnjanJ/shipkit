@@ -129,15 +129,21 @@ task_findings() {
   ' "$2"
 }
 
-# spec_reqs <spec.md> → one line per requirement, in order: "<N> R" (required) or "<N> W" (waived)
+# spec_reqs <spec.md> <tasks.md> → one line per requirement, in order:
+#   "<N> R T"  required, mentioned in tasks.md      "<N> R -"  required, not mentioned
+#   "<N> W T"  waived (and mentioned)               "<N> W -"  waived, not mentioned
+# One awk over both files, rather than a grep per requirement: the briefing runs this on
+# every session start, and fifty specs must come back in well under a second.
 spec_reqs() {
   awk '
-    function flush() { if (n != "" && !(n in seen)) { seen[n] = 1; print n, (w ? "W" : "R") } n = ""; w = 0 }
-    /^[ \t]*$/ || /^#/ { flush(); next }
-    /\*\*REQ-[0-9]+/ { flush(); match($0, /\*\*REQ-[0-9]+/); n = substr($0, RSTART + 6, RLENGTH - 6) }
-    n != "" && /\[untested:/ { w = 1 }
-    END { flush() }
-  ' "$1"
+    function flush() { if (n != "" && !(n in seen)) { seen[n] = 1; order[++count] = n; kind[n] = (w ? "W" : "R") } n = ""; w = 0 }
+    FNR == 1 { file++ }
+    file == 1 && (/^[ \t]*$/ || /^#/) { flush(); next }
+    file == 1 && /\*\*REQ-[0-9]+/ { flush(); match($0, /\*\*REQ-[0-9]+/); n = substr($0, RSTART + 6, RLENGTH - 6) }
+    file == 1 && n != "" && /\[untested:/ { w = 1 }
+    file == 2 { t = $0; while (match(t, /REQ-[0-9]+/)) { mentioned[substr(t, RSTART + 4, RLENGTH - 4)] = 1; t = substr(t, RSTART + RLENGTH) } }
+    END { flush(); for (i = 1; i <= count; i++) print order[i], kind[order[i]], (order[i] in mentioned ? "T" : "-") }
+  ' "$1" "$2"
 }
 
 # cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N
@@ -164,14 +170,14 @@ for spec in "$SPECS"/*/spec.md; do
     draft|dropped) echo "SKIPPED $slug ($status)"; continue ;;
   esac
   checked=$((checked + 1))
-  spec_reqs "$spec" > "$TMP"
-  while read -r n kind; do
+  if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
+  while read -r n kind mentioned; do
     [ -n "$n" ] || continue
     if [ "$kind" = W ]; then
       echo "WAIVED $slug REQ-$n"
       continue
     fi
-    if ! grep -Eq "REQ-$n([^0-9]|\$)" "$dir/tasks.md" 2>/dev/null; then
+    if [ "$mentioned" != T ]; then
       echo "MISSING-TASK $slug REQ-$n"
       gaps=$((gaps + 1))
     fi
