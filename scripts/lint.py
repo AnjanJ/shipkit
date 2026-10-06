@@ -361,8 +361,9 @@ if hooks_json.exists():
 # project, so their total size is a cost each user pays before typing a word. Triggers (when
 # to act) belong in them; detail (how) belongs in a skill that loads on demand. The budget is
 # an error, not a warning: without a ceiling these files only grow.
-# (.shipkit/specs/measure-and-slim/, REQ-16. Stack overlay rules are not counted here — they
-# belong to the project that installs them and have their own budget in check 12.)
+# (.shipkit/specs/measure-and-slim/, REQ-16; re-asserted by trim-and-docs/REQ-7. Stack overlay
+# rules are not counted here — they belong to the project that installs them and have their
+# own budget in check 12.)
 
 ALWAYS_ON_BUDGET = 3000   # bytes, all core always-on rules together
 
@@ -492,8 +493,8 @@ for name in ("deploy-check", "release"):
         err(skill, f"missing the ship-gate line: {SHIP_GATE_LINE}")
 
 # --- 14. Sprint 7 limits: stack rules, skill descriptions, bare mktemp -------------
-# Proves trim-and-docs/REQ-6 and trim-and-docs/REQ-9 (the limits themselves are REQ-4,
-# REQ-5 and the first half of REQ-9). A stack rule past 40 lines has stopped being a list of
+# Proves trim-and-docs/REQ-4 (stack rules), trim-and-docs/REQ-5 (descriptions),
+# trim-and-docs/REQ-6 (the lint fails on either) and trim-and-docs/REQ-9 (bare mktemp). A stack rule past 40 lines has stopped being a list of
 # traps; a skill description past 300 characters is loaded into every session and crowds the
 # others out; a bare `mktemp` on macOS ignores TMPDIR and writes to the system temp directory,
 # which a sandbox may deny (found by the digest eval in 3.7.0).
@@ -524,10 +525,10 @@ for sp in sorted((CORE / "scripts").glob("*.sh")):
                     "mktemp \"${TMPDIR:-/tmp}/shipkit.XXXXXX\"")
 
 # --- 15. The README: short, current, and naming only skills that exist -----------
-# Proves trim-and-docs/REQ-10 (no version history above Install), trim-and-docs/REQ-12 (every
-# command named exists) and trim-and-docs/REQ-13 (250 lines or fewer). History belongs in the
-# changelog; a README that names a cut skill is the first thing a new user tries and the first
-# thing that fails.
+# Proves trim-and-docs/REQ-10 (no version history above Install), trim-and-docs/REQ-11 (the
+# nine-step loop, one command each), trim-and-docs/REQ-12 (every command named exists) and
+# trim-and-docs/REQ-13 (250 lines or fewer). History belongs in the changelog; a README that
+# names a cut skill is the first thing a new user tries and the first thing that fails.
 
 README_MAX_LINES = 250
 
@@ -544,6 +545,17 @@ else:
         if re.search(r"\bNew in \d|\(\d\.\d+ (added|made|refocused)", ln):
             err(readme, f"line {i}: version history above the Install section — it belongs in "
                         "CHANGELOG.md")
+LOOP_STEPS = ["Product", "Intake", "Spec", "Brief", "Build", "Review", "Ship", "Escape", "Digest"]
+_loop_rows = {}
+for ln in readme_lines:
+    m = re.match(r"\|\s*(\d)\s*\|\s*\*\*(\w+)\*\*[^|]*\|\s*(`[^`]+`)\s*\|", ln)
+    if m:
+        _loop_rows[int(m.group(1))] = m.group(2)
+_missing = [f"{i} {name}" for i, name in enumerate(LOOP_STEPS, 1) if _loop_rows.get(i) != name]
+if _missing:
+    err(readme, "the loop table must have rows 1 to 9 — Product, Intake, Spec, Brief, Build, "
+                f"Review, Ship, Escape, Digest — each with a command in backticks; missing or "
+                f"out of place: {', '.join(_missing)}")
 _skill_dirs = {p.parent.name for r in PLUGIN_ROOTS for p in r.glob("skills/*/SKILL.md")}
 for i, ln in enumerate(readme_lines, 1):
     for m in re.finditer(r"/shipkit(?:-workflows)?:([a-z][a-z0-9-]*)", ln):

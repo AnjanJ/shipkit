@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `568338e` on sprint-7/trim-and-docs.
 > Status: open
-> Paths: docs/design/trim-audit-4.0.md, plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, README.md, GUIDE.md, ROADMAP.md
+> Paths: docs/design/trim-audit-4.0.md, plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, scripts/smoke.sh, README.md, GUIDE.md, ROADMAP.md, CHANGELOG.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
 
