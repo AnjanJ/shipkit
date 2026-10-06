@@ -1,7 +1,7 @@
 # Spec: Reviewer and ship gate (Sprint 4, release 3.5.0)
 
 > Spec accepted at commit `374b43b` on sprint-4/review-and-ship.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/, plugins/shipkit/skills/escape/, plugins/shipkit/evals/, plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/stacks/rails/.claude/skills/deploy-check/, plugins/shipkit/stacks/rails/.claude/skills/release/, scripts/smoke.sh, scripts/lint.py, .claude-plugin/marketplace.json
 
 ## Purpose
