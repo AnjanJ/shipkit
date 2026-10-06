@@ -1,7 +1,7 @@
 ---
 description: "Ask the project elders — route a question to grandfather (this project) or eve (across all projects). Keeps main context thin: all research happens in a subagent, only the answer comes back."
 user-invocable: true
-argument-hint: "<question>  |  --all <question>"
+argument-hint: "<question>  |  --all <question>  |  --all digest"
 ---
 
 # /shipkit:ask — Ask the Project Elders
@@ -22,11 +22,22 @@ Question: `$ARGUMENTS`
   "across all my apps…") → delegate to the **`eve`** agent, which reads the project
   registry and answers across the portfolio.
 
-- **Portfolio reports** — two named report shapes eve knows how to produce:
+- **Portfolio reports** — three named report shapes eve knows how to produce:
   - `--all matrix <library|framework|"everything major">` → dependency/version matrix across
     all repos (lockfile truth, one row per project). For upgrades and vulnerability sweeps.
   - `--all consolidate` → ranked report of patterns implemented in multiple repos that could
     exist once, with per-copy evidence and drift notes.
+  - `--all digest` → **which product needs attention this week, and why.** This one has a
+    step before the agent: run `sh "<plugin root>/scripts/portfolio-digest.sh"` (the plugin
+    root is in the `shipkit: plugin root is …` context line; if the request names a
+    `SHIPKIT_HOME`, set it for the command — the script reads
+    `$SHIPKIT_HOME/project-registry.md` and writes `$SHIPKIT_HOME/digests/<date>.md`, default
+    `~/.claude/shipkit`). It uses no model. Add `--run-checks` only if the user asked for the
+    decision commands to run. Then give `eve` the digest's path, the path of
+    `$SHIPKIT_HOME/studio.md`, and this one question, verbatim: **"Which product needs
+    attention this week, and why?"** Its answer is a ranked list of at most three products,
+    each reason tied to a line in the digest and to a studio priority. If the script fails
+    (no registry), relay its message and stop; do not have eve rank from nothing.
 
 ## How to run it
 
@@ -63,3 +74,4 @@ Question: `$ARGUMENTS`
 - `/shipkit:ask --all everywhere I integrate Stripe` → eve
 - `/shipkit:ask --all matrix rails` → eve (version matrix: every repo's Rails version, from lockfiles)
 - `/shipkit:ask --all consolidate` → eve (what am I maintaining N times that should exist once?)
+- `/shipkit:ask --all digest` → portfolio-digest.sh, then eve (which product needs attention this week, and why?)

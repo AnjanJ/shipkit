@@ -49,7 +49,7 @@ done
 [ -d "$PROJ" ] || { echo "decision-check: no such directory: $PROJ" >&2; exit 64; }
 cd "$PROJ" || exit 64
 
-TMP=$(mktemp) || exit 1
+TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 trap 'rm -f "$TMP"' EXIT
 
 # The files that may hold records. Globs that match nothing are dropped, not passed to awk.

@@ -362,6 +362,9 @@ Route a question to a research subagent so your main context stays thin. See
 
 - `/shipkit:ask <question>` → `grandfather` answers about **this** project.
 - `/shipkit:ask --all <question>` → `eve` answers across **all** registered projects.
+- `/shipkit:ask --all digest` → runs `portfolio-digest.sh` (below), then `eve` answers one
+  question from the page and `studio.md`: *which product needs attention this week, and why?*
+  — at most three, each reason a quoted digest line and the studio priority it bears on.
 
 The agent reads the relevant `PROJECT_MAP.md`, verifies the specific claim against live source
 (and queries MemPalace for decision-history questions if installed), and returns a tight, cited
@@ -602,6 +605,29 @@ falsifiability clause**. The falsifiability clause must be concrete — "we woul
 p99 latency exceeds 200ms", not "if it turns out wrong" — because that's what lets `grandfather`
 later answer *"is this decision now falsified?"*.
 
+**A decision can check itself.** When the condition can be measured from the repository, the
+record carries one more optional line, which `/shipkit:decide` asks for:
+
+```markdown
+**Falsifiability.** We would reverse this if the routes file passes 500 lines.
+**Fired-if.** `test "$(wc -l < config/routes.rb)" -gt 500`
+```
+
+The command exits 0 once the condition has come true (it *is* the condition, so it composes
+straight from the sentence). When it cannot be measured from the repository — users, latency,
+cost — write `**Fired-if.** manual`. Then:
+
+```sh
+sh "<plugin root>/scripts/decision-check.sh" .          # list every command; runs nothing
+sh "<plugin root>/scripts/decision-check.sh" . --run    # FIRED / HOLDS / MANUAL / ERROR per record
+```
+
+Listing is the default. The commands come from the repository you point it at, so read them
+before using `--run` in one you do not trust; nothing runs them from a hook. The elders show
+the list for any project and run it only for one in your registry; `/shipkit:ship` runs it as
+its eighth step — a `FIRED` decision is `NOT READY` until you write a superseding record or
+say to proceed.
+
 Use this for **project-wide** decisions not tied to one feature. Feature-scoped decisions belong
 inline in that spec's `design.md` (via `/shipkit:spec`). Capture real forks only — a decision
 with one option isn't a decision.
@@ -715,6 +741,58 @@ A `SessionStart` hook nudges once per **open** spec whose code has drifted ≥15
 acceptance SHA (override with `SHIPKIT_SPEC_STALE_COMMITS`) — the same closed-loop treatment the
 map already gets. With a `Paths` line, only commits that touch those paths count. Silent when
 fresh, and silent for `shipped`, `dropped` and `draft` specs.
+
+### The weekly digest
+
+One page across every project in your registry, from files already on disk, with no model:
+
+```sh
+sh "<plugin root>/scripts/portfolio-digest.sh"                 # ~/.claude/shipkit/digests/<date>.md
+sh "<plugin root>/scripts/portfolio-digest.sh" --run-checks    # also run the Fired-if commands
+```
+
+Each project gets seven lines — top goal and review date, open specs with task progress, spec
+gaps, decisions, escapes in the last 30 days by cause, map age in commits, uncommitted files
+and unpushed commits — and a project whose path has moved gets `path not found`. The registry
+and the output directory live under `SHIPKIT_HOME` (default `~/.claude/shipkit`). The session
+briefing adds one line when the newest digest is more than seven days old. `/shipkit:ask --all
+digest` runs the script and has `eve` read the page against `studio.md`.
+
+**Scheduling it is optional.** The plugin root is in `~/.claude/shipkit/plugin-root`; put the
+command in whichever scheduler your machine has. With `cron`, Monday at 08:00:
+
+```cron
+0 8 * * 1  sh "$(cat "$HOME/.claude/shipkit/plugin-root")/scripts/portfolio-digest.sh" >> "$HOME/.claude/shipkit/digests/cron.log" 2>&1
+```
+
+With `launchd` on macOS, save this as `~/Library/LaunchAgents/dev.shipkit.digest.plist` and
+run `launchctl load ~/Library/LaunchAgents/dev.shipkit.digest.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>dev.shipkit.digest</string>
+  <key>ProgramArguments</key><array>
+    <string>/bin/sh</string><string>-c</string>
+    <string>sh "$(cat "$HOME/.claude/shipkit/plugin-root")/scripts/portfolio-digest.sh"</string>
+  </array>
+  <key>StartCalendarInterval</key><dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>8</integer></dict>
+</dict></plist>
+```
+
+A laptop that is asleep at 08:00 gets no digest that week; `launchd` runs a missed job at the
+next wake, `cron` does not. The briefing's "newest is N days old" line is the backstop.
+
+**Could a scheduled cloud agent do this instead?** Checked against the Claude Code routines
+documentation (`code.claude.com/docs/en/routines`) on 2026-10-06: a routine runs on Anthropic's
+cloud, clones the GitHub repositories you select fresh on every run, and uses the skills
+committed to those repositories — not your installed plugins, and nothing from your home
+directory. The digest needs `~/.claude/shipkit/project-registry.md` and every registered
+project on disk, including ones that are not on GitHub, so a routine cannot produce it as
+built. It could run a copy of the script committed to one repository against the repositories
+it clones, which is a different, GitHub-only tool; nothing in shipkit depends on it (decision
+A7, recorded in `.shipkit/specs/decisions-and-digest/design.md`).
 
 ---
 

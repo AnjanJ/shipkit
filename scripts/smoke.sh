@@ -1306,6 +1306,29 @@ else
   else failc "portfolio-digest" "a digest appeared under ~/.claude/shipkit/digests"; fi
 fi
 
+# 37. digest-old: the briefing says when the newest digest is more than seven days old, and
+# says nothing about digests when there is none or when it is recent
+# (spec: .shipkit/specs/decisions-and-digest/). No claude needed; SHIPKIT_HOME points at a
+# scratch directory. Cites: decisions-and-digest/REQ-17
+DO="$WORK/digest-old"; mkdir -p "$DO/.shipkit/specs/alpha" "$DO/home/digests"
+(cd "$DO" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+bspec "$DO" alpha open 1 2
+do_old=$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=8)).isoformat())')
+do_recent=$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=6)).isoformat())')
+printf '# Shipkit digest — %s\n' "$do_old" > "$DO/home/digests/$do_old.md"
+do_a=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+printf '# Shipkit digest — %s\n' "$do_recent" > "$DO/home/digests/$do_recent.md"
+do_b=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+rm -f "$DO/home/digests/"*.md
+do_c=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+do_d=$(cd "$DO" && SHIPKIT_HOME="$DO/no-such-home" sh "$BRF" 2>/dev/null)
+if printf '%s\n' "$do_a" | grep -q '^shipkit: digest: newest is 8 days old — run portfolio-digest.sh' \
+   && ! printf '%s\n' "$do_b" | grep -q 'digest' \
+   && ! printf '%s\n' "$do_c" | grep -q 'digest' && ! printf '%s\n' "$do_d" | grep -q 'digest' \
+   && printf '%s\n' "$do_a" | grep -q '^shipkit: alpha: 1 of 2 tasks done'; then
+  pass "digest-old (newest digest 8 days old → one line; 6 days old, none, or no home → no digest line)"
+else failc "digest-old" "old: [$do_a] recent: [$do_b] none: [$do_c] no home: [$do_d]"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

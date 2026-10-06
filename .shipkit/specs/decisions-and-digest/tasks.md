@@ -23,8 +23,8 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "portfolio-digest" (a scratch registry with two projects and one missing path → a file with three sections, exit 0; written first)
   - After: T2
   - Done when: the portfolio-digest smoke checks → all PASS; `sh -n plugins/shipkit/scripts/portfolio-digest.sh` → clean
-- [ ] **T5** `/shipkit:ask --all digest`, the old-digest line, the guide (S6-T5) → REQ-16, REQ-17, REQ-18
-  - Files: plugins/shipkit/skills/ask/SKILL.md, plugins/shipkit/agents/eve.md, plugins/shipkit/scripts/briefing.sh, GUIDE.md, plugins/shipkit/evals/digest/, plugins/shipkit/evals/README.md, scripts/smoke.sh
+- [x] **T5** `/shipkit:ask --all digest`, the old-digest line, the guide (S6-T5) → REQ-16, REQ-17, REQ-18
+  - Files: plugins/shipkit/skills/ask/SKILL.md, plugins/shipkit/agents/eve.md, plugins/shipkit/scripts/briefing.sh, GUIDE.md, plugins/shipkit/evals/digest/, plugins/shipkit/evals/README.md, scripts/smoke.sh, plugins/shipkit/scripts/portfolio-digest.sh, plugins/shipkit/scripts/decision-check.sh, plugins/shipkit/scripts/spec-check.sh
   - Test: scripts/smoke.sh check "digest-old" (a digest eight days old → the line; none → no line); eval case digest/attention (eve names a product and cites a digest line)
   - After: T3, T4
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); the digest-old check → PASS; `bash scripts/evals.sh --case 'digest-*'` → passes

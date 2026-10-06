@@ -65,7 +65,7 @@ if [ -n "$ONLY" ] && [ ! -f "$SPECS/$ONLY/spec.md" ]; then
   exit 64
 fi
 
-TMP=$(mktemp) || exit 1
+TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 trap 'rm -f "$TMP"' EXIT
 
 # spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)

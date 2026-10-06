@@ -47,7 +47,7 @@ TODAY=$(date +%Y-%m-%d)
 OUT_DIR="$SHIPKIT_HOME/digests"
 OUT="$OUT_DIR/$TODAY.md"
 mkdir -p "$OUT_DIR" || { echo "portfolio-digest: cannot create $OUT_DIR" >&2; exit 1; }
-TMP=$(mktemp) || exit 1
+TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 trap 'rm -f "$TMP"' EXIT
 
 # The registry is a Markdown table. Columns are found by their header names, so a registry
