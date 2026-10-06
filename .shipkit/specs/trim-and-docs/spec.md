@@ -1,7 +1,7 @@
 # Spec: Trim and tell the story (Sprint 7, release 4.0.0 or 3.8.0)
 
 > Spec accepted at commit `568338e` on sprint-7/trim-and-docs.
-> Status: open
+> Status: shipped
 > Paths: docs/design/trim-audit-4.0.md, plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, scripts/smoke.sh, README.md, GUIDE.md, ROADMAP.md, CHANGELOG.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
