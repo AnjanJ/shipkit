@@ -75,7 +75,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 **🟢 Automatic — no command:**
 - **Always-on rules** apply to the *work*, not a file type — start non-trivial feature work and the *spec-driven* + *decisions* discipline is in effect; every commit follows the commit rule. The session hook injects them into every session; after `/shipkit:setup` they load from `.claude/rules/shipkit/` instead.
 - **Path-scoped rules** load when you edit a matching file — edit a test, the testing rule applies; edit a migration, the migration rule applies (6 rules, see below). Claude Code only loads rules from a project's `.claude/rules/`, so these need `/shipkit:setup` once per project.
-- **The session hook** runs at session start: it tells Claude where the plugin lives, injects the always-on rules if they are not installed, and prints one line if your `PROJECT_MAP.md` or a spec has drifted from the code. Silent otherwise.
+- **The session hook** runs at session start: it tells Claude where the plugin lives, injects the always-on rules if they are not installed, prints one line if your `PROJECT_MAP.md` or a spec has drifted, and ends with a briefing of at most eight lines — open specs and their next task, spec-check gaps, the top goal, the last handoff. After a compaction it says so. Silent when there is nothing to say.
 
 **🔵 Auto-invoked — Claude reaches for the right skill:** when your request matches a skill's `TRIGGER when:` guidance, Claude runs it without being asked. A test fails → `/shipkit-workflows:debug`; you make a real architectural choice → `/shipkit:decide`; you start a non-trivial feature → `/shipkit:spec`. You can always invoke by name to force it, or a skill's `DO NOT TRIGGER when:` clause keeps it from firing at the wrong moment.
 
@@ -85,7 +85,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 
 ## What You Get Instantly
 
-**The knowledge layer** (`shipkit`) — 16 skills, always at hand:
+**The knowledge layer** (`shipkit`) — 17 skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -98,7 +98,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-Eight more are reached for automatically when the work calls for it (each carries
+Nine more are reached for automatically when the work calls for it (each carries
 `TRIGGER when: / DO NOT TRIGGER when:` guidance), or you can invoke any by name:
 
 | Skill | What It Does |
@@ -108,6 +108,7 @@ Eight more are reached for automatically when the work calls for it (each carrie
 | `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
 | `/shipkit:ship` | The ship gate: seven checks on a spec'd feature, an independent reviewer, and a report that starts `READY` or `NOT READY` |
 | `/shipkit:escape` | A bug reached users: name the link that broke (no spec, missing requirement, missing test…), record it, reopen the spec with a failing-first task |
+| `/shipkit:handoff` | Leave a note for the next session in `.shipkit/state.md` — in flight, done, the one next step, open questions, traps; the session hook quotes the next step at every start |
 | `/shipkit:decide` | Capture a project decision as a five-part record with a falsifiability clause (`.shipkit/decisions/`) |
 | `/shipkit:explain-system` | Explore codebase and return verified system design docs |
 | `/shipkit:walkthrough` | Trace one feature end-to-end |
