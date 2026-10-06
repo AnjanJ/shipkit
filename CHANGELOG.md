@@ -2,6 +2,63 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.7.0] — 2026-10-06
+
+Sprint 6 of the quality-gate plan: decisions that can tell you when they have stopped being
+true, and one page a week that says which product needs you. Requirements and decision records
+in [`.shipkit/specs/decisions-and-digest/`](.shipkit/specs/decisions-and-digest/); the intake
+that shaped them is beside them.
+
+### Added
+
+- **A `Fired-if` line on decision records.** After the falsifiability clause, a record may
+  carry one optional line: a shell command that exits 0 once the condition has come true
+  (`**Fired-if.** \`test "$(wc -l < config/routes.rb)" -gt 500\``), or `manual` when the
+  condition cannot be measured from the repository. `/shipkit:decide` asks "can a command
+  check this?" and writes one or the other. The template is in the spec reference; the
+  always-on `decisions` rule is unchanged, since it stands at 2,996 of its 3,000 bytes.
+- **`decision-check.sh <project-dir> [--run]`** finds every such line in `.shipkit/decisions/`
+  and the specs' `design.md` files. By default it lists each command with its record and runs
+  nothing. With `--run` it runs them from the project directory and prints `FIRED`, `HOLDS`,
+  `MANUAL` (with the clause) or `ERROR` per decision, exiting 1 only if something fired. Its
+  header says the commands come from the repository and must be read before `--run` in one
+  you do not trust; no hook calls it, and a smoke check keeps it that way.
+- **The elders and the gate use it.** `grandfather` and `eve`, asked whether any decision is
+  falsified, list the commands first and run them only for a project in your registry.
+  `/shipkit:ship` has an eighth step: a `FIRED` decision is `NOT READY` until you write a
+  superseding record or say to proceed.
+- **`portfolio-digest.sh [registry-file] [--run-checks]`** writes
+  `~/.claude/shipkit/digests/<date>.md` — one section per registered project with seven lines:
+  top goal and review date, open specs with task progress, spec gaps, decisions, escapes in
+  the last 30 days by cause, map age in commits, uncommitted files and unpushed commits. A
+  project whose path has moved gets `path not found`. No model; decision commands run only
+  with `--run-checks`. `SHIPKIT_HOME` moves the registry and the output directory together.
+- **`/shipkit:ask --all digest`** runs the script and has `eve` answer one question from the
+  page and `studio.md`: which product needs attention this week, and why — at most three,
+  each reason a quoted digest line and the studio priority it bears on.
+- The session briefing adds one line when the newest digest is more than seven days old.
+- `GUIDE.md` shows how to schedule the digest with `cron` or `launchd`, as an option, and
+  records why a scheduled cloud agent cannot produce it: a routine clones GitHub repositories
+  and uses the skills committed to them, not your installed plugins or home directory.
+- Eval case `digest/attention`, 3 of 3.
+
+### Fixed
+
+- `spec-check.sh`, `decision-check.sh` and `portfolio-digest.sh` call `mktemp` with a
+  template. A bare `mktemp` on macOS ignores `TMPDIR` and writes to the system temp directory,
+  which a sandbox may deny; the eval found this (below).
+
+### What using it for real showed
+
+The `digest/attention` eval failed 0 of 3 on its first run and the trace said why: the eval
+sandbox denies the system temp directory, and the digest script died at `mktemp: Operation not
+permitted`. A later single run passed only because the model wrote itself a `mktemp` shim —
+a pass that would have hidden the bug. The fix touched two scripts from earlier tasks and one
+from Sprint 2, each outside the task's file list; the owner approved and the list was extended
+in the same commit. Seven other scripts still use bare `mktemp` and go to Sprint 7's audit.
+Run on the real registry, the digest said one project had six unpushed commits and a map 36
+commits old — both true, neither known.
+
 ## [3.6.0] — 2026-10-06
 
 Sprint 5 of the quality-gate plan: a session starts by knowing where things stand and ends by
