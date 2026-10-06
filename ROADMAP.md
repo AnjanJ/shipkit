@@ -3,16 +3,44 @@
 Where shipkit is heading and why. Written 2026-07-03, after a full design review of v1.2.5.
 Newest thinking wins — treat this as a living document, not a contract.
 
-**North star:** reposition shipkit from "21-skill methodology bundle" to **the project
-knowledge layer for Claude Code** — map + elders (grandfather/eve/archivist) + registry +
-lessons — with the generic workflow content demoted or split out.
+**North star:** shipkit is the colleague a solo engineer does not have — it remembers what was
+intended, asks before work is handed off, checks the result against the intent, and refuses to
+call unfinished work done.
 
-**Status (as of 2026-09-14, v2.9.0):** the north star is largely realized. The repositioning
-(1.3, 2.0) shipped; the knowledge layer then grew **forward** with spec-driven development and
-decision records (2.5), and its optional decision-recall (MemPalace) got one-command setup (2.7).
-2.8 fixed the audit findings that showed the "automatic" tier was not actually loading; 2.9 made
-the installs deterministic, added a smoke test for the platform assumptions, and lightened the
-discipline. Everything below through 2.9 is shipped; treat the rest as living direction.
+The first north star (2026-07) was to turn a 21-skill methodology bundle into **the project
+knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.0. The quality-gate
+plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
+shipped it in seven sprints.
+
+**Status (as of 2026-10-06, v3.7.0 shipped, 4.0.0 on its branch):** Sprints 1 to 7 of the
+quality-gate plan are done — see "The quality-gate plan" below. Everything in this document is
+shipped except the open items listed there.
+
+## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 1 | 3.2.0 | Evals that show whether shipkit helps; the three always-on rules four times smaller (11,867 → 2,996 bytes); a commit guard |
+| 2 | 3.3.0 | The spec is a contract: a `Status` line, drift measured on the spec's own paths, `spec-check.sh` fails when a requirement has no task or no cited test |
+| 3 | 3.4.0 | `/shipkit:product`, `/shipkit:intake`, `brief.sh` / `brief-verify.sh` — a product file, good questions before work starts, a standard brief for any agent |
+| 4 | 3.5.0 | The `reviewer` agent with fresh context; `/shipkit:ship`, the gate that says `READY` or `NOT READY` with evidence; `/shipkit:escape` |
+| 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
+| 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
+| 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+**Still open after Sprint 7.**
+
+- **Decision 0001** (`.shipkit/decisions/0001-project-map-default.md`): the project map bought
+  nothing on a nine-file fixture; the record asks for a re-test on a fixture of 200+ files with
+  one history question before the map's default changes. Not run; the map stays the default.
+- **`rules/nontrivial`**: the eval that asks for a spec before code on "add refunds" passes
+  about one run in three and has since the 3.1.0 baseline. The always-on rules produce the
+  test-first habit reliably and the spec-first habit a third of the time on that prompt.
+- **Criterion (c) of the trim audit** is unmeasured: no eval exists per rule file, so the 4.0
+  trims rest on "project value" and "named trap" alone. A trimmed line that mattered would show
+  up as a regression traced to it; none has yet.
+- From 3.0: whether the overlay skills should live in core (design doc §5) — reversible,
+  blocking nothing.
 
 Platform facts that shaped this plan, each verified against the official Claude Code docs and,
 since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):

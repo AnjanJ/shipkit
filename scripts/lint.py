@@ -550,6 +550,20 @@ for i, ln in enumerate(readme_lines, 1):
         if m.group(1) not in _skill_dirs:
             err(readme, f"line {i}: names `{m.group(0)}` but no such skill exists")
 
+# --- 16. The roadmap's status line names the current version ----------------------
+# Proves trim-and-docs/REQ-17. The status paragraph is the first thing a reader checks against
+# the release they installed; one that names an older version says the document is dead.
+
+roadmap = ROOT / "ROADMAP.md"
+if version:
+    status_lines = [ln for ln in roadmap.read_text(encoding="utf-8").splitlines()
+                    if ln.startswith("**Status")]
+    if not status_lines:
+        err(roadmap, "no '**Status' line")
+    elif not any(version in ln for ln in status_lines):
+        err(roadmap, f"the status line does not name the current version {version}: "
+                     f"{status_lines[0][:90]!r}")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

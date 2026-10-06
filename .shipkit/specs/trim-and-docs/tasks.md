@@ -24,7 +24,7 @@ the owner decides every `cut` row before T2 starts (A8).
   - Test: reading — nine steps, each with its command and the file it produced; `grep -c '^\*\*Step' GUIDE.md` or the equivalent counts nine in Playbook 4
   - After: T3
   - Done when: each of the nine steps appears with its command and file
-- [ ] **T5** Update the roadmap (S7-T5) → REQ-16, REQ-17
+- [x] **T5** Update the roadmap (S7-T5) → REQ-16, REQ-17
   - Files: ROADMAP.md, scripts/lint.py
   - Test: scripts/lint.py checks that the ROADMAP status line names the marketplace version (written first, red: the status line names v2.9.0)
   - After: T3
