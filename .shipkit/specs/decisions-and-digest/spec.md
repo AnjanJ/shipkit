@@ -1,7 +1,7 @@
 # Spec: Live decisions and the studio digest (Sprint 6, release 3.7.0)
 
 > Spec accepted at commit `8357868` on sprint-6/decisions-and-digest.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/decision-check.sh, plugins/shipkit/scripts/portfolio-digest.sh, plugins/shipkit/scripts/briefing.sh, plugins/shipkit/skills/spec/reference.md, plugins/shipkit/skills/decide/, plugins/shipkit/skills/ship/, plugins/shipkit/skills/ask/, plugins/shipkit/agents/grandfather.md, plugins/shipkit/agents/eve.md, plugins/shipkit/evals/, scripts/smoke.sh, GUIDE.md
 
 ## Purpose
