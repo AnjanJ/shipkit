@@ -24,13 +24,13 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/lint.py check "13. Rails overlay points at the ship gate" (an error when either skill lacks the line; written first)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `grep -c 'If this feature has a spec, run `/shipkit:ship <slug>` first.'` → 1 in each of the two skills
-- [ ] **T5** Use it for real, once: ship this sprint through its own gate (S4-T5) → REQ-20
-  - Files: .shipkit/releases/
-  - Test: the first line of `.shipkit/releases/<date>-review-and-ship.md`
-  - After: T3, T4
-  - Done when: `.shipkit/releases/<date>-review-and-ship.md` exists, its first line is `READY`, and it is committed
-- [ ] **T-REL** Release 3.5.0 → REQ-21
-  - Files: CHANGELOG.md, README.md, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, .shipkit/specs/review-and-ship/spec.md
-  - Test: the sprint exit checklist
-  - After: T5
-  - Done when: the five checklist lines hold; the pull request is merged; tag `v3.5.0` exists
+## After the gate
+
+Not tasks the gate can check — they are the gate and the release, and come after it. (They
+were T5 and T-REL with tick boxes until the first real run of the gate on this branch failed
+step 3 on them; owner-approved change, 2026-10-06.)
+
+- **Ship (S4-T5):** run `/shipkit:ship review-and-ship` on this branch and fix what it finds;
+  done when `.shipkit/releases/<date>-review-and-ship.md` starts with `READY` and is committed.
+- **Release 3.5.0 (S4-T-REL):** version in five places, changelog, counts, the sprint exit
+  checklist, pull request, merge, tag `v3.5.0`.
