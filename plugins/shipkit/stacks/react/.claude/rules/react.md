@@ -1,14 +1,4 @@
-# React Conventions
-- Functional components only — no class components
-- Never use array index as key in lists
-- Minimize useEffect — prefer derived state and event handlers
-- Co-locate component, test, and styles in the same directory
-- Extract custom hooks for reusable stateful logic
-- Use TypeScript interfaces for component props
-- Prefer controlled components over uncontrolled
-- Avoid prop drilling — use context or composition
-
-## Inside a Rails app (Inertia / Vite / jsbundling)
+# React inside a Rails app (Inertia / Vite / jsbundling)
 - Components live under `app/frontend/` (Vite) or `app/javascript/` (jsbundling) — match what
   the project already uses; do not introduce a second root.
 - **Inertia props are the API contract.** The controller decides what the page receives; do not

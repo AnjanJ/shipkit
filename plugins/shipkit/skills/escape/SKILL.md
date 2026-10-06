@@ -1,5 +1,5 @@
 ---
-description: "Trace a bug that reached users back to the link that broke: no spec, a missing or wrong requirement, a missing or wrong test, or something outside the product. Records it and reopens the spec with a failing-first task. TRIGGER when: the user reports a bug found in production or by a user. DO NOT TRIGGER when: a test fails during development."
+description: "Trace a bug that reached users to the link that broke (no spec, missing or wrong requirement or test, outside the product), record it, reopen the spec with a failing-first task. TRIGGER when: the user reports a bug found in production. DO NOT TRIGGER when: a test fails during development."
 user-invocable: true
 argument-hint: "<what went wrong, in a sentence>"
 ---

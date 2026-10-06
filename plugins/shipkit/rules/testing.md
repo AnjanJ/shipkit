@@ -9,10 +9,6 @@ paths:
   - "**/tests/**"
 ---
 # Testing Rules
-- Match existing test patterns and frameworks in this project
-- Every test must have a clear arrange/act/assert structure
-- Prefer specific assertions over generic truthy checks
-- Never skip or disable tests without a comment explaining why
-- Test names should describe the behavior, not the implementation
-- Test one behavior per test — if you need "and" in the name, split it
-- Use factories/fixtures that already exist before creating new ones
+- Use the factories, fixtures and helpers that already exist before writing new ones — look in
+  the test support directory first; a second `create_user` is how suites rot.
+- Match the project's test framework and file layout; do not introduce a second runner.

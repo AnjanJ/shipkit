@@ -451,7 +451,7 @@ for path in skill_files:
 
 # --- 12. Stack overlays: structure and add-on bases ---------------------------
 # An overlay rule with no paths: becomes an always-on rule in the project that installs it.
-# That is intentional for the language-convention rules (rails.md, python.md, ...), but it
+# That is intentional for the convention rules (rails.md, react.md, ...), but it
 # costs context in every session of that project, so keep them short — warn past a budget.
 # Every add-on must name an existing base overlay via `<!-- requires: <base> -->` so
 # /shipkit:setup can order the installs (base first, then add-ons).
@@ -490,6 +490,38 @@ for name in ("deploy-check", "release"):
     lines = [ln.strip() for ln in skill.read_text(encoding="utf-8").splitlines()]
     if SHIP_GATE_LINE not in lines:
         err(skill, f"missing the ship-gate line: {SHIP_GATE_LINE}")
+
+# --- 14. Sprint 7 limits: stack rules, skill descriptions, bare mktemp -------------
+# Proves trim-and-docs/REQ-6 and trim-and-docs/REQ-9 (the limits themselves are REQ-4,
+# REQ-5 and the first half of REQ-9). A stack rule past 40 lines has stopped being a list of
+# traps; a skill description past 300 characters is loaded into every session and crowds the
+# others out; a bare `mktemp` on macOS ignores TMPDIR and writes to the system temp directory,
+# which a sandbox may deny (found by the digest eval in 3.7.0).
+
+STACK_RULE_MAX_LINES = 40
+SKILL_DESCRIPTION_MAX = 300
+
+for d in overlay_dirs:
+    for rule in sorted(d.glob(".claude/rules/*.md")):
+        n = len(rule.read_text(encoding="utf-8").splitlines())
+        if n > STACK_RULE_MAX_LINES:
+            err(rule, f"stack rule is {n} lines; the limit is {STACK_RULE_MAX_LINES} — keep the "
+                      "traps, drop the defaults")
+
+for path in skill_files:
+    fm_text, _ = split_frontmatter(path)
+    fm = parse_frontmatter(path, fm_text) if fm_text else {}
+    desc = fm.get("description") or ""
+    if len(desc) > SKILL_DESCRIPTION_MAX:
+        err(path, f"description is {len(desc)} characters; the limit is {SKILL_DESCRIPTION_MAX}")
+
+for sp in sorted((CORE / "scripts").glob("*.sh")):
+    for i, line in enumerate(sp.read_text(encoding="utf-8").splitlines(), 1):
+        code = re.sub(r"(^|\s)#.*$", "", line)   # drop a comment; "$#" and "${#x}" have no space before #
+        # command position only: start of a statement or inside $( … ), not the word in a string
+        if re.search(r"(^\s*|\$\(\s*|[;&|]\s*)mktemp\b(?!\s+[\"'$./])", code):
+            err(sp, f"line {i}: bare `mktemp` ignores TMPDIR on macOS — pass a template: "
+                    "mktemp \"${TMPDIR:-/tmp}/shipkit.XXXXXX\"")
 
 # --- Report ------------------------------------------------------------------
 

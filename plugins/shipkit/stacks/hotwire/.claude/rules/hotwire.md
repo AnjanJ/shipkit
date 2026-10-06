@@ -10,7 +10,6 @@ paths:
 # Hotwire (Turbo + Stimulus)
 
 ## Pick the lightest tool that works
-- **Turbo Drive** handles full-page navigation already — do not reimplement it with JS.
 - **Turbo Frames** for a scoped region that navigates on its own. One frame, one concern.
 - **Turbo Streams** only when a single response must update *several* disjoint regions, or when
   the update is pushed from the server (broadcast). A Stream that touches one region should
@@ -39,4 +38,3 @@ paths:
 - Every Turbo flow gets a **system test** with a real driver — request specs do not exercise
   Turbo. Assert the resulting DOM, not the Stream payload.
 - Assert on visible user-facing text/roles, not on frame ids or CSS classes.
-- A Stimulus controller with logic worth testing is logic that probably belongs on the server.

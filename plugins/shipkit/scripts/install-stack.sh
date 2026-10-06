@@ -46,7 +46,7 @@ fi
 NONINTERACTIVE="${SHIPKIT_NONINTERACTIVE:-0}"
 
 # --- collect substitutions: KEY=value → a sed script -------------------------------------
-SEDSCRIPT=$(mktemp) || die "mktemp failed"
+SEDSCRIPT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
 trap 'rm -f "$SEDSCRIPT"' EXIT
 for kv in "$@"; do
   case "$kv" in
@@ -123,7 +123,7 @@ if [ -d "$SRC/.claude/skills" ]; then
       # user wrote and then recorded it in the manifest as shipkit's, so /shipkit:unsetup
       # would delete it. Overwrite only what the manifest proves is ours, or what is already
       # byte-identical to what we are about to write.
-      new=$(mktemp) || die "mktemp failed"
+      new=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
       cp "$f" "$new" || die "failed to copy $f"
       subst "$new"
       if [ -f "$dest" ] && ! cmp -s "$new" "$dest" \
@@ -154,7 +154,7 @@ MARK="<!-- shipkit:stack:$STACK -->"
 ENDMARK="<!-- /shipkit:stack:$STACK -->"
 if [ -f "$SRC/CLAUDE.md.append" ]; then
   CM="$PROJ/CLAUDE.md"
-  SECTION=$(mktemp) || die "mktemp failed"
+  SECTION=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
   { printf '\n%s\n' "$MARK"; cat "$SRC/CLAUDE.md.append"; printf '%s\n' "$ENDMARK"; } > "$SECTION"
   subst "$SECTION"
   if grep -q '{{[A-Z_][A-Z0-9_]*}}' "$SECTION"; then   # cannot happen after the pre-check; belt and braces
@@ -175,13 +175,13 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
       index($0,s){inb=1; next} index($0,e){inb=0; next} inb{print}
     ' "$1"
   }
-  NEW=$(mktemp) || die "mktemp failed"
+  NEW=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
   inner "$SECTION" > "$NEW"
   record_section() {
     mkdir -p "$(dirname "$SECSHA")" && sec_sha "$NEW" > "$SECSHA" && note "$SECSHA"
   }
   replace_section() {  # swap the managed block for $SECTION, leaving everything outside it
-    OUT=$(mktemp) || die "mktemp failed"
+    OUT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
     # cat, not mv: CLAUDE.md keeps its own mode instead of inheriting mktemp's 0600
     awk -v s="$MARK" -v e="$ENDMARK" -v f="$SECTION" '
       index($0,s){inb=1; while((getline l < f)>0) print l; next}
@@ -205,7 +205,7 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
     echo "  Add '$ENDMARK' after the stack section to let shipkit refresh it in place." >&2
     note "$CM (legacy unterminated section — left unchanged)"
   else
-    CUR=$(mktemp) || die "mktemp failed"
+    CUR=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
     inner "$CM" > "$CUR"
     if cmp -s "$CUR" "$NEW"; then
       record_section

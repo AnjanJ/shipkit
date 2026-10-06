@@ -1,5 +1,5 @@
 ---
-description: "Write or update .shipkit/product.md: what the product is for, its users, up to three measurable goals this quarter, and what it deliberately does not do. TRIGGER when: the user wants to set or revisit product goals, non-goals or priorities. DO NOT TRIGGER when: specifying one feature (use /shipkit:spec)."
+description: "Write or update .shipkit/product.md: what the product is for, its users, up to three measurable goals this quarter, its non-goals. TRIGGER when: the user wants to set or revisit product goals, non-goals or priorities. DO NOT TRIGGER when: specifying one feature (use /shipkit:spec)."
 user-invocable: true
 argument-hint: "[--studio] [what changed, if you are updating]"
 ---

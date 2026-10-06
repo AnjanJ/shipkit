@@ -1,5 +1,5 @@
 ---
-description: "The ship gate: eight checks on one spec'd feature (spec-check, tests, tasks ticked, an independent reviewer, migration rollback, decisions, clean tree, no decision fired) and a written report that starts READY or NOT READY. TRIGGER when: the user asks whether a feature is ready to ship or done. DO NOT TRIGGER when: the feature has no spec."
+description: "The ship gate: eight checks on one spec'd feature (spec-check, tests, tasks, an independent reviewer, migration rollback, decisions, clean tree, no decision fired) and a report that starts READY or NOT READY. TRIGGER when: the user asks if a feature is ready. DO NOT TRIGGER when: it has no spec."
 user-invocable: true
 argument-hint: "<feature-slug> [base-ref]"
 ---

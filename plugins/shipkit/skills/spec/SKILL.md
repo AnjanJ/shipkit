@@ -1,5 +1,5 @@
 ---
-description: "Write a spec for a non-trivial feature — the three questions (what are we building / how should it work / how will we know it's done) as durable .shipkit/specs/ artifacts, requirements in EARS, design as decision records. TRIGGER when: the user asks to spec, plan, or design a new feature or a multi-file change before building. DO NOT TRIGGER when: the change is trivial (typo, rename, config, one-liner), the user is mid-implementation, or they want a where-things-live index (use /shipkit:map) or a system explainer (use /shipkit:explain-system)."
+description: "Write a spec for a non-trivial feature: the three questions as .shipkit/specs/ files, requirements in EARS, design as decision records. TRIGGER when: the user asks to spec, plan or design a feature or multi-file change. DO NOT TRIGGER when: the change is trivial, or they want a map or an explainer."
 user-invocable: true
 argument-hint: "<feature-slug> [requirements|design|tasks]"
 ---

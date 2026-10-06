@@ -2,6 +2,40 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.0.0] — unreleased
+
+Sprint 7 of the quality-gate plan: less to load, a clear pitch, one worked example. The audit
+that decided every row is `docs/design/trim-audit-4.0.md`; the owner approved each cut.
+Requirements and decision records in [`.shipkit/specs/trim-and-docs/`](.shipkit/specs/trim-and-docs/).
+
+### Removed
+
+Each was cut because no line in it held a project-specific value or a trap the model gets wrong
+unprompted; the model does these things by default.
+
+| Removed | Use instead |
+|---|---|
+| `rules/security.md` (path-scoped: controllers, routes, api, auth) | Nothing to install. The always-on `shipkit.md` keeps "never stage `.env`, credentials, keys or tokens" and `guard-commit.sh` enforces it; parameterized queries, input validation and auth checks are default behaviour. |
+| `stacks/elixir/.claude/rules/elixir.md` | Nothing. `mix-deps.md`, `liveview.md` and `jobs.md` carry the stack's real traps. |
+| `stacks/go/.claude/rules/go.md` | Nothing. `go-mod.md` stays. |
+| `stacks/python/.claude/rules/python.md` | Nothing. `pyproject.md` stays. |
+| `shipkit-workflows` knowledge base `code-review-standards` | Claude Code's built-in `/code-review`. The one lens a built-in lacks, reviewing AI-written code, is a paragraph in `GUIDE.md`. The Rails overlay's `code-review-standards-rails` stays and now says it supplements `/code-review`. |
+
+A project that installed one of the removed rules keeps its copy until the next
+`/shipkit:setup`, which removes files shipkit no longer ships (the 3.1 reconciliation).
+
+### Changed
+
+- Sixteen rules trimmed to the lines that name a project value or a non-obvious trap; the
+  twenty-two rules went from 505 lines to 384 across the eighteen that remain (frontmatter
+  included; `ui-ux.md` alone carries 42 path globs). Every stack rule is now 40 lines or
+  fewer, every skill description 300 characters or fewer, and the lint fails when either
+  limit is crossed again. `react.md` is now only the "inside a Rails app" rules; `monorepo.md`
+  no longer loads for every `apps/` or `packages/` directory.
+- `/shipkit-workflows:qa` has a real description with trigger guidance (it had five words);
+  its body and `/shipkit-workflows:debug`'s are half their length, same phases.
+- Every script calls `mktemp` with a template; the lint forbids a bare one.
+
 ## [3.7.0] — 2026-10-06
 
 Sprint 6 of the quality-gate plan: decisions that can tell you when they have stopped being

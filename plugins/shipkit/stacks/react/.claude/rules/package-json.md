@@ -7,9 +7,6 @@ paths:
   - "bun.lockb"
 ---
 # When Modifying package.json / Lockfiles
-- Use caret `^` for compatible version ranges (default)
-- After ANY change: run install with frozen lockfile check, then full test suite
-- Run `npm audit` / `yarn audit` / `pnpm audit` to verify no new vulnerabilities
-- Never manually edit lockfiles
-- Detect package manager from lockfile: package-lock.json=npm, yarn.lock=yarn, pnpm-lock.yaml=pnpm, bun.lockb=bun
-- Use the detected package manager consistently — don't mix npm and yarn commands
+- Install with the frozen-lockfile flag (`npm ci`, `yarn --frozen-lockfile`, `pnpm i --frozen-lockfile`); never hand-edit a lockfile
+- Detect the package manager from the lockfile — `package-lock.json` → npm, `yarn.lock` → yarn,
+  `pnpm-lock.yaml` → pnpm, `bun.lockb` → bun — and use only that one

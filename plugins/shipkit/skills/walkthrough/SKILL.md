@@ -1,5 +1,5 @@
 ---
-description: "Trace one feature end-to-end (trigger → DB → back) and return a step-by-step code walkthrough. TRIGGER when: user asks how a specific feature/flow works or wants a guided trace of one path. DO NOT TRIGGER when: user wants whole-system architecture (use /explain-system), a where-things-live index (use /shipkit:map), or is mid-edit."
+description: "Trace one feature end-to-end (trigger, every layer, datastore, response) and return a step-by-step code walkthrough. TRIGGER when: the user asks how one feature or flow works. DO NOT TRIGGER when: they want the whole architecture (/shipkit:explain-system) or a where-things-live index (/shipkit:map)."
 user-invocable: true
 argument-hint: "[<feature-name> [surface|deep]]"
 context: fork

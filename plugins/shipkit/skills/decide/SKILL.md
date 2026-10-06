@@ -1,5 +1,5 @@
 ---
-description: "Capture a project decision as a durable, five-part record with a falsifiability clause, appended to .shipkit/decisions/. TRIGGER when: a non-trivial choice is made with ≥2 real alternatives (a tech pick, an architectural fork, a build-vs-buy) and it's worth a future reader revisiting. DO NOT TRIGGER when: the choice is a default with no real alternative, it's trivial/one-liner, or the decision is feature-scoped and already belongs inline in a spec's design.md (use /shipkit:spec)."
+description: "Capture a project-wide decision as a five-part record with a falsifiability clause in .shipkit/decisions/. TRIGGER when: a non-trivial choice with two or more real alternatives is made. DO NOT TRIGGER when: it is a default or a one-liner, or it belongs in a spec's design.md (use /shipkit:spec)."
 user-invocable: true
 argument-hint: "<decision in a phrase, e.g. 'Paddle over Stripe'>"
 ---

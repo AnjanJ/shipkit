@@ -54,9 +54,9 @@ if manifest_is_legacy "$PROJ"; then
 fi
 
 # --- classify every owned path ---------------------------------------------------------------
-CLEAN=$(mktemp) || exit 1
-DIRTY=$(mktemp) || exit 1
-ABSENT=$(mktemp) || exit 1
+CLEAN=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1
+DIRTY=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1
+ABSENT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1
 trap 'rm -f "$CLEAN" "$DIRTY" "$ABSENT"' EXIT
 
 manifest_entries "$PROJ" | while IFS="$(printf '\t')" read -r sha rel; do

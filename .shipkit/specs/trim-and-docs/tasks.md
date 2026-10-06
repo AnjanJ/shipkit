@@ -9,8 +9,8 @@ the owner decides every `cut` row before T2 starts (A8).
   - Test: reading — one row per item (6 + 16 + 7 + 1 = 30 rows), four columns, (c) marked where not measured, the map row cites decision 0001
   - After: none
   - Done when: the table is complete and shown to the owner; every `cut` row has the owner's yes or no
-- [ ] **T2** Apply the approved trims (S7-T2) → REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
-  - Files: plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, CHANGELOG.md, .claude-plugin/marketplace.json
+- [x] **T2** Apply the approved trims (S7-T2) → REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
+  - Files: plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/, plugins/shipkit-workflows/skills/, plugins/shipkit/scripts/, scripts/lint.py, CHANGELOG.md, .claude-plugin/marketplace.json, scripts/smoke.sh, plugins/shipkit-workflows/.claude-plugin/plugin.json
   - Test: scripts/lint.py checks for the 40-line, 300-character and bare-mktemp limits (written first, red on today's tree: 2 rules over 40 lines, 8 descriptions over 300 characters, 7 scripts with bare mktemp)
   - After: T1
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `bash scripts/evals.sh -j 4` → no case below its 3.7.0 result; `cat plugins/shipkit/rules/{shipkit,spec-driven,decisions}.md | wc -c` ≤ 3000

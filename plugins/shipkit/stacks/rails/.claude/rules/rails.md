@@ -1,9 +1,4 @@
 # Rails Conventions
-- Use strong parameters for all controller inputs
-- Prefer scopes over class methods for queries
-- Use `find_each` for batch processing, never `all.each`
-- Background jobs for anything taking >100ms
-- Never use `update_column` — it skips validations and callbacks
-- Use `presence` validation over custom blank checks
-- Prefer `where.not` over raw SQL negation
-- Keep controllers thin — business logic belongs in models or services
+- `find_each` for batch processing, never `all.each` — it loads the whole table
+- Anything over 100 ms in a request goes to a background job
+- Never `update_column` / `update_columns` — they skip validations and callbacks

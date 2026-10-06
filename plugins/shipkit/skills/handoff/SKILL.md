@@ -1,5 +1,5 @@
 ---
-description: "Leave a note for the next session: what is in flight, what got done, the one next step, open questions and traps, in .shipkit/state.md (30 lines). TRIGGER when: the user is wrapping up or pausing with unfinished spec work or uncommitted changes. DO NOT TRIGGER when: the session only did trivial work, or nothing is in flight."
+description: "Leave a note for the next session in .shipkit/state.md: what is in flight, what got done, the one next step, open questions, traps. TRIGGER when: the user is wrapping up with unfinished spec work or uncommitted changes. DO NOT TRIGGER when: nothing is in flight."
 user-invocable: true
 argument-hint: "[anything the note must not miss]"
 ---

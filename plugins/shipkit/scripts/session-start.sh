@@ -39,7 +39,7 @@ briefing() {
 # harness), so the read runs in the background and is given half a second.
 HOOK_INPUT=""
 if [ ! -t 0 ]; then
-  _hi=$(mktemp 2>/dev/null) && {
+  _hi=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX" 2>/dev/null) && {
     # A background job's stdin is /dev/null by default; hand it the real one on fd 3.
     exec 3<&0
     ( IFS= read -r _l <&3 2>/dev/null; printf '%s' "$_l" > "$_hi" ) &

@@ -44,7 +44,7 @@ file_sha() {
 }
 
 manifest_begin() {
-  MANIFEST_TMP=$(mktemp) || return 1
+  MANIFEST_TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || return 1
   export MANIFEST_TMP
 }
 
@@ -65,7 +65,7 @@ manifest_commit() {
   _dest=$(manifest_path "$_mp")
   _dir=$(dirname "$_dest")
   mkdir -p "$_dir" || return 1
-  _out=$(mktemp) || return 1
+  _out=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || return 1
   {
     echo "#shipkit-manifest v1"
     printf 'version=%s\n' "${_ver:-unknown}"
