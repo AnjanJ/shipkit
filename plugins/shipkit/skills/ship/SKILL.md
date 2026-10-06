@@ -1,5 +1,5 @@
 ---
-description: "The ship gate: seven checks on one spec'd feature (spec-check, tests, tasks ticked, an independent reviewer, migration rollback, decisions, clean tree) and a written report that starts READY or NOT READY. TRIGGER when: the user asks whether a feature is ready to ship or done. DO NOT TRIGGER when: the feature has no spec."
+description: "The ship gate: eight checks on one spec'd feature (spec-check, tests, tasks ticked, an independent reviewer, migration rollback, decisions, clean tree, no decision fired) and a written report that starts READY or NOT READY. TRIGGER when: the user asks whether a feature is ready to ship or done. DO NOT TRIGGER when: the feature has no spec."
 user-invocable: true
 argument-hint: "<feature-slug> [base-ref]"
 ---
@@ -29,7 +29,7 @@ Run `git status --porcelain` and keep its output. Step 7 judges the tree **as it
 the gate ran**: the gate's own test run can leave files behind (caches, coverage output), and
 those are not the user's unfinished work.
 
-## The gate — seven steps, in this order
+## The gate — eight steps, in this order
 
 Do **every** step even after one fails: the report must show the whole picture. Record each as
 `PASS`, `FAIL` or `SKIPPED`, with the reason, and keep the evidence: the exact command and the
@@ -44,6 +44,7 @@ last lines of its output. **Never record a result for a command you did not run.
 | 5 | Migration rollback | Is there a database migration in `git diff <base>...HEAD --name-only`? If so, is the way to roll it back written down? | no migration, or a written rollback |
 | 6 | Decisions | Every live decision in `design.md` has a concrete reversal condition | none is vague or missing |
 | 7 | Clean tree | The `git status --porcelain` you captured before step 1 | empty, apart from an earlier report for this slug |
+| 8 | Decisions fired | `sh "<plugin root>/scripts/decision-check.sh" . --run` | no `FIRED` line |
 
 Notes on the steps:
 
@@ -69,12 +70,20 @@ Notes on the steps:
   `.shipkit/releases/` does not count against it. If the test run left new untracked files,
   mention them under the evidence as a note — a missing `.gitignore` entry is worth knowing
   about — but they do not fail the step.
+- **Step 8 — decisions fired.** `decision-check.sh` runs every `**Fired-if.**` command in
+  `.shipkit/decisions/` and the specs' `design.md` files, from the project directory. They
+  come from this repository — the one whose tests step 2 just ran — so running them here adds
+  no trust that step 2 did not already extend. A `FIRED` line is `FAIL`; name the decision. The
+  result stays `NOT READY` until the owner writes a superseding record (`/shipkit:decide`) or
+  says to proceed — then record `PASS — owner said to proceed` with the `FIRED` line quoted. If
+  no user is present, it stays `FAIL`. Quote `MANUAL` and `ERROR` lines under the evidence; they
+  do not fail the step. No records, or none with the line: `PASS — none recorded`.
 
 ## The report
 
 Write `.shipkit/releases/<YYYY-MM-DD>-<slug>.md` in the shape in @reference.md. Its **first
-line is exactly `READY` or `NOT READY`** — `READY` only if all seven steps are `PASS`. A
-`SKIPPED` step makes it `NOT READY`. Then the table of seven results, the count of
+line is exactly `READY` or `NOT READY`** — `READY` only if all eight steps are `PASS`. A
+`SKIPPED` step makes it `NOT READY`. Then the table of eight results, the count of
 requirements and how many are waived as `[untested]` (from step 1's `WAIVED` lines), the
 commit sha, and the evidence for every step. Writing this file is the only change you make.
 

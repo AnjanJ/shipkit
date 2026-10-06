@@ -8,14 +8,18 @@
 #   top goal: <first goal in .shipkit/product.md>    only when the product file exists
 #   last handoff (<date>, N commits ago): <the "Next step" line of .shipkit/state.md>
 #                                                     only when a handoff exists
+#   digest: newest is N days old — run portfolio-digest.sh
+#                                                     only when $SHIPKIT_HOME/digests/ holds a
+#                                                     digest and the newest is over seven days old
 #
 # Prints nothing when .shipkit/ does not exist. Never exits non-zero and never prints to
 # stderr: a session-start hook must not break a session, and a tasks.md it cannot read is a
 # line left out, not an error. No model, no network. POSIX sh + awk + git.
-# Spec: .shipkit/specs/briefing-and-handoff/.
+# Spec: .shipkit/specs/briefing-and-handoff/ (the digest line: decisions-and-digest/).
 
 [ -d .shipkit ] || exit 0
 HERE=$(cd "$(dirname "$0")" 2>/dev/null && pwd) || exit 0
+SHIPKIT_HOME=${SHIPKIT_HOME:-$HOME/.claude/shipkit}
 MAXLINES=8
 MAXBYTES=800
 
@@ -77,6 +81,24 @@ MAXBYTES=800
       fi
       echo "shipkit: last handoff (${hdate:-undated}$ago): $hnext"
     fi
+  fi
+
+  # 5. the digest, when there is one and it is old. Age comes from the newest file's name,
+  # <YYYY-MM-DD>.md, by days-from-civil arithmetic: no date(1) flags, which differ by platform.
+  newest=$(ls "$SHIPKIT_HOME/digests"/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9].md 2>/dev/null | sed 's|.*/||; s|\.md$||' | sort | tail -1)
+  if [ -n "$newest" ]; then
+    age=$(printf '%s\n%s\n' "$newest" "$(date +%Y-%m-%d)" | awk -F- '
+      function dn(y, m, d,   era, yoe, doy, doe) {
+        if (m <= 2) { y--; m += 12 }
+        era = int(y / 400); yoe = y - era * 400
+        doy = int((153 * (m - 3) + 2) / 5) + d - 1
+        doe = yoe * 365 + int(yoe / 4) - int(yoe / 100) + doy
+        return era * 146097 + doe - 719468 }
+      NF == 3 { n[NR] = dn($1 + 0, $2 + 0, $3 + 0) } END { if (NR == 2) print n[2] - n[1] }')
+    case "$age" in
+      ''|*[!0-9]*) ;;
+      *) [ "$age" -gt 7 ] && echo "shipkit: digest: newest is $age days old — run portfolio-digest.sh (or /shipkit:ask --all digest)" ;;
+    esac
   fi
 } 2>/dev/null | awk -v maxl="$MAXLINES" -v maxb="$MAXBYTES" '
   # Keep every line short (this is read in every session) and stop at the limits.

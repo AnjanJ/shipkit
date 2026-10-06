@@ -1154,6 +1154,181 @@ if printf '%s\n' "$cr_a" | grep -qF "$cr_line" && ! printf '%s\n' "$cr_b" | grep
   pass "compact-reminder (source compact → the line; startup or no input → no line, hook still runs)"
 else failc "compact-reminder" "compact: [$cr_a] startup: [$cr_b] none: [$cr_c]"; fi
 
+# 34. fired-if-template: the decision-record template shows the optional Fired-if line in
+# both forms — a command that exits 0 once the condition has come true, and `manual` — and
+# the three always-on rules still fit the budget (spec: .shipkit/specs/decisions-and-digest/).
+# No claude needed. Cites: decisions-and-digest/REQ-1 decisions-and-digest/REQ-3
+ft_ref="$COPY/skills/spec/reference.md"
+ft_cmd=$(grep -c '^\*\*Fired-if\.\*\* `test ' "$ft_ref")
+ft_man=$(grep -c '^\*\*Fired-if\.\*\* manual$' "$ft_ref")
+ft_after=$(awk '/^\*\*Falsifiability\.\*\*/{f=NR} /^\*\*Fired-if\.\*\* `test /{if (f && NR > f && NR - f <= 3) ok=1} END{print ok+0}' "$ft_ref")
+if [ "$ft_cmd" -ge 1 ] && [ "$ft_man" -ge 1 ] && [ "$ft_after" -eq 1 ]; then
+  pass "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
+else failc "fired-if-template" "command-form lines: $ft_cmd, manual-form lines: $ft_man, command after a clause: $ft_after"; fi
+# measured on $CORE, not $COPY: check 1 appended a codeword to the copy's decisions.md
+ft_bytes=$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')
+if [ "$ft_bytes" -le 3000 ]; then pass "fired-if-template (the three always-on rules total $ft_bytes bytes, at most 3000)"
+else failc "fired-if-template" "the three always-on rules total $ft_bytes bytes, over 3000"; fi
+
+# 35. decision-check: Fired-if commands are listed by default and run only with --run; exit 0
+# from a command is FIRED, 1 is HOLDS, above 1 is ERROR, `manual` is MANUAL with the clause;
+# the script exits 1 only when something FIRED; no hook names it
+# (spec: .shipkit/specs/decisions-and-digest/). No claude needed. Cites: decisions-and-digest/REQ-4
+# decisions-and-digest/REQ-5 decisions-and-digest/REQ-6 decisions-and-digest/REQ-7
+# decisions-and-digest/REQ-8 decisions-and-digest/REQ-9
+DCS="$COPY/scripts/decision-check.sh"
+dcrec() {  # dcrec <file> <title> <clause> <fired-if payload> → one standalone decision record
+  printf '# %s\n\n**Context.** c\n\n**Alternatives.**\n1. a\n2. b\n\n**Case for a.** x\n\n**Case against a.** y\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if %s.\n**Fired-if.** %s\n' "$2" "$3" "$4" > "$1"
+}
+if [ ! -f "$DCS" ]; then
+  failc "decision-check" "scripts/decision-check.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$DCS" 2>/dev/null; then pass "decision-check (POSIX sh: sh -n is clean)"
+  else failc "decision-check" "sh -n reports a syntax error"; fi
+  if grep -q 'read them before\|read the commands before\|before using --run\|before `--run`' "$DCS" \
+     && sed -n 1,40p "$DCS" | grep -q 'come from the repository'; then
+    pass "decision-check (the header says the commands come from the repository and to read them before --run)"
+  else failc "decision-check" "the header comment lacks the warning about untrusted repositories"; fi
+  DC="$WORK/dc"; mkdir -p "$DC/.shipkit/decisions" "$DC/.shipkit/specs/demo"
+  (cd "$DC" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  dcrec "$DC/.shipkit/decisions/0001-fired.md" "Fired one" "the marker exists" '`touch dc-marker`'
+  dcrec "$DC/.shipkit/decisions/0002-holds.md" "Holds one" "a file called never appears" '`test -f never`'
+  dcrec "$DC/.shipkit/decisions/0003-manual.md" "Manual one" "the routes file passes 500 lines" 'manual'
+  printf '# Design: demo\n\n## Decision: Exit three   (→ REQ-1)\n\n**Context.** c\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if the tool breaks.\n**Fired-if.** `sh -c "exit 3"`\n\n## Decision: No line here   (→ REQ-2)\n\n**Decision.** We chose b.\n**Falsifiability.** We would reverse this if the sky falls.\n' > "$DC/.shipkit/specs/demo/design.md"
+  # a. no flag: every command and its record listed, nothing run, exit 0
+  out=$(sh "$DCS" "$DC" 2>"$WORK/dc.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ ! -e "$DC/dc-marker" ] \
+     && printf '%s\n' "$out" | grep -q '0001-fired\.md.*touch dc-marker' \
+     && printf '%s\n' "$out" | grep -q '0002-holds\.md.*test -f never' \
+     && printf '%s\n' "$out" | grep -q '0003-manual\.md.*manual' \
+     && printf '%s\n' "$out" | grep -q 'demo/design\.md.*Exit three.*exit 3' \
+     && ! printf '%s\n' "$out" | grep -q 'No line here' \
+     && ! printf '%s\n' "$out" | grep -q '^FIRED\|^HOLDS'; then
+    pass "decision-check (no flag → four commands listed with their records, none run, exit 0)"
+  else failc "decision-check" "list: rc=$rc marker=$([ -e "$DC/dc-marker" ] && echo yes || echo no) out: $out $(cat "$WORK/dc.err")"; fi
+  # b. --run: FIRED / HOLDS / MANUAL with the clause / ERROR with the exit status; exit 1
+  out=$(cd "$WORK" && sh "$DCS" "$DC" --run 2>"$WORK/dc.err"); rc=$?
+  if [ "$rc" -eq 1 ] && [ -e "$DC/dc-marker" ] \
+     && printf '%s\n' "$out" | grep -q '^FIRED .*0001-fired\.md' \
+     && printf '%s\n' "$out" | grep -q '^HOLDS .*0002-holds\.md' \
+     && printf '%s\n' "$out" | grep -q '^MANUAL .*0003-manual\.md.*the routes file passes 500 lines' \
+     && printf '%s\n' "$out" | grep -q '^ERROR .*demo/design\.md.*Exit three.*exit 3'; then
+    pass "decision-check (--run → FIRED, HOLDS, MANUAL with the clause, ERROR (exit 3); the command ran from the project; exit 1)"
+  else failc "decision-check" "run: rc=$rc marker=$([ -e "$DC/dc-marker" ] && echo yes || echo no) out: $out $(cat "$WORK/dc.err")"; fi
+  # c. nothing fired → exit 0, even with an ERROR and a MANUAL
+  rm -f "$DC/.shipkit/decisions/0001-fired.md"
+  out=$(sh "$DCS" "$DC" --run 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^FIRED'; then
+    pass "decision-check (--run with nothing fired → exit 0)"
+  else failc "decision-check" "nothing fired: rc=$rc out: $out"; fi
+  # d. a project with no records at all → exit 0 and no finding lines
+  DN="$WORK/dc-none"; mkdir -p "$DN"
+  out=$(sh "$DCS" "$DN" --run 2>/dev/null); rc=$?
+  if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^FIRED\|^HOLDS\|^MANUAL\|^ERROR'; then
+    pass "decision-check (no .shipkit/ → exit 0, nothing found)"
+  else failc "decision-check" "no records: rc=$rc out: $out"; fi
+  # e. no hook calls it
+  if ! grep -rq 'decision-check' "$COPY/hooks" && ! grep -q 'decision-check' "$COPY/scripts/session-start.sh"; then
+    pass "decision-check (no hook and not the session hook names decision-check)"
+  else failc "decision-check" "a hook names decision-check: $(grep -rn 'decision-check' "$COPY/hooks" "$COPY/scripts/session-start.sh")"; fi
+fi
+
+# 36. portfolio-digest: one page across every registered project, written under
+# $SHIPKIT_HOME/digests/<date>.md from the files already on disk, with no model; a project whose
+# path is missing gets one line and the script goes on; decision commands run only with
+# --run-checks (spec: .shipkit/specs/decisions-and-digest/). No claude needed, and nothing is
+# written under ~/.claude: SHIPKIT_HOME points at a scratch directory. Cites:
+# decisions-and-digest/REQ-12 decisions-and-digest/REQ-13 decisions-and-digest/REQ-14
+# decisions-and-digest/REQ-15
+PDS="$COPY/scripts/portfolio-digest.sh"
+if [ ! -f "$PDS" ]; then
+  failc "portfolio-digest" "scripts/portfolio-digest.sh does not exist (checks written first, by design)"
+else
+  if sh -n "$PDS" 2>/dev/null; then pass "portfolio-digest (POSIX sh: sh -n is clean)"
+  else failc "portfolio-digest" "sh -n reports a syntax error"; fi
+  PH="$WORK/shipkit-home"; mkdir -p "$PH"
+  # proj-a: a product file, an open spec, a Fired-if decision, an escape today, a map two
+  # commits old, one uncommitted file, no upstream
+  PA="$WORK/pd-a"; mkdir -p "$PA/.shipkit/decisions" "$PA/.shipkit/escapes"
+  (cd "$PA" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  bspec "$PA" alpha open 1 3; bspec "$PA" done-one shipped 2 2
+  printf '# alpha/REQ-1\n# done-one/REQ-1\n' > "$PA/t.py"
+  printf '# Product: a\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Cut failed charges — metric: share that fail; target: under 2%%; by: 2026-12-31\n\n## Non-goals\n- z\n' > "$PA/.shipkit/product.md"
+  dcrec "$PA/.shipkit/decisions/0001-fired.md" "Fired one" "the marker exists" '`touch pd-marker`'
+  dcrec "$PA/.shipkit/decisions/0002-manual.md" "Manual one" "users pass 1000" 'manual'
+  printf '# Escape 0001: over-refund\n\n> Recorded on %s.\n\n## What happened\nx\n\n## Cause\n`requirement missing` — y\n' "$(date +%Y-%m-%d)" > "$PA/.shipkit/escapes/0001-over-refund.md"
+  printf '# Escape 0002: old one\n\n> Recorded on 2020-01-01.\n\n## Cause\n`no spec` — y\n' > "$PA/.shipkit/escapes/0002-old.md"
+  printf '# Project map\n\n> Map generated at commit `%s` on main. Refresh with `/shipkit:map`.\n' "$(cd "$PA" && git rev-parse --short HEAD)" > "$PA/PROJECT_MAP.md"
+  (cd "$PA" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m two)
+  printf 'wip\n' > "$PA/wip.txt"
+  # proj-b: a bare project with no .shipkit/, registered with a ~ path
+  PB="$WORK/pd-b"; mkdir -p "$PB"; (cd "$PB" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  printf '# Shipkit Project Registry\n> Portfolio index for `eve`.\n\n| Project | Path | Map | Mapped At | Stack | Deploys To | Active Specs | Product | Top Goal | Summary |\n|---|---|---|---|---|---|---|---|---|---|\n| proj-a | %s | PROJECT_MAP.md | abc1234 | Python | — | alpha | a | Cut failed charges | first |\n| proj-b | ~/pd-b | — | ? | ? | ? | — | ? | ? | second |\n| proj-gone | %s/nowhere | — | ? | ? | ? | — | ? | ? | missing |\n' "$PA" "$WORK" > "$PH/project-registry.md"
+  pd_file="$PH/digests/$(date +%Y-%m-%d).md"
+  pd_own="$HOME/.claude/shipkit/digests/$(date +%Y-%m-%d).md"; pd_own_before=$([ -e "$pd_own" ] && echo yes || echo no)
+  pd_section() { awk -v p="## $1" '$0 ~ "^## " {on=(index($0, p)==1)} on' "$pd_file"; }
+  # a. default: the file, three sections, path not found, the seven lines, nothing run
+  pd_out=$(cd "$WORK" && HOME="$WORK" SHIPKIT_HOME="$PH" sh "$PDS" 2>"$WORK/pd.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ -f "$pd_file" ] && [ "$(grep -c '^## ' "$pd_file")" -eq 3 ] \
+     && [ ! -e "$PA/pd-marker" ] && [ ! -e "$WORK/pd-marker" ] \
+     && pd_section proj-gone | grep -q '^path not found$' \
+     && [ "$(pd_section proj-a | grep -c '^- ')" -eq 7 ] && [ "$(pd_section proj-b | grep -c '^- ')" -eq 7 ] \
+     && printf '%s\n' "$pd_out" | grep -q "digests/$(date +%Y-%m-%d)\.md"; then
+    pass "portfolio-digest (two projects and a missing path → one file, three sections, 'path not found', seven lines each, no command run, exit 0)"
+  else failc "portfolio-digest" "rc=$rc file=$([ -f "$pd_file" ] && echo yes || echo no) sections=$(grep -c '^## ' "$pd_file" 2>/dev/null) marker=$([ -e "$PA/pd-marker" ] && echo yes || echo no) out: $pd_out $(cat "$WORK/pd.err"; cat "$pd_file" 2>/dev/null)"; fi
+  # b. each line says what its file says
+  sa=$(pd_section proj-a); sb=$(pd_section proj-b)
+  if printf '%s\n' "$sa" | grep -q '^- Top goal: Cut failed charges.*reviewed on 2026-10-01' \
+     && printf '%s\n' "$sa" | grep -q '^- Open specs: alpha 1 of 3 tasks done, next T2' \
+     && ! printf '%s\n' "$sa" | grep -q 'done-one' \
+     && printf '%s\n' "$sa" | grep -q '^- Spec gaps: 0' \
+     && printf '%s\n' "$sa" | grep -q '^- Decisions: .*not run' && printf '%s\n' "$sa" | grep -q '^- Decisions: .*1 manual' \
+     && printf '%s\n' "$sa" | grep -q '^- Escapes (30 days): 1 — requirement missing 1$' \
+     && printf '%s\n' "$sa" | grep -q '^- Map: 2 commits old' \
+     && printf '%s\n' "$sa" | grep -q '^- Git: 1 uncommitted file(s), no upstream' \
+     && printf '%s\n' "$sb" | grep -q '^- Top goal: no product file' \
+     && printf '%s\n' "$sb" | grep -q '^- Open specs: none' \
+     && printf '%s\n' "$sb" | grep -q '^- Escapes (30 days): none' \
+     && printf '%s\n' "$sb" | grep -q '^- Map: no map'; then
+    pass "portfolio-digest (goal and review date, open spec progress, gaps, decisions, escapes by cause within 30 days, map age, git state; a ~ path expands)"
+  else failc "portfolio-digest" "lines: $sa $sb"; fi
+  # c. --run-checks runs the decision commands and reports what fired; still exit 0
+  pd_out=$(cd "$WORK" && HOME="$WORK" SHIPKIT_HOME="$PH" sh "$PDS" --run-checks 2>"$WORK/pd.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ -e "$PA/pd-marker" ] && pd_section proj-a | grep -q '^- Decisions: 1 fired, 0 hold, 1 manual, 0 error(s)'; then
+    pass "portfolio-digest (--run-checks → the command ran from the project; 'Decisions: 1 fired …'; exit 0)"
+  else failc "portfolio-digest" "run-checks: rc=$rc marker=$([ -e "$PA/pd-marker" ] && echo yes || echo no) $(pd_section proj-a | grep '^- Decisions') $(cat "$WORK/pd.err")"; fi
+  # d. an explicit registry file, and a missing one
+  pd_out=$(cd "$WORK" && SHIPKIT_HOME="$PH" sh "$PDS" "$PH/no-such-registry.md" 2>&1); rc=$?
+  if [ "$rc" -ne 0 ] && [ ! -d "$PH/digests/nowhere" ]; then pass "portfolio-digest (a missing registry → non-zero exit and a message: $pd_out)"
+  else failc "portfolio-digest" "missing registry: rc=$rc out: $pd_out"; fi
+  if [ "$pd_own_before" = yes ] || [ ! -e "$pd_own" ]; then
+    pass "portfolio-digest (nothing written under ~/.claude/shipkit/digests)"
+  else failc "portfolio-digest" "a digest appeared under ~/.claude/shipkit/digests"; fi
+fi
+
+# 37. digest-old: the briefing says when the newest digest is more than seven days old, and
+# says nothing about digests when there is none or when it is recent
+# (spec: .shipkit/specs/decisions-and-digest/). No claude needed; SHIPKIT_HOME points at a
+# scratch directory. Cites: decisions-and-digest/REQ-17
+DO="$WORK/digest-old"; mkdir -p "$DO/.shipkit/specs/alpha" "$DO/home/digests"
+(cd "$DO" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+bspec "$DO" alpha open 1 2
+do_old=$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=8)).isoformat())')
+do_recent=$(python3 -c 'import datetime; print((datetime.date.today() - datetime.timedelta(days=6)).isoformat())')
+printf '# Shipkit digest — %s\n' "$do_old" > "$DO/home/digests/$do_old.md"
+do_a=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+printf '# Shipkit digest — %s\n' "$do_recent" > "$DO/home/digests/$do_recent.md"
+do_b=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+rm -f "$DO/home/digests/"*.md
+do_c=$(cd "$DO" && SHIPKIT_HOME="$DO/home" sh "$BRF" 2>/dev/null)
+do_d=$(cd "$DO" && SHIPKIT_HOME="$DO/no-such-home" sh "$BRF" 2>/dev/null)
+if printf '%s\n' "$do_a" | grep -q '^shipkit: digest: newest is 8 days old — run portfolio-digest.sh' \
+   && ! printf '%s\n' "$do_b" | grep -q 'digest' \
+   && ! printf '%s\n' "$do_c" | grep -q 'digest' && ! printf '%s\n' "$do_d" | grep -q 'digest' \
+   && printf '%s\n' "$do_a" | grep -q '^shipkit: alpha: 1 of 2 tasks done'; then
+  pass "digest-old (newest digest 8 days old → one line; 6 days old, none, or no home → no digest line)"
+else failc "digest-old" "old: [$do_a] recent: [$do_b] none: [$do_c] no home: [$do_d]"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

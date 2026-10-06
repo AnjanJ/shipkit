@@ -123,6 +123,7 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `reviewer/missing-req` | start `shipkit:reviewer` on spec `refunds`, base `base` | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
 | `reviewer/all-met` | the same, on a complete feature | ends `VERDICT: PASS` with no `NOT MET` row | regex |
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
+| `digest/attention` | `/shipkit:ask --all digest` | names `ledger` and cites its digest line (`Escapes (30 days)` or `requirement missing`) | regex |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -143,6 +144,13 @@ added in 3.5.0 and passed 3 of 3 on 2026-10-06.
 
 `escape/missing-req` runs on a shipped `refunds` spec that never said a refund may not exceed
 the charge. Added in 3.5.0; 3 of 3 on 2026-10-06.
+
+`digest/attention` builds three small products in the workspace — `ledger` with an escape
+recorded today and uncommitted work, `notes` with a spec three tasks of four done, `brochure`
+with nothing going on — plus a registry pointing at them and a `studio.md` ranking `ledger`
+first, all under `shipkit-home/`. The prompt names that directory as `SHIPKIT_HOME`, so the
+skill's run of `portfolio-digest.sh` writes the digest there and not under the run's home.
+Passes when `eve`'s answer names `ledger` and quotes its digest line. Added in 3.7.0.
 
 ## Baseline 3.1.0
 

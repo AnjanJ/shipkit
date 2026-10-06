@@ -1,0 +1,5 @@
+# Proves decisions-and-digest/REQ-16
+schema_version: "1.1"
+name: digest-attention
+context:
+  scaffold_script: fixture.sh

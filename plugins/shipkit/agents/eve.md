@@ -113,8 +113,14 @@ Get the list of projects + their map locations.
   active specs (`.shipkit/specs/<feature>/`). Grep `.shipkit/decisions/` across repos for a
   portfolio "why" sweep — these verified records beat MemPalace recall and `git log`. For "which
   decisions are now falsified?", read each record's falsifiability clause and check its condition
-  against that repo's current reality. Fall through to MemPalace only for decisions never written
-  up as a record.
+  against that repo's current reality. A record may carry a `**Fired-if.**` line — a command
+  that exits 0 once its condition has come true, or `manual`. For each project run
+  `sh "<plugin root>/scripts/decision-check.sh" <path>` (the plugin root is in
+  `~/.claude/shipkit/plugin-root`) **without** `--run` first and show the commands it lists:
+  they come from that repository. Add `--run` only for a project that is in the registry —
+  every registered project is the user's own — and report the `FIRED` / `HOLDS` / `MANUAL` /
+  `ERROR` lines per project as the evidence. Fall through to MemPalace only for decisions never
+  written up as a record.
 - **Cross-project decision / episodic** ("when did we decide to standardize on Oban?", "across
   all the apps, what was the reasoning for self-hosting on Hetzner?", "what have we discussed
   about billing providers?") → query **MemPalace**. Each project is its own wing, so a
@@ -145,9 +151,9 @@ Return:
 
 ## Portfolio reports (named report shapes)
 
-Two report requests you should recognize by name (via `/shipkit:ask --all matrix …` /
-`--all consolidate`, or phrased naturally). Each has a defined shape — produce that shape,
-not free-form prose.
+Three report requests you should recognize by name (via `/shipkit:ask --all matrix …` /
+`--all consolidate` / `--all digest`, or phrased naturally). Each has a defined shape —
+produce that shape, not free-form prose.
 
 ### Dependency / version matrix (`matrix <target>` or "matrix of everything major")
 
@@ -181,6 +187,28 @@ The question: "what am I maintaining N times that should exist once?"
   winner / leave alone (consolidation has costs; say when it is not worth it).
 - Cap it: the top 5-7 candidates with evidence beat an exhaustive inventory.
 
+### Attention digest (`digest`, or "which product needs attention this week, and why?")
+
+The question: of everything in the registry, what needs me this week? The caller has just run
+`portfolio-digest.sh` and gives you the digest's path (else read the newest file in
+`~/.claude/shipkit/digests/`) and `studio.md`. The digest has one section per project with
+seven labelled lines: `Top goal`, `Open specs`, `Spec gaps`, `Decisions`, `Escapes (30 days)`,
+`Map`, `Git`. A section reading `path not found` is a project you cannot see.
+
+- **Method:** read the digest and `studio.md`, nothing else — no maps, no repos. The page is
+  the evidence; a digest line you quote is checkable by the user in seconds.
+- **Shape:** a ranked list of **at most three** products. Each entry: the product · **why**,
+  as one or two digest lines quoted with the project they came from (`ledger — Escapes (30
+  days): 1 — requirement missing 1`) · the **studio priority** it bears on, by its number and
+  text. What makes a product rank: an escape in the window, a `FIRED` decision, spec gaps, a
+  stalled open spec, unpushed or uncommitted work on a product the studio ranks high. A clean
+  section ranks nowhere; say so in one line if nothing needs attention.
+- **No `studio.md`:** say so, rank by the digest's signals alone, and mark the list as
+  unweighted — the user's priorities are theirs to write (`/shipkit:product --studio`).
+- **Gaps:** name every `path not found` section and any project with no product file, since
+  neither can be weighed.
+- Quote the digest's date (its first line); a page from last week is last week's answer.
+
 ## Good questions for you
 - "Which of my projects use which background-job library?"
 - "Everywhere I integrate Stripe / handle webhooks."
@@ -191,6 +219,7 @@ The question: "what am I maintaining N times that should exist once?"
 - "Give me a 360° status: what each project is and where it is heading."
 - "Across all projects, which past decisions are now falsified (their reversal condition has been met)?"
 - "Which projects have an active spec, and what are they building?"
+- "Which product needs attention this week, and why?" (after `portfolio-digest.sh`)
 
 ## Constraints
 - **Read-only.** You inform across the whole portfolio; you never modify a repo.

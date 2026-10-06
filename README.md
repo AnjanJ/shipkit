@@ -90,7 +90,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | Skill | What It Does |
 |-------|-------------|
 | `/shipkit:map` | Build/refresh a project's `PROJECT_MAP.md` and register it for cross-project answers |
-| `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin |
+| `/shipkit:ask` | Ask the project elders a question — routed to a subagent, keeps main context thin; `--all digest` says which product needs attention this week |
 | `/shipkit:setup` | Configure for your stack set (base + add-ons: Rails+Hotwire+React, Phoenix+LiveView+Oban, Python+ML) + pick a workflow style |
 | `/shipkit:unsetup` | Remove setup and restore your project to its pre-shipkit state |
 | `/shipkit:connect-memory` | Set up MemPalace episodic memory so the elders recall past decisions |
@@ -106,7 +106,7 @@ Nine more are reached for automatically when the work calls for it (each carries
 | `/shipkit:product` | Write `.shipkit/product.md` — what the product is for, up to three measurable goals, and its non-goals; `--studio` ranks priorities across products |
 | `/shipkit:intake` | Check a request before it becomes a spec — conflicts with non-goals, open specs and past decisions, then at most four questions |
 | `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
-| `/shipkit:ship` | The ship gate: seven checks on a spec'd feature, an independent reviewer, and a report that starts `READY` or `NOT READY` |
+| `/shipkit:ship` | The ship gate: eight checks on a spec'd feature, an independent reviewer, and a report that starts `READY` or `NOT READY` |
 | `/shipkit:escape` | A bug reached users: name the link that broke (no spec, missing requirement, missing test…), record it, reopen the spec with a failing-first task |
 | `/shipkit:handoff` | Leave a note for the next session in `.shipkit/state.md` — in flight, done, the one next step, open questions, traps; the session hook quotes the next step at every start |
 | `/shipkit:decide` | Capture a project decision as a five-part record with a falsifiability clause (`.shipkit/decisions/`) |
@@ -208,7 +208,9 @@ records use five parts — **Context · Alternatives · Case for · Case against
 falsifiability clause** — where the falsifiability clause is a concrete "I would reverse this if
 ___" (a metric, event, or threshold). That makes decisions *queryable for staleness*: ask
 `grandfather` *"are any past decisions now falsified?"* and it checks each clause against current
-reality. A `SessionStart` hook nudges when a spec drifts from its code.
+reality — and a record whose condition can be measured from the repository carries a
+`Fired-if` command that `decision-check.sh` runs on request, never from a hook. A `SessionStart`
+hook nudges when a spec drifts from its code.
 
 ```
 /shipkit:spec checkout-redesign      # spec a feature: what / how / done
