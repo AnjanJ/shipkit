@@ -361,8 +361,9 @@ if hooks_json.exists():
 # project, so their total size is a cost each user pays before typing a word. Triggers (when
 # to act) belong in them; detail (how) belongs in a skill that loads on demand. The budget is
 # an error, not a warning: without a ceiling these files only grow.
-# (.shipkit/specs/measure-and-slim/, REQ-16. Stack overlay rules are not counted here — they
-# belong to the project that installs them and have their own budget in check 12.)
+# (.shipkit/specs/measure-and-slim/, REQ-16; re-asserted by trim-and-docs/REQ-7. Stack overlay
+# rules are not counted here — they belong to the project that installs them and have their
+# own budget in check 12.)
 
 ALWAYS_ON_BUDGET = 3000   # bytes, all core always-on rules together
 
@@ -451,7 +452,7 @@ for path in skill_files:
 
 # --- 12. Stack overlays: structure and add-on bases ---------------------------
 # An overlay rule with no paths: becomes an always-on rule in the project that installs it.
-# That is intentional for the language-convention rules (rails.md, python.md, ...), but it
+# That is intentional for the convention rules (rails.md, react.md, ...), but it
 # costs context in every session of that project, so keep them short — warn past a budget.
 # Every add-on must name an existing base overlay via `<!-- requires: <base> -->` so
 # /shipkit:setup can order the installs (base first, then add-ons).
@@ -490,6 +491,90 @@ for name in ("deploy-check", "release"):
     lines = [ln.strip() for ln in skill.read_text(encoding="utf-8").splitlines()]
     if SHIP_GATE_LINE not in lines:
         err(skill, f"missing the ship-gate line: {SHIP_GATE_LINE}")
+
+# --- 14. Sprint 7 limits: stack rules, skill descriptions, bare mktemp -------------
+# Proves trim-and-docs/REQ-4 (stack rules), trim-and-docs/REQ-5 (descriptions),
+# trim-and-docs/REQ-6 (the lint fails on either) and trim-and-docs/REQ-9 (bare mktemp). A stack rule past 40 lines has stopped being a list of
+# traps; a skill description past 300 characters is loaded into every session and crowds the
+# others out; a bare `mktemp` on macOS ignores TMPDIR and writes to the system temp directory,
+# which a sandbox may deny (found by the digest eval in 3.7.0).
+
+STACK_RULE_MAX_LINES = 40
+SKILL_DESCRIPTION_MAX = 300
+
+for d in overlay_dirs:
+    for rule in sorted(d.glob(".claude/rules/*.md")):
+        n = len(rule.read_text(encoding="utf-8").splitlines())
+        if n > STACK_RULE_MAX_LINES:
+            err(rule, f"stack rule is {n} lines; the limit is {STACK_RULE_MAX_LINES} — keep the "
+                      "traps, drop the defaults")
+
+for path in skill_files:
+    fm_text, _ = split_frontmatter(path)
+    fm = parse_frontmatter(path, fm_text) if fm_text else {}
+    desc = fm.get("description") or ""
+    if len(desc) > SKILL_DESCRIPTION_MAX:
+        err(path, f"description is {len(desc)} characters; the limit is {SKILL_DESCRIPTION_MAX}")
+
+for sp in sorted((CORE / "scripts").glob("*.sh")):
+    for i, line in enumerate(sp.read_text(encoding="utf-8").splitlines(), 1):
+        code = re.sub(r"(^|\s)#.*$", "", line)   # drop a comment; "$#" and "${#x}" have no space before #
+        # command position only: start of a statement or inside $( … ), not the word in a string
+        if re.search(r"(^\s*|\$\(\s*|[;&|]\s*)mktemp\b(?!\s+[\"'$./])", code):
+            err(sp, f"line {i}: bare `mktemp` ignores TMPDIR on macOS — pass a template: "
+                    "mktemp \"${TMPDIR:-/tmp}/shipkit.XXXXXX\"")
+
+# --- 15. The README: short, current, and naming only skills that exist -----------
+# Proves trim-and-docs/REQ-10 (no version history above Install), trim-and-docs/REQ-11 (the
+# nine-step loop, one command each), trim-and-docs/REQ-12 (every command named exists) and
+# trim-and-docs/REQ-13 (250 lines or fewer). History belongs in the changelog; a README that
+# names a cut skill is the first thing a new user tries and the first thing that fails.
+
+README_MAX_LINES = 250
+
+readme = ROOT / "README.md"
+readme_lines = readme.read_text(encoding="utf-8").splitlines()
+if len(readme_lines) > README_MAX_LINES:
+    err(readme, f"{len(readme_lines)} lines; the limit is {README_MAX_LINES} — move history to "
+                "CHANGELOG.md and detail to GUIDE.md")
+install_at = next((i for i, ln in enumerate(readme_lines) if ln.startswith("## Install")), None)
+if install_at is None:
+    err(readme, "no '## Install' heading")
+else:
+    for i, ln in enumerate(readme_lines[:install_at], 1):
+        if re.search(r"\bNew in \d|\(\d\.\d+ (added|made|refocused)", ln):
+            err(readme, f"line {i}: version history above the Install section — it belongs in "
+                        "CHANGELOG.md")
+LOOP_STEPS = ["Product", "Intake", "Spec", "Brief", "Build", "Review", "Ship", "Escape", "Digest"]
+_loop_rows = {}
+for ln in readme_lines:
+    m = re.match(r"\|\s*(\d)\s*\|\s*\*\*(\w+)\*\*[^|]*\|\s*(`[^`]+`)\s*\|", ln)
+    if m:
+        _loop_rows[int(m.group(1))] = m.group(2)
+_missing = [f"{i} {name}" for i, name in enumerate(LOOP_STEPS, 1) if _loop_rows.get(i) != name]
+if _missing:
+    err(readme, "the loop table must have rows 1 to 9 — Product, Intake, Spec, Brief, Build, "
+                f"Review, Ship, Escape, Digest — each with a command in backticks; missing or "
+                f"out of place: {', '.join(_missing)}")
+_skill_dirs = {p.parent.name for r in PLUGIN_ROOTS for p in r.glob("skills/*/SKILL.md")}
+for i, ln in enumerate(readme_lines, 1):
+    for m in re.finditer(r"/shipkit(?:-workflows)?:([a-z][a-z0-9-]*)", ln):
+        if m.group(1) not in _skill_dirs:
+            err(readme, f"line {i}: names `{m.group(0)}` but no such skill exists")
+
+# --- 16. The roadmap's status line names the current version ----------------------
+# Proves trim-and-docs/REQ-17. The status paragraph is the first thing a reader checks against
+# the release they installed; one that names an older version says the document is dead.
+
+roadmap = ROOT / "ROADMAP.md"
+if version:
+    status_lines = [ln for ln in roadmap.read_text(encoding="utf-8").splitlines()
+                    if ln.startswith("**Status")]
+    if not status_lines:
+        err(roadmap, "no '**Status' line")
+    elif not any(version in ln for ln in status_lines):
+        err(roadmap, f"the status line does not name the current version {version}: "
+                     f"{status_lines[0][:90]!r}")
 
 # --- Report ------------------------------------------------------------------
 

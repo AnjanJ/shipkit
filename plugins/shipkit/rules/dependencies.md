@@ -22,15 +22,7 @@ paths:
 ---
 
 # Dependency Management Rules
-
-## Before Adding Any Dependency
-1. Read the library's documentation first (WebFetch the official docs — never guess at an API)
-2. Check the latest stable version and use it unless the project pins a major version
-3. Verify compatibility: run the full test suite AFTER adding the dependency
-4. Check for security advisories before adoption
-
-## Never
-- Never add a dependency without running tests afterward
-- Never downgrade a dependency without documenting why
-- Never use `*` or unpinned versions in dependency files
-- Never run bare `bundle update` or `npm update` without targeting specific packages
+- Never use `*` or an unpinned version in a dependency file.
+- Never run a bare `bundle update`, `npm update` or `mix deps.update --all`: name the package.
+  A bare update moves every dependency at once and hides which one broke the build.
+- Never downgrade a dependency without saying why in the commit.

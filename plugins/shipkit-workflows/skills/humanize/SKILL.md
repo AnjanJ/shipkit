@@ -1,5 +1,5 @@
 ---
-description: "Detect and remove AI-generated writing patterns from prose — make text sound naturally human. TRIGGER when: user asks to humanize, de-AI, or make writing sound natural in docs/READMEs/PR descriptions/marketing copy. DO NOT TRIGGER when: editing code or comments, or the user hasn't asked about writing style."
+description: "Detect and remove AI-generated writing patterns from prose so it reads as written by a person. TRIGGER when: the user asks to humanize or de-AI docs, READMEs, PR descriptions or marketing copy. DO NOT TRIGGER when: editing code or comments, or writing style was not asked about."
 user-invocable: true
 argument-hint: "[analyze|<text-or-file-path>]"
 context: fork

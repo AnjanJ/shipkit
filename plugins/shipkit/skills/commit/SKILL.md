@@ -1,5 +1,5 @@
 ---
-description: "Write an atomic git commit with a message that scales to the change — a good subject for trivial commits, and What/Why/How-decisions/Test plan for substantive ones. TRIGGER when: the user asks to commit, or work reaches a natural commit point (a task done, a fix verified). DO NOT TRIGGER when: the user is mid-edit, or explicitly says they'll commit themselves."
+description: "Write an atomic git commit whose message scales to the change: a subject line for trivial ones, What/Why/How/Test plan for substantive ones. TRIGGER when: the user asks to commit, or a task or fix is done. DO NOT TRIGGER when: the user is mid-edit or says they will commit themselves."
 user-invocable: true
 argument-hint: "[optional: what to emphasize, or a message]"
 ---

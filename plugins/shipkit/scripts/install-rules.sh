@@ -33,7 +33,7 @@ die()   { echo "install-rules: $*" >&2; exit 1; }
 DEST="$PROJ/.claude/rules/shipkit"
 
 # --- what did we own BEFORE this run? (empty for a legacy stamp: no delete authority) -------
-PRIOR=$(mktemp) || die "mktemp failed"
+PRIOR=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
 trap 'rm -f "$PRIOR"' EXIT
 if manifest_is_legacy "$PROJ"; then
   LEGACY=1

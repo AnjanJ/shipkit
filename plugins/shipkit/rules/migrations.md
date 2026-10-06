@@ -6,10 +6,7 @@ paths:
   - "**/db/migrate/**"
 ---
 # Migration Safety
-- Never drop columns or tables without confirming with the user
-- Always make migrations reversible when possible
-- For large tables, consider batched operations
-- Check for index additions on high-traffic tables — may need CONCURRENTLY
-- Verify foreign key constraints won't break existing data
-- Test migrations against a copy of production data when available
-- Always add a rollback strategy for destructive migrations
+- On a large table, backfill in batches: one `UPDATE` over millions of rows holds a lock for
+  the whole run.
+- An index on a high-traffic table needs `CONCURRENTLY` (Postgres) or the ORM's equivalent
+  (`algorithm: :concurrently`, `disable_ddl_transaction!`), or writes block until it is built.

@@ -1,5 +1,5 @@
 ---
-description: "Set up MemPalace episodic memory end-to-end so grandfather/eve can recall past decisions — installs it if missing, registers it at user scope, and backfills this project's decision history from your Claude transcripts. TRIGGER when: the user asks to set up / enable / connect episodic memory, decision recall, or MemPalace. DO NOT TRIGGER when: MemPalace is already connected and backfilled, or the user only wants the structural project map (use /shipkit:map)."
+description: "Set up MemPalace episodic memory so grandfather/eve can recall past decisions: install, register at user scope, backfill from Claude transcripts. TRIGGER when: the user asks to set up or connect episodic memory or MemPalace. DO NOT TRIGGER when: it is already connected, or they want the map."
 user-invocable: true
 argument-hint: "[--wing <name>] [--reinstall]"
 ---

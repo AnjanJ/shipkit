@@ -7,9 +7,7 @@ paths:
   - "setup.cfg"
 ---
 # When Modifying Python Dependencies
-- Use flexible constraints in pyproject.toml: `>=1.0,<2.0`
-- Pin exact versions in requirements.txt for deployment
-- After ANY change: install in virtualenv, run full test suite
-- Run `pip-audit` or `safety check` for vulnerability scanning
-- Detect package manager: poetry.lock=poetry, uv.lock=uv, Pipfile.lock=pipenv, else pip
-- Always use a virtual environment — never install globally
+- Flexible constraints in `pyproject.toml` (`>=1.0,<2.0`); exact pins in `requirements.txt` for deployment
+- Run `pip-audit` for known vulnerabilities
+- Detect the package manager from the lockfile — `poetry.lock` → poetry, `uv.lock` → uv,
+  `Pipfile.lock` → pipenv, else pip — and use that one; never install outside a virtualenv

@@ -5,7 +5,7 @@ user-invocable: false
 
 # Rails Code Review Standards
 
-Supplement to the base `code-review-standards` knowledge base. Only loaded for Rails projects.
+Rails-specific lenses to apply alongside Claude Code's built-in `/code-review`. Only loaded for Rails projects.
 
 ## Rails Performance & Scalability
 

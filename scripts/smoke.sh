@@ -94,10 +94,11 @@ out=$(ask "$COPY" 'List the exact names of every agent type available to you tha
 got=$(printf '%s\n' "$out" | grep -o 'shipkit:[a-z-]*' | sed 's/shipkit://' | sort -u | tr '\n' ' ')
 if [ "$got" = "$expected" ]; then pass "agents (registered set = $expected)"; else failc "agents" "expected [$expected] got [$got]"; fi
 
-# 5. kb-skills: the workflows plugin's knowledge base registers as a skill
-out=$(ask "$ROOT/plugins/shipkit-workflows" 'List the exact names of every skill available to you whose name contains "standards", one per line, or NONE.')
-case "$out" in *code-review-standards*) pass "kb-skills (knowledge base registered in shipkit-workflows)";;
-  *) failc "kb-skills" "got: $out";; esac
+# 5. workflows-skills: the workflows plugin's skills register (the knowledge base this check
+# used to look for was cut in 4.0; `humanize` is the skill with the most distinctive name)
+out=$(ask "$ROOT/plugins/shipkit-workflows" 'List the exact names of every skill available to you whose name contains "humanize", one per line, or NONE.')
+case "$out" in *humanize*) pass "workflows-skills (a shipkit-workflows skill is registered)";;
+  *) failc "workflows-skills" "got: $out";; esac
 
 # 5b. namespaces: the two plugins register under distinct prefixes, no collision.
 #
@@ -378,7 +379,7 @@ else
   survivors=$(find "$UP/.claude" -type f 2>/dev/null | sed "s#^$UP/##" | sort | tr '\n' ' ')
   gone=0
   [ -f "$UP/.claude/rules/shipkit/shipkit.md" ] && gone=1
-  [ -f "$UP/.claude/rules/shipkit/python/python.md" ] && gone=1
+  [ -f "$UP/.claude/rules/shipkit/python/pyproject.md" ] && gone=1
   [ -f "$UP/.claude/skills/new-feature/SKILL.md" ] && gone=1
   kept=1
   [ -f "$UP/.claude/agents/my-agent.md" ] || kept=0

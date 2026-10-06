@@ -22,19 +22,12 @@ paths:
 - Keep assigns small and flat. Never assign a full Ecto struct with preloaded associations
   when the template reads three fields.
 - Use `assign_new/3` for values shared between the dead and connected renders.
-- Never assign raw params or anything user-controlled without casting it first.
-
-## Components
 - Prefer **function components** (`attr`/`slot`) over nested LiveViews. A nested LiveView is a
   separate process with its own lifecycle — use it only for genuinely independent state.
-- Declare `attr` and `slot` with types and `required:` — the compiler checks call sites.
-- Keep `.heex` free of business logic: no `Repo` calls, no multi-clause `case` on domain state.
-  Compute in the LiveView, render in the template.
 
 ## Events and PubSub
-- Prefer `phx-*` bindings over custom JS hooks. Use a hook only for browser APIs LiveView
-  cannot reach (charts, maps, clipboard, file APIs).
-- Every `handle_event/3` validates its payload — the client can send anything.
+- Every `handle_event/3` validates its payload — the client can send anything; never assign
+  raw params without casting them first.
 - Subscribe to PubSub in `mount/3` under `connected?`, and scope the topic (per-user or
   per-resource). A global topic fans out to every connected socket.
 - `handle_info/2` must tolerate messages arriving after the relevant state has changed.

@@ -1,5 +1,5 @@
 ---
-description: "Explore a codebase and return a verified system-design doc explaining WHY it's built this way (decisions, trade-offs, ADRs). TRIGGER when: user asks how/why a system is designed, wants architecture reasoning, or a SYSTEM_DESIGN doc. DO NOT TRIGGER when: user wants a where-things-live index (use /shipkit:map), is mid-edit, or asked a narrow factual question."
+description: "Explore a codebase and return a verified system-design doc on WHY it is built this way (decisions, trade-offs). TRIGGER when: the user asks how or why the system is designed, or wants a SYSTEM_DESIGN doc. DO NOT TRIGGER when: they want a where-things-live index (/shipkit:map) or one fact."
 user-invocable: true
 argument-hint: "[full|quick|section <name>]"
 context: fork
