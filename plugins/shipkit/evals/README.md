@@ -120,6 +120,9 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `intake/nongoal` | `/shipkit:intake` Add EUR and GBP pricing. | says the request conflicts with the non-goal on multi-currency support | regex |
 | `intake/trivial` | `/shipkit:intake` Rename `apply_tax` to `add_tax`. | says the request is trivial and runs no intake | llm |
 | `intake/limit` | `/shipkit:intake` Add refunds. | asks at least one and at most four questions, and builds nothing | llm |
+| `reviewer/missing-req` | start `shipkit:reviewer` on spec `refunds`, base `base` | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/all-met` | the same, on a complete feature | ends `VERDICT: PASS` with no `NOT MET` row | regex |
+| `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -131,6 +134,15 @@ reach the session through the plugin's hook — the path a plugin-only user gets
 
 `gap` uses a judge and not a "no provider name appears" regex on purpose: an honest answer
 lists the names it searched for and did not find.
+
+The `reviewer` cases build their feature in the scaffold: the fixture as a commit tagged
+`base`, then one commit adding a `refunds` spec (three requirements, one of them waived) and
+its code. In `missing-req` the second requirement has no code and no test. `all-met` is the
+control: a reviewer that fails everything would pass `missing-req` and be useless. Both were
+added in 3.5.0 and passed 3 of 3 on 2026-10-06.
+
+`escape/missing-req` runs on a shipped `refunds` spec that never said a refund may not exceed
+the charge. Added in 3.5.0; 3 of 3 on 2026-10-06.
 
 ## Baseline 3.1.0
 

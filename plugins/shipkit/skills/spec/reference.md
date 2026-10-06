@@ -21,7 +21,10 @@ that matches the behavior; number requirements `REQ-N` so tasks and tests can ci
 | **Unwanted** | guarding against bad input/state | `If <trigger>, then the <system> shall <response>.` | If the upload exceeds 10MB, then the system shall reject it with a size error. |
 
 Rules of thumb: one behavior per requirement (if you need "and", split it); prefer the most
-specific pattern that fits; **escapable** — where EARS is forced, use a user story + acceptance
+specific pattern that fits; requirements describe the **product**, never the process around
+it — "the ship report says READY" or "the release checklist holds" cannot be met before the
+gate runs, so they go under a "Release steps" note, not a `REQ-N`, and the gate and release
+go in `tasks.md` under "After the gate" without tick boxes; **escapable** — where EARS is forced, use a user story + acceptance
 bullets and note why.
 
 Each `shall` maps to one acceptance test — that 1:1 mapping is the whole reason to use EARS.

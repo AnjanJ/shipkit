@@ -9,6 +9,8 @@ argument-hint: "[patch|minor|major]"
 
 Two-phase release with a mandatory approval gate.
 
+If this feature has a spec, run `/shipkit:ship <slug>` first.
+
 Version bump type: $ARGUMENTS (default: `patch`)
 
 ## Phase 1: Prepare (Local only — nothing leaves this machine)

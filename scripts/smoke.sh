@@ -946,6 +946,73 @@ else
   else failc "brief-verify" "usage: missing arg $rc, unknown task $rc2, bad ref $rc3 (want 64 1 64)"; fi
 fi
 
+# 27. reviewer-tools: the reviewer agent can read and run git, and cannot change anything or
+# start another agent (spec: .shipkit/specs/review-and-ship/). Read from the file a session
+# loads. Cites: review-and-ship/REQ-7
+rv="$COPY/agents/reviewer.md"
+rv_tools=$(sed -n 's/^tools: *//p' "$rv" 2>/dev/null | tr -d ' ')
+rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
+if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
+  pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
+else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
+
+# 28. spec-check --as-shipped: an open spec is asked for what a shipped one owes, and no file
+# changes (spec: .shipkit/specs/review-and-ship/). Reuses scspec and sc from section 19.
+# Cites: review-and-ship/REQ-9
+P="$WORK/as-shipped"; scspec "$P" demo open
+printf '# demo/REQ-1\n' > "$P/tests/test_demo.py"
+as_before=$(cat "$P/.shipkit/specs/demo/spec.md")
+sh "$SC" "$P" demo > "$WORK/sc.out" 2>&1
+if grep -q 'MISSING-TEST' "$WORK/sc.out"; then failc "as-shipped" "an open spec was asked for tests without the flag: $(cat "$WORK/sc.out")"
+else
+  rc=$(sc "$P" demo --as-shipped)
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-2$' "$WORK/sc.out" \
+     && [ "$as_before" = "$(cat "$P/.shipkit/specs/demo/spec.md")" ]; then
+    pass "as-shipped (open spec + --as-shipped → MISSING-TEST, exit 1, spec.md untouched)"
+  else failc "as-shipped" "exit $rc: $(cat "$WORK/sc.out")"; fi
+fi
+
+# 29. ship-gate: /shipkit:ship says READY for a complete feature and NOT READY, naming step 3,
+# when one task is unticked — and changes nothing but its report
+# (spec: .shipkit/specs/review-and-ship/). Cites: review-and-ship/REQ-12 review-and-ship/REQ-13
+# review-and-ship/REQ-14
+# Asks a model (sonnet) to do real work, twice, and each run starts the reviewer agent: a few
+# minutes. The feature is the one the reviewer/all-met eval case builds. What is asserted is
+# the report file and `git status`, read here — not the model's summary.
+SG="$WORK/ship"; mkdir -p "$SG"
+(cd "$SG" && bash "$COPY/evals/reviewer/all-met/fixture.sh" >/dev/null 2>&1)
+# No .gitignore on purpose: the gate's own test run leaves __pycache__/ behind, and a gate that
+# then called the tree dirty would fail every Python project on its own step 2.
+shiprun() {
+  (cd "$SG" && claude --plugin-dir "$COPY" --model sonnet \
+    --allowedTools Read Glob Grep Bash Write Skill Agent \
+    -p "/shipkit:ship refunds base
+This run is not interactive and you cannot ask me anything. The project's test command is: python3 -m unittest discover -s tests
+Do not change the spec's Status line." </dev/null >"$WORK/ship.out" 2>&1)
+}
+shiprun
+sg_report=$(ls "$SG"/.shipkit/releases/*-refunds.md 2>/dev/null | sed -n 1p)
+sg_first=""; [ -n "$sg_report" ] && sg_first=$(sed -n 1p "$sg_report")
+sg_dirty=$(cd "$SG" && git status --porcelain | grep -v '\.shipkit/releases/' | grep -v '__pycache__')
+if [ "$sg_first" = "READY" ] && [ -z "$sg_dirty" ]; then
+  pass "ship-gate (complete feature → report starts READY; nothing else in the tree changed)"
+else
+  failc "ship-gate" "first line [$sg_first], other changes [$sg_dirty] — model said: $(tail -6 "$WORK/ship.out")"
+fi
+# the same feature with one task unticked
+rm -rf "$SG/.shipkit/releases"
+sed 's/^- \[x\] \*\*T2\*\*/- [ ] **T2**/' "$SG/.shipkit/specs/refunds/tasks.md" > "$WORK/sg.tmp" \
+  && mv "$WORK/sg.tmp" "$SG/.shipkit/specs/refunds/tasks.md"
+(cd "$SG" && git add .shipkit/specs/refunds/tasks.md && git -c user.email=s@s -c user.name=s commit -q -m "untick T2")
+shiprun
+sg_report=$(ls "$SG"/.shipkit/releases/*-refunds.md 2>/dev/null | sed -n 1p)
+sg_first=""; [ -n "$sg_report" ] && sg_first=$(sed -n 1p "$sg_report")
+if [ "$sg_first" = "NOT READY" ] && grep -Eq '^\| *3 *\|.*\| *FAIL *\|' "$sg_report"; then
+  pass "ship-gate (one task unticked → report starts NOT READY and step 3 is FAIL)"
+else
+  failc "ship-gate" "first line [$sg_first]; step 3 row: $(grep -E '^\| *3 *\|' "$sg_report" 2>/dev/null) — model said: $(tail -6 "$WORK/ship.out")"
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

@@ -1,8 +1,8 @@
 # Spec: Reviewer and ship gate (Sprint 4, release 3.5.0)
 
-> Spec not yet accepted.
-> Status: draft
-> Paths: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/, plugins/shipkit/skills/escape/, plugins/shipkit/evals/reviewer/, plugins/shipkit/evals/escape/
+> Spec accepted at commit `374b43b` on sprint-4/review-and-ship.
+> Status: shipped
+> Paths: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/, plugins/shipkit/skills/escape/, plugins/shipkit/evals/, plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/stacks/rails/.claude/skills/deploy-check/, plugins/shipkit/stacks/rails/.claude/skills/release/, scripts/smoke.sh, scripts/lint.py, .claude-plugin/marketplace.json
 
 ## Purpose
 
@@ -90,13 +90,16 @@ intake beside this file (`intake.md`).
   line "If this feature has a spec, run `/shipkit:ship <slug>` first.", with nothing else in
   either skill removed or rewritten.
 
-### Use it for real, and exit (S4-T5)
+## Release steps (not requirements)
 
-- **REQ-20.** When Sprint 4 is complete, `.shipkit/releases/<date>-review-and-ship.md` shall
-  exist in the repository with `READY` as its first line.
-  [untested: a committed report, verified by reading]
-- **REQ-21.** When Sprint 4 is complete, the five lines of the sprint exit checklist shall
-  hold. [untested: a checklist, verified by running it]
+Requirements describe the product; these describe what happens to this spec after the gate,
+and the gate cannot judge them because they come after it. Removed from the requirements on
+2026-10-06, owner-approved, after the first real run of `/shipkit:ship` on this branch
+answered `NOT READY` on exactly these two (they were REQ-20 and REQ-21).
+
+- `/shipkit:ship review-and-ship` is run on this branch; its report,
+  `.shipkit/releases/<date>-review-and-ship.md`, starts with `READY` and is committed.
+- The five lines of the sprint exit checklist hold before the release.
 
 ## Out of scope
 

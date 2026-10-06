@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Run through all checks before deploying. Stop on any FAIL.
 
+If this feature has a spec, run `/shipkit:ship <slug>` first.
+
 ## Current State
 !`f=$(git log --oneline -5 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no git history"`
 !`f=$(bin/rails db:migrate:status 2>/dev/null | tail -5); [ -n "$f" ] && echo "$f" || echo "no Rails migration status available"`

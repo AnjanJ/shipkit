@@ -2,6 +2,54 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [3.5.0] — 2026-10-06
+
+Sprint 4 of the quality-gate plan: a second pair of eyes that has not seen the implementer's
+reasoning, and one command that says whether a feature is ready, with evidence. Requirements
+and decision records in [`.shipkit/specs/review-and-ship/`](.shipkit/specs/review-and-ship/);
+the intake that shaped them is beside them.
+
+### Added
+
+- **The `reviewer` agent.** Given only a spec folder name and a base git ref, it reads the
+  spec and the diff and gives one verdict per requirement — `MET` with the file and line of
+  the code and of the test, `NOT MET`, or `CANNOT TELL` — lists changes beyond the spec's
+  `Paths` and decisions the code does not follow, and ends `VERDICT: PASS` or `FAIL`. A
+  requirement marked `[untested: …]` is verified by reading. It has read tools and `Bash`
+  only; it cannot edit or start agents, and it uses the session's model (`model: inherit`).
+- **`/shipkit:ship <slug> [base-ref]`**, the gate: spec-check as shipped, the project's
+  tests, every task ticked, the reviewer's verdict, a rollback for any migration, a concrete
+  reversal condition on every decision, a clean tree. Each step is `PASS`, `FAIL` or
+  `SKIPPED` with its evidence, in `.shipkit/releases/<date>-<slug>.md`, whose first line is
+  `READY` or `NOT READY`. It never deploys, pushes, merges, tags or edits code, and it asks
+  before marking the spec `shipped`.
+- **`/shipkit:escape`** for a bug that reached users: at most three questions, then exactly
+  one cause from six (`no spec`, `requirement missing`, `requirement wrong`,
+  `requirement right, no test`, `test existed but was wrong`, `outside the product`), a record
+  in `.shipkit/escapes/`, and — where the spec was at fault — the requirement added or
+  corrected, the spec reopened, and a task whose test fails first.
+- **`spec-check.sh --as-shipped`** asks an open spec for what a shipped one owes, without
+  changing it.
+- The Rails overlay's `deploy-check` and `release` skills say: if this feature has a spec, run
+  `/shipkit:ship <slug>` first.
+- Eval cases `reviewer/missing-req`, `reviewer/all-met` and `escape/missing-req`, all 3 of 3.
+
+### Changed
+
+- The core plugin has 16 skills and 6 agents.
+- The spec reference says requirements describe the product, never the process after the
+  gate: "the ship report says READY" cannot be met before the gate runs.
+
+### What using it for real showed
+
+`/shipkit:ship review-and-ship` was run on the sprint's own branch. The first run answered
+`NOT READY`: two requirements and two tasks in the spec were about the gate's own result and
+the release, which no feature can satisfy before its gate has passed. They became release
+notes instead of requirements. The second run answered `READY`; the report is committed at
+`.shipkit/releases/2026-10-06-review-and-ship.md`. The gate also caught its own first flaw
+during development: its test run left `__pycache__` behind and its clean-tree step then
+failed; it now judges the tree as it was before it ran.
+
 ## [3.4.0] — 2026-10-06
 
 Sprint 3 of the quality-gate plan: shipkit learns what the product is for, asks a few good

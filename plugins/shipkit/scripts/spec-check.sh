@@ -2,7 +2,12 @@
 # Shipkit spec-check: does every requirement in a spec have a task, and — once the spec is
 # shipped — a test that cites it?
 #
-#   spec-check.sh <project-dir> [slug]     # no slug: every spec under .shipkit/specs/
+#   spec-check.sh <project-dir> [slug] [--as-shipped]
+#
+#   no slug        every spec under .shipkit/specs/
+#   --as-shipped   ask an OPEN spec for what a shipped one owes — a cited test for every
+#                  requirement that is not excused. Changes no file. It is how the ship gate
+#                  asks "would this pass if it shipped now?" before the status is changed.
 #
 # Reads the spec files as plain text and prints one line per finding:
 #
@@ -39,12 +44,20 @@
 # POSIX sh + awk + git. No bash-only syntax, no python. Spec: .shipkit/specs/spec-contract/.
 
 usage() {
-  echo "usage: spec-check.sh <project-dir> [slug]" >&2
+  echo "usage: spec-check.sh <project-dir> [slug] [--as-shipped]" >&2
   exit 64
 }
-[ $# -ge 1 ] && [ $# -le 2 ] || usage
-PROJ=$1
-ONLY=${2:-}
+AS_SHIPPED=0
+PROJ=""
+ONLY=""
+for arg in "$@"; do
+  case "$arg" in
+    --as-shipped) AS_SHIPPED=1 ;;
+    -*) usage ;;
+    *) if [ -z "$PROJ" ]; then PROJ=$arg; elif [ -z "$ONLY" ]; then ONLY=$arg; else usage; fi ;;
+  esac
+done
+[ -n "$PROJ" ] || usage
 [ -d "$PROJ" ] || { echo "spec-check: no such directory: $PROJ" >&2; exit 64; }
 SPECS="$PROJ/.shipkit/specs"
 if [ -n "$ONLY" ] && [ ! -f "$SPECS/$ONLY/spec.md" ]; then
@@ -162,7 +175,7 @@ for spec in "$SPECS"/*/spec.md; do
       echo "MISSING-TASK $slug REQ-$n"
       gaps=$((gaps + 1))
     fi
-    if [ "$status" = shipped ] && ! cited "$slug" "$n"; then
+    if { [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; } && ! cited "$slug" "$n"; then
       echo "MISSING-TEST $slug REQ-$n"
       gaps=$((gaps + 1))
     fi

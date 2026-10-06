@@ -85,7 +85,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 
 ## What You Get Instantly
 
-**The knowledge layer** (`shipkit`) — 14 skills, always at hand:
+**The knowledge layer** (`shipkit`) — 16 skills, always at hand:
 
 | Skill | What It Does |
 |-------|-------------|
@@ -98,7 +98,7 @@ Shipkit has three kinds of behavior. Knowing which is which tells you what to ex
 | `/shipkit:update-rules` | Update CLAUDE.md rules (never edit manually) |
 | `/shipkit:context-audit` | Check context window health and find bloat |
 
-Six more are reached for automatically when the work calls for it (each carries
+Eight more are reached for automatically when the work calls for it (each carries
 `TRIGGER when: / DO NOT TRIGGER when:` guidance), or you can invoke any by name:
 
 | Skill | What It Does |
@@ -106,6 +106,8 @@ Six more are reached for automatically when the work calls for it (each carries
 | `/shipkit:product` | Write `.shipkit/product.md` — what the product is for, up to three measurable goals, and its non-goals; `--studio` ranks priorities across products |
 | `/shipkit:intake` | Check a request before it becomes a spec — conflicts with non-goals, open specs and past decisions, then at most four questions |
 | `/shipkit:spec` | Spec a non-trivial feature — the three questions, written to `.shipkit/specs/` (EARS + decision records) |
+| `/shipkit:ship` | The ship gate: seven checks on a spec'd feature, an independent reviewer, and a report that starts `READY` or `NOT READY` |
+| `/shipkit:escape` | A bug reached users: name the link that broke (no spec, missing requirement, missing test…), record it, reopen the spec with a failing-first task |
 | `/shipkit:decide` | Capture a project decision as a five-part record with a falsifiability clause (`.shipkit/decisions/`) |
 | `/shipkit:explain-system` | Explore codebase and return verified system design docs |
 | `/shipkit:walkthrough` | Trace one feature end-to-end |
@@ -121,7 +123,7 @@ Six more are reached for automatically when the work calls for it (each carries
 | `/shipkit-workflows:migration-plan` | Plan major dependency upgrades |
 | `/shipkit-workflows:humanize` | Detect and remove AI-generated writing patterns from text |
 
-**6 agents** (5 in `shipkit`, 1 in `shipkit-workflows`) — subagents that do heavy work in their own context so yours stays thin:
+**7 agents** (6 in `shipkit`, 1 in `shipkit-workflows`) — subagents that do heavy work in their own context so yours stays thin:
 
 | Agent | Plugin | What It Does |
 |-------|--------|-------------|
@@ -130,6 +132,7 @@ Six more are reached for automatically when the work calls for it (each carries
 | `archivist` | shipkit | Builds/refreshes the `PROJECT_MAP.md` that grandfather and eve read |
 | `codebase-explorer` | shipkit | Read-only exploration: maps directories, answers bounded questions cheaply |
 | `tracer` | shipkit | Read-only deep trace of one feature end-to-end, `file:line`-cited — behind `/shipkit:walkthrough` |
+| `reviewer` | shipkit | Checks a branch against its spec with fresh eyes — one verdict per requirement, `VERDICT: PASS` or `FAIL` — behind `/shipkit:ship` |
 | `test-analyzer` | shipkit-workflows | Auto-diagnoses test failures |
 
 ### The project elders — ask, don't pollute

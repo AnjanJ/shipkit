@@ -1,0 +1,5 @@
+# Proves review-and-ship/REQ-16 and review-and-ship/REQ-17
+schema_version: "1.1"
+name: escape-missing-req
+context:
+  scaffold_script: fixture.sh
