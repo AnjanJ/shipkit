@@ -139,7 +139,7 @@ Configures shipkit for your specific project. Run it once when you start using s
    the plugin's `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
    makes the path-scoped rules work. The install is stamped with the plugin version; the session
    hook tells you when a plugin upgrade has made the copies stale, and re-running setup refreshes them
-7. Installs stack-specific skills, rules, and knowledge bases via the plugin's `scripts/install-stack.sh`
+7. Installs stack-specific skills and rules via the plugin's `scripts/install-stack.sh`
    (into `.claude/skills/` and `.claude/rules/shipkit/<stack>/`), filling every
    `{{placeholder}}` from detection — the script refuses to leave one unfilled
 8. Optionally creates `.claude/settings.json` with safe defaults
@@ -871,21 +871,29 @@ All three: read-only, report confidence levels, keep no private memory between r
 
 Shipped as skills with `user-invocable: false`: their one-line description is always known to
 Claude, the body loads only when a skill or rule points at them or Claude reaches for one. Not
-always in context.
+always in context. Since 4.0 the core plugins ship none; two come with the Rails overlay.
 
-### code-review-standards
+### Reviewing code — use the built-in
 
-Detailed review criteria: 8 core lenses (Clean Code, DRY, KISS, YAGNI, Idioms, Framework Patterns, Performance, Error Handling) plus a 9th that engages only when AI/LLM code is present, an anti-pattern catalog with smell-to-pattern mapping, and severity definitions. Load it for any diff review — Claude Code's built-in `/code-review` or a manual pass.
+Claude Code's `/code-review` covers the general lenses (clean code, duplication, idioms,
+performance, error handling), so shipkit's `code-review-standards` knowledge base was removed in
+4.0 (`ui-ux-standards` went in 3.0 for the same reason; the `ui-ux` **path-scoped rule stays**
+with its WCAG 2.2 AA baseline). One lens the built-in does not name, kept here:
 
-### ui-ux-standards — removed in 3.0
-
-The UI knowledge base and `/shipkit:ui-ux` were removed; the official `frontend-design`
-plugin covers design direction. The `ui-ux` **path-scoped rule stays** and now carries a
-self-contained WCAG 2.2 AA baseline, so accessibility still applies when you edit a UI file.
+**Reviewing code an AI wrote.** Look for the failure modes of generated code rather than of
+tired people: a plausible API that does not exist (a method, option or flag the library never
+had — check the docs, not the shape); a test that asserts what the code does rather than what
+the requirement says (compare it with the `REQ-N` it cites, not with the implementation);
+defensive scaffolding for states that cannot occur (`if x is None` on a value the caller
+guarantees); a comment that describes intent the code does not carry out; a "fix" that
+silences the symptom (a broadened `except`, a retry, a default) where the root cause was one
+line away; and three near-copies of a helper where the second one should have been a call.
+Severity follows the requirement: a `NOT MET` requirement is a blocker whatever the code's
+quality; a style finding on a `MET` one is a note.
 
 ### Stack-specific (installed via /setup)
 
-- **code-review-standards-rails** — ActiveRecord performance, Sidekiq best practices, Hotwire consistency
+- **code-review-standards-rails** — ActiveRecord performance, Sidekiq best practices, Hotwire consistency; applied alongside the built-in `/code-review`
 - **ai-rails** — RubyLLM patterns for chat, embeddings, streaming, tool use, testing
 
 ---
@@ -896,14 +904,18 @@ Installed into `.claude/rules/shipkit/` by `/shipkit:setup` (Claude Code only lo
 project, never from a plugin). After that they auto-load when you edit matching files — no
 action needed. Re-run `/shipkit:setup` after a plugin upgrade to refresh the copies.
 
+Since 4.0 each rule holds only the lines that name a trap the model gets wrong unprompted; the
+defaults it already follows were trimmed (the audit is `docs/design/trim-audit-4.0.md`). The
+`security` rule was removed: the always-on `shipkit.md` and the commit guard keep the one line
+that bites, and the rest was default behaviour.
+
 | Rule | When It Loads | What It Enforces |
 |------|--------------|-----------------|
-| `testing` | Test files (`*_test.*`, `*_spec.*`) | Arrange-act-assert, one behavior per test, descriptive names |
-| `migrations` | Database migrations | Reversibility, safety checks, rollback strategies |
-| `security` | Controllers, API, auth files | Input validation, parameterized queries, no hardcoded secrets |
-| `dependencies` | Dependency files (Gemfile, package.json, etc.) | Version constraints, security audits, test suite after changes |
-| `monorepo` | Monorepo configs, workspace files | Cross-package testing, dependency hoisting, breaking change paths |
-| `ui-ux` | UI files (web + mobile) | Empathy-first design, accessibility, all 5 states, platform conventions |
+| `testing` | Test files (`*_test.*`, `*_spec.*`) | Use the factories and fixtures that already exist; match the project's framework |
+| `migrations` | Database migrations | Batched backfills on large tables; `CONCURRENTLY` for an index on a busy table |
+| `dependencies` | Dependency files (Gemfile, package.json, etc.) | No `*` or unpinned version; never a bare `bundle update` / `npm update` |
+| `monorepo` | Workspace manifests (`pnpm-workspace.yaml`, `lerna.json`, `turbo.json`, `nx.json`) | A shared package's change runs its consumers' tests; `--filter` / `--scope` |
+| `ui-ux` | UI files (web + mobile) | The WCAG 2.2 AA baseline: contrast ratios, target size, reduced motion, errors not by colour alone, no layout shift |
 
 ### Always-on rules
 
@@ -921,25 +933,25 @@ injecting and they load from `.claude/rules/shipkit/` like any project rule.
 
 | Rule | Stack | What It Enforces |
 |------|-------|-----------------|
-| `rails` | Rails | N+1 prevention, strong params, migration safety, callback patterns |
-| `gemfile` | Rails | Pessimistic version constraints, bundle audit |
-| `react` | React | Component patterns, hooks rules, TypeScript conventions |
-| `package-json` | React | Caret constraints, npm audit, no `*` or `latest` |
-| `python` | Python | Virtual env, type hints, ruff/flake8 conventions |
-| `pyproject` | Python | Version constraints, pip-audit |
-| `go` | Go | Error handling, go vet, golangci-lint conventions |
-| `go-mod` | Go | go mod tidy, govulncheck |
-| `elixir` | Elixir | Context boundaries, OTP patterns, formatter/Credo |
-| `mix-deps` | Elixir | Version constraints, hex audit |
+| `rails` | Rails | `find_each` not `all.each`; over 100 ms goes to a job; never `update_column` |
+| `gemfile` | Rails | `~>` constraints, `bundle audit`, `ruby_llm` for AI features, grep before removing a gem |
+| `react` | React | Only the host-app rules (below); the file says so, and a standalone SPA skips them |
+| `package-json` | React | Frozen-lockfile installs, never hand-edit a lockfile, one package manager from the lockfile |
+| `pyproject` | Python | Flexible constraints in `pyproject.toml`, exact pins for deployment, `pip-audit`, the package manager from the lockfile |
+| `go-mod` | Go | `go get @latest` then `go mod tidy`, `govulncheck`, vendor only if `vendor/` exists |
+| `mix-deps` | Elixir | `~>` constraints, `mix hex.audit` / `mix deps.audit`, `only: [:dev, :test], runtime: false` |
+
+The language-convention rules (`python`, `go`, `elixir`) were removed in 4.0: every line was a
+default the model already follows.
 
 Add-on overlays install alongside their base — a Rails app with Turbo installs both `rails` and
 `hotwire`:
 
 | Rule | Add-on (requires) | What It Enforces |
 |------|-------------------|-----------------|
-| `hotwire` | Hotwire (Rails) | Drive by default, Frames for scoped navigation, Streams for multi-region/broadcast updates; Stimulus values/targets/outlets over `querySelector`; `disconnect()` cleanup; cache and morph safety; system tests for every Turbo flow |
+| `hotwire` | Hotwire (Rails) | Frames for scoped navigation, Streams only for multi-region or broadcast updates; Stimulus values/targets/outlets over `querySelector`; `disconnect()` cleanup because Turbo caches pages; stable ids for morphing; system tests for every Turbo flow |
 | `react` | React (Rails/Elixir) | Inertia props as the API contract, routing stays in Rails, server-owned auth and flash, asset build before the suite |
-| `liveview` | LiveView (Elixir) | `mount/3` runs twice (guard with `connected?/1`), `stream/4` for collections, `handle_params/3` for URL state, scoped PubSub topics, function components over nested LiveViews, LiveViewTest coverage |
+| `liveview` | LiveView (Elixir) | `mount/3` runs twice (guard with `connected?/1`), `stream/4` for collections, `handle_params/3` for URL state, scoped PubSub topics, function components over nested LiveViews, test the disconnected render too |
 | `jobs` | Oban (Elixir) | Idempotent `perform/1`, IDs as args, `unique:` deduplication, `{:cancel, _}` vs `{:error, _}`, queues by priority |
 | `notebooks` | ML (Python) | Exploration only, promote reused code to modules, clear outputs, no secrets in cells |
 | `experiments` | ML (Python) | Seeds set and logged, runs recorded with config + git SHA, explicit device, never evaluate on training data, metrics saved beside weights |
@@ -949,9 +961,10 @@ Add-on overlays install alongside their base — a Rails app with Turbo installs
 
 ## Common Workflows
 
-Three end-to-end playbooks cover most of how you'll use shipkit: **starting a new repo**,
-**taking over a legacy one**, and **asking the elders**. Each step says what you do, what it gives
-you, and what comes next. Shorter recipes follow at the end.
+Four end-to-end playbooks cover most of how you'll use shipkit: **starting a new repo**,
+**taking over a legacy one**, **asking the elders**, and **one feature from idea to shipped**.
+Each step says what you do, what it gives you, and what comes next. Shorter recipes follow at
+the end.
 
 ---
 
@@ -1096,6 +1109,215 @@ answer, then act in your main session.
 live source, the elders trust **source** and flag the drift — so a stale map yields a correction,
 not a confident wrong answer. Refresh with `/shipkit:map refresh` when you see a drift flag or the
 session-start hook nudges you.
+
+---
+
+### Playbook 4 — one feature from idea to shipped
+
+The nine steps of the loop, run for real on 2026-10-06 against `evals/fixtures/sample-app`
+(a nine-file Python order service with a `charge` function and no refunds), with `sonnet`,
+headless. Every file below is what the step wrote, cut for length and nothing else; the one
+thing changed is the path, shown as `~/code/shop`. Two steps did not go to plan, and those are
+the most useful part.
+
+**Step 1 — Product.** `/shipkit:product` (the users, goals, non-goals and constraints given in
+the request, since the run could not ask). Wrote `.shipkit/product.md`:
+
+```markdown
+# Product: sample-app
+
+> Product reviewed on 2026-10-06.
+
+## One line
+A small order service that takes orders, adds tax and charges the card, for owners of small online shops.
+
+## Goals this quarter
+- Cut failed charges — metric: share of all charges that fail; target: under 2%; by: 2026-12-31
+- Ship refunds — metric: share of refunds needing no manual step; target: 95%; by: 2026-11-15
+
+## Non-goals
+- No multi-currency support.
+- No storefront or cart.
+```
+
+**Step 2 — Intake.** `/shipkit:intake Add refunds: a charged order can be refunded in full or
+in part through the payment gateway.` The first pass wrote nothing: it found no conflict,
+asked `grandfather` what the code does today, named the goal it serves without asking, and
+stopped with four questions — the first of them a real finding:
+
+> **Charge data:** Refunds need the receipt or charge id and the charged amount saved on the
+> order, and today neither is saved (`app/billing.py:27-32`). Should the intake count recording
+> them at charge time as part of this feature?
+
+A second pass with the answers wrote `.shipkit/specs/refunds/intake.md`:
+
+```markdown
+## Serves goal
+Ship refunds — metric: share of refunds needing no manual step; target: 95%; by: 2026-11-15
+
+## Conflicts found
+None. No non-goal in `.shipkit/product.md` is touched, and there are no open specs or decision records.
+
+## Answers
+- What happens when a refund exceeds the original charge? It is refused.
+- Are partial refunds allowed? Yes, one per order.
+- Where does the gateway's refund number go? It is stored on the order.
+
+## Out of scope
+- Refund history and statements.
+- Multiple partial refunds on one order.
+```
+
+**Step 3 — Spec.** `/shipkit:spec refunds` (every approval gate treated as approved). Wrote
+`spec.md` with nine requirements, `design.md` with two decision records (each ending
+`**Fired-if.** manual`), and `tasks.md`; then ran `spec-check.sh`, which found no gap.
+
+```markdown
+> Spec accepted at commit `790c2f5` on master.
+> Status: open
+> Paths: app/billing.py, tests/test_refunds.py
+
+- **REQ-1.** When an order is charged through `charge_order`, the system shall store the gateway's receipt number and the charged amount in cents on the order.
+- **REQ-3.** When a refund of an amount no larger than the charged amount is requested for a charged order, the system shall ask the gateway to refund that amount against the charge receipt and store the gateway's refund number on the order.
+- **REQ-5.** If the requested refund amount is larger than the charged amount, then the system shall refuse the refund with `RefundRefused` without calling the gateway.
+```
+
+```markdown
+- [ ] **T1** Record the charge on the order → REQ-1, REQ-2
+  - Files: app/billing.py, tests/test_refunds.py
+  - Test: tests/test_refunds.py::ChargeOrderTest::test_a_charge_is_stored_on_the_order
+  - After: none
+  - Done when: `python3 -m unittest discover -s tests -p "test_refunds.py"` → all pass
+- [ ] **T2** Refund a charged order, in full or in part, and refuse bad refunds → REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9
+  - Files: app/billing.py, tests/test_refunds.py
+  - After: T1
+```
+
+The intake's finding became the spec's first assumption: "scope is widened to the charge flow
+… a new `charge_order` stores the receipt and amount on the order."
+
+**Step 4 — Brief.** `sh "<plugin root>/scripts/brief.sh" . refunds T1` — no model. Printed:
+
+```markdown
+# Brief: refunds / T1 — Record the charge on the order
+
+## Requirement
+- **REQ-1.** When an order is charged through `charge_order`, the system shall store the gateway's receipt number and the charged amount in cents on the order.
+- **REQ-2.** If the gateway fails the charge in `charge_order`, then the system shall raise `ChargeFailed` and leave the order unchanged.
+
+## You may edit
+- app/billing.py
+- tests/test_refunds.py
+Nothing else. If the task cannot be done inside these files, stop and report blocked.
+
+## Prove it with
+- Test: tests/test_refunds.py::ChargeOrderTest::test_a_charge_is_stored_on_the_order
+- Done when: `python3 -m unittest discover -s tests -p "test_refunds.py"` → all pass
+
+## Report back in exactly this form
+RESULT: done | blocked
+CHANGED: <files>
+TEST: <command> → <last lines of output>
+NOT VERIFIED: <anything you did not check, or "nothing">
+DEVIATIONS: <anything you did differently from this brief, or "none">
+```
+
+**Step 5 — Build.** `claude -p "$(sh "<plugin root>/scripts/brief.sh" . refunds T1)"` — the
+brief handed to a fresh session unchanged. It wrote `charge_order` in `app/billing.py` and
+`tests/test_refunds.py`, and reported in the brief's form:
+
+```text
+RESULT: done
+CHANGED: app/billing.py, tests/test_refunds.py
+TEST: `python3 -m unittest discover -s tests -p "test_refunds.py"` → Ran 2 tests in 0.000s, OK.
+NOT VERIFIED: nothing. The new tests failed with an import error before I added `charge_order`, then passed after.
+DEVIATIONS: I added a second test, `test_a_failed_charge_raises_and_leaves_the_order_unchanged`, which covers REQ-2.
+```
+
+**Step 6 — Review.** `sh "<plugin root>/scripts/brief-verify.sh" . refunds T1 89e540d`, then
+the task's `Done when`. The first did not go to plan:
+
+```text
+OUTSIDE app/__pycache__/billing.cpython-314.pyc
+OUTSIDE tests/__pycache__/test_refunds.cpython-314.pyc
+brief-verify: 9 file(s) changed, 7 outside the Files of refunds / T1
+```
+
+Seven files outside the task — all `__pycache__`, left by the test run, because the fixture
+has no `.gitignore`. The agent stayed inside its two files; the project was missing a line.
+That is the kind of thing the check is for, and the fix is a `.gitignore`, not a conversation
+with the agent. The `Done when` passed: `Ran 7 tests … OK`.
+
+**Step 7 — Ship.** `/shipkit:ship refunds 89e540d`, with T2 deliberately not built yet. Wrote
+`.shipkit/releases/2026-10-06-refunds.md`:
+
+```markdown
+NOT READY
+
+| # | Step | Result | Reason |
+|---|------|--------|--------|
+| 1 | Spec check, as shipped | FAIL | exit 1, 7 gaps: REQ-3 to REQ-9 have no test |
+| 2 | Tests | PASS | `python3 -m unittest discover -s tests` → exit 0 (7 tests) |
+| 3 | Tasks ticked | FAIL | 2 tasks not ticked: T1, T2 |
+| 4 | Independent review | FAIL | VERDICT: FAIL (2 MET, 7 NOT MET) |
+| 5 | Migration rollback | PASS | no migration in the diff |
+| 6 | Decisions | PASS | 2 decisions, reversal conditions concrete |
+| 7 | Clean tree | PASS | nothing uncommitted |
+| 8 | Decisions fired | PASS | no FIRED line; 2 MANUAL |
+
+## To fix before shipping
+- Step 1 and 4: implement T2 (`refund_order`, `RefundRefused`, `RefundFailed`, gateway refund call) and write the tests for REQ-3 to REQ-9, each citing `refunds/REQ-N`.
+- Step 3: tick T1 (its code and REQ-1/REQ-2 tests exist) and T2 in `.shipkit/specs/refunds/tasks.md` once done.
+- Note from review: `__pycache__/*.pyc` files are committed in the diff. Remove them from git and add a `.gitignore` entry.
+```
+
+Three steps failed for the one reason that was true — half the feature is not built — and the
+reviewer, told only the slug and the base ref, found the same `__pycache__` problem step 6 had.
+A `READY` here would have been the bug.
+
+**Step 8 — Escape.** `/shipkit:escape A refund of 25.00 was paid out on an order charged 20.00;
+the gateway's weekly statement did not match our orders.` Wrote
+`.shipkit/escapes/0001-refund-larger-than-charge.md` and added **T3** to
+`tasks.md`, a test citing `refunds/REQ-5` that fails now:
+
+```markdown
+## Cause
+`requirement right, no test` — a spec covers this code (`refunds`, Paths include `app/billing.py`), and REQ-5 says exactly what should have happened: a refund larger than the charged amount is refused with `RefundRefused` without calling the gateway. So it is not `requirement missing` or `requirement wrong`. No test cites `refunds/REQ-5` (`spec-check` reported `MISSING-TEST refunds REQ-5` in the ship report of 2026-10-06), so it is not `test existed but was wrong`.
+
+## Fix
+No requirement change; REQ-5 stands. `Status` stays `open`. Task **T3** carries a test that cites `refunds/REQ-5`, uses a 2500-cent refund on a 2000-cent charge, and fails now.
+```
+
+It also said what it could not know: no code in the repository pays refunds, so the payout
+came from outside it, and the gateway statement should say where.
+
+**Step 9 — Digest.** `/shipkit:ask --all digest`, with the project registered. `portfolio-digest.sh`
+wrote `~/.claude/shipkit/digests/2026-10-06.md`:
+
+```markdown
+## shop — ~/code/shop
+
+- Top goal: Cut failed charges — metric: share of all charges that fail; target: under 2%; by: 2026-12-31 (product reviewed on 2026-10-06)
+- Open specs: refunds 0 of 3 tasks done, next T1
+- Spec gaps: 0
+- Decisions: 2 with a Fired-if line, 2 manual; commands not run (add --run-checks)
+- Escapes (30 days): 1 — requirement right, no test 1
+- Map: PROJECT_MAP.md, no readable stamp
+- Git: 0 uncommitted file(s), no upstream
+```
+
+and `eve` answered from it and `studio.md`:
+
+> **1. shop** — *Escape:* the digest says "Escapes (30 days): 1 — requirement right, no test 1".
+> The requirement was correct, but nothing tested it, so a defect reached users. *Stalled spec:*
+> "Open specs: refunds 0 of 3 tasks done, next T1". *Studio priority:* it matches priority 1,
+> failed charges under 2% before the holiday season. **Suggested action this week:** add a test
+> for the escaped requirement, then start refunds T1.
+
+What the run took: ten headless `sonnet` sessions (the intake ran twice), four and a half
+minutes end to end by the files' timestamps; the cost was not measured. What it left behind:
+seven files under `.shipkit/` and one under `~/.claude/shipkit/digests/`, every one of them
+readable by the next session, a script, or you.
 
 ---
 

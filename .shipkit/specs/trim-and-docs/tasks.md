@@ -19,7 +19,7 @@ the owner decides every `cut` row before T2 starts (A8).
   - Test: scripts/lint.py checks that every skill named in README.md exists, README.md is ≤ 250 lines, and no "New in" line sits above the Install heading (written first, red on today's README: 348 lines, "New in 2.9" above Install)
   - After: T2
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s)
-- [ ] **T4** One worked example in the guide (S7-T4) → REQ-15
+- [x] **T4** One worked example in the guide (S7-T4) → REQ-15
   - Files: GUIDE.md
   - Test: reading — nine steps, each with its command and the file it produced; `grep -c '^\*\*Step' GUIDE.md` or the equivalent counts nine in Playbook 4
   - After: T3
