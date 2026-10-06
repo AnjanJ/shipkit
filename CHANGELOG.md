@@ -2,7 +2,7 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
-## [4.0.0] — unreleased
+## [4.0.0] — 2026-10-06
 
 Sprint 7 of the quality-gate plan: less to load, a clear pitch, one worked example. The audit
 that decided every row is `docs/design/trim-audit-4.0.md`; the owner approved each cut.
@@ -35,6 +35,30 @@ A project that installed one of the removed rules keeps its copy until the next
 - `/shipkit-workflows:qa` has a real description with trigger guidance (it had five words);
   its body and `/shipkit-workflows:debug`'s are half their length, same phases.
 - Every script calls `mktemp` with a template; the lint forbids a bare one.
+- **The README is rewritten around the loop**: what shipkit is in a paragraph, install, the
+  nine steps from an idea to a shipped feature with one command each and the file it writes,
+  what runs by itself, what you invoke, uninstall — 173 lines, down from 348, with every
+  "New in X.Y" paragraph moved here. The lint keeps it at 250 lines or fewer, free of version
+  history above Install, and naming only skills that exist.
+- **`GUIDE.md` has Playbook 4**, one feature from idea to shipped: the nine steps run for real
+  on the eval fixture with the files each produced, including a `NOT READY` from the gate and
+  seven `OUTSIDE` lines from `brief-verify.sh` that turned out to be a missing `.gitignore`.
+- **`ROADMAP.md`** states the new north star in one sentence, marks the seven sprints shipped
+  with their releases, and lists what is still open; the lint checks that its status line names
+  the current version.
+
+### What using it for real showed
+
+The audit's rule — a line stays only for a project value or a named trap — cut more than
+expected: four of the twenty-two rules had no such line at all, and the owner approved all
+five proposed cuts. Criterion (c), "an eval shows it changes the result", could be applied to
+no row, because no eval exists per rule file; the audit says so rather than guessing, and the
+roadmap carries it as open. Playbook 4's real run produced two findings the invented version
+would not have: `brief-verify.sh` flagged seven `__pycache__` files the agent never touched
+(the fixture has no `.gitignore`), and the gate's independent reviewer, told only the slug
+and the base ref, found the same files committed. The eval `rules/nontrivial` sat at 1 of 3
+on this release's runs, its result since 3.1.0; the always-on rules it exercises did not
+change in this release.
 
 ## [3.7.0] — 2026-10-06
 
