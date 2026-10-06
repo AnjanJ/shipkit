@@ -8,7 +8,7 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/smoke.sh section "briefing" (no .shipkit → empty; two open specs and a state.md → the right lines; 50 specs → ≤ 8 lines, ≤ 800 bytes, under a second; broken tasks.md → exit 0; written first)
   - After: none
   - Done when: the briefing smoke checks → all PASS; `sh -n plugins/shipkit/scripts/briefing.sh` → clean
-- [ ] **T2** `/shipkit:handoff` (S5-T2) → REQ-10, REQ-11, REQ-12, REQ-13
+- [x] **T2** `/shipkit:handoff` (S5-T2) → REQ-10, REQ-11, REQ-12, REQ-13
   - Files: plugins/shipkit/skills/handoff/SKILL.md, plugins/shipkit/skills/setup/SKILL.md, scripts/smoke.sh, .claude-plugin/marketplace.json
   - Test: scripts/smoke.sh check "handoff-file" (the skill, run headless with the session's facts given, writes the five headings and a one-line Next step)
   - After: T1

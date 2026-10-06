@@ -775,7 +775,7 @@ Now: the retry job. Next: refunds. Later: a proper database." \
   </dev/null >"$WORK/product.out" 2>&1)
 pf="$PF/.shipkit/product.md"
 if [ -f "$pf" ]; then
-  heads=$(grep '^## ' "$pf" | sed 's/^## //; s/[ \t]*$//' | tr '\n' '|')
+  heads=$(grep '^## ' "$pf" | sed 's/^## //; s/[[:space:]]*$//' | tr '\n' '|')
   goals=$(awk '/^## /{on=($0 ~ /^## Goals this quarter/)} on && /^(- |[0-9]+\. )/{n++} END{print n+0}' "$pf")
   plines=$(wc -l < "$pf" | tr -d ' ')
 else heads=""; goals=0; plines=0; fi
@@ -1093,6 +1093,38 @@ else
       pass "briefing (session-start.sh prints it last)";;
     *) failc "briefing" "the hook's last line is not from the briefing: $last";;
   esac
+fi
+
+# 31. handoff-file: /shipkit:handoff writes the note in its fixed shape
+# (spec: .shipkit/specs/briefing-and-handoff/). Cites: briefing-and-handoff/REQ-10
+# A model (sonnet) does the work, headless, in a copy of the eval fixture with the session's
+# facts given in the request and one file left uncommitted; the note it writes is read here.
+HF="$WORK/handoff"; mkdir -p "$HF"; cp -R "$COPY/evals/fixtures/sample-app/." "$HF/"
+(cd "$HF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+mkdir -p "$HF/.shipkit/specs/refunds"
+printf '# Spec: Refunds\n\n> Spec accepted at commit `abc1234` on master.\n> Status: open\n\n## Requirements\n\n- **REQ-1.** The system shall refund.\n' > "$HF/.shipkit/specs/refunds/spec.md"
+printf -- '- [x] **T1** Refund through the gateway → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: none\n  - Done when: tests pass\n- [ ] **T2** Reject a refund above the charge → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: T1\n  - Done when: tests pass\n' > "$HF/.shipkit/specs/refunds/tasks.md"
+(cd "$HF" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
+printf '"""Refunds — in progress."""\n' > "$HF/app/refunds.py"
+(cd "$HF" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Bash Write Skill \
+  -p "/shipkit:handoff
+This run is not interactive and you cannot ask me anything. This session: finished T1 of the refunds spec (committed as 'spec' — pretend). Started T2 in app/refunds.py, which is uncommitted and half done: the amount check is written, the test is not. The next thing to do is write the failing test for T2 in tests/test_refunds.py. Open question for the owner: should partial refunds be allowed at all? Trap found: python3 -m unittest must be run from the project root or imports fail." \
+  </dev/null >"$WORK/handoff.out" 2>&1)
+hf="$HF/.shipkit/state.md"
+if [ -f "$hf" ]; then
+  hf_heads=$(grep '^## ' "$hf" | sed 's/^## //; s/[[:space:]]*$//' | tr '\n' '|')
+  hf_next=$(awk '/^## /{on=($0 ~ /^## Next step/); next} on && NF{n++} END{print n+0}' "$hf")
+  hf_lines=$(wc -l < "$hf" | tr -d ' ')
+  hf_written=$(grep -c '^> Written [0-9-]* at commit' "$hf")
+else hf_heads=""; hf_next=0; hf_lines=0; hf_written=0; fi
+hf_dirty=$(cd "$HF" && git status --porcelain | grep -v 'app/refunds.py\|\.shipkit/state.md\|__pycache__')
+if [ "$hf_heads" = "In flight|Done this session|Next step|Open questions|Do not forget|" ] \
+   && [ "$hf_next" -eq 1 ] && [ "$hf_lines" -le 30 ] && [ "$hf_written" -eq 1 ] && [ -z "$hf_dirty" ] \
+   && sed -n 1p "$hf" | grep -q '^# Handoff'; then
+  pass "handoff-file (title, Written line, five headings in order, one-line Next step, $hf_lines lines, nothing else touched)"
+else
+  failc "handoff-file" "headings=[$hf_heads] next-lines=$hf_next lines=$hf_lines written=$hf_written dirty=[$hf_dirty] — model said: $(tail -4 "$WORK/handoff.out")"
 fi
 
 echo
