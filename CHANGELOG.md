@@ -2,6 +2,61 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.1.0] — 2026-10-07
+
+Sprint 8 of the evidence plan (`docs/plans/evidence-sprint-plan.md`): the re-test decision 0001
+asked for in 3.2.0, run at last, and acted on by the record's own clause. Requirements and
+decision records in [`.shipkit/specs/map-on-trial/`](.shipkit/specs/map-on-trial/); the numbers in
+[`docs/design/eval-results-4.1.md`](docs/design/eval-results-4.1.md).
+
+### Changed
+
+- **The project map is optional.** On a generated 224-file, 27-commit fixture, with five elder
+  questions including one only the history answers, the map gave no more correct answers
+  (15 of 15 on the fact either way) and 4.6% fewer tool calls — short of the 20% the record set
+  as its threshold. So `/shipkit:setup`, the README and the guide now offer `/shipkit:map`
+  with that number beside it instead of listing it first; `grandfather` reads a map when one
+  exists and goes to the source when none does, without calling the answer slower; `eve` greps
+  a registered repository that has no map instead of reporting it as a gap. Nothing is
+  removed: the archivist, `/shipkit:map`, the stale-map nag (which only fires on a map that
+  exists) and `eve`'s registry are as they were. Build a map for `eve`'s portfolio view, for
+  your own orientation, or when the commit log is too thin to carry the project's history.
+- Lint check 17 enforces the 100 KB ceiling on `plugins/shipkit/evals/` that decision A9 set
+  in 3.2.0 and nothing checked; check 18 keeps the three onboarding documents from presenting
+  the map as required again.
+
+### Added
+
+- `plugins/shipkit/evals/fixtures/ledger-gen/generate.py`: the XL eval fixture, generated at
+  scaffold time rather than committed (14 KB of generator instead of 400 KB of tree) —
+  `ledger`, 224 files across eight domain packages with mirrored tests, routes, adapters,
+  twenty migrations, and a 27-commit history with fixed dates so two runs are byte-identical.
+  Five planted facts with decoys in `fixtures/FACTS-XL.md`; `--no-map` for the comparison arm.
+- Five `grandfather-xl` eval cases (`lookup`, `explain`, `drift`, `gap`, `history`) — 15 → 20
+  cases in `scripts/evals.sh`, about $1.60 more per release run.
+- `scripts/trace-tools.sh <output-dir>`: tool calls (total and main session), `Agent` calls,
+  input tokens (total and main) and cost per run, read from each run's `trace.jsonl` through
+  `aggregate-result.json`. Eval summaries are not evidence; this is what the comparison read.
+- Smoke checks 38 to 41: the generator's determinism and planted facts, the XL scaffolds, the
+  counter against a synthetic trace with known numbers, and the hook's silence about a map in
+  a project that has none. 109 → 119 checks.
+
+### What using it for real showed
+
+Two things the nine-file fixture could not show. First, `grandfather` opened the map in nine of
+thirty with-map runs although its first instruction was to read it: it greps, the grep finds the
+answer, and the map is an afterthought — with the plugin off, Claude read the map more often
+(nine of fifteen) because its own grep landed on the map's line. Second, the history question —
+the map's strongest case on paper — was answered from `git log` in every run of every arm; the
+map, when read, was read after the log. The eval tool turned out not to pass the caller's
+environment to scaffold scripts (a nonce in an open spec's slug came back `unset`), so the
+no-map arm ran from a scratch copy of the plugin, as 3.2's did; and a kept sandbox keeps its
+trace but not its workspace, so a probe has to surface through the trace. The generator's
+12 KB limit was raised to 16 KB with the owner's yes after three compaction passes left it at
+14 KB: cutting further thinned the generated code, which is the opposite of the fixture's
+purpose, and the 100 KB ceiling is the budget that matters. `rules/nontrivial` was not run
+this sprint; it is Sprint 9's business.
+
 ## [4.0.0] — 2026-10-06
 
 Sprint 7 of the quality-gate plan: less to load, a clear pitch, one worked example. The audit

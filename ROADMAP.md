@@ -12,9 +12,10 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-06, v4.0.0):** Sprints 1 to 7 of the
-quality-gate plan are done — see "The quality-gate plan" below. Everything in this document is
-shipped except the open items listed there.
+**Status (as of 2026-10-07, v4.1.0):** Sprints 1 to 7 of the
+quality-gate plan are done, and Sprint 8 of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
+approved 2026-10-06) shipped as 4.1.0 — see "The evidence plan" below. Everything in this
+document is shipped except the open items listed there.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -28,7 +29,28 @@ shipped except the open items listed there.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-**Still open after Sprint 7.**
+## The evidence plan — Sprint 8 SHIPPED 2026-10-07; Sprints 9 and 10 next
+
+Full plan: [`docs/plans/evidence-sprint-plan.md`](docs/plans/evidence-sprint-plan.md). Every
+standing claim shipkit makes about itself gets a number behind it, starting with the one owed
+since Sprint 1.
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 8 | 4.1.0 | The map on trial: a generated 224-file, 27-commit fixture; five XL elder cases including a history question; `trace-tools.sh`; the re-test decision 0001 asked for — and, by its own clause, **the map is now optional** (`docs/design/eval-results-4.1.md`) |
+| 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 10 stack rules), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
+| 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
+
+**Still open after Sprint 8.**
+
+- **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
+  re-test's history question was answered from `git log` every time because the fixture's
+  commit messages are clean; a repository whose log says "wip" would test the map's Evolution
+  section properly. `eve` reads maps across repositories without opening them; nothing has
+  measured what she loses when fewer projects have one. Neither changes the 4.1.0 default.
+- **The elder reads the map in fewer than one run in three** even when its instructions said
+  to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
+  agent's step 1 is where the next experiment is, not the map's content.
 
 - **`rules/nontrivial`**: the eval that asks for a spec before code on "add refunds" passes
   about one run in three and has since the 3.1.0 baseline. The always-on rules produce the
