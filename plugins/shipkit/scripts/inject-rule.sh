@@ -16,6 +16,27 @@
 NAME="$1"
 [ -n "$NAME" ] || exit 0
 
+# `inject-rule.sh --eval-rule`: the rule a shipkit EVAL CASE is measuring. `claude plugin eval`
+# loads nothing from the workspace's .claude/ or CLAUDE.md (it sets
+# CLAUDE_CODE_DISABLE_CLAUDE_MDS=1; documented under "How runs are isolated"), so a rule a
+# scaffold installed would never reach the model. The scaffold (evals/lib/with-rule.sh) leaves
+# a marker naming the file; this prints it — only under the eval tool's own
+# CLAUDE_CODE_EVAL_CONFINED=1, so a real project never takes this branch, marker or not.
+if [ "$NAME" = "--eval-rule" ]; then
+  [ "${CLAUDE_CODE_EVAL_CONFINED:-}" = "1" ] || exit 0
+  MARK=".claude/rules/shipkit/.eval-rule"
+  [ -f "$MARK" ] || exit 0
+  REL=$(head -1 "$MARK" 2>/dev/null)
+  case "$REL" in .claude/rules/shipkit/*.md) ;; *) exit 0 ;; esac
+  [ -f "$REL" ] || exit 0
+  echo "## Shipkit rule in force for this session: $REL"
+  echo "(Installed by this project's setup. Treat it as in force for every file its paths: line"
+  echo "names, or for every file if it has no paths: line.)"
+  echo ""
+  cat "$REL" 2>/dev/null || true
+  exit 0
+fi
+
 # Skip injection only when THIS rule is actually installed as a file. Testing the directory
 # alone (what 3.0 did) meant an interrupted install or a deleted rule suppressed injection
 # too: the rule was then absent from disk AND from context, with nothing to notice it. The

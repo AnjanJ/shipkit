@@ -335,6 +335,8 @@ if hooks_json.exists():
             err(script, "hook script is not executable")
         # inject-rule.sh <name>: the rule must exist and fit under the per-command cap.
         if script.name == "inject-rule.sh":
+            if len(parts) == 2 and parts[1] == "--eval-rule":
+                continue   # the eval-only branch (rule-evals/REQ-21): no rule name to check
             if len(parts) != 2:
                 err(hooks_json, f"hook command {cmd!r} must pass exactly one rule name")
                 continue
@@ -576,12 +578,14 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
-# --- 17. The eval budget: plugins/shipkit/evals/ stays under 100 KB ------------------
-# Proves map-on-trial/REQ-7. Decision A9 of the quality-gate plan set the ceiling in 3.2.0 and
-# nothing enforced it; the XL fixture of 4.1.0 is generated at scaffold time precisely to stay
-# inside, and a committed fixture would be the first thing to breach it.
+# --- 17. The eval budget: plugins/shipkit/evals/ stays under 128 KB ------------------
+# Proves map-on-trial/REQ-7 and rule-evals/REQ-9. Decision A9 of the quality-gate plan set a
+# 100 KB ceiling in 3.2.0 and nothing enforced it; 4.1.0 added this check and generated the XL
+# fixture at scaffold time precisely to stay inside. 4.2.0 raised it to 128 KB with the
+# owner's yes: eighteen rule cases plus their harness need about 33 KB against 21 KB of room.
+# The room is for cases; a committed fixture is still the first thing this should catch.
 
-EVALS_MAX_BYTES = 102400
+EVALS_MAX_BYTES = 131072
 
 _evals_dir = CORE / "evals"
 _evals_bytes = sum(p.stat().st_size for p in _evals_dir.rglob("*") if p.is_file())

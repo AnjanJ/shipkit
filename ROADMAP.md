@@ -12,9 +12,9 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-07, v4.1.0):** Sprints 1 to 7 of the
-quality-gate plan are done, and Sprint 8 of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
-approved 2026-10-06) shipped as 4.1.0 — see "The evidence plan" below. Everything in this
+**Status (as of 2026-10-07, v4.2.0):** Sprints 1 to 7 of the
+quality-gate plan are done, and Sprints 8 and 9 of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
+approved 2026-10-06) shipped as 4.1.0 and 4.2.0 — see "The evidence plan" below. Everything in this
 document is shipped except the open items listed there.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
@@ -38,10 +38,10 @@ since Sprint 1.
 | Sprint | Release | What the owner got |
 |--------|---------|--------------------|
 | 8 | 4.1.0 | The map on trial: a generated 224-file, 27-commit fixture; five XL elder cases including a history question; `trace-tools.sh`; the re-test decision 0001 asked for — and, by its own clause, **the map is now optional** (`docs/design/eval-results-4.1.md`) |
-| 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 10 stack rules), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
+| 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 13 stack rule files), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
 | 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
 
-**Still open after Sprint 8.**
+**Still open after Sprint 9.**
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
   re-test's history question was answered from `git log` every time because the fixture's
@@ -52,12 +52,17 @@ since Sprint 1.
   to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
   agent's step 1 is where the next experiment is, not the map's content.
 
-- **`rules/nontrivial`**: the eval that asks for a spec before code on "add refunds" passes
-  about one run in three and has since the 3.1.0 baseline. The always-on rules produce the
-  test-first habit reliably and the spec-first habit a third of the time on that prompt.
-- **Criterion (c) of the trim audit** is unmeasured: no eval exists per rule file, so the 4.0
-  trims rest on "project value" and "named trap" alone. A trimmed line that mattered would show
-  up as a regression traced to it; none has yet.
+- **Sixteen of eighteen rules pass their case without the rule** (`docs/design/eval-results-4.2.md`):
+  `sonnet` clears each file's first named trap unaided. One line per file was probed, one
+  model. A second-trap case for the doubted files, or a decision that a line the model already
+  follows still earns its bytes, belongs to the next plan.
+- **Path-scoped loading is measured by nothing.** The eval sandbox loads no `.claude/` file,
+  so every rule eval delivers the text always-on through the hook. A smoke check in a normal
+  headless session (where the nonce did load) could measure whether `paths:` globs fire.
+- **A rule that names a network step can stop work where there is none** — `gemfile.md`'s
+  "read the lock diff after `bundle install`" halted three runs in a sandbox with no network.
+- **`rules/nontrivial`** passes 6 of 6 with the 4.2.0 sentence (record 0002); the record's
+  clause says when the sentence comes out. Watch it on every release run.
 - From 3.0: whether the overlay skills should live in core (design doc §5) — reversible,
   blocking nothing.
 
