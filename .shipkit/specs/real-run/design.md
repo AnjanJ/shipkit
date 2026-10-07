@@ -95,8 +95,9 @@ clean and gives the next plan its seed, which is what B10 was for.
 
 **Case against (1).** One project, one run, one model: anecdote, not measurement — the notes
 say so in their first line. The owner's time is spent too (approving a branch, naming a change,
-answering the intake's questions). The named repository: *to be filled in at T3 with the
-owner's answer to intake question 1.*
+answering the intake's questions). The named repository: `rails_error_dashboard`
+(`~/code/RED/rails_error_dashboard`, named by the owner on 2026-10-07 with the condition "no code
+changes"; the branch `shipkit/real-run` there holds the run's artifacts, not for merge).
 
 **Decision.** We chose (1).
 **Falsifiability.** We would re-run on a second repository before the next plan if the notes

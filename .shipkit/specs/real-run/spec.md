@@ -68,7 +68,9 @@ B11's branch count).
   10" shall carry a one-line candidate for it that names its field-notes section. [untested:
   documentation]
 - **REQ-11.** Where a step of `GUIDE.md`'s playbook proves wrong in the real run, `GUIDE.md`
-  shall be corrected in that step only. [untested: conditional; marked when T3 lands]
+  shall be corrected in that step only. [untested: the condition did not hold — Playbook 4's
+  steps matched the run step for step (field notes, closing section); `GUIDE.md` is unchanged
+  (T3, 2026-10-07)]
 
 ### Housekeeping (S10-T4)
 

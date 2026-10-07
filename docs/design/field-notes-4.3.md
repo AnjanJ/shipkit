@@ -26,7 +26,7 @@ Skill Agent -p "/shipkit:<skill> … This run is not interactive"` from the work
 installed 4.2.0 plugin loaded as it would for the owner, with RED's `CLAUDE.md` and skills.
 Durations are wall-clock from `date`.
 
-Each section below answers the same six questions: what the step asked for, what it produced,
+Each section below (one per step: the cache update, product, intake, the owner's answers, intake again, spec, acceptance and brief, build, the gate, its review, handoff, a fresh session) answers the same six questions: what the step asked for, what it produced,
 how long it took, what was awkward, whose fault that is (the tool's or the project's), and the
 evidence line.
 
@@ -299,6 +299,25 @@ not). Answers and the time they took are in the next section.
   `7c6716e spec: health check endpoint — product file, intake and spec (shipkit real run, not
   for merge)`.
 
+## 7a. Build — the step the owner struck out
+
+- **Asked for:** the loop's step 5: hand the T1 brief to an agent, let it build, check it with
+  `brief-verify.sh` and the task's Done-when. The owner's condition for this run was **no code
+  changes** in their repository, so the brief was produced (§7) and handed to nobody.
+- **Produced:** nothing — no file under `app/`, `lib/`, `config/`, `spec/` or `docs/` changed;
+  `brief-verify.sh . health-check T1 <base>` → `0 file(s) changed, all inside the Files of
+  health-check / T1`, exit 0: the trivial case of the check.
+- **Took:** 0 s of model time; about a minute to run the verifier and read the brief.
+- **Awkward:** nothing in the tool. The brief is complete enough to hand over blind (§7); what
+  it would have produced is the one thing this run cannot say. What *can* be said: the gate
+  (§8) and the fresh session (§10) both read "nothing built" correctly from the tree, which is
+  the state a half-finished real sprint is in most of the time.
+- **Whose fault:** nobody's — the owner's decision, recorded in the spec's design record for the
+  real run ("notes only, fix nothing") and in the ROADMAP candidate list as a limit of this run.
+- **Evidence:** `git diff --stat main -- plugins/` in shipkit → nothing from this task;
+  in the worktree, `git diff 4fcf366...HEAD --name-only` → five files, all under `.shipkit/`
+  (the gate's step 5 output, §8).
+
 ## 8. `/shipkit:ship health-check` — the gate on a spec with no code
 
 - **Asked for:** `/shipkit:ship health-check`, non-interactive, the test command given as
@@ -336,6 +355,28 @@ not). Answers and the time they took are in the next section.
   `can't find gem bundler (= 4.0.20) with executable bundle (Gem::GemNotFoundException)`";
   "5542 examples, 0 failures, 1 pending"; the reviewer's "VERDICT: FAIL"; `git status --short`
   → `?? .shipkit/releases/`.
+
+## 8a. The independent review the gate started
+
+- **Asked for:** the gate's step 4 starts the `reviewer` agent and tells it only the slug and
+  the base ref — "Review the spec `health-check` against the base ref `4fcf366…`" — nothing
+  about what was built or what the other steps showed.
+- **Produced:** a review copied whole into the report: a one-paragraph finding ("The diff
+  contains only spec files. There is no implementation: no controller, no query object, no
+  route, no specs and no docs change"), an eleven-row table with `NOT MET` and the evidence
+  column "no code or test" (REQ-11, waived, still checked: "`docs/PRODUCTION.md` has no
+  `/health` section"), a "Changes beyond the spec" section naming `.shipkit/product.md` as
+  outside the spec's `Paths`, "Decisions not followed: none can be checked because no code
+  exists", a "Not covered" line pointing at `/code-review`, and `VERDICT: FAIL`.
+- **Took:** inside the gate's 174 s; the reviewer's own turn is not timed separately in the
+  report.
+- **Awkward:** the reviewer did its job on a tree with nothing to review, and said so without
+  padding. One nit: it marked the waived REQ-11 `NOT MET` as well — a waived requirement that
+  is also unmet is two facts, and the table has one column. The `product.md` finding is the
+  real one and is counted under §8's third awkwardness.
+- **Whose fault:** the tool's, mildly (a waived-and-unmet row could say both).
+- **Evidence:** the report's section 4, quoted in §8: "Requirements: 0 MET, 11 NOT MET, 0
+  CANNOT TELL (1 waived). VERDICT: FAIL".
 
 ## 9. `/shipkit:handoff` — the note for the next session
 
