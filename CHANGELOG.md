@@ -2,6 +2,64 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.3.0] — 2026-10-07
+
+Sprint 10, the last of the evidence plan (`docs/plans/evidence-sprint-plan.md`): the gate's
+first-run misses become visible two seconds in, the one design question open since 3.0 is
+closed by record, the whole loop is run once on a repository that is not shipkit, and what
+the owner approved deleting is deleted. Requirements and decision records in
+[`.shipkit/specs/real-run/`](.shipkit/specs/real-run/); the run itself in
+[`docs/design/field-notes-4.3.md`](docs/design/field-notes-4.3.md).
+
+### Changed
+
+- **`spec-check.sh` shows the debt an open spec carries.** Run without `--as-shipped`, it
+  prints `PENDING-TEST <slug> REQ-N` for every requirement of an open spec that no test cites
+  yet — information, not a gap: the exit status is unchanged, an excused requirement stays
+  `WAIVED`, and `--as-shipped` or a shipped spec still turn the same lines into `MISSING-TEST`.
+  Both 4.0.0 gates failed their first run on exactly these requirements; the check that catches
+  them had existed since 3.5.0 and nobody ran it before the gate. The ship skill now says to.
+- **The stack overlay skills stay in core**, by decision record 0003
+  (`.shipkit/decisions/0003-overlay-skills-home.md`). Read as text, seven of the eleven tell
+  Claude how to work; read as delivery, all eleven are files core *installs* into the project,
+  cost no plugin context, and none refers to `shipkit-workflows`. Design doc §5 item 6 reads
+  settled; the record's clause and `Fired-if` say what would move them.
+- `ROADMAP.md`: the evidence plan marked shipped; "Still open after Sprint 10" lists six
+  candidates from the real run and six carried from Sprint 9, each naming its evidence.
+
+### Added
+
+- `docs/design/field-notes-4.3.md` — ten sections, one per step of the loop run on
+  `rails_error_dashboard` (755 commits, 5,542 RSpec examples): what the step asked for, what it
+  produced, how long it took, what was awkward, whose fault, and the evidence line.
+- Smoke check 48 (`pending-test`), two assertions; 127 checks in all.
+
+### Removed
+
+- Seven merged `sprint-1/*` … `sprint-7/*` branches, local and on GitHub; 354 sealed eval
+  sandboxes under `/private/tmp/e-*`; the detached worktree at `d666c27`. Each on its own yes;
+  the commands and their output are in the S10-T4 commit. Tags are untouched.
+
+### What using it for real showed
+
+The loop holds on a repository shipkit had never seen. Product, intake, spec, brief, gate,
+handoff and a fresh session ran end to end with `sonnet` headless in about nine minutes of
+model time; every file one step wrote was the file the next step needed, and the fresh
+session answered "what should I do next?" correctly from the handoff and the briefing alone.
+The gate refused a spec with no code, with evidence, and when the project's test command
+failed as written (the shell's Ruby was not the pinned one) it found the project's own way to
+run it and recorded both runs. Three things cost more than they should. **A project that used
+shipkit before 3.3 is reported wrong every session**: its six shipped specs have no `Status`
+line, so the briefing calls them in flight, nags about drift on them and counts 23 gaps.
+**The intake asked the owner four questions of which the repository answered three** — the
+owner could not answer from memory, the executor found the answers in eight minutes of
+reading the intake could have done, and one of the intake's claims of absence ("queue status
+has no source") was false. **A reversal condition that fires before the code exists** passed
+the spec skill: a line-count on a file not yet written. Smaller: `product.md` and the release
+report are "outside the spec" to the reviewer and to `brief-verify`, because no spec will
+ever list them; and a headless run's questions live only in its reply. None of it was fixed
+in this release; all of it is in the roadmap with its section number.
+
 ## [4.2.0] — 2026-10-07
 
 Sprint 9 of the evidence plan (`docs/plans/evidence-sprint-plan.md`): every rule file gets an
