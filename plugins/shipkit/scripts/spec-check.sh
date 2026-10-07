@@ -13,6 +13,9 @@
 #
 #   MISSING-TASK <slug> REQ-N   tasks.md never mentions the requirement
 #   MISSING-TEST <slug> REQ-N   the spec is shipped and no file cites "<slug>/REQ-N"
+#   PENDING-TEST <slug> REQ-N   the spec is OPEN and no file cites it yet — information, not a
+#                               gap: the test is owed at ship time (both 4.0.0 gates failed
+#                               their first run on exactly this, unseen until the gate ran)
 #   WAIVED <slug> REQ-N         the requirement ends with [untested: <reason>]
 #   SKIPPED <slug> (<status>)   the spec is a draft or was dropped; nothing is checked
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
@@ -29,7 +32,9 @@
 #   - A test cites a requirement by containing "<slug>/REQ-N" anywhere — a comment or a test
 #     name. The slug is needed because every spec has its own REQ-1. Citations under .shipkit/,
 #     under docs/, or in any *.md file do not count: prose is not a test.
-#   - Only a shipped spec is asked for tests. An open one still owes them.
+#   - Only a shipped spec is asked for tests. An open one still owes them, and is told so by a
+#     PENDING-TEST line per uncited requirement (exit status unchanged; --as-shipped turns
+#     them into MISSING-TEST).
 #   - The three task-format checks apply only to an OPEN spec that carries a Status line —
 #     that is, a spec written in the 3.3 format. A task is a line "- [ ] **T3** …" followed by
 #     indented "- Files:", "- Test:", "- After:", "- Done when:" lines. Files and After are
@@ -181,9 +186,13 @@ for spec in "$SPECS"/*/spec.md; do
       echo "MISSING-TASK $slug REQ-$n"
       gaps=$((gaps + 1))
     fi
-    if { [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; } && ! cited "$slug" "$n"; then
+    if cited "$slug" "$n"; then
+      :
+    elif [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; then
       echo "MISSING-TEST $slug REQ-$n"
       gaps=$((gaps + 1))
+    else
+      echo "PENDING-TEST $slug REQ-$n"   # real-run/REQ-1: open spec, shown not enforced
     fi
   done < "$TMP"
   if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then

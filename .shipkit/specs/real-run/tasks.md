@@ -6,7 +6,7 @@ by the intake beside this file (T1's remedy, T2's Rails count, B11's branch coun
 the owner to name the repository first and changes nothing under `plugins/`. T4 asks one yes
 per row.**
 
-- [ ] **T1** Show the citation debt before the gate (S10-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5
+- [x] **T1** Show the citation debt before the gate (S10-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/ship/SKILL.md
   - Test: scripts/smoke.sh check 48 "pending-test" (an open spec with one uncited requirement, one excused and one cited: the plain run prints `PENDING-TEST demo REQ-1`, `WAIVED demo REQ-2`, nothing for REQ-3, exits 0; with a slug and `--as-shipped` it prints `MISSING-TEST demo REQ-1` and exits 1; a shipped spec prints no PENDING line) — written first, red; check 19 still passes
   - After: none
