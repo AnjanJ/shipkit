@@ -2,6 +2,68 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.2.0] — 2026-10-07
+
+Sprint 9 of the evidence plan (`docs/plans/evidence-sprint-plan.md`): every rule file gets an
+eval, the 4.0 trims get the number the trim audit owed them, and the one eval that has sat at
+one run in three since 3.1.0 is fixed. Requirements and decision records in
+[`.shipkit/specs/rule-evals/`](.shipkit/specs/rule-evals/); the numbers in
+[`docs/design/eval-results-4.2.md`](docs/design/eval-results-4.2.md).
+
+### Changed
+
+- **`spec-driven.md` says to stop.** One sentence: non-trivial work "answers three questions,
+  shows the answers to the user and waits for a yes before any code". Six kept failing runs
+  showed the 4.1.0 text being read as a file format — two runs wrote a full spec folder and
+  built anyway in the same turn — and nothing in it said to pause. With the sentence,
+  `rules/nontrivial` went from 0 of 6 to 6 of 6, with `trivial` and `decision` unchanged;
+  the always-on rules are 2,979 bytes (two phrases said elsewhere paid for it). Decision
+  record 0002 has the traces' reading and the clause under which the sentence comes out.
+- `plugins/shipkit/evals/` may now be 128 KB (lint check 17, was 100 KB): eighteen cases and
+  their harness needed about 33 KB against 21 KB of room. Fixtures are still generated.
+- `scripts/evals.sh --group <name>` runs one group (cases are named after their folder);
+  no flag still runs everything, now 38 cases, about $13.50.
+
+### Added
+
+- **Eighteen rule cases** — `evals/scoped/` (the five path-scoped core rules) and
+  `evals/stacks/` (the thirteen stack rule files across nine stacks). Each prompt walks into
+  the rule's first named trap; each grader is a regex on the file the run writes;
+  `evals/lib/with-rule.sh <rule>` installs the one file under test as the installer would,
+  and `evals/fixtures/stack-gen.sh <stack>` writes the three-to-nine-file project its globs
+  need (plus `static` and `monorepo` shapes for core rules `sample-app` cannot exercise).
+- **The measurement** (`docs/design/eval-results-4.2.md`): eighteen rules, three runs, three
+  arms — with the rule, without it, and with its `v3.7.0` text. With 54 of 54, without 48 of
+  54, pre-trim 42 of 42. The trim audit gains an appended "Criterion (c), measured in 4.2.0"
+  section: no trim cost anything.
+- `inject-rule.sh --eval-rule`, a fifth session-hook command that prints the rule an eval
+  case marked as under test — only inside `claude plugin eval` (`CLAUDE_CODE_EVAL_CONFINED=1`)
+  and only with the marker a scaffold writes, so a real project never takes the branch.
+- Smoke checks 43 to 47: the harness, the eval-only hook branch, the stack generator against
+  every rule's globs, `--group`, and every rule case's shape.
+
+### What using it for real showed
+
+The eval sandbox loads nothing from the workspace: not a path-scoped rule under
+`.claude/rules/`, not an always-on rule file beside it, not a `CLAUDE.md` a scaffold wrote —
+three nonces, none seen — while the same files loaded in a normal headless session. The child
+runs with `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`, and the plugin-evals documentation says so.
+So the plan's Check first failed and its written fallback failed with it, and the rule under
+test reaches the model the way the always-on rules always have: through the plugin's own
+hook. Every number in this release measures a rule's **text delivered always-on**, not
+path-scoped loading, which nothing in shipkit measures yet. The largest gap between the with
+and without arms is a tie: `rules/dependencies` (a bare `"requests"` without it, a constraint
+with it) and `oban/jobs` (a refund worker with no idempotency guard without it, `unique:` with
+it) — both 3 of 3 against 0 of 3. The smallest is sixteen rules wide: sixteen cases pass
+without their rule because `sonnet` clears their first trap unaided, down to identical tool
+counts on `rails/gemfile` (2, 2, 2 in every arm). That is a finding about one line per file
+and one model, recorded and not acted on. One rule stopped work: the first `gemfile` run
+scored 0 of 3 *with* the rule, because "read the lock diff after `bundle install`" left the
+model unwilling to guess a version with no network — a rule that names a network step needs
+a prompt that says there is none. Two eval-tool facts cost a run each: an `llm` grader no
+longer takes a file `target:`, and a quote character inside a single-quoted YAML pattern is
+rejected (`\x27`). The plan's rule count was 15; the tree had 18, and `static` ships none.
+
 ## [4.1.0] — 2026-10-07
 
 Sprint 8 of the evidence plan (`docs/plans/evidence-sprint-plan.md`): the re-test decision 0001
