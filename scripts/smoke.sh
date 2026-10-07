@@ -1607,6 +1607,32 @@ if printf '%s\n' "$eg_group" | grep -q -- '--case stacks-\*' && ! printf '%s\n' 
   pass "evals-group (--group stacks → --case 'stacks-*'; no flag → every case; --case still passes through)"
 else failc "evals-group" "group=[$(printf '%s' "$eg_group" | head -c 120)] all=[$(printf '%s' "$eg_all" | head -c 80)]"; fi
 
+# 47. rule-cases: every rule case (evals/scoped/*, evals/stacks/*) has the four files, exactly
+# one scored grader, a description naming the rule file it probes, a scaffold that calls
+# lib/with-rule.sh for that rule, and a case name equal to <group>-<folder>. Each scaffold is
+# run in a scratch directory and must leave the rule and the marker in place.
+# Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12
+RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux"
+rc_ok=1; rc_why=""
+for c in $RC_EXPECT; do
+  CD="$COPY/evals/$c"; g=${c%%/*}; n=${c##*/}
+  if [ ! -f "$CD/prompt.md" ] || [ ! -f "$CD/case.yaml" ] || [ ! -f "$CD/fixture.sh" ]; then
+    rc_ok=0; rc_why="$rc_why $c:missing-files"; continue
+  fi
+  [ "$(ls "$CD/graders/" 2>/dev/null | grep -c '\.md$')" -eq 1 ] || { rc_ok=0; rc_why="$rc_why $c:graders!=1"; }
+  grep -q "^name: $g-$n\$" "$CD/case.yaml" || { rc_ok=0; rc_why="$rc_why $c:name"; }
+  rule=$(sed -n 's/.*with-rule\.sh" \([a-z-]*\).*/\1/p' "$CD/fixture.sh" | head -1)
+  [ -n "$rule" ] || { rc_ok=0; rc_why="$rc_why $c:no-with-rule"; continue; }
+  grep '^description:' "$CD/prompt.md" | grep -q "$rule\.md" || { rc_ok=0; rc_why="$rc_why $c:description-lacks-$rule.md"; }
+  RD="$WORK/rc-$g-$n"; mkdir -p "$RD"
+  (cd "$RD" && bash "$CD/fixture.sh" >/dev/null 2>&1) || { rc_ok=0; rc_why="$rc_why $c:scaffold-failed"; continue; }
+  rel=$(cat "$RD/.claude/rules/shipkit/.eval-rule" 2>/dev/null)
+  [ -n "$rel" ] && [ -f "$RD/$rel" ] && [ "$(basename "$rel")" = "$rule.md" ] || { rc_ok=0; rc_why="$rc_why $c:rule-not-installed"; }
+  [ "$(git -C "$RD" rev-list --count HEAD 2>/dev/null)" -ge 1 ] || { rc_ok=0; rc_why="$rc_why $c:no-commit"; }
+done
+if [ "$rc_ok" -eq 1 ]; then pass "rule-cases ($(echo $RC_EXPECT | wc -w | tr -d ' ') cases: four files, one grader, description names the rule, scaffold installs it)"
+else failc "rule-cases" "$rc_why"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

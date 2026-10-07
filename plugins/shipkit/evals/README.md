@@ -60,8 +60,10 @@ Both answers were found by running probe cases with a control grader that had to
 called 0x"). `input_match` narrows the count to calls whose JSON input matches a regex.
 
 **(b) A file the run wrote — yes, if the run is allowed to write.** `file_exists` checks that a
-file was created, and a `regex` or `llm` grader with `target: { source: file, path: out.txt }`
-reads its contents. Probe: the prompt asked for `out.txt` containing one word; both graders
+file was created, and a `regex` grader with `target: { source: file, path: out.txt }` reads
+its contents. (An `llm` grader with `target:` was accepted by the 3.2 probe; on Claude Code
+2.1.291 the case refuses to load — `graders.0: Unrecognized key(s) in object: 'target'` — so
+a judgement about a written file is a `regex` on the file or an `llm` grader on the reply.) Probe: the prompt asked for `out.txt` containing one word; both graders
 passed and the control `file_exists: missing.txt` failed. The case must list `Write` in
 `allowed_tools` **and** the command must pass `--allow-tools Write`; without the grant the tool
 is removed from the run and every file grader fails. `file_exists` sees only files created
@@ -195,6 +197,11 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
 | `grandfather-xl/gap` | `/shipkit:ask` Which email provider sends our notifications? | says none could be found and presents none as in use (XL4) | llm |
 | `grandfather-xl/history` | `/shipkit:ask` Why did we move order storage off the JSON file, and when? | gives the concurrent-writer corruption and identifies the commit (XL5) | llm |
+| `scoped/dependencies` | Add the `requests` library to pyproject.toml. | the entry carries a version constraint (`dependencies.md`: never unpinned) | regex on the file |
+| `scoped/migrations` | Add a migration that archives orders created before 2023 — forty million rows. | the backfill is batched (`migrations.md`: one UPDATE holds the lock) | regex on the file |
+| `scoped/monorepo` | Change `formatCents` in the shared package; write the test commands to CHECKS.txt. | the consumers' tests are run too (`monorepo.md`: every consumer) | llm on the file |
+| `scoped/testing` | Add tests/test_tax.py for NY tax on a two-mug order. | the test uses the existing `tests/support.py` helper (`testing.md`: reuse helpers) | regex on the file |
+| `scoped/ui-ux` | Make each recent-orders row open its order page. | rows are `<a href>`, no click handler on a list item (`ui-ux.md`: a div is not a button) | regex on the file |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -222,6 +229,13 @@ with nothing going on — plus a registry pointing at them and a `studio.md` ran
 first, all under `shipkit-home/`. The prompt names that directory as `SHIPKIT_HOME`, so the
 skill's run of `portfolio-digest.sh` writes the digest there and not under the run's home.
 Passes when `eve`'s answer names `ledger` and quotes its digest line. Added in 3.7.0.
+
+The `scoped` cases (4.2.0) are one per path-scoped core rule: a prompt that walks into the
+rule's first named trap, in `sample-app` or a `stack-gen.sh` shape, with the rule installed by
+`lib/with-rule.sh` and delivered by the hook (the section above). Each `description:` names
+the rule file and quotes the line it probes. A case that passes without the rule is a finding
+("the rule may be dead weight or the case too easy"), recorded in
+`docs/design/eval-results-4.2.md`, not a reason to bend the grader.
 
 The `grandfather-xl` cases are the four elder questions again, on the generated 224-file
 fixture with decoys, plus one the current source cannot answer: `history` is in `git log`
@@ -296,6 +310,30 @@ same models, 2026-10-05:
 Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` was run six more
 times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
 These runs cannot tell the two apart.
+
+## Baseline 4.1.0 (scoped)
+
+The five `scoped` cases on the 4.1.0 tree (branch `sprint-9/rule-evals`, S9-T2), with the
+rule installed by `with-rule.sh` and delivered by the hook. Claude Code 2.1.291, model
+`sonnet`, `-j 4`, 2026-10-07. Tool calls from the traces (`scripts/trace-tools.sh`); no
+`Agent` call in any run.
+
+| Case | Runs passed | Tool calls per run | Cost |
+|------|-------------|--------------------|------|
+| `scoped/dependencies` | 3 of 3 | 4, 4, 5 | $0.26 |
+| `scoped/migrations` | 3 of 3 | 4, 3, 4 | $0.27 |
+| `scoped/monorepo` | 3 of 3 | 9, 8, 6 | $0.27 |
+| `scoped/testing` | 3 of 3 | 9, 9, 10 | $0.32 |
+| `scoped/ui-ux` | 3 of 3 | 6, 5, 5 | $0.30 |
+
+15 of 15 runs, about $1.42, roughly 20 seconds a run at four in flight. Two graders were
+corrected after the first run, each on the evidence of the traces, not to make a run pass:
+`migrations` scored 1 of 3 because its regex knew `in_batches` and `find_each` but not the
+id-range loop two runs wrote (`(min_id..max_id).step(BATCH_SIZE)` — batched, which is what the
+rule asks); `monorepo` did not load at all, first because an `llm` grader may no longer take
+a file `target:`, then because the replacement regex held a quote character the eval tool's
+YAML parser rejects (write `\x27`). Whether any of the five passes without the rule is
+S9-T4's question; these numbers are the with arm only.
 
 ## Baseline 4.0.0 (XL)
 

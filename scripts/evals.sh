@@ -9,7 +9,8 @@
 # requirements they prove are cited here: measure-and-slim/REQ-1 measure-and-slim/REQ-2
 # measure-and-slim/REQ-3 measure-and-slim/REQ-9 measure-and-slim/REQ-10 measure-and-slim/REQ-17
 # map-on-trial/REQ-8 (the five grandfather-xl cases scaffold the generated XL fixture)
-# rule-evals/REQ-7 rule-evals/REQ-8 (--group)
+# rule-evals/REQ-7 rule-evals/REQ-8 (--group) rule-evals/REQ-10 (the five scoped cases install
+# their core rule through evals/lib/with-rule.sh)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
