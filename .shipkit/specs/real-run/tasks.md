@@ -21,7 +21,7 @@ per row.**
   - Test: reading — the notes have a section for the cache update and each of the nine steps, each with the six fields and an evidence line; every awkwardness is a one-line candidate under "Still open after Sprint 10" naming its section; REQ-11's branch is marked when the condition did not hold
   - After: T1, T2
   - Done when: the readings hold; `git diff --stat main -- plugins/` shows nothing from this task; nothing in the named repository was merged; `bash scripts/lint.sh` → 0/0
-- [ ] **T4** Housekeeping the owner approved, B11 to B13 (S10-T4) → REQ-12
+- [x] **T4** Housekeeping the owner approved, B11 to B13 (S10-T4) → REQ-12
   - Files: ROADMAP.md
   - Test: reading — for each approved row, ROADMAP records what was removed and when; the command outputs are in the commit message
   - After: T3

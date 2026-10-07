@@ -65,6 +65,21 @@ numbers are its sections):
   column loses exit codes to pipes; the handoff has no "Blocked on" line; the briefing's "top
   goal" line repeats "metric: none set; target: none set; by: no date set" every session.
 
+Housekeeping done in Sprint 10 (S10-T4, 2026-10-07, each row its own yes from the owner; the
+commands and their output are in that task's commit message):
+
+- **B11** — the seven merged branches `sprint-1/measure-and-slim` … `sprint-7/trim-and-docs`
+  deleted locally with plain `git branch -d` (each reported "Deleted branch … (was <sha>)") and
+  on GitHub with `git push origin --delete` (each "- [deleted]"); `git ls-remote --heads origin 'sprint-*'`
+  now lists only `sprint-8` and `sprint-9`. Tags `v3.2.0` … `v4.0.0` untouched.
+- **B12** — the 354 sealed eval sandboxes under `/private/tmp/e-*` (84.8 MB) removed. They were
+  owned by the owner with their permission bits cleared by the eval tool (`d---------`), so
+  `chmod -R u+rwx` came first; no smoke check read them (check 40 uses a synthetic trace).
+- **B13** — the detached worktree `.claude/worktrees/agent-a4a4658de35627a13` (at `d666c27`,
+  merged) removed with `git worktree remove --force` and pruned. It held three uncommitted
+  changes, all already on `main` (two overlay skills byte-identical; `lint.py`'s addition is
+  main's check 13), so the force discarded nothing unmerged. `git worktree list` shows one line.
+
 Carried from Sprint 9:
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
