@@ -1458,6 +1458,25 @@ if printf '%s\n' "$nms_lines" | grep -q '^shipkit: beta: 1 of 3 tasks done' \
   pass "no-map-silent (no map + an open spec → the briefing line, not one hook line about a map)"
 else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"; fi
 
+# 42. lint-negative: the two lint checks of 4.1.0 still FIRE. A copy of the working tree with
+# a 60 KB file under evals/ and one "build the map first" line in the README must fail the lint
+# with exactly those two errors (the gate's reviewer asked for a repeatable red, not a
+# one-time one). No claude needed. Cites: map-on-trial/REQ-7 map-on-trial/REQ-15
+LN="$WORK/lint-neg"; mkdir -p "$LN"
+# only the repo-root .git and .claude (agent worktrees) are skipped; the overlays' .claude/ must copy
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$LN/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$LN" && tar xf -); fi
+ln_clean=$(python3 "$LN/scripts/lint.py" 2>&1 | tail -1)
+head -c 61440 /dev/zero | tr '\0' 'x' > "$LN/plugins/shipkit/evals/fixtures/oversize.txt"
+printf '\nStart by building the map: run /shipkit:map first.\n' >> "$LN/README.md"
+ln_out=$(python3 "$LN/scripts/lint.py" 2>&1)
+if printf '%s\n' "$ln_clean" | grep -q '^lint: 0 error(s)' \
+   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 102,400' \
+   && printf '%s\n' "$ln_out" | grep -q 'README.md: line [0-9]*: presents the map as required or the first step' \
+   && printf '%s\n' "$ln_out" | grep -q '^lint: 2 error(s)'; then
+  pass "lint-negative (a 60 KB eval file and a 'build the map first' line → exactly those two lint errors; the clean copy → 0)"
+else failc "lint-negative" "clean: [$ln_clean] doctored: $(printf '%s' "$ln_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
