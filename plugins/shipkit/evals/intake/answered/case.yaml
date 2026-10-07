@@ -1,0 +1,5 @@
+# Proves run-wounds/REQ-6 (cited in scripts/evals.sh)
+schema_version: "1.1"
+name: intake-answered
+context:
+  scaffold_script: fixture.sh

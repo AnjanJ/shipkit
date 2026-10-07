@@ -9,7 +9,7 @@ first moves README history only with the owner's yes (intake question 1).**
   - Test: scripts/smoke.sh check 49 "pre33-specs" (three all-ticked specs with no Status → no progress line, no drift line, one "predate 3.3" line naming 3; one no-Status spec with an unticked task → reported as open; `Status: open` all ticked → "all ticked" as today) — written first, red
   - After: none
   - Done when: check 49 → PASS; check 30 → PASS; check 19h → PASS; `bash scripts/lint.sh` → 0/0
-- [ ] **T2** The intake searches before it asks (S11-T2) → REQ-6, REQ-7, REQ-8
+- [x] **T2** The intake searches before it asks (S11-T2) → REQ-6, REQ-7, REQ-8
   - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/evals/intake/answered/, scripts/evals.sh, plugins/shipkit/evals/README.md, docs/design/eval-history.md
   - Test: eval case `intake-answered` (sample-app + docs/decisions.md answering two of three natural refunds questions; grader: at most one question asked, the other two cited to the file) — run with the 4.3.0 text first (expect < 2 of 3), then with the new text (≥ 2 of 3)
   - After: none

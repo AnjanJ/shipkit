@@ -44,6 +44,10 @@ line it comes from, **before** asking anything:
 - **Open spec** — an open spec already covers it, wholly or in part. Name the spec.
 - **Decision** — it contradicts a decision record. Name the record and its reversal condition.
 
+When you say that something does **not** exist in the project — no source for a value, no
+earlier decision, no doc — name the places you searched for it, in the same sentence. A claim
+of absence with no search behind it was wrong once already ("queue status has no source": it did).
+
 A conflict does not end the intake: the user may have changed their mind. Ask whether to go
 ahead anyway (that is one of your four questions). If they do, the non-goal or the decision
 is what must change first — say so. If there is no conflict, say "No conflicts found" in one line.

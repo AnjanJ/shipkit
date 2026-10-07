@@ -188,6 +188,7 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `intake/nongoal` | `/shipkit:intake` Add EUR and GBP pricing. | says the request conflicts with the non-goal on multi-currency support | regex |
 | `intake/trivial` | `/shipkit:intake` Rename `apply_tax` to `add_tax`. | says the request is trivial and runs no intake | llm |
 | `intake/limit` | `/shipkit:intake` Add refunds. | asks at least one and at most four questions, and builds nothing | llm |
+| `intake/answered` | `/shipkit:intake` Add refunds. (with a `docs/decisions.md` answering two natural questions) | does not ask the two answered questions and names the file | llm |
 | `reviewer/missing-req` | start `shipkit:reviewer` on spec `refunds`, base `base` | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
 | `reviewer/all-met` | the same, on a complete feature | ends `VERDICT: PASS` with no `NOT MET` row | regex |
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
@@ -325,36 +326,12 @@ Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` wa
 times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
 These runs cannot tell the two apart.
 
-## After the spec-first sentence (4.2.0)
+Older readings (the 4.2.0 spec-first sentence, the 4.3.0 release run) are in `docs/design/eval-history.md`.
 
-Sprint task S9-T5 read six kept failing runs first (0 of 6 on the 4.1.0 text): every run built
-refunds test-first and listed its assumptions afterwards; two wrote a full spec folder and
-then built in the same turn without showing it. The rule was being read as a file format, not
-a gate. One sentence changed in `spec-driven.md` — "answers three questions, shows the answers
-to the user and waits for a yes before any code" — paid for inside the file (2,996 → 2,979
-bytes). Same command, same models, 2026-10-07:
+## `intake/answered` (4.4.0)
 
-| Case | 4.1.0 text (6 runs) | With the sentence |
-|------|---------------------|-------------------|
-| `rules/nontrivial` | 0 of 6 | 3 of 3, then 3 of 3 more (6 of 6) |
-| `rules/trivial` | 3 of 3 | 3 of 3 |
-| `rules/decision` | 3 of 3 | 3 of 3 |
-
-The three passing replies each stop at a proposed spec and ask for a yes. Decision record
-`.shipkit/decisions/0002-spec-first-eval.md` holds the traces' reading, the alternatives and
-the clause under which the sentence comes out again. `rules/nontrivial` is no longer the
-accepted known failure of the release run; a release run where it drops below 2 of 3 is a
-regression to investigate, not a number to carry.
-
-## Release run 4.3.0
-
-`bash scripts/evals.sh -j 4`, 2026-10-07: 38 cases, 592 s, $11.57, exit 1 — `grandfather-xl/drift`
-1 of 3. Both failing replies gave the right answer (the `_counts` dict in `app/inventory/cache.py`)
-and never opened `PROJECT_MAP.md`, so had no Redis claim to call wrong — the shape the 4.1.0
-results record (the elder reads the map in fewer than one run in three). Re-run alone with
-`--keep-temp`: 3 of 3, every reply naming `PROJECT_MAP.md:25` as wrong; traces read with
-`trace-tools.sh` (1 Agent call, 4–5 tools each). Nothing in 4.3.0 touched the elders or the map.
-Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
+3 of 3 on the 4.3.0 text before its sentence existed, so the planned search list was not added;
+3 of 3 after; the reading is in `docs/design/eval-history.md`.
 
 ## Baseline 4.1.0 (scoped)
 
