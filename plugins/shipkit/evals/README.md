@@ -346,6 +346,16 @@ the clause under which the sentence comes out again. `rules/nontrivial` is no lo
 accepted known failure of the release run; a release run where it drops below 2 of 3 is a
 regression to investigate, not a number to carry.
 
+## Release run 4.3.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-07: 38 cases, 592 s, $11.57, exit 1 — `grandfather-xl/drift`
+1 of 3. Both failing replies gave the right answer (the `_counts` dict in `app/inventory/cache.py`)
+and never opened `PROJECT_MAP.md`, so had no Redis claim to call wrong — the shape the 4.1.0
+results record (the elder reads the map in fewer than one run in three). Re-run alone with
+`--keep-temp`: 3 of 3, every reply naming `PROJECT_MAP.md:25` as wrong; traces read with
+`trace-tools.sh` (1 Agent call, 4–5 tools each). Nothing in 4.3.0 touched the elders or the map.
+Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
+
 ## Baseline 4.1.0 (scoped)
 
 The five `scoped` cases on the 4.1.0 tree (branch `sprint-9/rule-evals`, S9-T2), with the

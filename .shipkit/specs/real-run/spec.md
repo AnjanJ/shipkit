@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `5085d2f` on sprint-10/real-run.
 > Status: shipped
-> Paths: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/ship/SKILL.md, .shipkit/decisions/, docs/design/two-plugin-split.md, docs/design/field-notes-4.3.md, ROADMAP.md, GUIDE.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
+> Paths: .shipkit/releases/, plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/ship/SKILL.md, .shipkit/decisions/, docs/design/two-plugin-split.md, docs/design/field-notes-4.3.md, ROADMAP.md, GUIDE.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
 
