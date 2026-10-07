@@ -25,6 +25,9 @@ Arguments: $ARGUMENTS — `<feature-slug> [base-ref]`
 
 ## Before step 1
 
+Before the gate, run `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped` yourself and
+cite every requirement it names — both 4.0.0 gates failed their first run on this two-second check.
+
 Run `git status --porcelain` and keep its output. Step 7 judges the tree **as it was before
 the gate ran**: the gate's own test run can leave files behind (caches, coverage output), and
 those are not the user's unfinished work.

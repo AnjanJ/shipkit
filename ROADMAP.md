@@ -12,10 +12,10 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-07, v4.2.0):** Sprints 1 to 7 of the
-quality-gate plan are done, and Sprints 8 and 9 of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
-approved 2026-10-06) shipped as 4.1.0 and 4.2.0 — see "The evidence plan" below. Everything in this
-document is shipped except the open items listed there.
+**Status (as of 2026-10-07, v4.3.0):** Sprints 1 to 7 of the
+quality-gate plan are done, and all three sprints of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
+approved 2026-10-06) shipped as 4.1.0, 4.2.0 and 4.3.0 — see "The evidence plan" below. Everything in
+this document is shipped except the items under "Still open after Sprint 10", which seed the next plan.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,7 +29,7 @@ document is shipped except the open items listed there.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The evidence plan — Sprint 8 SHIPPED 2026-10-07; Sprints 9 and 10 next
+## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
 
 Full plan: [`docs/plans/evidence-sprint-plan.md`](docs/plans/evidence-sprint-plan.md). Every
 standing claim shipkit makes about itself gets a number behind it, starting with the one owed
@@ -39,18 +39,59 @@ since Sprint 1.
 |--------|---------|--------------------|
 | 8 | 4.1.0 | The map on trial: a generated 224-file, 27-commit fixture; five XL elder cases including a history question; `trace-tools.sh`; the re-test decision 0001 asked for — and, by its own clause, **the map is now optional** (`docs/design/eval-results-4.1.md`) |
 | 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 13 stack rule files), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
-| 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
+| 10 | 4.3.0 | `spec-check` shows an open spec's uncited requirements (`PENDING-TEST`) so the gate's first-run misses are seen two seconds in; the overlay skills stay in core by record 0003; the loop run once, end to end, on `rails_error_dashboard` (`docs/design/field-notes-4.3.md` — it held; six candidates below came out of it); seven merged branches, 354 eval sandboxes and one stale worktree gone |
 
-**Still open after Sprint 9.**
+**Still open after Sprint 10.**
+
+From the real run (`docs/design/field-notes-4.3.md`, Sprint 10, one project, one run; the §
+numbers are its sections):
+
+- **Pre-3.3 specs with no `Status` line are treated as open forever** (§1): the briefing reports
+  shipped features as in flight, nags about drift on them and counts 23 `MISSING-TASK` gaps in a
+  project whose six specs all shipped. A migration nudge, or "all tasks ticked and no Status"
+  read as shipped, belongs to the next plan.
+- **The intake asked the owner what the repository already knew** (§3, §4): three of its four
+  questions were answerable from files it had read or could have read; one claim of absence
+  ("queue status has no source") was false; `grandfather` was not used in either pass (§5).
+- **A `Fired-if` that fires before the code exists** passed the spec skill (§6): a line-count on
+  a file not yet written. The spec skill could run `decision-check.sh` on its own output as it
+  runs `spec-check.sh`; `spec-check` cannot check a draft, so the skill flipped the status to run it.
+- **Files no spec will ever list are "outside the spec"** (§7, §8): `.shipkit/product.md` and the
+  release report, to the reviewer and to `brief-verify.sh`, which allows only the spec's `tasks.md`.
+- **Headless runs leave their questions in the reply, not on disk** (§2, §3): product's eight
+  and intake's four questions vanish with the session; an unanswered intake writes nothing.
+- Smaller (§0, §7, §8, §9, §10): the session hook could say when the cache holds a newer version
+  than the running one; a `Fired-if` line tolerates nothing after the command; the gate's `How`
+  column loses exit codes to pipes; the handoff has no "Blocked on" line; the briefing's "top
+  goal" line repeats "metric: none set; target: none set; by: no date set" every session.
+
+Housekeeping done in Sprint 10 (S10-T4, 2026-10-07, each row its own yes from the owner; the
+commands and their output are in that task's commit message):
+
+- **B11** — the seven merged branches `sprint-1/measure-and-slim` … `sprint-7/trim-and-docs`
+  deleted locally with plain `git branch -d` (each reported "Deleted branch … (was <sha>)") and
+  on GitHub with `git push origin --delete` (each "- [deleted]"); `git ls-remote --heads origin 'sprint-*'`
+  now lists only `sprint-8` and `sprint-9`. Tags `v3.2.0` … `v4.0.0` untouched.
+- **B12** — the 354 sealed eval sandboxes under `/private/tmp/e-*` (84.8 MB) removed. They were
+  owned by the owner with their permission bits cleared by the eval tool (`d---------`), so
+  `chmod -R u+rwx` came first; no smoke check read them (check 40 uses a synthetic trace).
+- **B13** — the detached worktree `.claude/worktrees/agent-a4a4658de35627a13` (at `d666c27`,
+  merged) removed with `git worktree remove --force` and pruned. It held three uncommitted
+  changes, all already on `main` (two overlay skills byte-identical; `lint.py`'s addition is
+  main's check 13), so the force discarded nothing unmerged. `git worktree list` shows one line.
+
+Carried from Sprint 9:
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
   re-test's history question was answered from `git log` every time because the fixture's
   commit messages are clean; a repository whose log says "wip" would test the map's Evolution
   section properly. `eve` reads maps across repositories without opening them; nothing has
   measured what she loses when fewer projects have one. Neither changes the 4.1.0 default.
+  (`docs/design/eval-results-4.1.md`, the history question's rows.)
 - **The elder reads the map in fewer than one run in three** even when its instructions said
   to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
   agent's step 1 is where the next experiment is, not the map's content.
+  (`docs/design/eval-results-4.1.md`, "did the elder read the map" column.)
 
 - **Sixteen of eighteen rules pass their case without the rule** (`docs/design/eval-results-4.2.md`):
   `sonnet` clears each file's first named trap unaided. One line per file was probed, one
@@ -59,12 +100,13 @@ since Sprint 1.
 - **Path-scoped loading is measured by nothing.** The eval sandbox loads no `.claude/` file,
   so every rule eval delivers the text always-on through the hook. A smoke check in a normal
   headless session (where the nonce did load) could measure whether `paths:` globs fire.
+  (`docs/design/eval-results-4.2.md`, first paragraph, and `evals/README.md` "How runs are isolated".)
 - **A rule that names a network step can stop work where there is none** — `gemfile.md`'s
-  "read the lock diff after `bundle install`" halted three runs in a sandbox with no network.
+  "read the lock diff after `bundle install`" halted three runs in a sandbox with no network
+  (`docs/design/eval-results-4.2.md`, the `gemfile` row and its reading).
 - **`rules/nontrivial`** passes 6 of 6 with the 4.2.0 sentence (record 0002); the record's
-  clause says when the sentence comes out. Watch it on every release run.
-- From 3.0: whether the overlay skills should live in core (design doc §5) — reversible,
-  blocking nothing.
+  clause says when the sentence comes out (`.shipkit/decisions/0002-spec-first-eval.md`;
+  `docs/design/eval-results-4.2.md`, the `rules/*` table). Watch it on every release run.
 
 Platform facts that shaped this plan, each verified against the official Claude Code docs and,
 since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):

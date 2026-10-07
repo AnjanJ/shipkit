@@ -322,5 +322,8 @@ Settled 2026-09-14:
 Still open (settle before step 9):
 
 5. **Rules: all in core (recommended, §1) or split.** See the falsifiability clause there.
-6. **Stack overlay skills** (`/new-feature`, `/release`, …): core (recommended) or a
-   `workflow-skills/` subfolder installed only when workflows is present. Defer.
+6. **Stack overlay skills** (`/new-feature`, `/release`, …): **settled, see
+   `.shipkit/decisions/0003-overlay-skills-home.md`** (2026-10-07, 4.3.0) — they stay in core
+   because they are files core *installs* into the project (the rule's third verb), cost no
+   plugin context, and none of the eleven refers to `shipkit-workflows`; the record's clause
+   says what would move them.

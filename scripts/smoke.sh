@@ -1633,6 +1633,38 @@ done
 if [ "$rc_ok" -eq 1 ]; then pass "rule-cases ($(echo $RC_EXPECT | wc -w | tr -d ' ') cases: four files, one grader, description names the rule, scaffold installs it)"
 else failc "rule-cases" "$rc_why"; fi
 
+# 48. pending-test: an OPEN spec's uncited requirements are shown, not enforced, before the gate.
+# Both 4.0.0 gates failed their first run on requirements no test cited; the plain run never
+# asked an open spec for tests (check 19c), and --as-shipped (the gate's step 1) was not run
+# first. Now the plain run prints an information line PENDING-TEST <slug> REQ-N per uncited,
+# unexcused requirement of an open spec; the exit status is unchanged; an excused requirement
+# stays WAIVED; --as-shipped and a shipped spec print MISSING-TEST as before, never PENDING.
+# Reuses scspec/sc from check 19. Cites: real-run/REQ-1 real-run/REQ-2 real-run/REQ-3
+P="$WORK/sc-pt"; scspec "$P" demo open
+printf -- '- **REQ-3.** The README shall say so. [untested: prose]\n' >> "$P/.shipkit/specs/demo/spec.md"
+{ for t in 1 2 3; do
+    printf -- '- [ ] **T%s** step %s → REQ-%s\n  - Files: app/f%s.py\n  - Test: tests/test_demo.py\n  - After: none\n  - Done when: `true`\n' "$t" "$t" "$t" "$t"
+  done; } > "$P/.shipkit/specs/demo/tasks.md"
+printf '# demo/REQ-2\n' > "$P/tests/test_demo.py"
+rc=$(sc "$P"); out_plain=$(cat "$WORK/sc.out")
+rc2=$(sc "$P" demo --as-shipped); out_ship=$(cat "$WORK/sc.out")
+sed 's/^> Status: open/> Status: shipped/' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/spec.md"
+rc3=$(sc "$P"); out_shipped=$(cat "$WORK/sc.out")
+if [ "$rc" -eq 0 ] && printf '%s\n' "$out_plain" | grep -q '^PENDING-TEST demo REQ-1$' \
+   && ! printf '%s\n' "$out_plain" | grep -q 'PENDING-TEST demo REQ-2' \
+   && ! printf '%s\n' "$out_plain" | grep -q 'PENDING-TEST demo REQ-3' \
+   && printf '%s\n' "$out_plain" | grep -q '^WAIVED demo REQ-3$' \
+   && ! printf '%s\n' "$out_plain" | grep -q 'MISSING-' \
+   && printf '%s\n' "$out_plain" | grep -q '0 gap(s)$'; then
+  pass "pending-test (open spec, plain run → PENDING-TEST for the uncited requirement only; WAIVED kept; exit 0, 0 gaps)"
+else failc "pending-test" "plain: exit $rc: $out_plain"; fi
+if [ "$rc2" -eq 1 ] && printf '%s\n' "$out_ship" | grep -q '^MISSING-TEST demo REQ-1$' \
+   && ! printf '%s\n' "$out_ship" | grep -q 'PENDING-TEST' \
+   && [ "$rc3" -eq 1 ] && printf '%s\n' "$out_shipped" | grep -q '^MISSING-TEST demo REQ-1$' \
+   && ! printf '%s\n' "$out_shipped" | grep -q 'PENDING-TEST'; then
+  pass "pending-test (--as-shipped and a shipped spec → MISSING-TEST, exit 1, no PENDING line)"
+else failc "pending-test" "as-shipped: exit $rc2: $out_ship / shipped: exit $rc3: $out_shipped"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
