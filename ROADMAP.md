@@ -30,9 +30,6 @@ shipped except the open items listed there.
 
 **Still open after Sprint 7.**
 
-- **Decision 0001** (`.shipkit/decisions/0001-project-map-default.md`): the project map bought
-  nothing on a nine-file fixture; the record asks for a re-test on a fixture of 200+ files with
-  one history question before the map's default changes. Not run; the map stays the default.
 - **`rules/nontrivial`**: the eval that asks for a spec before code on "add refunds" passes
   about one run in three and has since the 3.1.0 baseline. The always-on rules produce the
   test-first habit reliably and the spec-first habit a third of the time on that prompt.

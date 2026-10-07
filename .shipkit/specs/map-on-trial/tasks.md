@@ -20,7 +20,7 @@ branch and the owner says go.
   - Test: reading — the three-arm table has no empty cell; every per-case cell has three tool-call counts from scripts/trace-tools.sh; the drift rule of REQ-14 is applied and shown; the record's status line names a side
   - After: T2
   - Done when: the two tables and the status line are shown to the owner; `git diff --stat main -- plugins/` shows nothing from this task; the owner has said which branch of T4 to take
-- [ ] **T4** Act on the outcome (S8-T4) → REQ-15, REQ-16, REQ-17
+- [x] **T4** Act on the outcome (S8-T4) → REQ-15, REQ-16, REQ-17
   - Files: plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/agents/grandfather.md, plugins/shipkit/agents/eve.md, plugins/shipkit/skills/map/SKILL.md, README.md, GUIDE.md, ROADMAP.md, .shipkit/decisions/0001-project-map-default.md, scripts/smoke.sh, scripts/lint.py, .shipkit/specs/map-on-trial/spec.md
   - Test: optional side — scripts/lint.py check 18 (no required/first-step map phrasing in setup, README, GUIDE), written first and red on the 4.0.0 tree; default side — `grep -rn "re-test\|not yet acted" README.md ROADMAP.md` → nothing. The branch not taken has its requirements marked `[untested: the condition did not hold]`
   - After: T3

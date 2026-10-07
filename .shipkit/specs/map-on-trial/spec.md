@@ -73,7 +73,9 @@ beside this file.
   `PROJECT_MAP.md` as an index when it exists and go to the source when it does not.
   [untested: agent prose, verified by reading; the elder evals of S8-T2 must still pass]
 - **REQ-17.** Where the re-test falls on the default side, `README.md` and `ROADMAP.md` shall
-  no longer describe the re-test as pending. [untested: documentation, verified by grep]
+  no longer describe the re-test as pending. [untested: the condition did not hold — the
+  re-test fell on the optional side (`docs/design/eval-results-4.1.md`); the pending language
+  was removed by T4 all the same]
 
 ## Release steps (not requirements)
 

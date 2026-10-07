@@ -87,3 +87,10 @@ repositories; a stale map's cost. None of these is measured, and none is changed
 read a map when one exists and go to the source when none does; `/shipkit:setup`, the README
 and the guide offer the map with this number beside it instead of presenting it as the first
 step; the archivist, `/shipkit:map`, the stale-map nag and `eve`'s registry stay as they are.
+
+**What changed (4.1.0, S8-T4).** `/shipkit:setup`, the README and the guide offer the map
+instead of listing it first; `grandfather` reads it when present and goes to the source
+otherwise, without calling the answer slower; `eve` greps a registered repo that has no map
+rather than reporting it as a gap; `/shipkit:map`'s description says when a map earns its keep.
+Lint check 18 keeps the three documents from presenting the map as required again. The
+archivist, `/shipkit:map`, the stale-map nag and the registry are unchanged. **Closed.**

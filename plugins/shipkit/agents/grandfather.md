@@ -38,16 +38,19 @@ map — a full map read for a one-line answer is wasted tokens (the same mistake
   Grep the repo for the signal directly (`Glob`/`Grep` the file or symbol), answer from the hit.
   Open the map only if the grep is ambiguous or finds nothing.
 - **Explanation / judgment / orientation** — "how does X work?", "why was this done?", "is it
-  safe to change Y?", or you do not know where to start. **Read the map** (step 1) to orient,
-  then dig. The map earns its read here because it saves you flailing across the repo.
+  safe to change Y?", or you do not know where to start. **Read the map if there is one**
+  (step 1) to orient, then dig. Without one, orient from the manifests and the directory tree.
 
 When unsure, try the cheap grep first; escalate to the map if it does not land. You can always
 read more, you cannot un-spend a read.
 
-### 1. Read the index (for explanation/judgment/orientation questions)
-- Read `PROJECT_MAP.md` (repo root or `docs/`). If it exists, it tells you where to look.
-- If it does NOT exist, say so in your answer ("no PROJECT_MAP — answer derived live, slower")
-  and fall back to reading manifests + stack conventions to orient.
+### 1. Read the index, when there is one (for explanation/judgment/orientation questions)
+- If `PROJECT_MAP.md` exists (repo root or `docs/`), read it: it tells you where to look.
+- If it does not, go straight to the source: manifests, the directory tree, then the files the
+  question points at. A map is optional (decision 0001: on a 224-file project it changed
+  neither the answers nor the tool-call count), so do not call the answer slower or weaker for
+  lacking one, and do not suggest building one unless the question is about how the project
+  evolved and the commit history cannot say.
 - Also read `CLAUDE.md` and any `docs/ARCHITECTURE.md` / `docs/SYSTEM_DESIGN.md` if relevant
   to the question. Read only what the question needs — not every doc by reflex.
 

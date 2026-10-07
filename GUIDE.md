@@ -40,8 +40,8 @@ Skills are namespaced by their plugin: `/shipkit:<name>` and `/shipkit-workflows
 can start using them immediately — no configuration needed.
 
 ```
-/shipkit:map --register     # build this project's PROJECT_MAP.md + register it
 /shipkit:ask <question>     # ask the elders about this project (or --all, portfolio-wide)
+/shipkit:map --register     # optional: a PROJECT_MAP.md index + a row in eve's registry
 /shipkit-workflows:qa       # full QA workflow (needs the workflows plugin)
 ```
 
@@ -243,11 +243,11 @@ elder subagent does the reading in *its own* context and hands back only the ans
 ### Typical usage
 
 ```
-# One-time per project: build the map and register it
-/shipkit:map --register
-
-# Ask about THIS project (→ grandfather)
+# Ask about THIS project (→ grandfather) — no map needed; it reads the source
 /shipkit:ask how does locale fallback work in this monolith?
+
+# Optional, once per project: an index for the elders and a row in eve's registry
+/shipkit:map --register
 /shipkit:ask is it safe to remove the legacy_token column?
 
 # Ask across ALL your projects (→ eve)
@@ -1010,13 +1010,15 @@ strategy), capture it. **What you get:** a five-part record in `.shipkit/decisio
 concrete falsifiability clause — so a year from now you (or grandfather) can answer *why* and
 *"is this still the right call?"*.
 
-**5. Build the map once the repo has a shape, and register it.**
+**5. Optional: map the repo once it has a shape, and register it.**
 ```
 /shipkit:map --register
 ```
-**What you get:** a verified `PROJECT_MAP.md` and a row in your cross-project registry — from now
-on the elders can answer questions about this repo, and `eve` sees it in portfolio sweeps. **When:**
-once there's real structure (a few features in), not on day one.
+**What you get:** a verified `PROJECT_MAP.md` and a row in your cross-project registry, so `eve`
+sees this repo in portfolio sweeps. The elders answer without a map — measured on a 224-file
+project, a map changed neither the answers nor the tool-call count (decision 0001,
+`docs/design/eval-results-4.1.md`) — so build one for `eve`, or when the commit history is too
+thin to explain how the project evolved. **When:** once there's real structure, not on day one.
 
 **From here:** ask the elders when you need to understand something (Playbook 3), `/shipkit:map
 refresh` after big changes, and repeat steps 2–4 per feature.
@@ -1035,13 +1037,15 @@ The opposite starting point: lots of existing code, little context, and the stan
 **What you get:** a modernization assessment — dependency age, dead code, complexity hotspots,
 test-coverage gaps. This tells you what you're walking into before you touch anything.
 
-**2. Build the map so you (and the elders) have an index.**
+**2. Optional: an index for you — and a registry row for `eve`.**
 ```
 /shipkit:map --register
 ```
 **What you get:** a verified `PROJECT_MAP.md` — architecture, where-things-live, data model,
-evolution, gotchas. On an unfamiliar codebase this is the highest-value first move: it turns "I
-have no idea where anything is" into a navigable index, and lets you ask the elders from now on.
+evolution, gotchas — which *you* can read in five minutes on an unfamiliar codebase. The elders
+do not need it: on a 224-file test they answered as well and as fast from the source alone
+(decision 0001). Skip it if you only want to ask questions; build it for your own orientation,
+for `eve`'s portfolio view, or when the commit log is too thin to carry the project's history.
 
 **3. Understand before you change.**
 ```

@@ -1443,6 +1443,21 @@ else
   else failc "trace-tools" "exit $tt_rc, grep says $tt_grep; output: $(printf '%s' "$tt_out" | head -4 | tr '\n' '|')"; fi
 fi
 
+# 41. no-map-silent: the map is optional since 4.1.0 (decision 0001). In a project with no
+# PROJECT_MAP.md and one open spec, the session hook prints the briefing and says nothing
+# about a map — no nag, no "build one". The nag itself stays and still fires on a STALE map
+# (check 3). No claude needed. Cites: map-on-trial/REQ-16
+NMS="$WORK/no-map-silent"; mkdir -p "$NMS/.shipkit/specs/beta"
+(cd "$NMS" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+bspec "$NMS" beta open 1 3
+nms_out=$(cd "$NMS" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" </dev/null 2>/dev/null)
+# only the hook's own lines (^shipkit:) — the injected rule bodies legitimately mention the map
+nms_lines=$(printf '%s\n' "$nms_out" | grep '^shipkit:')
+if printf '%s\n' "$nms_lines" | grep -q '^shipkit: beta: 1 of 3 tasks done' \
+   && ! printf '%s\n' "$nms_lines" | grep -qi 'PROJECT_MAP\|/shipkit:map\| map'; then
+  pass "no-map-silent (no map + an open spec → the briefing line, not one hook line about a map)"
+else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

@@ -10,8 +10,8 @@ unfinished work done, and once a week tells you which product needs you. Two plu
 `shipkit` (the loop, the elders, the rules) and `shipkit-workflows` (QA, strict TDD, debugging,
 audits, migration plans, humanizing). Install either or both; each works without the other.
 
-*What "verified" means here, precisely:* `grandfather` reads the map as an index and then checks
-the specific claim it is about to make against live source. `eve` answers some portfolio
+*What "verified" means here, precisely:* `grandfather` reads the source — and the project map as
+an index when one exists — and checks the specific claim it is about to make against live source. `eve` answers some portfolio
 questions straight from the registry and labels those MEDIUM confidence — attributed snapshots,
 not live reads. Every answer carries `file:line` citations so you can check it yourself. There is
 no independent validator confirming that a citation supports its claim; the durable part of the
@@ -98,12 +98,11 @@ steps on a real feature and shows the file each one produced.
 session stays thin:
 
 ```
-/shipkit:map                                      # build this project's PROJECT_MAP.md
-/shipkit:map --register                           # and add it to the cross-project registry
 /shipkit:ask how does locale fallback work here?  # grandfather: this project
 /shipkit:ask --all which apps deploy to Hetzner?  # eve: every registered project
 /shipkit:ask --all matrix rails                   # eve: a version matrix from lockfiles
 /shipkit:ask --all consolidate                    # eve: what exists N times that should exist once
+/shipkit:map --register                           # optional: a PROJECT_MAP.md index, and a row in eve's registry
 ```
 
 **Everything else in `shipkit`** (17 skills, 6 agents):
@@ -122,9 +121,9 @@ session stays thin:
 
 | Agent | What it does |
 |-------|--------------|
-| `grandfather` | One project: architecture, where things live, why — map as index, source as proof |
+| `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one |
 | `eve` | Every registered project: sweeps, matrices, consolidation, the weekly digest |
-| `archivist` | Builds and refreshes `PROJECT_MAP.md` |
+| `archivist` | Builds and refreshes `PROJECT_MAP.md` — optional since 4.1.0: on a 224-file test it changed neither answers nor tool calls (decision 0001) |
 | `reviewer` | Checks a branch against its spec with fresh eyes — behind `/shipkit:ship` |
 | `tracer` | A deep trace of one feature — behind `/shipkit:walkthrough` |
 | `codebase-explorer` | Read-only exploration for the other skills |
