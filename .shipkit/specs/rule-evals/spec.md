@@ -1,8 +1,8 @@
 # Spec: One eval per rule (Sprint 9, release 4.2.0)
 
 > Spec accepted at commit `d8c7fb8` on sprint-9/rule-evals.
-> Status: open
-> Paths: plugins/shipkit/evals/, scripts/, docs/design/eval-results-4.2.md, docs/design/trim-audit-4.0.md, .shipkit/decisions/, plugins/shipkit/rules/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
+> Status: shipped
+> Paths: plugins/shipkit/evals/, plugins/shipkit/hooks/, plugins/shipkit/scripts/inject-rule.sh, scripts/, docs/design/eval-results-4.2.md, docs/design/trim-audit-4.0.md, .shipkit/decisions/, plugins/shipkit/rules/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
 
