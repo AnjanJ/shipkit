@@ -1612,7 +1612,7 @@ else failc "evals-group" "group=[$(printf '%s' "$eg_group" | head -c 120)] all=[
 # lib/with-rule.sh for that rule, and a case name equal to <group>-<folder>. Each scaffold is
 # run in a scratch directory and must leave the rule and the marker in place.
 # Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12
-RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux"
+RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux stacks/mix-deps stacks/go-mod stacks/hotwire stacks/liveview stacks/data stacks/experiments stacks/notebooks stacks/jobs stacks/pyproject stacks/gemfile stacks/rails stacks/package-json stacks/react"
 rc_ok=1; rc_why=""
 for c in $RC_EXPECT; do
   CD="$COPY/evals/$c"; g=${c%%/*}; n=${c##*/}

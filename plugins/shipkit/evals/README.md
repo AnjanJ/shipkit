@@ -202,6 +202,19 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `scoped/monorepo` | Change `formatCents` in the shared package; write the test commands to CHECKS.txt. | the consumers' tests are run too (`monorepo.md`: every consumer) | llm on the file |
 | `scoped/testing` | Add tests/test_tax.py for NY tax on a two-mug order. | the test uses the existing `tests/support.py` helper (`testing.md`: reuse helpers) | regex on the file |
 | `scoped/ui-ux` | Make each recent-orders row open its order page. | rows are `<a href>`, no click handler on a list item (`ui-ux.md`: a div is not a button) | regex on the file |
+| `stacks/mix-deps` | Add `tesla` to mix.exs. | `~>` on the new dep | regex on the file |
+| `stacks/go-mod` | Add cobra; no network, so write the commands to STEPS.txt. | `go get` for the module, not a hand edit | regex on the file |
+| `stacks/hotwire` | An order page whose line items refresh on their own. | the region is a Turbo Frame, not a Stream | regex on the file |
+| `stacks/liveview` | Subscribe the LiveView to a PubSub topic on mount. | the subscription is under `connected?(socket)` | regex on the file |
+| `stacks/data` | Make the project ready for a 3 GB raw dump at data/. | `.gitignore` excludes it | regex on the file |
+| `stacks/experiments` | Add a shuffled train/validation split. | the shuffle is seeded | regex on the file |
+| `stacks/notebooks` | A function the notebook and train.py both need. | the notebook imports it from the package | regex on the file |
+| `stacks/jobs` | An Oban worker that refunds through the card gateway. | `perform/1` guards a second run (`unique:`, a refunded check) | regex on the file |
+| `stacks/pyproject` | Add `httpx`. | a flexible `>=` constraint in pyproject.toml | regex on the file |
+| `stacks/gemfile` | Add the `pagy` gem. | `~>` on the gem line | regex on the file |
+| `stacks/rails` | A rake task that mails every paid order. | `find_each` / `in_batches`, not `.each` | regex on the file |
+| `stacks/package-json` | Add `clsx`; no network, so write the commands to STEPS.txt. | pnpm (the lockfile's manager) and no other | regex on the file |
+| `stacks/react` | Show each order's total on the Inertia index page. | the total is a prop; no `fetch`/`useEffect` in the page | regex on the file |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -230,7 +243,8 @@ first, all under `shipkit-home/`. The prompt names that directory as `SHIPKIT_HO
 skill's run of `portfolio-digest.sh` writes the digest there and not under the run's home.
 Passes when `eve`'s answer names `ledger` and quotes its digest line. Added in 3.7.0.
 
-The `scoped` cases (4.2.0) are one per path-scoped core rule: a prompt that walks into the
+The `scoped` cases (4.2.0) are one per path-scoped core rule, and the `stacks` cases one per
+stack rule file (thirteen, across nine stacks; `static` ships none): a prompt that walks into the
 rule's first named trap, in `sample-app` or a `stack-gen.sh` shape, with the rule installed by
 `lib/with-rule.sh` and delivered by the hook (the section above). Each `description:` names
 the rule file and quotes the line it probes. A case that passes without the rule is a finding
@@ -334,6 +348,38 @@ rule asks); `monorepo` did not load at all, first because an `llm` grader may no
 a file `target:`, then because the replacement regex held a quote character the eval tool's
 YAML parser rejects (write `\x27`). Whether any of the five passes without the rule is
 S9-T4's question; these numbers are the with arm only.
+
+## Baseline 4.1.0 (stacks)
+
+The thirteen `stacks` cases on the 4.1.0 tree (S9-T3), rule installed and delivered as above.
+Same tool, model and date; `-j 4`. Tool calls from the traces; no `Agent` call in any run.
+
+| Case | Runs passed | Tool calls per run | Cost |
+|------|-------------|--------------------|------|
+| `stacks/mix-deps` | 3 of 3 | 5, 5, 4 | $0.27 |
+| `stacks/go-mod` | 3 of 3 | 2, 2, 2 | $0.21 |
+| `stacks/hotwire` | 3 of 3 | 8, 6, 4 | $0.33 |
+| `stacks/liveview` | 3 of 3 | 5, 3, 3 | $0.26 |
+| `stacks/data` | 3 of 3 | 9, 14, 3 | $0.42 |
+| `stacks/experiments` | 3 of 3 | 5, 10, 7 | $0.32 |
+| `stacks/notebooks` | 3 of 3 | 18, 16, 21 | $0.46 |
+| `stacks/jobs` | 3 of 3 | 6, 5, 6 | $0.27 |
+| `stacks/pyproject` | 3 of 3 | 5, 5, 6 | $0.27 |
+| `stacks/gemfile` | 3 of 3 | 2, 2, 2 | $0.21 |
+| `stacks/rails` | 3 of 3 | 3, 3, 3 | $0.23 |
+| `stacks/package-json` | 3 of 3 | 3, 3, 4 | $0.24 |
+| `stacks/react` | 3 of 3 | 8, 5, 7 | $0.30 |
+
+39 of 39 runs, about $3.80, 204 seconds for the thirteen at four in flight. Two prompts were
+changed after the first run, on the evidence of the traces: `gemfile` scored 0 of 3 because
+all three runs **refused to edit** — the sandbox has no network, and the rule's own second
+clause ("read the `Gemfile.lock` diff after `bundle install`") left the model unwilling to
+guess a version for `~>`; the prompt now gives the major version and says there is no
+network, as the `go-mod` and `package-json` prompts already did. `hotwire` scored 2 of 3
+because one run put a correct `turbo_frame_tag` in a partial the regex does not read; the
+prompt now asks for the markup in `show.html.erb` itself. The `gemfile` refusal is itself a
+finding for `eval-results-4.2.md`: a rule that names a network step can stop an edit where
+there is no network. With-arm numbers only; S9-T4 adds the other two arms.
 
 ## Baseline 4.0.0 (XL)
 

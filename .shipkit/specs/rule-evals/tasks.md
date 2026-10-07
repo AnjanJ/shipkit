@@ -16,7 +16,7 @@ before T5 starts; T4 changes no file under `plugins/shipkit/rules/` or `stacks/`
   - Test: scripts/smoke.sh check "rule-cases" (each of the five case folders has prompt.md, case.yaml, fixture.sh and one scored grader; `description:` names a rule file that exists under plugins/shipkit/rules/; fixture.sh calls with-rule.sh; the scaffold runs in a scratch directory and the rule lands under .claude/rules/shipkit/) — written first, red
   - After: T1
   - Done when: the "rule-cases" smoke check → PASS; `bash scripts/evals.sh --group scoped` runs five cases and prints a result for each, recorded in evals/README.md under "Baseline 4.1.0 (scoped)"; lint 0/0
-- [ ] **T3** Cases for the thirteen stack rule files (S9-T3) → REQ-11, REQ-12, REQ-13
+- [x] **T3** Cases for the thirteen stack rule files (S9-T3) → REQ-11, REQ-12, REQ-13
   - Files: plugins/shipkit/evals/stacks/, scripts/smoke.sh, scripts/evals.sh, plugins/shipkit/evals/README.md
   - Test: scripts/smoke.sh check "rule-cases" extended to the thirteen stack cases (same assertions; the rule file is under plugins/shipkit/stacks/*/.claude/rules/; the scaffold runs stack-gen.sh then with-rule.sh) — red before the cases exist
   - After: T2
