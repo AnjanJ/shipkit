@@ -21,7 +21,7 @@ before T5 starts; T4 changes no file under `plugins/shipkit/rules/` or `stacks/`
   - Test: scripts/smoke.sh check "rule-cases" extended to the thirteen stack cases (same assertions; the rule file is under plugins/shipkit/stacks/*/.claude/rules/; the scaffold runs stack-gen.sh then with-rule.sh) — red before the cases exist
   - After: T2
   - Done when: the "rule-cases" smoke check → PASS for all eighteen; `bash scripts/evals.sh --group stacks` runs thirteen cases and prints a result for each, recorded under "Baseline 4.1.0 (stacks)"; evals bytes ≤ 131072; lint 0/0
-- [ ] **T4** Measure: with, without, and before the trim (S9-T4) → REQ-14, REQ-15, REQ-16
+- [x] **T4** Measure: with, without, and before the trim (S9-T4) → REQ-14, REQ-15, REQ-16
   - Files: docs/design/eval-results-4.2.md, docs/design/trim-audit-4.0.md, ROADMAP.md
   - Test: reading — the eighteen-row table has no empty cell (the four unchanged files say "same text" in the pre-trim column); every cell has three tool-call counts from scripts/trace-tools.sh; the trim audit's new section has fourteen lines and `git diff main -- docs/design/trim-audit-4.0.md` shows additions only
   - After: T3

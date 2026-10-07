@@ -38,7 +38,7 @@ since Sprint 1.
 | Sprint | Release | What the owner got |
 |--------|---------|--------------------|
 | 8 | 4.1.0 | The map on trial: a generated 224-file, 27-commit fixture; five XL elder cases including a history question; `trace-tools.sh`; the re-test decision 0001 asked for — and, by its own clause, **the map is now optional** (`docs/design/eval-results-4.1.md`) |
-| 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 10 stack rules), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
+| 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 13 stack rule files), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
 | 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
 
 **Still open after Sprint 8.**
@@ -55,9 +55,6 @@ since Sprint 1.
 - **`rules/nontrivial`**: the eval that asks for a spec before code on "add refunds" passes
   about one run in three and has since the 3.1.0 baseline. The always-on rules produce the
   test-first habit reliably and the spec-first habit a third of the time on that prompt.
-- **Criterion (c) of the trim audit** is unmeasured: no eval exists per rule file, so the 4.0
-  trims rest on "project value" and "named trap" alone. A trimmed line that mattered would show
-  up as a regression traced to it; none has yet.
 - From 3.0: whether the overlay skills should live in core (design doc §5) — reversible,
   blocking nothing.
 

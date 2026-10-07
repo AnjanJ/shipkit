@@ -114,3 +114,38 @@ sixteen trims, and nothing else.
 - Criterion (c), for every row. An eval per rule file would cost more than the rules weigh.
 - Whether any user besides the owner relies on a `cut` file. Shipkit has one user.
 - The always-on rules: they are under their own 3,000-byte budget and were trimmed in Sprint 1.
+
+## Criterion (c), measured in 4.2.0
+
+Appended 2026-10-07 by sprint task S9-T4 (spec `rule-evals`, REQ-16); nothing above this line
+was changed. One case per trimmed rule file, its prompt walking into the file's first named
+trap, three runs with the 4.0 text and three with the `v3.7.0` text (`git show`), the rule
+delivered as always-on text by the hook because the eval sandbox loads no project file.
+Method, per-run counts and the readings: `eval-results-4.2.md`. Runs passed, then tool calls
+per run.
+
+| File | 4.0 text | `v3.7.0` text |
+|---|---|---|
+| `rules/dependencies.md` | 3 of 3; 4, 4, 5 | 3 of 3; 7, 8, 8 |
+| `rules/migrations.md` | 3 of 3; 4, 4, 3 | 3 of 3; 5, 4, 5 |
+| `rules/monorepo.md` | 3 of 3; 10, 8, 7 | 3 of 3; 9, 9, 9 |
+| `rules/testing.md` | 3 of 3; 9, 9, 12 | 3 of 3; 9, 9, 9 |
+| `rules/ui-ux.md` | 3 of 3; 4, 4, 4 | 3 of 3; 4, 4, 5 |
+| `elixir/mix-deps.md` | 3 of 3; 5, 4, 4 | 3 of 3; 4, 5, 4 |
+| `go/go-mod.md` | 3 of 3; 2, 2, 2 | 3 of 3; 3, 2, 2 |
+| `hotwire/hotwire.md` | 3 of 3; 6, 3, 5 | 3 of 3; 6, 3, 5 |
+| `liveview/liveview.md` | 3 of 3; 3, 3, 3 | 3 of 3; 3, 3, 3 |
+| `python/pyproject.md` | 3 of 3; 6, 5, 5 | 3 of 3; 6, 6, 5 |
+| `rails/gemfile.md` | 3 of 3; 2, 2, 2 | 3 of 3; 2, 2, 2 |
+| `rails/rails.md` | 3 of 3; 3, 3, 3 | 3 of 3; 3, 3, 3 |
+| `react/package-json.md` | 3 of 3; 3, 3, 3 | 3 of 3; 3, 5, 3 |
+| `react/react.md` | 3 of 3; 8, 6, 5 | 3 of 3; 10, 9, 6 |
+
+No trimmed file scores lower with its 4.0 text than with its `v3.7.0` text: 42 of 42 runs
+each way. The one visible cost ran against the old text — `dependencies.md` at `v3.7.0` took
+seven to eight tool calls where the trimmed text took four or five, because the model obeyed
+the generic lines the trim removed. The same sprint also ran each file without any text
+(`eval-results-4.2.md`): `dependencies.md` is the one trimmed file whose case fails without
+it (0 of 3); the other thirteen pass without it, which says the first trap is one this model
+clears unaided, not that the file is dead weight. The five cut files have no with arm and
+were not measured.
