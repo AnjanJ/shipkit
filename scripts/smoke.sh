@@ -1471,11 +1471,141 @@ head -c 61440 /dev/zero | tr '\0' 'x' > "$LN/plugins/shipkit/evals/fixtures/over
 printf '\nStart by building the map: run /shipkit:map first.\n' >> "$LN/README.md"
 ln_out=$(python3 "$LN/scripts/lint.py" 2>&1)
 if printf '%s\n' "$ln_clean" | grep -q '^lint: 0 error(s)' \
-   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 102,400' \
+   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 131,072' \
    && printf '%s\n' "$ln_out" | grep -q 'README.md: line [0-9]*: presents the map as required or the first step' \
    && printf '%s\n' "$ln_out" | grep -q '^lint: 2 error(s)'; then
   pass "lint-negative (a 60 KB eval file and a 'build the map first' line → exactly those two lint errors; the clean copy → 0)"
 else failc "lint-negative" "clean: [$ln_clean] doctored: $(printf '%s' "$ln_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
+# 43. with-rule: evals/lib/with-rule.sh <rule> installs ONE rule file into a workspace the way
+# the installer would — a core rule at .claude/rules/shipkit/<rule>.md, a stack rule under
+# .claude/rules/shipkit/<stack>/ — writes the manifest with the plugin version, and the marker
+# .eval-rule that the hook reads (check 44). SHIPKIT_EVAL_NO_RULE=1 installs nothing;
+# SHIPKIT_EVAL_RULE_REF=v3.7.0 installs the tag's text (git show, from this repository). The
+# eval tool forwards no environment to a scaffold, so an ARM is selected by a scratch copy
+# whose with-rule.sh sets the variable's default; the variables are for running by hand.
+# Cites: rule-evals/REQ-1 rule-evals/REQ-2 rule-evals/REQ-3 rule-evals/REQ-4
+WR="$COPY/evals/lib/with-rule.sh"
+if [ ! -f "$WR" ]; then
+  failc "with-rule" "evals/lib/with-rule.sh does not exist (check written first, by design)"
+else
+  wr_ok=1; wr_why=""
+  sh -n "$WR" 2>/dev/null || { wr_ok=0; wr_why="$wr_why sh-n"; }
+  W1="$WORK/wr-core"; mkdir -p "$W1"
+  (cd "$W1" && git init -q && sh "$WR" dependencies --repo "$ROOT" >/dev/null 2>&1) || { wr_ok=0; wr_why="$wr_why core:exit"; }
+  cmp -s "$W1/.claude/rules/shipkit/dependencies.md" "$COPY/rules/dependencies.md" || { wr_ok=0; wr_why="$wr_why core:content"; }
+  [ "$(ls "$W1/.claude/rules/shipkit/" 2>/dev/null | grep -c '\.md$')" -eq 1 ] || { wr_ok=0; wr_why="$wr_why core:extra-files"; }
+  grep -q "^version=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$COPY/.claude-plugin/plugin.json" | head -1)\$" "$W1/.claude/rules/shipkit/.installed" 2>/dev/null || { wr_ok=0; wr_why="$wr_why core:manifest-version"; }
+  grep -q '	\.claude/rules/shipkit/dependencies\.md$' "$W1/.claude/rules/shipkit/.installed" 2>/dev/null || { wr_ok=0; wr_why="$wr_why core:manifest-path"; }
+  [ "$(cat "$W1/.claude/rules/shipkit/.eval-rule" 2>/dev/null)" = ".claude/rules/shipkit/dependencies.md" ] || { wr_ok=0; wr_why="$wr_why core:marker"; }
+  W2="$WORK/wr-stack"; mkdir -p "$W2"
+  (cd "$W2" && git init -q && sh "$WR" gemfile --repo "$ROOT" >/dev/null 2>&1) || { wr_ok=0; wr_why="$wr_why stack:exit"; }
+  cmp -s "$W2/.claude/rules/shipkit/rails/gemfile.md" "$COPY/stacks/rails/.claude/rules/gemfile.md" || { wr_ok=0; wr_why="$wr_why stack:content"; }
+  grep -q '	\.claude/rules/shipkit/rails/gemfile\.md$' "$W2/.claude/rules/shipkit/.installed" 2>/dev/null || { wr_ok=0; wr_why="$wr_why stack:manifest"; }
+  [ "$(cat "$W2/.claude/rules/shipkit/.eval-rule" 2>/dev/null)" = ".claude/rules/shipkit/rails/gemfile.md" ] || { wr_ok=0; wr_why="$wr_why stack:marker"; }
+  W3="$WORK/wr-none"; mkdir -p "$W3"
+  (cd "$W3" && git init -q && SHIPKIT_EVAL_NO_RULE=1 sh "$WR" dependencies --repo "$ROOT" >/dev/null 2>&1) || { wr_ok=0; wr_why="$wr_why none:exit"; }
+  [ ! -e "$W3/.claude/rules" ] || { wr_ok=0; wr_why="$wr_why none:installed-something"; }
+  W4="$WORK/wr-ref"; mkdir -p "$W4"
+  (cd "$W4" && git init -q && SHIPKIT_EVAL_RULE_REF=v3.7.0 sh "$WR" dependencies --repo "$ROOT" >/dev/null 2>&1) || { wr_ok=0; wr_why="$wr_why ref:exit"; }
+  git -C "$ROOT" show v3.7.0:plugins/shipkit/rules/dependencies.md > "$WORK/wr-ref-expected.md" 2>/dev/null
+  cmp -s "$W4/.claude/rules/shipkit/dependencies.md" "$WORK/wr-ref-expected.md" || { wr_ok=0; wr_why="$wr_why ref:content"; }
+  cmp -s "$W4/.claude/rules/shipkit/dependencies.md" "$COPY/rules/dependencies.md" && { wr_ok=0; wr_why="$wr_why ref:same-as-head"; }
+  if [ "$wr_ok" -eq 1 ]; then pass "with-rule (one rule file as the installer writes it, manifest + marker; NO_RULE=1 → nothing; RULE_REF=v3.7.0 → the tag's text)"
+  else failc "with-rule" "$wr_why"; fi
+fi
+
+# 44. eval-inject: the eval sandbox loads NOTHING from the workspace's .claude/ or CLAUDE.md
+# (CLAUDE_CODE_DISABLE_CLAUDE_MDS=1; nonce-tested 2026-10-07; documented under "How runs are
+# isolated"), so the rule under test reaches the model through the plugin's own hook:
+# `inject-rule.sh --eval-rule` prints the file named by .claude/rules/shipkit/.eval-rule, and
+# ONLY when the eval tool's own CLAUDE_CODE_EVAL_CONFINED=1 is set — a real project never
+# takes the branch. Cites: rule-evals/REQ-21 rule-evals/REQ-22
+EI="$COPY/scripts/inject-rule.sh"
+EP="$WORK/ei"; mkdir -p "$EP/.claude/rules/shipkit"
+printf 'Eval codeword: ZEBRA-4343.\n' > "$EP/.claude/rules/shipkit/migrations.md"
+printf '.claude/rules/shipkit/migrations.md\n' > "$EP/.claude/rules/shipkit/.eval-rule"
+ei_on=$(cd "$EP" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh "$EI" --eval-rule 2>/dev/null)
+ei_noenv=$(cd "$EP" && env -u CLAUDE_CODE_EVAL_CONFINED CLAUDE_PLUGIN_ROOT="$COPY" sh "$EI" --eval-rule 2>/dev/null)
+rm -f "$EP/.claude/rules/shipkit/.eval-rule"
+ei_nomark=$(cd "$EP" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh "$EI" --eval-rule 2>/dev/null)
+if printf '%s\n' "$ei_on" | grep -q 'ZEBRA-4343' && [ -z "$ei_noenv" ] && [ -z "$ei_nomark" ] \
+   && grep -q -- 'inject-rule.sh\\" --eval-rule' "$COPY/hooks/hooks.json"; then
+  pass "eval-inject (hook prints the marked rule only under CLAUDE_CODE_EVAL_CONFINED=1 with a marker; hooks.json carries the command)"
+else failc "eval-inject" "on=[$(printf '%s' "$ei_on" | head -c 60)] noenv=[$(printf '%s' "$ei_noenv" | head -c 40)] nomark=[$(printf '%s' "$ei_nomark" | head -c 40)] hook=$(grep -c 'eval-rule' "$COPY/hooks/hooks.json")"; fi
+
+# 45. stack-gen: evals/fixtures/stack-gen.sh <stack> writes the smallest project whose files
+# match the stack's rule globs — nothing is run, the model edits and the grader reads. For
+# each of the nine stacks with rules, every rule FILE has at least one generated file matching
+# one of its `paths:` globs. Three shapes serve core rules sample-app cannot exercise: `static`
+# (ui-ux.md), `monorepo` (monorepo.md), `rails` (migrations.md via db/migrate/).
+# Cites: rule-evals/REQ-5 rule-evals/REQ-6
+SG="$COPY/evals/fixtures/stack-gen.sh"
+if [ ! -f "$SG" ]; then
+  failc "stack-gen" "evals/fixtures/stack-gen.sh does not exist (check written first, by design)"
+else
+  sg_ok=1; sg_why=""
+  sh -n "$SG" 2>/dev/null || { sg_ok=0; sg_why="$sg_why sh-n"; }
+  [ "$(wc -c < "$SG")" -le 15360 ] || { sg_ok=0; sg_why="$sg_why size>15K"; }
+  sg_match() {  # sg_match <dir> <rule-file...> → exit 0 when every rule file has a matching file
+    python3 - "$@" <<'PY'
+import sys, re, os
+root = sys.argv[1]; rules = sys.argv[2:]
+files = []
+for d, _, fs in os.walk(root):
+    for f in fs:
+        rel = os.path.relpath(os.path.join(d, f), root)
+        if not rel.startswith('.git'): files.append(rel)
+def rx(g):
+    out = ''; i = 0
+    while i < len(g):
+        if g.startswith('**/', i): out += '(?:.*/)?'; i += 3
+        elif g.startswith('**', i): out += '.*'; i += 2
+        elif g[i] == '*': out += '[^/]*'; i += 1
+        elif g[i] == '?': out += '[^/]'; i += 1
+        else: out += re.escape(g[i]); i += 1
+    return re.compile('^' + out + '$')
+bad = []
+for r in rules:
+    txt = open(r).read()
+    m = re.match(r'---\n(.*?)\n---', txt, re.S)
+    if not m: continue
+    globs = re.findall(r'^\s*-\s*"([^"]+)"', m.group(1), re.M)
+    if not any(rx(g).match(f) for g in globs for f in files): bad.append(os.path.basename(r))
+if bad: print('no match for: ' + ' '.join(bad)); sys.exit(1)
+PY
+  }
+  for st in elixir go hotwire liveview ml oban python rails react; do
+    D="$WORK/sg-$st"; mkdir -p "$D"
+    (cd "$D" && sh "$SG" "$st" >/dev/null 2>&1) || { sg_ok=0; sg_why="$sg_why $st:exit"; continue; }
+    n=$(find "$D" -type f | wc -l | tr -d ' ')
+    [ "$n" -ge 3 ] || { sg_ok=0; sg_why="$sg_why $st:$n-files"; }
+    out=$(sg_match "$D" "$COPY"/stacks/$st/.claude/rules/*.md) || { sg_ok=0; sg_why="$sg_why $st:$out"; }
+  done
+  D="$WORK/sg-static"; mkdir -p "$D"; (cd "$D" && sh "$SG" static >/dev/null 2>&1) || { sg_ok=0; sg_why="$sg_why static:exit"; }
+  out=$(sg_match "$D" "$COPY/rules/ui-ux.md") || { sg_ok=0; sg_why="$sg_why static:$out"; }
+  D="$WORK/sg-monorepo"; mkdir -p "$D"; (cd "$D" && sh "$SG" monorepo >/dev/null 2>&1) || { sg_ok=0; sg_why="$sg_why monorepo:exit"; }
+  out=$(sg_match "$D" "$COPY/rules/monorepo.md") || { sg_ok=0; sg_why="$sg_why monorepo:$out"; }
+  out=$(sg_match "$WORK/sg-rails" "$COPY/rules/migrations.md") || { sg_ok=0; sg_why="$sg_why rails-migrations:$out"; }
+  (cd "$WORK/sg-go" && sh "$SG" nosuchstack >/dev/null 2>&1) && { sg_ok=0; sg_why="$sg_why unknown-stack-exit-0"; }
+  if [ "$sg_ok" -eq 1 ]; then pass "stack-gen (nine stacks match every rule file's globs; static → ui-ux, monorepo → monorepo, rails → migrations; ≤ 15 KB)"
+  else failc "stack-gen" "$sg_why"; fi
+fi
+
+# 46. evals-group: scripts/evals.sh --group <name> runs only the cases named <name>-* (every
+# case is named after its folder: rules-trivial, scoped-dependencies, stacks-gemfile); with
+# no flag it still runs everything (B7). A stub `claude` on PATH echoes the arguments.
+# Cites: rule-evals/REQ-7 rule-evals/REQ-8
+EG="$WORK/eg-bin"; mkdir -p "$EG"
+printf '#!/bin/sh\necho "$@"\n' > "$EG/claude"; chmod +x "$EG/claude"
+eg_group=$(PATH="$EG:$PATH" sh "$ROOT/scripts/evals.sh" --group stacks 2>&1)
+eg_all=$(PATH="$EG:$PATH" sh "$ROOT/scripts/evals.sh" 2>&1)
+eg_case=$(PATH="$EG:$PATH" sh "$ROOT/scripts/evals.sh" --case hello 2>&1)
+if printf '%s\n' "$eg_group" | grep -q -- '--case stacks-\*' && ! printf '%s\n' "$eg_group" | grep -q -- '--group' \
+   && ! printf '%s\n' "$eg_all" | grep -q -- '--case' && printf '%s\n' "$eg_all" | grep -q -- '--scaffold' \
+   && printf '%s\n' "$eg_case" | grep -q -- '--case hello'; then
+  pass "evals-group (--group stacks → --case 'stacks-*'; no flag → every case; --case still passes through)"
+else failc "evals-group" "group=[$(printf '%s' "$eg_group" | head -c 120)] all=[$(printf '%s' "$eg_all" | head -c 80)]"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

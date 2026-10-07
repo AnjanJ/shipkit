@@ -75,6 +75,11 @@ mean the room went to padding, not cases.
 
 ## Decision: "Without the rule" is setup's install minus one file   (→ REQ-1, REQ-2, REQ-3, REQ-4)
 
+> **Superseded on 2026-10-07** by the record that follows. Its own clause fired: installed
+> files do not load inside the eval sandbox at all, so "everything setup installs" installs
+> nothing the model sees, and the three always-on rules written to disk would stop the hook
+> from injecting them. Kept as written, below, so the reasoning stays readable.
+
 **Context.** A path-scoped rule loads only from a project's `.claude/rules/`. A user who has
 one rule has all of them: `/shipkit:setup` runs `install-rules.sh` (every core rule) and
 `install-stack.sh` (the overlay). The three always-on rules then load from disk and the hook
@@ -102,6 +107,52 @@ stack overlay only when the fixture is a stack project.
 **Falsifiability.** We would switch to (2) if, in T4, the without arm of any case shows the
 rule under test's first trap line in its trace context (a rule that arrived another way), or
 if the installers fail inside the sandbox and the fallback cannot be made to write a manifest.
+**Fired-if.** manual
+
+---
+
+## Decision: The rule under test reaches the sandbox through the hook   (→ REQ-1, REQ-3, REQ-21, REQ-22)
+
+**Context.** T1's Check first: a path-scoped rule under `.claude/rules/shipkit/` with a
+matching edit, an always-on rule file beside it, and a workspace `CLAUDE.md` — three nonces,
+none reached the model in the sandbox, while the first two did in a normal headless session.
+A hook that dumped the child's environment showed the eval tool sets
+`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and `CLAUDE_CODE_EVAL_CONFINED=1`; the plugin-evals
+documentation ("How runs are isolated") says no `.claude/` directory or `CLAUDE.md` loads from
+inside the workspace, "even one a `scaffold_script` wrote", and offers no way to opt back in.
+The plan's section 3 fallback (the text through a scaffold-written `CLAUDE.md`) therefore
+fails too. What does reach the model is the plugin's own `SessionStart` hook output — the path
+the three always-on rules already take in the `rules/*` cases.
+
+**Alternatives.**
+1. The scaffold installs the one rule under test to disk and writes a marker
+   (`.claude/rules/shipkit/.eval-rule`) naming it; one more hook command,
+   `inject-rule.sh --eval-rule`, prints the named file only when the eval tool's own
+   `CLAUDE_CODE_EVAL_CONFINED=1` is set and the marker exists.
+2. The documented `append_system_prompt` field in each case's prompt frontmatter, carrying the
+   rule text: no shipped change, but the text is copied into eighteen prompts, drifts when a
+   rule changes, costs about 18 KB of the ceiling, and lands in the system prompt rather than
+   where rules arrive.
+3. Run the rule cases outside `claude plugin eval` with `claude -p`, where rules load, and
+   grade by hand — the tool's graders and traces are what make the numbers comparable.
+
+**Case for (1).** One source of truth (the installed file is what is printed); the release run
+works on the real plugin; an arm is one `sed` on `with-rule.sh` in a scratch copy, as in
+Sprint 8; the text arrives the way always-on rules arrive for a plugin-only user, so the
+numbers compare with the `rules/*` cases already measured; about ten lines of shipped code,
+gated twice, that a real project never executes.
+
+**Case against (1).** Eval-only code in a shipped hook, which the gate's reviewer may question;
+and the measurement is of the rule's text delivered always-on, not of path-scoped loading —
+for all eighteen rules, two of which (`rails.md`, `react.md`) are always-on anyway. The results
+document says so in its first paragraph.
+
+**Decision.** We chose (1), with the owner's yes on 2026-10-07. `with-rule.sh` installs only
+the file under test (the always-on three keep coming through the hook as before), writes the
+manifest and the marker; `SHIPKIT_EVAL_NO_RULE=1` installs nothing.
+**Falsifiability.** We would remove the branch and move to (2) if a Claude Code release stops
+setting `CLAUDE_CODE_EVAL_CONFINED` in the eval child (the smoke check that reads it would go
+red), or if a user reports the hook printing a rule in a project that is not an eval sandbox.
 **Fired-if.** manual
 
 ---
@@ -199,7 +250,8 @@ asking for one — the clause the plan wrote, carried into 0002.
 
 ## Data / interface changes
 
-- New: `plugins/shipkit/evals/lib/with-rule.sh <rule> [--repo <path>]` (REQ-1 to REQ-4),
+- New: `plugins/shipkit/evals/lib/with-rule.sh <rule> [--repo <path>]` (REQ-1 to REQ-4), the
+  `.claude/rules/shipkit/.eval-rule` marker and `inject-rule.sh --eval-rule` (REQ-21, REQ-22),
   `plugins/shipkit/evals/fixtures/stack-gen.sh <stack|static|monorepo>` (REQ-5, REQ-6),
   eighteen case folders under `evals/scoped/` and `evals/stacks/` (REQ-10 to REQ-13),
   `docs/design/eval-results-4.2.md` (REQ-14, REQ-15), `.shipkit/decisions/0002-spec-first-eval.md`

@@ -6,6 +6,7 @@ Cases that measure whether shipkit changes what Claude does. They run with `clau
 ```sh
 bash scripts/evals.sh                 # every case, three runs each
 bash scripts/evals.sh --case hello    # one case
+bash scripts/evals.sh --group stacks  # one group: the cases named stacks-* (4.2.0)
 ```
 
 `scripts/evals.sh` exits non-zero if any case fails. A case passes when at least two of its three
@@ -111,6 +112,60 @@ It is deterministic (fixed dates, no clock): two runs are byte-identical outside
 the `ledger-gen` smoke check proves. `--no-map` omits `PROJECT_MAP.md`; the map is left
 untracked in both arms so the git history is the same with and without it. The five planted
 facts, their decoys and the rules for editing the generator are in `fixtures/FACTS-XL.md`.
+
+### A rule under test is installed by `lib/with-rule.sh` and delivered by the hook
+
+A rule case (`scoped/*`, `stacks/*`, 4.2.0) measures whether one rule file changes what Claude
+does. Its scaffold builds the fixture — `sample-app`, or the few files `fixtures/stack-gen.sh
+<stack>` writes for a stack's `paths:` globs (`static` and `monorepo` are shapes for the
+`ui-ux` and `monorepo` core rules; `rails` carries `db/migrate/` for `migrations`) — and then
+runs `lib/with-rule.sh <rule>`, which installs that one file under `.claude/rules/shipkit/` as
+`install-rules.sh` / `install-stack.sh` would, writes the manifest, and leaves a marker
+`.claude/rules/shipkit/.eval-rule` naming it.
+
+**Why a marker.** Checked first, 2026-10-07: a path-scoped rule under the workspace's
+`.claude/rules/shipkit/` with a matching edit, an always-on rule file beside it, and a
+workspace `CLAUDE.md` — three nonces, and none reached the model in the sandbox, while the
+first two did in a normal headless session. The eval child runs with
+`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` (seen by a hook that dumped its environment), and the
+plugin-evals documentation says so under "How runs are isolated": no `.claude/` directory or
+`CLAUDE.md` loads from inside the workspace, "even one a `scaffold_script` wrote". The plan's
+fallback (the text through a scaffold-written `CLAUDE.md`) fails for the same reason. What
+does reach the model is the plugin's own `SessionStart` hook, the path the three always-on
+rules already take. So `hooks.json` carries one more command, `inject-rule.sh --eval-rule`,
+which prints the marked file — only under the eval tool's own `CLAUDE_CODE_EVAL_CONFINED=1`,
+so a real project never takes the branch (smoke check 44). A second probe confirmed it: with
+`with-rule.sh dependencies` in the scaffold, the hook's output carried the rule and the reply
+said "the project's dependency rules forbid unpinned versions".
+
+Two consequences, both stated wherever the numbers are read. **The measurement is of the
+rule's text, delivered always-on, not of path-scoped loading** — for all eighteen rules, two
+of which (`rails.md`, `react.md`) have no `paths:` line anyway. And **only the file under test
+is installed**: nothing else on disk loads, and writing the three always-on rules to disk would
+stop the hook injecting them (smoke check 2), which would change the arms in a second way.
+
+**Arms.** `with-rule.sh` reads `SHIPKIT_EVAL_NO_RULE=1` (install nothing) and
+`SHIPKIT_EVAL_RULE_REF=v3.7.0` (the file's text at that tag, by `git show` from this
+repository — `--repo <path>` when the plugin is a copy outside it). The eval tool forwards no
+environment to a scaffold, so an eval arm is a scratch copy of the plugin with the variable's
+default edited on one line:
+
+```sh
+cp -R plugins/shipkit "$TMPDIR/shipkit-norule"
+sed -i '' 's/^: "${SHIPKIT_EVAL_NO_RULE:=}"/: "${SHIPKIT_EVAL_NO_RULE:=1}"/' "$TMPDIR/shipkit-norule/evals/lib/with-rule.sh"
+cp -R plugins/shipkit "$TMPDIR/shipkit-pretrim"
+sed -i '' -e 's/^: "${SHIPKIT_EVAL_RULE_REF:=}"/: "${SHIPKIT_EVAL_RULE_REF:=v3.7.0}"/' \
+  -e "s|^REPO=.*|REPO=$PWD|" "$TMPDIR/shipkit-pretrim/evals/lib/with-rule.sh"
+```
+
+Groups are name prefixes: every case is named after its folder (`rules-trivial`,
+`scoped-dependencies`, `stacks-gemfile`), and `--group <name>` is `--case '<name>-*'`. The
+core rule group is `scoped/`, not `rules-scoped/`, so that `--group rules` keeps meaning the
+three always-on cases.
+
+The directory's ceiling (lint check 17) is 131,072 bytes since 4.2.0, raised from 102,400
+with the owner's yes: eighteen cases and their harness needed about 33 KB against 21 KB of
+room. The room is for cases; fixtures are still generated, never committed.
 
 ## Cases
 

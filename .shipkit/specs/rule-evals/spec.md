@@ -27,17 +27,28 @@ beside this file (which corrects the plan's rule count from 15 to 18).
 ### The harness (S9-T1)
 
 - **REQ-1.** When run as `evals/lib/with-rule.sh <rule>` in a workspace, the harness shall
-  install the named rule file under the workspace's `.claude/rules/shipkit/` with the content
-  shipkit's own installer writes for it.
+  install that one rule file under the workspace's `.claude/rules/shipkit/` (stack rules under
+  `.claude/rules/shipkit/<stack>/`) with the content shipkit's own installer writes for it, and
+  nothing else from `rules/` or the overlay. *(Amended 2026-10-07 with the owner's yes: the
+  sandbox loads no installed file, and installing the always-on rules as files would silence
+  the hook that delivers them.)*
 - **REQ-2.** When the harness installs a rule, the workspace's installation manifest
   (`.claude/rules/shipkit/.installed`) shall record that file and the plugin's version.
-- **REQ-3.** While `SHIPKIT_EVAL_NO_RULE=1` is set, the harness shall leave the rule under
-  test absent from the workspace and install everything else as it otherwise would.
+- **REQ-3.** While `SHIPKIT_EVAL_NO_RULE=1` is set, the harness shall install no rule file and
+  write no marker, leaving the workspace as the fixture left it.
 - **REQ-4.** While `SHIPKIT_EVAL_RULE_REF` names a git ref, the harness shall install the rule
   under test with that ref's text of the file, taken from this repository's history.
+- **REQ-21.** While `CLAUDE_CODE_EVAL_CONFINED=1` is set and `.claude/rules/shipkit/.eval-rule`
+  names an installed rule file, the session hook shall add that file's text to the session's
+  context. *(Added 2026-10-07: the eval sandbox sets `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` and
+  loads no `.claude/` or `CLAUDE.md` from the workspace; the hook is the one delivery path.)*
+- **REQ-22.** If `CLAUDE_CODE_EVAL_CONFINED` is not `1`, or no `.eval-rule` marker exists, then
+  the session hook shall add nothing for the rule under test.
 - **REQ-5.** When run as `evals/fixtures/stack-gen.sh <stack>` in an empty directory, for each
   of the nine stacks that ship a rule, the generator shall write a project with at least one
-  file matching every `paths:` glob of that stack's rule files.
+  file matching a `paths:` glob of each of that stack's rule files. *(Relaxed from "every
+  glob" on 2026-10-07: a project holding every manifest a rule lists — `Pipfile` beside
+  `pyproject.toml` beside `setup.py` — would confuse the very trap the case probes.)*
 - **REQ-6.** Where a core rule's `paths:` globs match nothing in `sample-app` (`migrations`,
   `monorepo`, `ui-ux`), `stack-gen.sh` shall offer a shape whose files match them.
 - **REQ-7.** When run with `--group <name>`, `scripts/evals.sh` shall run only the cases whose

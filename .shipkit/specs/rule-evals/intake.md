@@ -59,6 +59,14 @@ None — this repository has no `.shipkit/product.md`.
    meaning to make room, which is worse than saying the number grew and why. **Answered yes
    by the owner on 2026-10-07.**
 
+3. **T1's Check first failed, and so did the plan's fallback (asked 2026-10-07, after T0).**
+   No file under the workspace's `.claude/` and no workspace `CLAUDE.md` loads in the eval
+   sandbox (`CLAUDE_CODE_DISABLE_CLAUDE_MDS=1`; documented under "How runs are isolated").
+   The rule under test is delivered by the plugin's own session hook from the installed file,
+   behind a marker and the eval tool's `CLAUDE_CODE_EVAL_CONFINED=1`; `with-rule.sh` installs
+   only that file. **The owner chose this over `append_system_prompt` on 2026-10-07.** The
+   measurement is of the text, delivered always-on, for all eighteen rules.
+
 ## Assumptions made
 - **"Without the rule" means setup's install minus one file.** The with arm installs every
   core rule and the stack overlay exactly as `/shipkit:setup` would (`install-rules.sh`,
