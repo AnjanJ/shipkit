@@ -40,8 +40,9 @@ B11's branch count).
   before starting the gate. [untested: prose, verified by reading]
 - **REQ-5.** Where the Check first at `ceef7f5^` shows the plain run already exits non-zero on
   the uncited requirements, the change shall be REQ-4's sentence only, and REQ-1 to REQ-3 shall
-  not be built. [untested: conditional on the Check first; the branch not taken is marked when
-  T1 lands]
+  not be built. [untested: the condition did not hold — at `ceef7f5^` the plain run exited 0
+  (9 specs, 0 gaps; with the slug, 1 spec, 0 gaps) and only `--as-shipped` named REQ-4, 5, 7
+  and 11 of trim-and-docs; T1 built REQ-1 to REQ-4 (2026-10-07)]
 
 ### The overlay skills (S10-T2)
 

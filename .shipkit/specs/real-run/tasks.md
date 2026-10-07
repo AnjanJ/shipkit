@@ -7,11 +7,11 @@ the owner to name the repository first and changes nothing under `plugins/`. T4 
 per row.**
 
 - [x] **T1** Show the citation debt before the gate (S10-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5
-  - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/ship/SKILL.md
+  - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh, plugins/shipkit/skills/ship/SKILL.md, .shipkit/specs/real-run/spec.md (added with the owner's yes on 2026-10-07: REQ-5's branch-not-taken note lives there)
   - Test: scripts/smoke.sh check 48 "pending-test" (an open spec with one uncited requirement, one excused and one cited: the plain run prints `PENDING-TEST demo REQ-1`, `WAIVED demo REQ-2`, nothing for REQ-3, exits 0; with a slug and `--as-shipped` it prints `MISSING-TEST demo REQ-1` and exits 1; a shipped spec prints no PENDING line) — written first, red; check 19 still passes
   - After: none
   - Done when: the Check first is run in a scratch worktree at `ceef7f5^` (plain run and `--as-shipped`, both outputs in the commit message) and the worktree is removed; check 48 → PASS; check 19 → PASS; `sh -n plugins/shipkit/scripts/spec-check.sh` clean; `sh plugins/shipkit/scripts/spec-check.sh .` → 0 gaps on this repository; `bash scripts/lint.sh` → 0/0
-- [ ] **T2** Where the overlay skills live, decision 0003 (S10-T2) → REQ-6, REQ-7, REQ-8
+- [x] **T2** Where the overlay skills live, decision 0003 (S10-T2) → REQ-6, REQ-7, REQ-8
   - Files: .shipkit/decisions/0003-overlay-skills-home.md, docs/design/two-plugin-split.md, ROADMAP.md
   - Test: reading — the record has Context, Alternatives (3), Case for, Case against, Decision, a countable clause and a `Fired-if` line; `sh plugins/shipkit/scripts/decision-check.sh . --run` prints `HOLDS` for 0003; §5 item 6 says "settled, see 0003"; `grep -n 'From 3.0' ROADMAP.md` finds nothing
   - After: none

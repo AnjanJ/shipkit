@@ -63,8 +63,6 @@ since Sprint 1.
   "read the lock diff after `bundle install`" halted three runs in a sandbox with no network.
 - **`rules/nontrivial`** passes 6 of 6 with the 4.2.0 sentence (record 0002); the record's
   clause says when the sentence comes out. Watch it on every release run.
-- From 3.0: whether the overlay skills should live in core (design doc §5) — reversible,
-  blocking nothing.
 
 Platform facts that shaped this plan, each verified against the official Claude Code docs and,
 since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):
