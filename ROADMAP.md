@@ -41,7 +41,31 @@ since Sprint 1.
 | 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 13 stack rule files), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
 | 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
 
-**Still open after Sprint 9.**
+**Still open after Sprint 10.**
+
+From the real run (`docs/design/field-notes-4.3.md`, Sprint 10, one project, one run; the §
+numbers are its sections):
+
+- **Pre-3.3 specs with no `Status` line are treated as open forever** (§1): the briefing reports
+  shipped features as in flight, nags about drift on them and counts 23 `MISSING-TASK` gaps in a
+  project whose six specs all shipped. A migration nudge, or "all tasks ticked and no Status"
+  read as shipped, belongs to the next plan.
+- **The intake asked the owner what the repository already knew** (§3, §4): three of its four
+  questions were answerable from files it had read or could have read; one claim of absence
+  ("queue status has no source") was false; `grandfather` was not used in either pass (§5).
+- **A `Fired-if` that fires before the code exists** passed the spec skill (§6): a line-count on
+  a file not yet written. The spec skill could run `decision-check.sh` on its own output as it
+  runs `spec-check.sh`; `spec-check` cannot check a draft, so the skill flipped the status to run it.
+- **Files no spec will ever list are "outside the spec"** (§7, §8): `.shipkit/product.md` and the
+  release report, to the reviewer and to `brief-verify.sh`, which allows only the spec's `tasks.md`.
+- **Headless runs leave their questions in the reply, not on disk** (§2, §3): product's eight
+  and intake's four questions vanish with the session; an unanswered intake writes nothing.
+- Smaller (§0, §7, §8, §9, §10): the session hook could say when the cache holds a newer version
+  than the running one; a `Fired-if` line tolerates nothing after the command; the gate's `How`
+  column loses exit codes to pipes; the handoff has no "Blocked on" line; the briefing's "top
+  goal" line repeats "metric: none set; target: none set; by: no date set" every session.
+
+Carried from Sprint 9:
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
   re-test's history question was answered from `git log` every time because the fixture's

@@ -16,7 +16,7 @@ per row.**
   - Test: reading — the record has Context, Alternatives (3), Case for, Case against, Decision, a countable clause and a `Fired-if` line; `sh plugins/shipkit/scripts/decision-check.sh . --run` prints `HOLDS` for 0003; §5 item 6 says "settled, see 0003"; `grep -n 'From 3.0' ROADMAP.md` finds nothing
   - After: none
   - Done when: the three readings above hold; `bash scripts/lint.sh` → 0/0
-- [ ] **T3** The real run (S10-T3) → REQ-9, REQ-10, REQ-11
+- [x] **T3** The real run (S10-T3) → REQ-9, REQ-10, REQ-11
   - Files: docs/design/field-notes-4.3.md, ROADMAP.md, GUIDE.md
   - Test: reading — the notes have a section for the cache update and each of the nine steps, each with the six fields and an evidence line; every awkwardness is a one-line candidate under "Still open after Sprint 10" naming its section; REQ-11's branch is marked when the condition did not hold
   - After: T1, T2
