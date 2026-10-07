@@ -295,8 +295,12 @@ Report what was installed:
 - Settings created (if applicable)
 
 Suggest next steps:
-1. Try `/shipkit:map --register` and `/shipkit:ask` (and `/shipkit-workflows:qa` if you have
-   the workflows plugin)
+1. Try `/shipkit:ask <question>` (and `/shipkit-workflows:qa` if you have the workflows plugin)
+   — the elders read the source directly; a project map is optional. `/shipkit:map --register`
+   builds one and registers the project for `eve`'s portfolio answers: worth it for that, or
+   when the commit history is too thin to explain how the project evolved. Measured on a
+   224-file project, a map changed neither the answers nor the number of tool calls
+   (decision 0001; `docs/design/eval-results-4.1.md` in the shipkit repository).
 2. Use `/update-rules` to add project-specific rules
 3. Use `/context-audit` to check context usage
 4. **Want the elders to recall past decisions** ("why did we pick X?")? Run `/shipkit:connect-memory` to set up optional episodic memory (MemPalace). Skip it and the elders fall back to git history — nothing breaks.

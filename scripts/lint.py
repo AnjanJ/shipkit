@@ -576,6 +576,48 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
+# --- 17. The eval budget: plugins/shipkit/evals/ stays under 100 KB ------------------
+# Proves map-on-trial/REQ-7. Decision A9 of the quality-gate plan set the ceiling in 3.2.0 and
+# nothing enforced it; the XL fixture of 4.1.0 is generated at scaffold time precisely to stay
+# inside, and a committed fixture would be the first thing to breach it.
+
+EVALS_MAX_BYTES = 102400
+
+_evals_dir = CORE / "evals"
+_evals_bytes = sum(p.stat().st_size for p in _evals_dir.rglob("*") if p.is_file())
+if _evals_bytes > EVALS_MAX_BYTES:
+    err(_evals_dir, f"{_evals_bytes:,} bytes; the limit is {EVALS_MAX_BYTES:,} — generate "
+                    "fixtures at scaffold time instead of committing them")
+
+# --- 18. The map is offered, not required ----------------------------------------
+# Proves map-on-trial/REQ-15. Decision 0001, re-tested in 4.1.0 on a 224-file fixture, found
+# the map changed neither the answers nor the tool-call count, so it became optional: the
+# three documents that onboard a user may not present PROJECT_MAP.md as a required or first
+# step, and each must say in so many words that it is optional where it names the map.
+
+MAP_REQUIRED_PHRASES = [
+    r"one-time per project: build the map",
+    r"build the map (once|so|first|before)",
+    r"highest-value first move",
+    r"from now on the elders can answer",
+    r"(start|begin) by building (a|the) map",
+    r"(needs|requires|require) a (project )?map",
+    r"the elders (need|require) (a|the) map",
+]
+_map_docs = [CORE / "skills" / "setup" / "SKILL.md", ROOT / "README.md", ROOT / "GUIDE.md"]
+_map_ref = re.compile(r"/shipkit:map\b|PROJECT_MAP\.md")
+for doc in _map_docs:
+    text = doc.read_text(encoding="utf-8")
+    for i, ln in enumerate(text.splitlines(), 1):
+        for ph in MAP_REQUIRED_PHRASES:
+            if re.search(ph, ln, re.IGNORECASE):
+                err(doc, f"line {i}: presents the map as required or the first step ({ph!r}) — "
+                         "since 4.1.0 the map is optional (decision 0001)")
+    if not any(_map_ref.search(ln) and re.search(r"\boptional\b", ln, re.IGNORECASE)
+               for ln in text.splitlines()):
+        err(doc, "names the map but never on a line that says it is optional — say so where "
+                 "/shipkit:map or PROJECT_MAP.md is introduced (decision 0001, 4.1.0)")
+
 # --- Report ------------------------------------------------------------------
 
 for w in warnings:

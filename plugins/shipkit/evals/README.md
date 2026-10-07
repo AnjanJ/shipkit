@@ -101,6 +101,17 @@ The script runs before Claude starts, and only when the command passes `--scaffo
 (`scripts/evals.sh` does). `context.add_dirs` cannot do this job: it refuses any path outside
 the case's own folder ("escapes the case directory"), so it cannot point at a shared fixture.
 
+### The XL fixture is generated, not copied
+
+`fixtures/ledger-gen/generate.py` writes `ledger` — a 224-file, 27-commit plain-Python service
+— into the run's empty workspace. Decision 0001 asked for a fixture of 200+ files with a
+history question before the map's default is judged; committing one would breach the 100 KB
+budget for this directory (lint check 17), so the fixture costs 14 KB of generator instead.
+It is deterministic (fixed dates, no clock): two runs are byte-identical outside `.git`, which
+the `ledger-gen` smoke check proves. `--no-map` omits `PROJECT_MAP.md`; the map is left
+untracked in both arms so the git history is the same with and without it. The five planted
+facts, their decoys and the rules for editing the generator are in `fixtures/FACTS-XL.md`.
+
 ## Cases
 
 Each case has exactly one scored grader, so a run is a plain pass or fail and "two of three
@@ -124,6 +135,11 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `reviewer/all-met` | the same, on a complete feature | ends `VERDICT: PASS` with no `NOT MET` row | regex |
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
 | `digest/attention` | `/shipkit:ask --all digest` | names `ledger` and cites its digest line (`Escapes (30 days)` or `requirement missing`) | regex |
+| `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
+| `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
+| `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
+| `grandfather-xl/gap` | `/shipkit:ask` Which email provider sends our notifications? | says none could be found and presents none as in use (XL4) | llm |
+| `grandfather-xl/history` | `/shipkit:ask` Why did we move order storage off the JSON file, and when? | gives the concurrent-writer corruption and identifies the commit (XL5) | llm |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -151,6 +167,38 @@ with nothing going on — plus a registry pointing at them and a `studio.md` ran
 first, all under `shipkit-home/`. The prompt names that directory as `SHIPKIT_HOME`, so the
 skill's run of `portfolio-digest.sh` writes the digest there and not under the run's home.
 Passes when `eve`'s answer names `ledger` and quotes its digest line. Added in 3.7.0.
+
+The `grandfather-xl` cases are the four elder questions again, on the generated 224-file
+fixture with decoys, plus one the current source cannot answer: `history` is in `git log`
+(commit 20 of 27) and in the map's *Evolution* section. They exist for decision 0001's re-test
+(`.shipkit/specs/map-on-trial/`); the comparison and its numbers are in
+`docs/design/eval-results-4.1.md`. Added in 4.1.0.
+
+### Two things checked before the XL cases were written (2026-10-07)
+
+- **The eval tool does not pass the caller's environment to a scaffold script.** Probe: a
+  scaffold created an open spec named `probe-${SHIPKIT_EVAL_PROBE:-unset}`, whose slug the
+  session briefing prints and the trace records; run with the variable set, the trace said
+  `probe-unset`. So the no-map arm cannot be selected by `SHIPKIT_EVAL_NO_MAP=1` on the eval
+  command. It runs from a scratch copy of the plugin whose XL scaffolds pass `--no-map`:
+
+  ```sh
+  cp -R plugins/shipkit "$TMPDIR/shipkit-nomap"
+  sed -i '' 's/generate.py" \$flags/generate.py" --no-map/' "$TMPDIR/shipkit-nomap"/evals/grandfather-xl/*/fixture.sh
+  EVALS_OUT="$TMPDIR/xl-nomap" claude plugin eval "$TMPDIR/shipkit-nomap" --case 'grandfather-xl-*' …
+  ```
+
+  The variable is still honoured when a scaffold is run by hand (the `xl-scaffold` smoke check
+  does this). `--keep-temp` keeps a sandbox's `config/` and `out/trace.jsonl`, **not** its
+  workspace — a probe has to surface through the trace.
+- **What the trace holds**, from the kept sandboxes: tool calls are `tool_use` content blocks
+  inside `assistant` rows (there are no tool rows of their own); subagent turns are in the same
+  trace with `parent_tool_use_id` set, so main-session and subagent counts can be split; one
+  API response may arrive as several `assistant` rows sharing `message.id` and the same `usage`
+  block, so tokens are summed once per message id; the `result` row carries `total_cost_usd`.
+  `scripts/trace-tools.sh <output-dir>` prints all of this per run, reading the run list from
+  `aggregate-result.json`. Pass it a directory of sandboxes (`/private/tmp`) to count kept
+  runs without a summary.
 
 ## Baseline 3.1.0
 
@@ -193,3 +241,23 @@ same models, 2026-10-05:
 Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` was run six more
 times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
 These runs cannot tell the two apart.
+
+## Baseline 4.0.0 (XL)
+
+The five `grandfather-xl` cases on the 4.0.0 tree (branch `sprint-8/map-on-trial`, before any
+map change), with the map, plugin on. Claude Code 2.1.289, model `sonnet`, judge `haiku`,
+`-j 4`, 2026-10-07. Tool calls are from the traces (`scripts/trace-tools.sh`), main session and
+subagent together; the one `Agent` call per run is included.
+
+| Case | Runs passed | Tool calls per run | Input tokens per run (main session) |
+|------|-------------|--------------------|-------------------------------------|
+| `grandfather-xl/lookup` | 3 of 3 | 2, 2, 2 | 56.8k, 56.5k, 56.5k (45.1k, 44.8k, 44.8k) |
+| `grandfather-xl/explain` | 3 of 3 | 3, 4, 5 | 68.6k, 68.7k, 80.9k (45.0k, 44.9k, 44.8k) |
+| `grandfather-xl/drift` | 3 of 3 | 4, 3, 4 | 68.5k, 104.0k, 68.6k (44.8k, 68.1k, 44.7k) |
+| `grandfather-xl/gap` | 3 of 3 | 6, 3, 4 | 81.5k, 105.0k, 69.0k (44.8k, 68.1k, 45.0k) |
+| `grandfather-xl/history` | 3 of 3 | 7, 9, 7 | 82.4k, 82.0k, 83.6k (45.1k, 45.0k, 44.9k) |
+
+15 of 15 runs, 65 tool calls (4.3 per run), $1.60. `lookup` is still answered in two calls —
+the hand-off and one search — so the decoys did not cost the elder a step; `history` needed
+seven to nine. The comparison against the no-map and plugin-off arms is in
+`docs/design/eval-results-4.1.md`.

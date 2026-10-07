@@ -1,5 +1,5 @@
 ---
-description: "Build or refresh this project's PROJECT_MAP.md — the verified index the elders read. Run after big changes. Use --register to add the project to your cross-project registry for eve."
+description: "Build or refresh this project's PROJECT_MAP.md — an optional verified index the elders read when it exists; worth it for eve's portfolio view or a thin commit history. Run after big changes. Use --register to add the project to your cross-project registry."
 user-invocable: true
 argument-hint: "[refresh | section <name> | --register]"
 ---

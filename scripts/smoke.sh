@@ -1330,6 +1330,153 @@ if printf '%s\n' "$do_a" | grep -q '^shipkit: digest: newest is 8 days old — r
   pass "digest-old (newest digest 8 days old → one line; 6 days old, none, or no home → no digest line)"
 else failc "digest-old" "old: [$do_a] recent: [$do_b] none: [$do_c] no home: [$do_d]"; fi
 
+# 38. ledger-gen: the XL eval fixture is GENERATED, never committed (spec: .shipkit/specs/
+# map-on-trial/). generate.py writes a 200-file service with a 25-commit history into an empty
+# directory; two runs must be byte-identical outside .git so both arms of the map comparison
+# see the same code. No claude needed. Cites: map-on-trial/REQ-1 map-on-trial/REQ-2
+# map-on-trial/REQ-3 map-on-trial/REQ-4 map-on-trial/REQ-6
+GEN="$COPY/evals/fixtures/ledger-gen/generate.py"
+if [ ! -f "$GEN" ]; then
+  failc "ledger-gen" "evals/fixtures/ledger-gen/generate.py does not exist (check written first, by design)"
+else
+  LG_A="$WORK/xl-a"; LG_B="$WORK/xl-b"; LG_N="$WORK/xl-nomap"; mkdir -p "$LG_A" "$LG_B" "$LG_N"
+  (cd "$LG_A" && python3 "$GEN" >/dev/null 2>&1) && (cd "$LG_B" && python3 "$GEN" >/dev/null 2>&1) \
+    && (cd "$LG_N" && python3 "$GEN" --no-map >/dev/null 2>&1) || failc "ledger-gen" "generate.py exited non-zero"
+  lg_files=$(cd "$LG_A" && find . -type f -not -path './.git/*' | wc -l | tr -d ' ')
+  lg_commits=$(git -C "$LG_A" rev-list --count HEAD 2>/dev/null || echo 0)
+  lg_commits_n=$(git -C "$LG_N" rev-list --count HEAD 2>/dev/null || echo 0)
+  if [ "$lg_files" -ge 200 ] && [ "$lg_commits" -ge 25 ]; then
+    pass "ledger-gen ($lg_files files, $lg_commits commits — at least 200 and 25)"
+  else failc "ledger-gen" "$lg_files files, $lg_commits commits; want >= 200 and >= 25"; fi
+  if lg_diff=$(diff -r -x .git "$LG_A" "$LG_B") && [ -z "$lg_diff" ]; then
+    pass "ledger-gen (two runs are byte-identical outside .git)"
+  else failc "ledger-gen" "two runs differ: $(printf '%s' "$lg_diff" | head -3)"; fi
+  lg_redis=$(cd "$LG_A" && grep -rli redis . --exclude-dir=.git | sort | tr '\n' ' ')
+  if [ "$lg_redis" = "./PROJECT_MAP.md " ]; then pass "ledger-gen (Redis is named only in PROJECT_MAP.md — the planted drift)"
+  else failc "ledger-gen" "Redis named in: [$lg_redis], want only ./PROJECT_MAP.md"; fi
+  if ! (cd "$LG_A" && grep -rliw --exclude-dir=.git -e sendgrid -e postmark -e mailgun -e sparkpost -e mandrill -e mailchimp -e 'amazon ses' -e smtp2go -e resend . | grep -q .); then
+    pass "ledger-gen (no email provider is named anywhere — the planted gap)"
+  else failc "ledger-gen" "an email provider is named: $(cd "$LG_A" && grep -rliw --exclude-dir=.git -e sendgrid -e postmark -e mailgun -e sparkpost -e mandrill -e mailchimp -e 'amazon ses' -e smtp2go -e resend . | head -3 | tr '\n' ' ')"; fi
+  if [ ! -e "$LG_N/PROJECT_MAP.md" ] && [ -e "$LG_A/PROJECT_MAP.md" ] && [ "$lg_commits_n" = "$lg_commits" ] \
+     && lg_ndiff=$(diff -r -x .git -x PROJECT_MAP.md "$LG_A" "$LG_N") && [ -z "$lg_ndiff" ]; then
+    pass "ledger-gen (--no-map: no PROJECT_MAP.md, same $lg_commits commits, same tree otherwise)"
+  else failc "ledger-gen" "--no-map: map present=$([ -e "$LG_N/PROJECT_MAP.md" ] && echo yes || echo no), commits $lg_commits_n vs $lg_commits, diff: $(printf '%s' "$lg_ndiff" | head -2)"; fi
+  lg_bytes=$(wc -c < "$GEN" | tr -d ' ')
+  if [ "$lg_bytes" -le 16384 ] && python3 - "$GEN" <<'EOF'
+import ast, sys
+names = set()
+for n in ast.walk(ast.parse(open(sys.argv[1]).read())):
+    if isinstance(n, ast.Import): names |= {a.name.split('.')[0] for a in n.names}
+    elif isinstance(n, ast.ImportFrom) and n.level == 0: names.add(n.module.split('.')[0])
+bad = names - set(sys.stdlib_module_names)
+if bad: print("non-stdlib imports:", sorted(bad))
+sys.exit(1 if bad else 0)
+EOF
+  then pass "ledger-gen ($lg_bytes bytes, at most 16384; standard-library imports only)"
+  else failc "ledger-gen" "$lg_bytes bytes (limit 16384) or a non-stdlib import (see above)"; fi
+fi
+
+# 39. xl-scaffold: each grandfather-xl case builds the XL fixture through the generator, and
+# SHIPKIT_EVAL_NO_MAP=1 builds it without a map. The eval tool does NOT pass the caller's
+# environment to a scaffold (checked 2026-10-07 with a nonce: the briefing printed
+# "probe-unset"), so the no-map ARM runs from a scratch copy whose scaffolds pass --no-map;
+# the variable is for running a scaffold by hand, which is what this check does.
+# Cites: map-on-trial/REQ-8 map-on-trial/REQ-9
+XL="$COPY/evals/grandfather-xl"
+xl_ok=1; xl_why=""
+for c in lookup explain drift gap history; do
+  if [ ! -f "$XL/$c/fixture.sh" ] || [ ! -f "$XL/$c/case.yaml" ] || [ ! -f "$XL/$c/prompt.md" ]; then
+    xl_ok=0; xl_why="$xl_why $c:missing-files"; continue
+  fi
+  grep -q 'generate.py' "$XL/$c/fixture.sh" || { xl_ok=0; xl_why="$xl_why $c:no-generator"; }
+  grep -q '^/shipkit:ask ' "$XL/$c/prompt.md" || { xl_ok=0; xl_why="$xl_why $c:prompt-not-ask"; }
+  XD="$WORK/xl-case-$c"; mkdir -p "$XD"
+  (cd "$XD" && bash "$XL/$c/fixture.sh" >/dev/null 2>&1) || { xl_ok=0; xl_why="$xl_why $c:scaffold-failed"; continue; }
+  [ -f "$XD/PROJECT_MAP.md" ] && [ "$(git -C "$XD" rev-list --count HEAD 2>/dev/null)" -ge 25 ] \
+    || { xl_ok=0; xl_why="$xl_why $c:no-map-or-history"; }
+done
+XN="$WORK/xl-case-nomap"; mkdir -p "$XN"
+if [ -f "$XL/history/fixture.sh" ]; then
+  (cd "$XN" && SHIPKIT_EVAL_NO_MAP=1 bash "$XL/history/fixture.sh" >/dev/null 2>&1)
+  [ ! -e "$XN/PROJECT_MAP.md" ] && [ -f "$XN/app/orders/store.py" ] || { xl_ok=0; xl_why="$xl_why nomap:map-present-or-no-tree"; }
+fi
+if [ "$xl_ok" -eq 1 ]; then pass "xl-scaffold (five cases scaffold the XL fixture with a map; SHIPKIT_EVAL_NO_MAP=1 → without)"
+else failc "xl-scaffold" "$xl_why"; fi
+
+# 40. trace-tools: scripts/trace-tools.sh reads an eval output directory's aggregate-result.json
+# and prints one line per run with the counts the map comparison reads — from the trace, never
+# the summary. A synthetic two-run trace with known numbers: run 1 has three tool calls (one
+# Agent, one by the subagent, one split across two rows of the same message, which must not
+# double-count), run 2 has one. Cites: map-on-trial/REQ-10 map-on-trial/REQ-11
+TT="$ROOT/scripts/trace-tools.sh"
+TD="$WORK/tt"; mkdir -p "$TD/r1/out" "$TD/r2/out"
+tt_asst() {  # tt_asst <msg-id> <parent-or-null> <input> <cache_create> <cache_read> <content-json>
+  printf '{"type":"assistant","parent_tool_use_id":%s,"message":{"id":"%s","usage":{"input_tokens":%s,"cache_creation_input_tokens":%s,"cache_read_input_tokens":%s},"content":%s}}\n' "$2" "$1" "$3" "$4" "$5" "$6"
+}
+{
+  printf '{"type":"system","subtype":"init"}\n'
+  tt_asst m1 null 10 100 1000 '[{"type":"text","text":"x"}]'
+  tt_asst m1 null 10 100 1000 '[{"type":"tool_use","id":"t1","name":"Agent","input":{}}]'
+  tt_asst m2 '"t1"' 5 50 500 '[{"type":"tool_use","id":"t2","name":"Grep","input":{}}]'
+  tt_asst m3 null 20 0 2000 '[{"type":"tool_use","id":"t3","name":"Read","input":{}}]'
+  printf '{"type":"result","subtype":"success","total_cost_usd":0.5,"num_turns":3}\n'
+} > "$TD/r1/out/trace.jsonl"
+{
+  tt_asst m9 null 1 2 3 '[{"type":"tool_use","id":"t9","name":"Glob","input":{}}]'
+  printf '{"type":"result","subtype":"success","total_cost_usd":0.25,"num_turns":1}\n'
+} > "$TD/r2/out/trace.jsonl"
+printf '{"cases":[{"name":"grandfather-xl-lookup","arms":{"with":[{"passed":true,"tracePath":"%s"},{"passed":false,"tracePath":"%s"}]}}]}\n' \
+  "$TD/r1/out/trace.jsonl" "$TD/r2/out/trace.jsonl" > "$TD/aggregate-result.json"
+if [ ! -f "$TT" ]; then
+  failc "trace-tools" "scripts/trace-tools.sh does not exist (check written first, by design)"
+else
+  if sh -n "$TT" 2>/dev/null; then pass "trace-tools (POSIX sh: sh -n is clean)"; else failc "trace-tools" "sh -n reports a syntax error"; fi
+  tt_out=$(sh "$TT" "$TD" 2>&1); tt_rc=$?
+  tt_l1=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*1[[:space:]]')
+  tt_l2=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*2[[:space:]]')
+  tt_grep=$(grep -o '"type":"tool_use"' "$TD/r1/out/trace.jsonl" | wc -l | tr -d ' ')
+  # fields: case arm run passed tools tools_main agent in_tokens in_tokens_main cost
+  if [ "$tt_rc" -eq 0 ] && printf '%s\n' "$tt_l1" | awk -v g="$tt_grep" '{ok = ($4=="pass" && $5==g && $5==3 && $6==2 && $7==1 && $8==3685 && $9==3130 && $10=="0.5000")} END{exit ok?0:1}' \
+     && printf '%s\n' "$tt_l2" | awk '{ok = ($4=="fail" && $5==1 && $6==1 && $7==0 && $8==6 && $9==6 && $10=="0.2500")} END{exit ok?0:1}' \
+     && [ "$(printf '%s\n' "$tt_out" | grep -c '^grandfather-xl-lookup')" -eq 2 ]; then
+    pass "trace-tools (one line per run; tool calls = $tt_grep tool_use blocks, main/subagent split, tokens deduped per message, cost)"
+  else failc "trace-tools" "exit $tt_rc, grep says $tt_grep; output: $(printf '%s' "$tt_out" | head -4 | tr '\n' '|')"; fi
+fi
+
+# 41. no-map-silent: the map is optional since 4.1.0 (decision 0001). In a project with no
+# PROJECT_MAP.md and one open spec, the session hook prints the briefing and says nothing
+# about a map — no nag, no "build one". The nag itself stays and still fires on a STALE map
+# (check 3). No claude needed. Cites: map-on-trial/REQ-16
+NMS="$WORK/no-map-silent"; mkdir -p "$NMS/.shipkit/specs/beta"
+(cd "$NMS" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+bspec "$NMS" beta open 1 3
+nms_out=$(cd "$NMS" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" </dev/null 2>/dev/null)
+# only the hook's own lines (^shipkit:) — the injected rule bodies legitimately mention the map
+nms_lines=$(printf '%s\n' "$nms_out" | grep '^shipkit:')
+if printf '%s\n' "$nms_lines" | grep -q '^shipkit: beta: 1 of 3 tasks done' \
+   && ! printf '%s\n' "$nms_lines" | grep -qi 'PROJECT_MAP\|/shipkit:map\| map'; then
+  pass "no-map-silent (no map + an open spec → the briefing line, not one hook line about a map)"
+else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"; fi
+
+# 42. lint-negative: the two lint checks of 4.1.0 still FIRE. A copy of the working tree with
+# a 60 KB file under evals/ and one "build the map first" line in the README must fail the lint
+# with exactly those two errors (the gate's reviewer asked for a repeatable red, not a
+# one-time one). No claude needed. Cites: map-on-trial/REQ-7 map-on-trial/REQ-15
+LN="$WORK/lint-neg"; mkdir -p "$LN"
+# only the repo-root .git and .claude (agent worktrees) are skipped; the overlays' .claude/ must copy
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$LN/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$LN" && tar xf -); fi
+ln_clean=$(python3 "$LN/scripts/lint.py" 2>&1 | tail -1)
+head -c 61440 /dev/zero | tr '\0' 'x' > "$LN/plugins/shipkit/evals/fixtures/oversize.txt"
+printf '\nStart by building the map: run /shipkit:map first.\n' >> "$LN/README.md"
+ln_out=$(python3 "$LN/scripts/lint.py" 2>&1)
+if printf '%s\n' "$ln_clean" | grep -q '^lint: 0 error(s)' \
+   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 102,400' \
+   && printf '%s\n' "$ln_out" | grep -q 'README.md: line [0-9]*: presents the map as required or the first step' \
+   && printf '%s\n' "$ln_out" | grep -q '^lint: 2 error(s)'; then
+  pass "lint-negative (a 60 KB eval file and a 'build the map first' line → exactly those two lint errors; the clean copy → 0)"
+else failc "lint-negative" "clean: [$ln_clean] doctored: $(printf '%s' "$ln_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

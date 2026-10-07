@@ -105,7 +105,9 @@ Get the list of projects + their map locations.
 
 ### 2. Structure vs decision-history across the portfolio
 - **Structural** ("which apps use X", "where across projects is Y") → registry + the relevant
-  `PROJECT_MAP.md` files + a confirming grep. Default path.
+  `PROJECT_MAP.md` files where a project has one + a confirming grep. Default path. A
+  registered project without a map is not a gap: grep its repo for the signal directly (maps
+  are optional since 4.1.0, decision 0001).
 - **Cross-project decisions / specs** ("where did we decide against microservices, and are those
   reasons still true?", "which projects have an open spec touching billing?") → each repo's
   shipkit artifact root **`.shipkit/`** holds deliberate decision records
@@ -146,8 +148,8 @@ not doing a full audit of each repo, just confirming the one fact.
 Return:
 - **The cross-project answer**, usually as a table: project | finding | evidence (`path`).
 - **Confidence per row** — verified against repo (HIGH) vs map-only (MEDIUM).
-- **Gaps** — projects with no map yet (so they may be missing from the answer), and any
-  drift you spotted.
+- **Gaps** — projects you could not check (not registered, path missing, repo unreadable), and
+  any drift you spotted. A project without a map that you grepped is checked, not a gap.
 
 ## Portfolio reports (named report shapes)
 
