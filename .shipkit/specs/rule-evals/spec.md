@@ -93,10 +93,13 @@ beside this file (which corrects the plan's rule count from 15 to 18).
 - **REQ-18.** The three always-on rules shall total at most 3,000 bytes after any kept
   attempt. [untested: enforced by the existing lint budget check and exit-checklist line 5]
 - **REQ-19.** Where an attempt is kept, `rules/nontrivial` shall pass at least two of three
-  runs while `rules/trivial` and `rules/decision` hold their baseline.
+  runs while `rules/trivial` and `rules/decision` hold their baseline. [untested: an eval
+  result, not a repository test — `bash scripts/evals.sh --group rules` on 2026-10-07 gave
+  3 of 3, 3 of 3, 3 of 3 with the kept sentence; recorded in `evals/README.md` and record 0002]
 - **REQ-20.** Where no attempt is kept, the evals README's known-result note shall say that
-  record 0002 accepts `rules/nontrivial`'s range and name the record. [untested:
-  documentation, verified by reading]
+  record 0002 accepts `rules/nontrivial`'s range and name the record. [untested: the
+  condition did not hold — the first attempt was kept (T5, 2026-10-07); the README's note
+  was updated all the same]
 
 ## Release steps (not requirements)
 

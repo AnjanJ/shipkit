@@ -325,6 +325,27 @@ Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` wa
 times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
 These runs cannot tell the two apart.
 
+## After the spec-first sentence (4.2.0)
+
+Sprint task S9-T5 read six kept failing runs first (0 of 6 on the 4.1.0 text): every run built
+refunds test-first and listed its assumptions afterwards; two wrote a full spec folder and
+then built in the same turn without showing it. The rule was being read as a file format, not
+a gate. One sentence changed in `spec-driven.md` — "answers three questions, shows the answers
+to the user and waits for a yes before any code" — paid for inside the file (2,996 → 2,979
+bytes). Same command, same models, 2026-10-07:
+
+| Case | 4.1.0 text (6 runs) | With the sentence |
+|------|---------------------|-------------------|
+| `rules/nontrivial` | 0 of 6 | 3 of 3, then 3 of 3 more (6 of 6) |
+| `rules/trivial` | 3 of 3 | 3 of 3 |
+| `rules/decision` | 3 of 3 | 3 of 3 |
+
+The three passing replies each stop at a proposed spec and ask for a yes. Decision record
+`.shipkit/decisions/0002-spec-first-eval.md` holds the traces' reading, the alternatives and
+the clause under which the sentence comes out again. `rules/nontrivial` is no longer the
+accepted known failure of the release run; a release run where it drops below 2 of 3 is a
+regression to investigate, not a number to carry.
+
 ## Baseline 4.1.0 (scoped)
 
 The five `scoped` cases on the 4.1.0 tree (branch `sprint-9/rule-evals`, S9-T2), with the

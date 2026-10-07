@@ -26,7 +26,7 @@ before T5 starts; T4 changes no file under `plugins/shipkit/rules/` or `stacks/`
   - Test: reading — the eighteen-row table has no empty cell (the four unchanged files say "same text" in the pre-trim column); every cell has three tool-call counts from scripts/trace-tools.sh; the trim audit's new section has fourteen lines and `git diff main -- docs/design/trim-audit-4.0.md` shows additions only
   - After: T3
   - Done when: the table is shown to the owner; the three readings (passes equally without; pre-trim scores higher; fails even with) are written with the trace evidence; ROADMAP's "Still open" drops criterion (c); `git diff --stat main -- plugins/shipkit/rules plugins/shipkit/stacks` shows nothing
-- [ ] **T5** `rules/nontrivial`: fix it or accept it (S9-T5) → REQ-17, REQ-18, REQ-19, REQ-20
+- [x] **T5** `rules/nontrivial`: fix it or accept it (S9-T5) → REQ-17, REQ-18, REQ-19, REQ-20
   - Files: plugins/shipkit/rules/spec-driven.md, plugins/shipkit/rules/shipkit.md, .shipkit/decisions/0002-spec-first-eval.md, plugins/shipkit/evals/README.md, .shipkit/specs/rule-evals/spec.md
   - Test: `bash scripts/evals.sh --group rules` after each attempt (nontrivial ≥ 2 of 3 and trivial, decision at baseline → keep; else revert); `cat plugins/shipkit/rules/{shipkit,spec-driven,decisions}.md | wc -c` ≤ 3000; the branch of REQ-19/REQ-20 not taken is marked `[untested: the condition did not hold]`
   - After: T4
