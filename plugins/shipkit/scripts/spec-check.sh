@@ -71,7 +71,8 @@ if [ -n "$ONLY" ] && [ ! -f "$SPECS/$ONLY/spec.md" ]; then
 fi
 
 TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
-trap 'rm -f "$TMP"' EXIT
+CITES="$TMP.cites"
+trap 'rm -f "$TMP" "$CITES"' EXIT
 
 # spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)
 spec_status() {
@@ -151,16 +152,25 @@ spec_reqs() {
   ' "$1" "$2"
 }
 
-# cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N
-cited() {
-  _pat="$(printf '%s' "$1" | sed 's/[.[\*^$]/\\&/g')/REQ-$2([^0-9]|\$)"
+# collect_cites → every "<slug>/REQ-N" that appears in a file that counts as a test, one per
+# line, in $CITES. ONE git grep per run: the briefing runs this script at every session start,
+# and a grep per requirement made fifty open specs take 2.7 s (smoke check 30's limit is 1 s).
+collect_cites() {
+  _pat='[A-Za-z0-9._-]+/REQ-[0-9]+'
   if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$PROJ" grep -q -I --untracked -E -e "$_pat" -- . \
+    git -C "$PROJ" grep -h -I -o --untracked -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null
   else
-    (cd "$PROJ" && git grep -q -I --no-index -E -e "$_pat" -- . \
+    (cd "$PROJ" && git grep -h -I -o --no-index -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null)
-  fi
+  fi | sort -u > "$CITES"
+}
+collect_cites
+
+# cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N (whole token:
+# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1)
+cited() {
+  grep -q -x -F "$1/REQ-$2" "$CITES"
 }
 
 gaps=0
