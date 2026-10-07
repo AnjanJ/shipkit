@@ -4,7 +4,7 @@ One commit per task, test and code together. The steps for each task are in
 `docs/plans/field-sprint-plan.md` under the same task number (S11-T1 to S11-T4). **T2's Check
 first moves README history only with the owner's yes (intake question 1).**
 
-- [ ] **T1** The briefing on a project with pre-3.3 specs (S11-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5
+- [x] **T1** The briefing on a project with pre-3.3 specs (S11-T1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5
   - Files: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 49 "pre33-specs" (three all-ticked specs with no Status → no progress line, no drift line, one "predate 3.3" line naming 3; one no-Status spec with an unticked task → reported as open; `Status: open` all ticked → "all ticked" as today) — written first, red
   - After: none

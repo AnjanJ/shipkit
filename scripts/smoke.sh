@@ -1665,6 +1665,36 @@ if [ "$rc2" -eq 1 ] && printf '%s\n' "$out_ship" | grep -q '^MISSING-TEST demo R
   pass "pending-test (--as-shipped and a shipped spec → MISSING-TEST, exit 1, no PENDING line)"
 else failc "pending-test" "as-shipped: exit $rc2: $out_ship / shipped: exit $rc3: $out_shipped"; fi
 
+# 49. pre33-specs: a spec with NO Status line and EVERY task ticked predates 3.3 and is shipped
+# in all but name. The briefing prints no progress line for it and the hook no drift line; one
+# briefing line counts the specs with no Status line and gives the fix. A no-Status spec with an
+# unticked task is still reported as open. spec-check.sh is not touched (spec-contract/REQ-7).
+# Reuses bspec/brief from check 30. Cites: run-wounds/REQ-1 run-wounds/REQ-2 run-wounds/REQ-3
+# run-wounds/REQ-4
+P33="$WORK/pre33"; mkdir -p "$P33"
+(cd "$P33" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+p33sha=$(cd "$P33" && git rev-parse --short HEAD)
+bspec "$P33" old-a none 2 2; bspec "$P33" old-b none 3 3; bspec "$P33" old-c none 1 1
+bspec "$P33" gamma none 0 2; bspec "$P33" delta open 2 2
+for s in old-a old-b old-c gamma delta; do
+  sed "s/abc1234/$p33sha/" "$P33/.shipkit/specs/$s/spec.md" > "$WORK/p33.tmp" && mv "$WORK/p33.tmp" "$P33/.shipkit/specs/$s/spec.md"
+done
+(cd "$P33" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m specs \
+  && i=0 && while [ "$i" -lt 16 ]; do git -c user.email=s@s -c user.name=s commit -q --allow-empty -m "c$i"; i=$((i + 1)); done)
+out=$(brief "$P33")
+if ! printf '%s\n' "$out" | grep -q 'old-[abc]' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: gamma: 0 of 2 tasks done, next T1 — Do step 1$' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: delta: 2 of 2 tasks done, all ticked$' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: 4 specs predate 3.3' \
+   && printf '%s\n' "$out" | grep '^shipkit: 4 specs predate 3.3' | grep -q 'Status: shipped'; then
+  pass "pre33-specs (briefing: all-ticked no-Status specs silent; unticked one still open; one line counts 4 and names the fix)"
+else failc "pre33-specs" "briefing: $out"; fi
+hook=$(cd "$P33" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>/dev/null)
+if ! printf '%s\n' "$hook" | grep 'behind HEAD' | grep -q 'old-[abc]' \
+   && printf '%s\n' "$hook" | grep 'behind HEAD' | grep -q 'gamma\|delta'; then
+  pass "pre33-specs (hook: no drift line for all-ticked no-Status specs; still one for the open ones)"
+else failc "pre33-specs" "hook drift lines: $(printf '%s\n' "$hook" | grep 'behind HEAD\|stale')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

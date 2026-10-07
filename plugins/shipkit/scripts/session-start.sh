@@ -182,6 +182,14 @@ spec_is_closed() {
   case "$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$1" | sed -n 1p)" in
     shipped|dropped|draft) return 0 ;;
   esac
+  # No Status line (a spec written before 3.3) and every task ticked: shipped in all but name,
+  # so no drift nag (run-wounds/REQ-2). spec-check.sh still reads it as open.
+  if ! grep -q '^> *Status:' "$1" 2>/dev/null; then
+    _t="${1%/spec.md}/tasks.md"
+    if [ -f "$_t" ] && grep -q '^- \[[xX]\] \*\*' "$_t" 2>/dev/null && ! grep -q '^- \[ \] \*\*' "$_t" 2>/dev/null; then
+      return 0
+    fi
+  fi
   return 1
 }
 SPEC_CAP=3
