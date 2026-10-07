@@ -1,7 +1,9 @@
 # 0001 — Is `PROJECT_MAP.md` the default source for the elders?
 
-> Recorded 2026-10-05 on `sprint-1/measure-and-slim`. Status: **measured, not yet acted on.**
-> Evidence: `docs/design/eval-results-3.2.md`.
+> Recorded 2026-10-05 on `sprint-1/measure-and-slim`.
+> Status: **re-tested on 2026-10-07 — the map becomes optional (S8-T4).**
+> Evidence: `docs/design/eval-results-3.2.md` (nine files), `docs/design/eval-results-4.1.md`
+> (224 files, one history question — the re-test this record asked for).
 
 **Context.** Since 1.x shipkit has told every project to build and keep a `PROJECT_MAP.md`: the
 archivist writes it, a session hook nags when it goes stale, and `grandfather` and `eve` read
@@ -50,3 +52,38 @@ fixture of at least 200 files with one question about how the project evolved. W
 the map as the default if, there, it gives at least one more correct answer or at least 20%
 fewer tool calls. That re-test is this record's addition; the owner's plan asked only for the
 clause above.
+
+## Re-test (4.1.0)
+
+Run 2026-10-07 on `sprint-8/map-on-trial` (spec `map-on-trial`), on the generated `ledger`
+fixture: 224 files, 27 commits, the four questions again with decoys, and `history` — why order
+storage left the JSON file and when — whose answer is in commit 20's message and the map's
+Evolution section, not in the current source. Three arms, five cases, three runs each, counted
+from traces by `scripts/trace-tools.sh`. Full tables: `docs/design/eval-results-4.1.md`.
+
+The clause asked two questions. The counting rule for `drift` was fixed in the spec's design
+before any run: a pass that exists only because the map contains the planted error is not one
+more correct answer.
+
+- *One more correct answer?* **No.** By the graders, 14 of 15 runs with the map against 12 of
+  15 without; the gap is `drift`, which needs the reply to call the map wrong, and all nine
+  `drift` replies in every arm got the fact right (an in-process dict, `app/inventory/cache.py:2`).
+  On the questions asked: 15 of 15 with the map, 15 of 15 without. `history` passed 3 of 3 in
+  both arms — every run read `git log`, with the map or without.
+- *At least 20% fewer tool calls?* **No.** 62 against 65 is 4.6% fewer; with the baseline run
+  counted too, 4.23 against 4.33 calls per run, 2.3% fewer.
+
+Both fall on the "otherwise" side, as they did on nine files. Two things the larger fixture
+added: the elder opened the map in nine of thirty with-map runs although its instructions say
+to read it first — it greps, the grep finds the answer, and the map is an afterthought; and the
+history question, the map's strongest case on paper, was answered from the commit log every
+time, with the map read afterwards if at all.
+
+**What this does not settle** (carried in the results document): a map on a repository whose
+commit log is uninformative; `eve`'s portfolio answers, which read maps without opening
+repositories; a stale map's cost. None of these is measured, and none is changed by S8-T4.
+
+**Decision, as the clause reads it: the map becomes optional.** Per the plan's B4: the elders
+read a map when one exists and go to the source when none does; `/shipkit:setup`, the README
+and the guide offer the map with this number beside it instead of presenting it as the first
+step; the archivist, `/shipkit:map`, the stale-map nag and `eve`'s registry stay as they are.

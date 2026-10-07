@@ -15,7 +15,7 @@ branch and the owner says go.
   - Test: scripts/smoke.sh checks "xl-scaffold" (each of the five fixture.sh scripts builds the fixture in a scratch directory; with SHIPKIT_EVAL_NO_MAP=1 no PROJECT_MAP.md) and "trace-tools" (on a kept trace, the printed tool-call count equals `grep -c '"type":"tool_use"'`; one line per run with five fields) — written first, red
   - After: T1
   - Done when: both smoke checks → PASS; `sh -n scripts/trace-tools.sh` → clean; `bash scripts/evals.sh --case 'grandfather-xl-*'` runs all five and prints a result for each, recorded in evals/README.md under "Baseline 4.0.0 (XL)"; both Check-first answers are in the README
-- [ ] **T3** The comparison, and what the record says now (S8-T3) → REQ-12, REQ-13, REQ-14
+- [x] **T3** The comparison, and what the record says now (S8-T3) → REQ-12, REQ-13, REQ-14
   - Files: docs/design/eval-results-4.1.md, .shipkit/decisions/0001-project-map-default.md
   - Test: reading — the three-arm table has no empty cell; every per-case cell has three tool-call counts from scripts/trace-tools.sh; the drift rule of REQ-14 is applied and shown; the record's status line names a side
   - After: T2
