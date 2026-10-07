@@ -1,7 +1,7 @@
 # Spec: The map on trial (Sprint 8, release 4.1.0)
 
 > Spec accepted at commit `16df449` on sprint-8/map-on-trial.
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/evals/, scripts/, docs/design/eval-results-4.1.md, .shipkit/decisions/, plugins/shipkit/skills/setup/, plugins/shipkit/skills/map/, plugins/shipkit/agents/, README.md, GUIDE.md, ROADMAP.md, CHANGELOG.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
