@@ -13,9 +13,9 @@ plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one
 shipped it in seven sprints.
 
 **Status (as of 2026-10-07, v4.2.0):** Sprints 1 to 7 of the
-quality-gate plan are done, and Sprints 8 and 9 of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
-approved 2026-10-06) shipped as 4.1.0 and 4.2.0 — see "The evidence plan" below. Everything in this
-document is shipped except the open items listed there.
+quality-gate plan are done, and all three sprints of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
+approved 2026-10-06) shipped as 4.1.0, 4.2.0 and 4.3.0 — see "The evidence plan" below. Everything in
+this document is shipped except the items under "Still open after Sprint 10", which seed the next plan.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,7 +29,7 @@ document is shipped except the open items listed there.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The evidence plan — Sprint 8 SHIPPED 2026-10-07; Sprints 9 and 10 next
+## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
 
 Full plan: [`docs/plans/evidence-sprint-plan.md`](docs/plans/evidence-sprint-plan.md). Every
 standing claim shipkit makes about itself gets a number behind it, starting with the one owed
@@ -39,7 +39,7 @@ since Sprint 1.
 |--------|---------|--------------------|
 | 8 | 4.1.0 | The map on trial: a generated 224-file, 27-commit fixture; five XL elder cases including a history question; `trace-tools.sh`; the re-test decision 0001 asked for — and, by its own clause, **the map is now optional** (`docs/design/eval-results-4.1.md`) |
 | 9 | 4.2.0 | One eval per rule file (the 5 path-scoped and 13 stack rule files), measured with, without and against the pre-trim 3.7.0 text; `rules/nontrivial` fixed within the byte budget or accepted by record |
-| 10 | 4.3.0 | The gate's first-run misses caught by `spec-check`; the overlay-skill question closed; the loop run once on a real repository; the merged branches gone |
+| 10 | 4.3.0 | `spec-check` shows an open spec's uncited requirements (`PENDING-TEST`) so the gate's first-run misses are seen two seconds in; the overlay skills stay in core by record 0003; the loop run once, end to end, on `rails_error_dashboard` (`docs/design/field-notes-4.3.md` — it held; six candidates below came out of it); seven merged branches, 354 eval sandboxes and one stale worktree gone |
 
 **Still open after Sprint 10.**
 
@@ -87,9 +87,11 @@ Carried from Sprint 9:
   commit messages are clean; a repository whose log says "wip" would test the map's Evolution
   section properly. `eve` reads maps across repositories without opening them; nothing has
   measured what she loses when fewer projects have one. Neither changes the 4.1.0 default.
+  (`docs/design/eval-results-4.1.md`, the history question's rows.)
 - **The elder reads the map in fewer than one run in three** even when its instructions said
   to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
   agent's step 1 is where the next experiment is, not the map's content.
+  (`docs/design/eval-results-4.1.md`, "did the elder read the map" column.)
 
 - **Sixteen of eighteen rules pass their case without the rule** (`docs/design/eval-results-4.2.md`):
   `sonnet` clears each file's first named trap unaided. One line per file was probed, one
@@ -98,10 +100,13 @@ Carried from Sprint 9:
 - **Path-scoped loading is measured by nothing.** The eval sandbox loads no `.claude/` file,
   so every rule eval delivers the text always-on through the hook. A smoke check in a normal
   headless session (where the nonce did load) could measure whether `paths:` globs fire.
+  (`docs/design/eval-results-4.2.md`, first paragraph, and `evals/README.md` "How runs are isolated".)
 - **A rule that names a network step can stop work where there is none** — `gemfile.md`'s
-  "read the lock diff after `bundle install`" halted three runs in a sandbox with no network.
+  "read the lock diff after `bundle install`" halted three runs in a sandbox with no network
+  (`docs/design/eval-results-4.2.md`, the `gemfile` row and its reading).
 - **`rules/nontrivial`** passes 6 of 6 with the 4.2.0 sentence (record 0002); the record's
-  clause says when the sentence comes out. Watch it on every release run.
+  clause says when the sentence comes out (`.shipkit/decisions/0002-spec-first-eval.md`;
+  `docs/design/eval-results-4.2.md`, the `rules/*` table). Watch it on every release run.
 
 Platform facts that shaped this plan, each verified against the official Claude Code docs and,
 since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed before):

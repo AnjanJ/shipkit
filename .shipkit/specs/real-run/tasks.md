@@ -26,7 +26,7 @@ per row.**
   - Test: reading — for each approved row, ROADMAP records what was removed and when; the command outputs are in the commit message
   - After: T3
   - Done when: `git branch --list 'sprint-*'` and `git ls-remote --heads origin 'sprint-*'` list only sprint-8, sprint-9 and sprint-10 (if B11 approved); `git worktree list` shows one line (if B13); `ls -d /private/tmp/e-*` matches nothing (if B12); any row not approved is recorded as kept
-- [ ] **T5** Update the roadmap (S10-T5) → REQ-13, REQ-14
+- [x] **T5** Update the roadmap (S10-T5) → REQ-13, REQ-14
   - Files: ROADMAP.md
   - Test: reading — Sprints 8 to 10 marked shipped with 4.1.0, 4.2.0, 4.3.0; the evidence-plan heading no longer says "Sprints 9 and 10 next"; every "Still open after Sprint 10" item names its evidence; the north-star paragraph is unchanged or the change is explained
   - After: T4
