@@ -30,7 +30,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: the read-rate column of trace-tools.sh checked by hand against one kept trace; the five `grandfather-xl` cases on the 4.5.0 text (baseline, 15 runs) and after each attempt (15 runs each, at most two); Check first: the read-rate claim in the plan's §3
   - After: T3
   - Done when: the results doc has the baseline and each attempt's rate and answers; the kept text (owner's go) or the revert with 0001's note is in the commit; `--group grandfather` ≥ 2 of 3 per case; lint 0/0
-- [ ] **T5** The "wip" history (S13-T5) → REQ-12, REQ-13
+- [x] **T5** The "wip" history (S13-T5) → REQ-12, REQ-13
   - Files: plugins/shipkit/evals/fixtures/ledger-gen/generate.py, scripts/smoke.sh, docs/design/eval-results-4.6.md, ROADMAP.md
   - Test: scripts/smoke.sh check 39 gains `--wip` (same files and tree hashes per commit, messages all "wip") — written first, red; `grandfather-xl/history` with and without the map on the wip log (6 runs, scratch copies); Check first: the generator claim in the plan's §3
   - After: T4

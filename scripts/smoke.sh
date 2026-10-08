@@ -1409,6 +1409,16 @@ if [ -f "$XL/history/fixture.sh" ]; then
 fi
 if [ "$xl_ok" -eq 1 ]; then pass "xl-scaffold (five cases scaffold the XL fixture with a map; SHIPKIT_EVAL_NO_MAP=1 → without)"
 else failc "xl-scaffold" "$xl_why"; fi
+# --wip: the same history with every commit message "wip" — same files, same tree hash per
+# commit, only the messages differ (the map is untracked, so it does not enter any tree).
+# A "wip" log is where a map's Evolution section would earn its place (second-traps/REQ-12).
+XW="$WORK/xl-wip"; mkdir -p "$XW"
+(cd "$XW" && python3 "$COPY/evals/fixtures/ledger-gen/generate.py" --wip >/dev/null 2>&1)
+xw_trees=$(git -C "$XW" log --format=%T 2>/dev/null); xn_trees=$(git -C "$WORK/xl-case-history" log --format=%T 2>/dev/null)
+xw_msgs=$(git -C "$XW" log --format=%s%n%b 2>/dev/null | grep -v '^$' | sort -u | tr '\n' '|')
+if [ -n "$xw_trees" ] && [ "$xw_trees" = "$xn_trees" ] && [ "$xw_msgs" = "wip|" ] && [ -f "$XW/PROJECT_MAP.md" ]; then
+  pass "xl-scaffold (--wip: $(printf '%s\n' "$xw_trees" | wc -l | tr -d ' ') commits with the same tree hashes, every message \"wip\", the map still written)"
+else failc "xl-scaffold" "--wip: trees equal=$([ "$xw_trees" = "$xn_trees" ] && echo yes || echo no) messages=[$xw_msgs] map=$([ -f "$XW/PROJECT_MAP.md" ] && echo yes || echo no)"; fi
 
 # 40. trace-tools: scripts/trace-tools.sh reads an eval output directory's aggregate-result.json
 # and prints one line per run with the counts the map comparison reads — from the trace, never

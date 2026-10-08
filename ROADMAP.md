@@ -111,6 +111,12 @@ Carried from Sprint 9:
   section properly. `eve` reads maps across repositories without opening them; nothing has
   measured what she loses when fewer projects have one. Neither changes the 4.1.0 default.
   (`docs/design/eval-results-4.1.md`, the history question's rows.)
+  *4.6.0 (S13-T5): the XL generator takes `--wip` (same trees, every message "wip") and
+  `grandfather-xl/history` on that log reads 3 of 3 with the map, 0 of 3 without — the one
+  question in two releases where the map changed the answer, and the exception decision 0001
+  names (`docs/design/eval-results-4.6.md`). `eve`'s loss when fewer projects carry a map stays
+  **unmeasured and open**: it needs a multi-project registry fixture (about 20 KB of generator,
+  a sprint of its own — C11), which no plan has built.*
 - **The elder reads the map in fewer than one run in three** even when its instructions said
   to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
   agent's step 1 is where the next experiment is, not the map's content.
