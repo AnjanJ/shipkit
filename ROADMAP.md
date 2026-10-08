@@ -12,10 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-07, v4.3.0):** Sprints 1 to 7 of the
-quality-gate plan are done, and all three sprints of the evidence plan (`docs/plans/evidence-sprint-plan.md`,
-approved 2026-10-06) shipped as 4.1.0, 4.2.0 and 4.3.0 — see "The evidence plan" below. Everything in
-this document is shipped except the items under "Still open after Sprint 10", which seed the next plan.
+**Status (as of 2026-10-08, v4.4.0):** Sprints 1 to 7 of the quality-gate plan and 8 to 10 of
+the evidence plan are done; Sprint 11, the first of the field plan (`docs/plans/field-sprint-plan.md`,
+approved 2026-10-08), shipped as 4.4.0 — see "The field plan" below. Everything in this document
+is shipped except the items under "Still open after Sprint 10" not marked shipped, which
+Sprints 12 and 13 of the field plan take up.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -28,6 +29,18 @@ this document is shipped except the items under "Still open after Sprint 10", wh
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The field plan — Sprint 11 SHIPPED 2026-10-08 as 4.4.0; Sprints 12–13 in flight
+
+Full plan: [`docs/plans/field-sprint-plan.md`](docs/plans/field-sprint-plan.md). What the real
+run showed, fixed in three sprints: shipkit's own behaviour on a project it had not seen (11),
+the gate's blind spots (12), second traps and the elder's first step (13).
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 11 | 4.4.0 | A briefing that is right on a project with pre-3.3 specs; an intake whose claims of absence name what it searched (the fixed search list was not added — its case passed 3 of 3 before the sentence existed, and the record's clause fired first); headless intake and product runs that leave their questions on disk; a version line in the hook, a quiet top-goal line, a "Blocked on" heading in the handoff |
+| 12 | 4.5.0 | *in flight* |
+| 13 | 4.6.0 | *planned* |
 
 ## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
 
@@ -49,10 +62,12 @@ numbers are its sections):
 - **Pre-3.3 specs with no `Status` line are treated as open forever** (§1): the briefing reports
   shipped features as in flight, nags about drift on them and counts 23 `MISSING-TASK` gaps in a
   project whose six specs all shipped. A migration nudge, or "all tasks ticked and no Status"
-  read as shipped, belongs to the next plan.
+  read as shipped, belongs to the next plan. *Shipped in 4.4.0 (S11-T1).*
 - **The intake asked the owner what the repository already knew** (§3, §4): three of its four
   questions were answerable from files it had read or could have read; one claim of absence
   ("queue status has no source") was false; `grandfather` was not used in either pass (§5).
+  *4.4.0 (S11-T2): a claim of absence names what was searched; the search list was not added,
+  by the record's clause (`docs/design/eval-history.md`).*
 - **A `Fired-if` that fires before the code exists** passed the spec skill (§6): a line-count on
   a file not yet written. The spec skill could run `decision-check.sh` on its own output as it
   runs `spec-check.sh`; `spec-check` cannot check a draft, so the skill flipped the status to run it.
@@ -60,10 +75,13 @@ numbers are its sections):
   release report, to the reviewer and to `brief-verify.sh`, which allows only the spec's `tasks.md`.
 - **Headless runs leave their questions in the reply, not on disk** (§2, §3): product's eight
   and intake's four questions vanish with the session; an unanswered intake writes nothing.
+  *Shipped in 4.4.0 (S11-T3).*
 - Smaller (§0, §7, §8, §9, §10): the session hook could say when the cache holds a newer version
   than the running one; a `Fired-if` line tolerates nothing after the command; the gate's `How`
   column loses exit codes to pipes; the handoff has no "Blocked on" line; the briefing's "top
   goal" line repeats "metric: none set; target: none set; by: no date set" every session.
+  *4.4.0 (S11-T4): the version line, the "Blocked on" heading and the quiet goal line; the
+  `Fired-if` tolerance and the exit codes are Sprint 12.*
 
 Housekeeping done in Sprint 10 (S10-T4, 2026-10-07, each row its own yes from the owner; the
 commands and their output are in that task's commit message):

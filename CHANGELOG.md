@@ -2,6 +2,67 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.4.0] — 2026-10-08
+
+Sprint 11, the first of the field plan (`docs/plans/field-sprint-plan.md`, approved
+2026-10-08): the five things the real run showed about shipkit's own behaviour on a project
+it had not seen, fixed without touching a rule, an agent or an existing eval case.
+Requirements and decision records in [`.shipkit/specs/run-wounds/`](.shipkit/specs/run-wounds/);
+the eval readings in [`docs/design/eval-history.md`](docs/design/eval-history.md).
+
+### Changed
+
+- **The briefing is right on a project that used shipkit before 3.3.** A spec with no `Status`
+  line whose every task is ticked is closed to the briefing and to the session hook's drift nag;
+  one briefing line counts the specs that predate 3.3 and gives the fix. `spec-check.sh` is
+  unchanged and still reads them as open. On `rails_error_dashboard` this was every briefing
+  line but the first, every session (field notes §1).
+- **A claim of absence names what was searched.** One sentence in the intake skill: when the
+  intake says something does not exist in the project, it names the places it searched, in the
+  same sentence. The fixed search list the plan proposed (C3) was not added — see below.
+- **Headless runs leave their questions on disk.** `/shipkit:intake` with nobody to answer
+  writes `intake.md` anyway, each question marked *unanswered*; a later pass fills in what the
+  request answers and re-asks nothing. `/shipkit:product` with no answers writes one blockquote
+  directly under its review line, `> Open questions for the owner:`, and keeps its seven
+  headings. The owner chose the blockquote over an eighth heading; REQ-11 says so.
+- **Three lines.** The session hook prints `shipkit: 4.4.0 is installed; this session runs
+  4.2.0 — restart to use it.` when a higher version directory sits beside the running root in
+  the plugin cache — directory names, compared numerically, so an older directory beside the
+  running one says nothing. The briefing's top-goal line prints `(no metric set)` when metric,
+  target and date are all unset, instead of three gaps. The handoff note may carry a sixth
+  heading, `## Blocked on`, one line, only when the next step cannot start.
+
+### Added
+
+- `plugins/shipkit/evals/intake/answered/` — a `docs/decisions.md` in the fixture answers two
+  of three natural questions; the case passes when the intake does not ask them and names the
+  file. 39 cases.
+- `docs/design/eval-history.md` — two README sections (the 4.2.0 spec-first reading, the 4.3.0
+  release run) moved there with the owner's yes, and this sprint's readings written there:
+  `plugins/shipkit/evals/` is 130,913 of 131,072 bytes and lint check 17 holds the line.
+- Smoke checks 49 (`pre33-specs`), 50 (`headless-questions`, two `sonnet` runs that read the
+  files, not the reply) and 51 (`version-and-goal`); 137 checks in all.
+
+### What using it for real showed
+
+**The intake case passed before its sentence existed.** `intake/answered` was written to
+justify a fixed search list in the intake skill. Run first against the 4.3.0 text it passed
+3 of 3 — every reply read `docs/decisions.md` unprompted — so the design record's reversal
+clause fired before the list was written, and the list was not added. One sentence was. The
+case stays as the regression watch: on the final text it read 2 of 3, the one miss a
+refinement of the documented rule ("how does one partial refund treat full refunds?"), which
+the judges read as re-asking it; the grader is left as written. Its fixture is one file under
+`docs/`; the real run's miss was a 755-commit repository with the answers in
+`.shipkit/research/` and a configuration comment, so the case watches for regression, not for
+the field. **Three smaller things.** `product.md` holds exactly seven headings by smoke check
+23, so a headless product's open questions became a blockquote, not a section, and REQ-11 was
+reworded to say so at the ship commit. The first README note for the new case went 493 bytes
+over the eval ceiling and lint check 17 caught it; a two-line pointer stays, the reading moved
+to `eval-history.md`. The hook's version line hit the bash 3.2 trap the file already
+documents, a `case` pattern inside `$(…)`, and took the same cure, a function. Run against the
+owner's real cache the line read `4.2.0 is installed; this session runs 3.1.0` — the wound it
+was written for.
+
 ## [4.3.0] — 2026-10-07
 
 Sprint 10, the last of the evidence plan (`docs/plans/evidence-sprint-plan.md`): the gate's
