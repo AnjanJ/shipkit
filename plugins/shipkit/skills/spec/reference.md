@@ -85,7 +85,10 @@ A clause is text, and nobody re-reads old records to check it. When the conditio
 measured from the repository, add one line after the clause holding a shell command that
 **exits 0 once the condition has come true** — the command *is* the condition, so `test …`
 or `grep -q …` composes straight from the sentence. Exit 1 means it still holds; anything
-above 1 is an error.
+above 1 is an error. The command must exit 1 on the tree the record is written against: a
+condition about code that does not exist yet (its size, its test count) errors today and fires
+the day the file appears, before the decision has had a chance to be wrong. A note after the
+command goes in a trailing `<!-- … -->`, which `decision-check.sh` ignores.
 
 ```markdown
 **Falsifiability.** We would reverse this if the routes file passes 500 lines.

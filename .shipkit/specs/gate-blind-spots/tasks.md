@@ -4,7 +4,7 @@ One commit per task, test and code together. The steps for each task are in
 `docs/plans/field-sprint-plan.md` under the same task number (S12-T1 to S12-T4). **T3's dry
 gate run is a measurement run: intake question 1 says whether it is in the budget.**
 
-- [ ] **T1** A `Fired-if` that cannot fire before the code exists (S12-T1) → REQ-1, REQ-2, REQ-3, REQ-4
+- [x] **T1** A `Fired-if` that cannot fire before the code exists (S12-T1) → REQ-1, REQ-2, REQ-3, REQ-4
   - Files: plugins/shipkit/scripts/decision-check.sh, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 52 "fired-if-early" (a design.md whose Fired-if names a missing file → `ERROR` with the exit code and stderr naming the file; the same line with a trailing `<!-- … -->` → parsed, same result; after `touch` of the file with 10 lines → `FIRED`; the summary line's words unchanged) — written first, red
   - After: none

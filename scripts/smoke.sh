@@ -1767,6 +1767,41 @@ if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds — metric: 
   pass "version-and-goal (a goal with one field set keeps all three)"
 else failc "version-and-goal" "partial goal: $(printf '%s\n' "$out" | grep 'top goal')"; fi
 
+# 52. fired-if-early: a Fired-if written before the code it measures exists. On the real run
+# `test "$(grep -c . lib/…/health_report.rb)" -lt 40` errored (exit 2) with nothing said about
+# why, and the fix `manual <!-- was … -->` was run as a command (field notes §6, §7). Now: the
+# ERROR line carries the exit code AND the first line of stderr (naming the file); a trailing
+# HTML comment after the command is stripped before the run; once the file exists and is short
+# the same line is FIRED (the day-one firing the spec skill is told to catch); the summary
+# line's words are unchanged. The spec skill says to run decision-check on its own output and
+# the reference says a command must exit 1 on the tree the record is written against. Reuses
+# dcrec/DCS from check 35. No claude needed. Cites: gate-blind-spots/REQ-1
+# gate-blind-spots/REQ-2 gate-blind-spots/REQ-3 gate-blind-spots/REQ-4
+FE="$WORK/fired-early"; mkdir -p "$FE/.shipkit/specs/hc" "$FE/lib"
+(cd "$FE" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+fe_cmd='test "$(grep -c . lib/health_report.rb)" -lt 40'
+printf '# Design: hc\n\n## Decision: Query object   (→ REQ-1)\n\n**Context.** c\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if the query object stays under 40 lines.\n**Fired-if.** `%s`\n\n## Decision: With comment   (→ REQ-2)\n\n**Decision.** We chose b.\n**Falsifiability.** We would reverse this if the same.\n**Fired-if.** `%s` <!-- was manual -->\n\n## Decision: Manual with comment   (→ REQ-3)\n\n**Decision.** We chose c.\n**Falsifiability.** We would reverse this if the moon falls.\n**Fired-if.** manual <!-- was a line count -->\n' "$fe_cmd" "$fe_cmd" > "$FE/.shipkit/specs/hc/design.md"
+out=$(sh "$DCS" "$FE" --run 2>"$WORK/fe.err"); rc=$?
+if [ "$rc" -eq 0 ] \
+   && printf '%s\n' "$out" | grep -q '^ERROR .*Query object.*(exit 2): .*health_report\.rb.*No such file' \
+   && printf '%s\n' "$out" | grep -q '^ERROR .*With comment.*(exit 2): .*health_report\.rb' \
+   && ! printf '%s\n' "$out" | grep -q '<!--' \
+   && printf '%s\n' "$out" | grep -q '^MANUAL .*Manual with comment.*the moon falls' \
+   && printf '%s\n' "$out" | grep -q '^decision-check: 3 decision(s), 0 fired, 0 hold, 1 manual, 2 error(s)$'; then
+  pass "fired-if-early (missing file → ERROR with exit 2 and stderr naming the file; trailing comment stripped from a command and from manual; summary words unchanged)"
+else failc "fired-if-early" "rc=$rc out: $out $(cat "$WORK/fe.err")"; fi
+i=0; while [ "$i" -lt 10 ]; do echo "line $i" >> "$FE/lib/health_report.rb"; i=$((i + 1)); done
+out=$(sh "$DCS" "$FE" --run 2>/dev/null); rc=$?
+if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^FIRED .*health_report')" -eq 2 ] \
+   && printf '%s\n' "$out" | grep -q '^decision-check: 3 decision(s), 2 fired, 0 hold, 1 manual, 0 error(s)$'; then
+  pass "fired-if-early (the file exists with 10 lines → both FIRED, exit 1: the day-one firing)"
+else failc "fired-if-early" "after touch: rc=$rc out: $out"; fi
+if grep -q 'decision-check.sh" \. --run' "$COPY/skills/spec/SKILL.md" \
+   && grep -qi 'FIRED.*ERROR\|ERROR.*FIRED' "$COPY/skills/spec/SKILL.md" \
+   && grep -q 'exit 1 on the tree' "$COPY/skills/spec/reference.md"; then
+  pass "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
+else failc "fired-if-early" "spec skill or reference lacks the decision-check sentence"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

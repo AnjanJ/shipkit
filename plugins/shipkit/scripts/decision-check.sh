@@ -8,6 +8,9 @@
 #   **Fired-if.** `<command>`     a shell command that exits 0 once the condition has come true
 #   **Fired-if.** manual          the condition cannot be measured from the repository
 #
+# A trailing HTML comment on the line (`manual <!-- was a line count -->`) is not part of the
+# command: it is stripped before anything runs (gate-blind-spots/REQ-1).
+#
 # The script looks in .shipkit/decisions/*.md and .shipkit/specs/*/design.md.
 #
 # Without --run (the default) it LISTS: one line per Fired-if line, the record and its command,
@@ -18,7 +21,8 @@
 #   FIRED  <record>: <command>              exit 0 — the condition has come true
 #   HOLDS  <record>: <command>              exit 1 — it still holds
 #   MANUAL <record>: <the clause's text>    the line says manual; a person has to look
-#   ERROR  <record>: <command> (exit N)     exit above 1 — the command itself failed
+#   ERROR  <record>: <command> (exit N): <first line of its stderr>   exit above 1 — the
+#                                           command itself failed (gate-blind-spots/REQ-2)
 # then a summary line. Exit 1 if anything FIRED, else 0 (an ERROR or a MANUAL is not a
 # firing). 64 on wrong usage.
 #
@@ -50,7 +54,7 @@ done
 cd "$PROJ" || exit 64
 
 TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
-trap 'rm -f "$TMP"' EXIT
+trap 'rm -f "$TMP" "$TMP.err"' EXIT
 
 # The files that may hold records. Globs that match nothing are dropped, not passed to awk.
 set --
@@ -74,6 +78,7 @@ if [ "$#" -gt 0 ]; then
     inclause { c = $0; sub(/^[ \t]+/, "", c); sub(/[ \t]+$/, "", c); clause = clause " " c }
     /^\*\*Fired-if\.\*\*/ {
       p = $0; sub(/^\*\*Fired-if\.\*\*[ \t]*/, "", p); sub(/[ \t]+$/, "", p)
+      sub(/[ \t]*<!--.*-->[ \t]*$/, "", p)   # a trailing HTML comment is a note, not the command
       if (p ~ /^`.*`$/) { p = substr(p, 2, length(p) - 2); kind = "cmd" }
       else if (tolower(p) ~ /^manual\.?$/) { kind = "manual"; p = "manual" }
       else kind = "cmd"
@@ -99,12 +104,14 @@ while IFS="$TAB" read -r rec kind payload clause; do
     continue
   fi
   # The command runs here, from the project directory, and only because --run was given.
-  sh -c "$payload" </dev/null >/dev/null 2>&1
+  # stderr is kept: an ERROR line that says only "exit 2" sends the reader back to re-run
+  # the command by hand to learn that a file does not exist yet.
+  sh -c "$payload" </dev/null >/dev/null 2>"$TMP.err"
   rc=$?
   case "$rc" in
     0) fired=$((fired + 1)); echo "FIRED  $rec: $payload" ;;
     1) holds=$((holds + 1)); echo "HOLDS  $rec: $payload" ;;
-    *) errors=$((errors + 1)); echo "ERROR  $rec: $payload (exit $rc)" ;;
+    *) errors=$((errors + 1)); echo "ERROR  $rec: $payload (exit $rc): $(sed -n 1p "$TMP.err" 2>/dev/null | cut -c1-160)" ;;
   esac
 done < "$TMP"
 
