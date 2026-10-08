@@ -15,7 +15,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: scripts/smoke.sh check 54 "scoped-loading" (haiku, scratch project: `dependencies.md` installed by install-rules.sh with a nonce; prompt naming `pyproject.toml` → nonce seen; naming `README.md` → not seen; the same for `rails/gemfile.md` and `Gemfile`) — written first, red; Check first: the loading claim in the plan's §3
   - After: T0
   - Done when: check 54 → PASS with both halves (or the fallback recorded); the README paragraph states the result; the ROADMAP item is replaced by the number; lint 0/0
-- [ ] **T2** Sixteen trap-2 cases, with and without (S13-T2) → REQ-4, REQ-5, REQ-6, REQ-7
+- [x] **T2** Sixteen trap-2 cases, with and without (S13-T2) → REQ-4, REQ-5, REQ-6, REQ-7
   - Files: plugins/shipkit/evals/trap2/, scripts/evals.sh, scripts/smoke.sh, plugins/shipkit/evals/README.md, docs/design/eval-results-4.6.md, ROADMAP.md
   - Test: scripts/smoke.sh check 47 extended to `trap2/*` (case format parses, 34 cases); `bash scripts/evals.sh --group trap2` with the rule and on a scratch copy without it, counts from trace-tools.sh
   - After: T1

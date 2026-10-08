@@ -120,6 +120,11 @@ Carried from Sprint 9:
   `sonnet` clears each file's first named trap unaided. One line per file was probed, one
   model. A second-trap case for the doubted files, or a decision that a line the model already
   follows still earns its bytes, belongs to the next plan.
+  *4.6.0 (S13-T2): the second trap measured (`docs/design/eval-results-4.6.md`). Four files
+  separate on it — `ml/data`, `rails/gemfile`, `go/go-mod`, `ml/experiments` — and twelve pass
+  without on both traps: **named cut candidates for the next plan** (C8, no rule text changed
+  on these numbers): `hotwire`, `liveview`, `migrations`, `mix-deps`, `monorepo`, `notebooks`,
+  `package-json`, `pyproject`, `react`, `testing`, `ui-ux`, and `rails` at the threshold.*
 - **Path-scoped loading, measured** (4.6.0, S13-T1, smoke check 54): in a normal headless
   session the `paths:` rules installed under `.claude/rules/shipkit/` load when the model
   *reads* a matching file (`pyproject.toml` → `dependencies.md`, `Gemfile` → `gemfile.md`), not

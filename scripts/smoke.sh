@@ -1614,12 +1614,12 @@ if printf '%s\n' "$eg_group" | grep -q -- '--case stacks-\*' && ! printf '%s\n' 
   pass "evals-group (--group stacks → --case 'stacks-*'; no flag → every case; --case still passes through)"
 else failc "evals-group" "group=[$(printf '%s' "$eg_group" | head -c 120)] all=[$(printf '%s' "$eg_all" | head -c 80)]"; fi
 
-# 47. rule-cases: every rule case (evals/scoped/*, evals/stacks/*) has the four files, exactly
+# 47. rule-cases: every rule case (evals/scoped/*, evals/stacks/*, evals/trap2/*) has the four files, exactly
 # one scored grader, a description naming the rule file it probes, a scaffold that calls
 # lib/with-rule.sh for that rule, and a case name equal to <group>-<folder>. Each scaffold is
 # run in a scratch directory and must leave the rule and the marker in place.
-# Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12
-RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux stacks/mix-deps stacks/go-mod stacks/hotwire stacks/liveview stacks/data stacks/experiments stacks/notebooks stacks/jobs stacks/pyproject stacks/gemfile stacks/rails stacks/package-json stacks/react"
+# Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12 second-traps/REQ-4
+RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux stacks/mix-deps stacks/go-mod stacks/hotwire stacks/liveview stacks/data stacks/experiments stacks/notebooks stacks/jobs stacks/pyproject stacks/gemfile stacks/rails stacks/package-json stacks/react trap2/migrations trap2/monorepo trap2/testing trap2/ui-ux trap2/mix-deps trap2/go-mod trap2/hotwire trap2/liveview trap2/data trap2/experiments trap2/notebooks trap2/pyproject trap2/gemfile trap2/rails trap2/package-json trap2/react"
 rc_ok=1; rc_why=""
 for c in $RC_EXPECT; do
   CD="$COPY/evals/$c"; g=${c%%/*}; n=${c##*/}

@@ -228,6 +228,7 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `stacks/rails` | A rake task that mails every paid order. | `find_each` / `in_batches`, not `.each` | regex on the file |
 | `stacks/package-json` | Add `clsx`; no network, so write the commands to STEPS.txt. | pnpm (the lockfile's manager) and no other | regex on the file |
 | `stacks/react` | Show each order's total on the Inertia index page. | the total is a prop; no `fetch`/`useEffect` in the page | regex on the file |
+| `trap2/<rule>` (16) | the same sixteen rules whose 4.2.0 case passed without them, one prompt each into the rule's **second** named line (`evals/trap2/*/prompt.md` says which) | the written file follows that line | regex on the file |
 
 The `intake` cases need a product file with a non-goal. Their scaffold script writes
 `.shipkit/product.md` into the run's workspace after copying the fixture, so the shared fixture
@@ -295,6 +296,14 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
   `scripts/trace-tools.sh <output-dir>` prints all of this per run, reading the run list from
   `aggregate-result.json`. Pass it a directory of sandboxes (`/private/tmp`) to count kept
   runs without a summary.
+
+## Trap 2 (4.6.0)
+
+Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the
+file's second named line, run with and without: four separate (`data`, `gemfile`, `go-mod`,
+`experiments`), twelve pass without on both traps and are named cut candidates for the next
+plan; three cases were corrected on trace evidence before their numbers counted. The table
+and the readings are in `docs/design/eval-results-4.6.md`.
 
 ## Baselines and older readings
 
