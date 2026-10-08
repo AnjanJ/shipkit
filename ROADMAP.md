@@ -103,6 +103,28 @@ commands and their output are in that task's commit message):
   changes, all already on `main` (two overlay skills byte-identical; `lint.py`'s addition is
   main's check 13), so the force discarded nothing unmerged. `git worktree list` shows one line.
 
+Housekeeping done in Sprint 13 (S13-T6, 2026-10-09, field plan C12, each row its own yes from
+the owner; the commands and their output are in that task's commit message):
+
+- **D1** — `~/code/RED/rails_error_dashboard`'s branch `shipkit/real-run` (two commits of
+  shipkit artifacts from the real run, never for merge) deleted with `git branch -D`
+  ("Deleted branch shipkit/real-run (was 14771c1)"); the owner's checkout stayed on
+  `docs/http-reference`. What the run showed is in `docs/design/field-notes-4.3.md`.
+- **D2** — the unused `4.2.0` and `4.4.0` directories beside `4.5.0` in
+  `~/.claude/plugins/cache/shipkit/shipkit/` removed. **`3.1.0` is kept until the owner's next
+  restart:** the session that did the housekeeping was running it (`plugin-root`), and deleting
+  it from inside that session would have broken its skills. Delete it by hand after restarting.
+- **D3** — the 25 scratch directories and one log under `$TMPDIR` from Sprints 8 to 10
+  (`xl-*`, `t4-*`, `t5-*`, `s9-*`, `exit-4.2.0`, `shipkit-nomap`, `shipkit-norule`,
+  `shipkit-pretrim`, `shipkit-evals`; about 14 MB) removed, one per `read` line — the first
+  attempt looped once over the whole list because zsh does not word-split an unquoted variable,
+  and removed nothing.
+- **D4** — the merged branches `sprint-8/map-on-trial` … `sprint-12/gate-blind-spots`, local
+  and on GitHub, are deleted by the release step **after `v4.6.0` is tagged** (the owner's yes
+  given at T6); `sprint-13/second-traps` stays until the owner says.
+- **D5** — the owner's cache was updated to 4.4.0 and 4.5.0 at their releases (each its own
+  yes); 4.6.0 is asked at its release.
+
 Carried from Sprint 9:
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The

@@ -35,7 +35,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: scripts/smoke.sh check 39 gains `--wip` (same files and tree hashes per commit, messages all "wip") — written first, red; `grandfather-xl/history` with and without the map on the wip log (6 runs, scratch copies); Check first: the generator claim in the plan's §3
   - After: T4
   - Done when: the generator check → PASS; the results doc has the six runs; the ROADMAP names what eve still owes; lint 0/0
-- [ ] **T6** Housekeeping the owner approves (S13-T6) → REQ-14
+- [x] **T6** Housekeeping the owner approves (S13-T6) → REQ-14
   - Files: ROADMAP.md
   - Test: none beyond lint — each row's command and its output go in the commit message
   - After: T5
