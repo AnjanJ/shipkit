@@ -2,6 +2,59 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.5.0] — 2026-10-08
+
+Sprint 12 of the field plan (`docs/plans/field-sprint-plan.md`): the four findings about the
+gate, the reviewer and the briefs that the real run left — closed in the tools, not worked
+around in the next run. Requirements and decision records in
+[`.shipkit/specs/gate-blind-spots/`](.shipkit/specs/gate-blind-spots/).
+
+### Changed
+
+- **A `Fired-if` that cannot fire before the code exists.** `decision-check.sh` strips a trailing
+  `<!-- … -->` from a `Fired-if` line before running it, and its `ERROR` line now carries the
+  first line of the command's stderr after the exit code, so "exit 2" says *why* (`grep:
+  lib/health_report.rb: No such file or directory`). The spec skill runs
+  `decision-check.sh . --run` on the `design.md` it just wrote, as it runs `spec-check.sh`, and
+  treats a `FIRED` or `ERROR` on a new record as a defect to rewrite; the reference says a
+  command must exit 1 on the tree the record is written against. The four result words and the
+  summary line are unchanged.
+- **`.shipkit/` is never "outside the spec".** `brief-verify.sh` allows every changed file under
+  `.shipkit/` — `product.md`, `state.md`, `releases/`, `decisions/`, the spec's own folder —
+  except one inside another spec's folder, which is still `OUTSIDE`; the reviewer's step 4 lists
+  the same way. One rule, not four named paths, so a new artifact there does not reopen this
+  (decision record, C5's default). Smoke check 26's example of an outside tracked file moves to
+  another spec's `spec.md`.
+- **The gate keeps its exit codes and its output.** Every command in the ship skill's How column
+  ends `; echo "exit $?"`; the test command runs in a subshell with its output captured to a
+  file, as does `decision-check.sh`; the report template's evidence blocks say the output is
+  pasted from the file and a rule says "exit code not captured" never appears.
+- **Ignored files are invisible to `brief-verify.sh` by design** — closed by record (C6). One
+  header sentence says the check sees what git sees and that a build artifact in an ignored
+  path shows in the task's Done-when output. The ROADMAP item carries the note.
+
+### Added
+
+- Smoke checks 52 (`fired-if-early`, three assertions) and 53 (`shipkit-allowed`, three);
+  143 checks in all. No eval case added or changed; `plugins/shipkit/evals/` stays at
+  130,913 bytes.
+
+### What using it for real showed
+
+**The dry gate found the flaw in its own fix.** T3's test was a headless `/shipkit:ship` on the
+shipped `real-run` spec with the new How column. Every step quoted an exit code and pasted its
+evidence from the files — and the model noted that with the test command `a && b > file` the
+redirect captured only `b`: the lint line went to the terminal. The row now wraps the command in
+a subshell and the note says why. **A shipped test went red by design.** Check 26 proved "a
+tracked file off the list is `OUTSIDE`" with the spec's own `spec.md` as the example; the spec's
+own folder is allowed from this release, so the example moved to another spec's folder, which is
+still outside — the shipped requirement (`product-intake-brief/REQ-25`) holds, its example was
+the thing that changed. **The ROADMAP had no ignored-files item.** The plan's S12-T4 said to
+remove one; the question lived in the 4.0.0 CHANGELOG and the evidence plan's "does not fix"
+list, so the closing note went beside the "files no spec will ever list" item instead. Smaller:
+an apostrophe in an awk comment inside a single-quoted shell program cost one red run of
+check 26 — the comment, not the code.
+
 ## [4.4.0] — 2026-10-08
 
 Sprint 11, the first of the field plan (`docs/plans/field-sprint-plan.md`, approved

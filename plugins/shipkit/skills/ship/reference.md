@@ -30,14 +30,14 @@ Requirements: 3 (1 waived as `[untested]`).
 
 ### 1. Spec check, as shipped
 `sh <plugin root>/scripts/spec-check.sh . refunds --as-shipped` → exit 0
-<the script's output>
+<the script's output, pasted>
 
 ### 2. Tests
 `python3 -m unittest discover -s tests` → exit 0
-<the last 20 lines of output>
+<the last 20 lines of shipkit-ship-tests.out, pasted from the file>
 
 ### 3. Tasks ticked
-`grep -n '^- \[ \]' .shipkit/specs/refunds/tasks.md`
+`grep -n '^- \[ \]' .shipkit/specs/refunds/tasks.md` → exit 1
 <the lines found, or "no line found">
 
 ### 4. Independent review
@@ -56,7 +56,7 @@ Requirements: 3 (1 waived as `[untested]`).
 
 ### 8. Decisions fired
 `sh <plugin root>/scripts/decision-check.sh . --run` → exit 0
-<the script's output: every FIRED, HOLDS, MANUAL and ERROR line, and its summary line>
+<every FIRED, HOLDS, MANUAL and ERROR line and the summary line, pasted from shipkit-ship-decisions.out>
 ```
 
 Rules:
@@ -65,5 +65,8 @@ Rules:
 - `Result` is `PASS`, `FAIL` or `SKIPPED` and nothing else.
 - When the first line is `READY`, leave out "To fix before shipping".
 - The evidence section is not optional: a result with no evidence under it is not a result.
+- Every `→ exit N` is the number the command's own `echo "exit $?"` printed, and every output
+  block is pasted from the command's captured output. Nothing in the evidence is typed from
+  memory, and "exit code not captured" never appears.
 - Write the plugin's location as `<plugin root>` in commands, never the absolute path: the
   report is committed, and a path from one machine is noise on every other.

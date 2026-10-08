@@ -40,8 +40,11 @@ If either of the two is missing, say which and stop.
    is not waived, is `NOT MET`. A wrong `MET` is the costly mistake: it lets unfinished work
    through.
 4. **Changes beyond the spec.** From `git diff <base>...HEAD --name-only`, list every changed
-   file that is not under the spec's `> Paths:` (and is not inside `.shipkit/specs/<slug>/`).
-   No `Paths` line: write "The spec has no Paths line; not checked."
+   file that is not under the spec's `> Paths:`. A file under `.shipkit/` is not beyond the spec
+   (`product.md`, `state.md`, `releases/`, `decisions/`, this spec's own folder: shipkit's loop
+   writes them and no `Paths` line will name them) — except one inside another spec's folder
+   (`.shipkit/specs/<other>/`), which is. No `Paths` line: write "The spec has no Paths line;
+   not checked."
 5. **Decisions not followed.** For each `## Decision:` in `design.md` that is not marked
    superseded, check the code follows it. List each one it does not, with `path:line`.
 

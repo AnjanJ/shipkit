@@ -924,14 +924,15 @@ else
   if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE'; then
     pass "brief-verify (only allowed files changed, committed and not → exit 0)"
   else failc "brief-verify" "allowed only: exit $rc: $out"; fi
-  # b. one extra tracked file
-  printf 'z\n' >> "$BP/.shipkit/specs/refunds/spec.md"
+  # b. one extra tracked file — another spec's spec.md (since 4.5.0 the spec's OWN folder is
+  # allowed, check 53; another spec's folder is still outside)
+  printf 'z\n' >> "$BP/.shipkit/specs/old/spec.md"
   out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
-  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/refunds/spec.md$' \
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/old/spec.md$' \
      && ! printf '%s\n' "$out" | grep -q 'OUTSIDE app/billing/refunds.py'; then
-    pass "brief-verify (a changed file outside the list → OUTSIDE, exit 1)"
+    pass "brief-verify (a changed tracked file outside the list → OUTSIDE, exit 1)"
   else failc "brief-verify" "extra file: exit $rc: $out"; fi
-  (cd "$BP" && git checkout -q -- .shipkit/specs/refunds/spec.md)
+  (cd "$BP" && git checkout -q -- .shipkit/specs/old/spec.md)
   # c. a new untracked file outside the list
   printf 'n\n' > "$BP/app/notes.txt"
   out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
@@ -1766,6 +1767,73 @@ out=$(cd "$VG" && printf '# Product: demo\n\n## Goals this quarter\n- Ship refun
 if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds — metric: none set; target: 2%; by: 2026-12-31$'; then
   pass "version-and-goal (a goal with one field set keeps all three)"
 else failc "version-and-goal" "partial goal: $(printf '%s\n' "$out" | grep 'top goal')"; fi
+
+# 52. fired-if-early: a Fired-if written before the code it measures exists. On the real run
+# `test "$(grep -c . lib/…/health_report.rb)" -lt 40` errored (exit 2) with nothing said about
+# why, and the fix `manual <!-- was … -->` was run as a command (field notes §6, §7). Now: the
+# ERROR line carries the exit code AND the first line of stderr (naming the file); a trailing
+# HTML comment after the command is stripped before the run; once the file exists and is short
+# the same line is FIRED (the day-one firing the spec skill is told to catch); the summary
+# line's words are unchanged. The spec skill says to run decision-check on its own output and
+# the reference says a command must exit 1 on the tree the record is written against. Reuses
+# dcrec/DCS from check 35. No claude needed. Cites: gate-blind-spots/REQ-1
+# gate-blind-spots/REQ-2 gate-blind-spots/REQ-3 gate-blind-spots/REQ-4
+FE="$WORK/fired-early"; mkdir -p "$FE/.shipkit/specs/hc" "$FE/lib"
+(cd "$FE" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+fe_cmd='test "$(grep -c . lib/health_report.rb)" -lt 40'
+printf '# Design: hc\n\n## Decision: Query object   (→ REQ-1)\n\n**Context.** c\n\n**Decision.** We chose a.\n**Falsifiability.** We would reverse this if the query object stays under 40 lines.\n**Fired-if.** `%s`\n\n## Decision: With comment   (→ REQ-2)\n\n**Decision.** We chose b.\n**Falsifiability.** We would reverse this if the same.\n**Fired-if.** `%s` <!-- was manual -->\n\n## Decision: Manual with comment   (→ REQ-3)\n\n**Decision.** We chose c.\n**Falsifiability.** We would reverse this if the moon falls.\n**Fired-if.** manual <!-- was a line count -->\n' "$fe_cmd" "$fe_cmd" > "$FE/.shipkit/specs/hc/design.md"
+out=$(sh "$DCS" "$FE" --run 2>"$WORK/fe.err"); rc=$?
+if [ "$rc" -eq 0 ] \
+   && printf '%s\n' "$out" | grep -q '^ERROR .*Query object.*(exit 2): .*health_report\.rb.*No such file' \
+   && printf '%s\n' "$out" | grep -q '^ERROR .*With comment.*(exit 2): .*health_report\.rb' \
+   && ! printf '%s\n' "$out" | grep -q '<!--' \
+   && printf '%s\n' "$out" | grep -q '^MANUAL .*Manual with comment.*the moon falls' \
+   && printf '%s\n' "$out" | grep -q '^decision-check: 3 decision(s), 0 fired, 0 hold, 1 manual, 2 error(s)$'; then
+  pass "fired-if-early (missing file → ERROR with exit 2 and stderr naming the file; trailing comment stripped from a command and from manual; summary words unchanged)"
+else failc "fired-if-early" "rc=$rc out: $out $(cat "$WORK/fe.err")"; fi
+i=0; while [ "$i" -lt 10 ]; do echo "line $i" >> "$FE/lib/health_report.rb"; i=$((i + 1)); done
+out=$(sh "$DCS" "$FE" --run 2>/dev/null); rc=$?
+if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^FIRED .*health_report')" -eq 2 ] \
+   && printf '%s\n' "$out" | grep -q '^decision-check: 3 decision(s), 2 fired, 0 hold, 1 manual, 0 error(s)$'; then
+  pass "fired-if-early (the file exists with 10 lines → both FIRED, exit 1: the day-one firing)"
+else failc "fired-if-early" "after touch: rc=$rc out: $out"; fi
+if grep -q 'decision-check.sh" \. --run' "$COPY/skills/spec/SKILL.md" \
+   && grep -qi 'FIRED.*ERROR\|ERROR.*FIRED' "$COPY/skills/spec/SKILL.md" \
+   && grep -q 'exit 1 on the tree' "$COPY/skills/spec/reference.md"; then
+  pass "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
+else failc "fired-if-early" "spec skill or reference lacks the decision-check sentence"; fi
+
+# 53. shipkit-allowed: the files shipkit's own loop writes are never "outside the spec". On the
+# real run brief-verify called the spec's own intake.md/spec.md/design.md OUTSIDE before they
+# were committed and the reviewer called .shipkit/product.md outside the Paths line (field
+# notes §7, §8). Now everything under .shipkit/ is allowed except another spec's folder — for
+# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25 and
+# 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
+# gate-blind-spots/REQ-7
+mkdir -p "$BP/.shipkit/releases" "$BP/.shipkit/decisions"
+printf '# Product: x\n' > "$BP/.shipkit/product.md"
+printf 'READY\n' > "$BP/.shipkit/releases/2026-10-08-refunds.md"
+printf '# Handoff\n' > "$BP/.shipkit/state.md"
+printf '# Decision\n' > "$BP/.shipkit/decisions/0001-x.md"
+printf '\nnote\n' >> "$BP/.shipkit/specs/refunds/design.md"
+out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE' \
+   && printf '%s\n' "$out" | grep -q 'all inside the Files'; then
+  pass "shipkit-allowed (product.md, a release report, state.md, a decision record and the spec's own design.md → exit 0, nothing OUTSIDE)"
+else failc "shipkit-allowed" "shipkit files: exit $rc: $out"; fi
+mkdir -p "$BP/.shipkit/specs/other"; printf '# Spec: other\n' > "$BP/.shipkit/specs/other/spec.md"
+out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^OUTSIDE')" -eq 1 ] \
+   && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/other/spec.md$'; then
+  pass "shipkit-allowed (a write into another spec's folder → the one OUTSIDE line, exit 1)"
+else failc "shipkit-allowed" "other spec: exit $rc: $out"; fi
+rm -rf "$BP/.shipkit/specs/other" "$BP/.shipkit/releases" "$BP/.shipkit/decisions" "$BP/.shipkit/product.md" "$BP/.shipkit/state.md"
+(cd "$BP" && git checkout -q -- .shipkit/specs/refunds/design.md)
+if sed -n 1,30p "$BV" | grep -q 'another spec' \
+   && grep -q 'another spec' "$COPY/agents/reviewer.md" \
+   && grep -A3 'Changes beyond the spec\.\*\*' "$COPY/agents/reviewer.md" | grep -q 'under `\.shipkit/`'; then
+  pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
+else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

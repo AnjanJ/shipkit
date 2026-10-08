@@ -43,6 +43,17 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.5.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-08, at `682d0f3`: 39 cases, $12.30, exit 0 — every case
+passed. Four at 2 of 3: `digest-attention` (as in 4.2.0 to 4.4.0), `grandfather-xl/drift` (2 of
+3 in parallel this time, against 1 of 3 in the 4.3.0 and 4.4.0 runs; not re-run alone — the
+threshold held), `intake/answered` (as on the 4.4.0 T3 text) and `intake/limit` (3 of 3 in every
+earlier run; nothing in 4.5.0 touched the intake skill or its cases, so this is read as the
+case's own variance until a second run says otherwise — no re-run, the sprint's measurement
+budget was spent). The two reviewer cases, whose agent 4.5.0 changed, 3 of 3 here and 3 of 3
+in the S12-T2 group run ($0.60).
+
 ## Release run 4.4.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-08, at `53f223b`: 39 cases, $12.45, exit 1 —

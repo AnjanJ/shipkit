@@ -11,8 +11,13 @@
 #
 #   OUTSIDE <file>
 #
-# A Files entry ending in "/" allows everything under that folder. The spec's own tasks.md is
-# always allowed, so the task's box can be ticked. Ignored files (.gitignore) are not seen.
+# A Files entry ending in "/" allows everything under that folder. Everything under .shipkit/
+# is always allowed — product.md, state.md, releases/, decisions/ and the spec's own folder are
+# written by shipkit's own loop and no Files line will ever name them — EXCEPT a file inside
+# another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). Ignored files
+# (.gitignore) are not seen, by design: this check sees what git sees, and a build artifact an
+# agent leaves in an ignored path shows in the task's Done-when output, which you run yourself
+# (gate-blind-spots/REQ-10, closed by record C6).
 #
 # This checks WHICH files changed, not WHAT changed in them. Run the task's Done when command
 # yourself as well: the agent's own claim is not proof.
@@ -43,11 +48,13 @@ TASKS_FILE=".shipkit/specs/$SLUG/tasks.md"
 CHANGED=$( { git -C "$PROJ" diff --name-only "$BASE" --; git -C "$PROJ" ls-files --others --exclude-standard; } | sort -u)
 
 # The list goes in through the environment: BSD awk (macOS) rejects a newline in a -v value.
-OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" awk -v tasks="$TASKS_FILE" '
+OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" awk -v tasks="$TASKS_FILE" -v own=".shipkit/specs/$SLUG/" '
   BEGIN { n = split(ENVIRON["BV_ALLOWED"], a, "\n") }
   $0 == "" { next }
   {
     ok = ($0 == tasks)
+    # under .shipkit/: allowed, except inside another spec folder (see the header)
+    if (!ok && index($0, ".shipkit/") == 1) ok = (index($0, ".shipkit/specs/") != 1 || index($0, own) == 1)
     for (i = 1; i <= n && !ok; i++) {
       if ($0 == a[i]) ok = 1
       else if (a[i] ~ /\/$/ && index($0, a[i]) == 1) ok = 1
