@@ -1,7 +1,7 @@
 # Spec: What the run hurt on (Sprint 11, release 4.4.0)
 
 > Spec accepted at commit `74d6c11` on sprint-11/run-wounds (2026-10-08).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/session-start.sh, plugins/shipkit/skills/intake/, plugins/shipkit/skills/product/, plugins/shipkit/skills/handoff/, plugins/shipkit/evals/, scripts/, docs/design/eval-history.md, docs/plans/field-sprint-plan.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
