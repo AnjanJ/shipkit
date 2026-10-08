@@ -1051,7 +1051,7 @@ else
   mkdir -p "$BB/.shipkit"
   printf '# Product: demo\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Cut failed charges — metric: share that fail; target: under 2%%; by: 2026-12-31\n- Second goal\n\n## Non-goals\n- z\n' > "$BB/.shipkit/product.md"
   hsha=$(cd "$BB" && git rev-parse --short HEAD)
-  printf '# Handoff\n\n> Written 2026-10-01 at commit `%s` on main.\n\n## In flight\n- alpha T2\n\n## Done this session\n- T1\n\n## Next step\nFinish alpha T2 and run its test.\n\n## Open questions\n- none\n\n## Do not forget\n- x\n' "$hsha" > "$BB/.shipkit/state.md"
+  printf '# Handoff\n\n> Written 2026-10-01 at commit `%s` on main.\n\n## In flight\n- alpha T2\n\n## Done this session\n- T1\n\n## Next step\nFinish alpha T2 and run its test.\n\n## Blocked on\nThe owner'"'"'s answer on REQ-11.\n\n## Open questions\n- none\n\n## Do not forget\n- x\n' "$hsha" > "$BB/.shipkit/state.md"
   (cd "$BB" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m two)
   out=$(brief "$BB")
   if printf '%s\n' "$out" | grep -q '^shipkit: alpha: 1 of 3 tasks done, next T2 — Do step 2$' \
@@ -1063,6 +1063,12 @@ else
      && [ "$(printf '%s\n' "$out" | grep -vc '^shipkit: ')" -eq 0 ]; then
     pass "briefing (open specs with progress and next task, top goal, last handoff; shipped spec silent; no gap line)"
   else failc "briefing" "lines: $out $(cat "$WORK/brief.err")"; fi
+  # ...the handoff skill documents the heading that fixture carries, as the one conditional
+  # sixth heading (run-wounds/REQ-15), and the briefing's handoff line above did not pick it up
+  if grep -q '`## Blocked on`' "$COPY/skills/handoff/SKILL.md" \
+     && grep -q 'Only when the next step cannot start' "$COPY/skills/handoff/SKILL.md"; then
+    pass "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
+  else failc "briefing" "handoff/SKILL.md does not document the conditional Blocked on heading"; fi
   # ...and a gap makes the spec-check line appear
   : > "$BB/.shipkit/specs/alpha/tasks.md"
   out=$(brief "$BB")
@@ -1725,6 +1731,41 @@ if [ -f "$hp" ] && grep -q '^> Open questions for the owner' "$hp" \
    && [ "$hp_heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ]; then
   pass "headless-questions (product with no answers wrote the open-questions block; seven headings kept)"
 else failc "headless-questions" "product.md block missing or shape changed: heads=[$hp_heads] — model said: $(tail -3 "$WORK/hq-product.out")"; fi
+
+# 51. version-and-goal: two lines the real run wanted. (a) Claude Code keeps each installed
+# version at ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a session keeps the root it
+# started with: a HIGHER version directory beside the running root → the hook prints one line
+# naming both and "restart"; run from the highest, or beside only older or non-version
+# directories (3.1.0 sits beside 4.2.0 today), no line. 4.10.0 beside 4.3.0 catches a string
+# compare. (b) a top goal whose metric, target and date are all "none set" prints the goal and
+# "(no metric set)", none of the three fields. No claude needed. Cites: run-wounds/REQ-12
+# run-wounds/REQ-13 run-wounds/REQ-14
+VC="$WORK/cache/shipkit/shipkit"; mkdir -p "$VC/3.1.0" "$VC/notes"
+cp -R "$COPY" "$VC/4.3.0"; cp -R "$COPY" "$VC/4.10.0"
+VP="$WORK/ver-proj"; mkdir -p "$VP"
+vrun() { (cd "$VP" && CLAUDE_PLUGIN_ROOT="$VC/$1" sh "$VC/$1/scripts/session-start.sh" </dev/null 2>/dev/null); }
+out=$(vrun 4.3.0)
+if [ "$(printf '%s\n' "$out" | grep -c 'restart')" -eq 1 ] \
+   && printf '%s\n' "$out" | grep -q '^shipkit: 4\.10\.0 is installed; this session runs 4\.3\.0 — restart'; then
+  pass "version-and-goal (hook run from 4.3.0 beside 4.10.0: one line naming both and restart)"
+else failc "version-and-goal" "run from 4.3.0: $(printf '%s\n' "$out" | grep 'restart\|installed' | head -2)"; fi
+out=$(vrun 4.10.0)
+if printf '%s\n' "$out" | grep -q '^shipkit: plugin root is ' && ! printf '%s\n' "$out" | grep -q 'restart\|is installed'; then
+  pass "version-and-goal (hook run from the highest version, 3.1.0 and a non-version dir beside it: no line)"
+else failc "version-and-goal" "run from 4.10.0: $(printf '%s\n' "$out" | grep 'restart\|installed' | head -2)"; fi
+out=$(cd "$ROOT" && sh plugins/shipkit/scripts/session-start.sh </dev/null 2>/dev/null)
+if ! printf '%s\n' "$out" | grep -q 'restart to use'; then pass "version-and-goal (hook run from this repository: no version line)"
+else failc "version-and-goal" "repository run: $(printf '%s\n' "$out" | grep 'restart to use')"; fi
+VG="$WORK/ver-goal"; mkdir -p "$VG/.shipkit"
+printf '# Product: demo\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Ship refunds — metric: none set; target: none set; by: none set\n- Second — metric: m; target: t; by: 2026-12-31\n\n## Non-goals\n- z\n' > "$VG/.shipkit/product.md"
+out=$(cd "$VG" && sh "$COPY/scripts/briefing.sh" 2>/dev/null)
+if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds (no metric set)$' && ! printf '%s\n' "$out" | grep -q 'metric:'; then
+  pass "version-and-goal (top goal with three none-set fields → \"(no metric set)\", no fields)"
+else failc "version-and-goal" "goal line: $(printf '%s\n' "$out" | grep 'top goal')"; fi
+out=$(cd "$VG" && printf '# Product: demo\n\n## Goals this quarter\n- Ship refunds — metric: none set; target: 2%%; by: 2026-12-31\n' > .shipkit/product.md && sh "$COPY/scripts/briefing.sh" 2>/dev/null)
+if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds — metric: none set; target: 2%; by: 2026-12-31$'; then
+  pass "version-and-goal (a goal with one field set keeps all three)"
+else failc "version-and-goal" "partial goal: $(printf '%s\n' "$out" | grep 'top goal')"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

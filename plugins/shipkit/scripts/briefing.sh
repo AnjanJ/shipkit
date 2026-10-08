@@ -88,6 +88,12 @@ MAXBYTES=800
   # 3. the top goal
   if [ -f .shipkit/product.md ]; then
     goal=$(awk '/^## /{on=($0 ~ /^## Goals this quarter/); next} on && /^(- |[0-9]+\. )/{sub(/^(- |[0-9]+\. )/, ""); print; exit}' .shipkit/product.md 2>/dev/null)
+    # Metric, target and date all unset: the goal alone and "(no metric set)" — three "none
+    # set" fields say less than two words (run-wounds/REQ-14). One field set keeps all three.
+    case "$goal" in
+      *"metric: none set"*"target: none set"*"by: no"*"set"*)
+        goal="$(printf '%s' "$goal" | sed 's/[[:space:]]*— *metric:.*$//; s/[[:space:]]*- *metric:.*$//') (no metric set)" ;;
+    esac
     [ -n "$goal" ] && echo "shipkit: top goal: $goal"
   fi
 

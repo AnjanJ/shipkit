@@ -19,7 +19,7 @@ first moves README history only with the owner's yes (intake question 1).**
   - Test: scripts/smoke.sh check 50 "headless-questions" (sonnet, scratch project: a non-interactive `/shipkit:intake` with no answers → `.shipkit/specs/*/intake.md` exists and contains "unanswered"; a non-interactive `/shipkit:product` with no answers → product.md contains a `> Open questions for the owner:` block under the review line, seven headings kept) — written first, red
   - After: T1, T2
   - Done when: check 50 → PASS; `bash scripts/evals.sh --group intake` → every case ≥ 2 of 3; lint 0/0
-- [ ] **T4** Three lines: version, quiet goal, Blocked on (S11-T4) → REQ-12, REQ-13, REQ-14, REQ-15
+- [x] **T4** Three lines: version, quiet goal, Blocked on (S11-T4) → REQ-12, REQ-13, REQ-14, REQ-15
   - Files: plugins/shipkit/scripts/session-start.sh, plugins/shipkit/scripts/briefing.sh, plugins/shipkit/skills/handoff/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 51 "version-and-goal" (a scratch cache with 4.3.0 and 4.4.0 directories, the hook run from 4.3.0 → one line naming both and "restart"; run from 4.4.0 → no line; a product file whose first goal has three "none set" → "(no metric set)" and no "metric:" in the briefing) — written first, red; the handoff heading is read in check 30's state.md assertions
   - After: T3
