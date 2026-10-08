@@ -11,6 +11,7 @@
 # map-on-trial/REQ-8 (the five grandfather-xl cases scaffold the generated XL fixture)
 # rule-evals/REQ-7 rule-evals/REQ-8 (--group) rule-evals/REQ-10 rule-evals/REQ-11 (the five
 # scoped and thirteen stacks cases install their rule through evals/lib/with-rule.sh)
+# run-wounds/REQ-6 (intake-answered: a question a repository file answers is not asked)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \

@@ -1051,7 +1051,7 @@ else
   mkdir -p "$BB/.shipkit"
   printf '# Product: demo\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Cut failed charges — metric: share that fail; target: under 2%%; by: 2026-12-31\n- Second goal\n\n## Non-goals\n- z\n' > "$BB/.shipkit/product.md"
   hsha=$(cd "$BB" && git rev-parse --short HEAD)
-  printf '# Handoff\n\n> Written 2026-10-01 at commit `%s` on main.\n\n## In flight\n- alpha T2\n\n## Done this session\n- T1\n\n## Next step\nFinish alpha T2 and run its test.\n\n## Open questions\n- none\n\n## Do not forget\n- x\n' "$hsha" > "$BB/.shipkit/state.md"
+  printf '# Handoff\n\n> Written 2026-10-01 at commit `%s` on main.\n\n## In flight\n- alpha T2\n\n## Done this session\n- T1\n\n## Next step\nFinish alpha T2 and run its test.\n\n## Blocked on\nThe owner'"'"'s answer on REQ-11.\n\n## Open questions\n- none\n\n## Do not forget\n- x\n' "$hsha" > "$BB/.shipkit/state.md"
   (cd "$BB" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m two)
   out=$(brief "$BB")
   if printf '%s\n' "$out" | grep -q '^shipkit: alpha: 1 of 3 tasks done, next T2 — Do step 2$' \
@@ -1063,6 +1063,12 @@ else
      && [ "$(printf '%s\n' "$out" | grep -vc '^shipkit: ')" -eq 0 ]; then
     pass "briefing (open specs with progress and next task, top goal, last handoff; shipped spec silent; no gap line)"
   else failc "briefing" "lines: $out $(cat "$WORK/brief.err")"; fi
+  # ...the handoff skill documents the heading that fixture carries, as the one conditional
+  # sixth heading (run-wounds/REQ-15), and the briefing's handoff line above did not pick it up
+  if grep -q '`## Blocked on`' "$COPY/skills/handoff/SKILL.md" \
+     && grep -q 'Only when the next step cannot start' "$COPY/skills/handoff/SKILL.md"; then
+    pass "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
+  else failc "briefing" "handoff/SKILL.md does not document the conditional Blocked on heading"; fi
   # ...and a gap makes the spec-check line appear
   : > "$BB/.shipkit/specs/alpha/tasks.md"
   out=$(brief "$BB")
@@ -1664,6 +1670,102 @@ if [ "$rc2" -eq 1 ] && printf '%s\n' "$out_ship" | grep -q '^MISSING-TEST demo R
    && ! printf '%s\n' "$out_shipped" | grep -q 'PENDING-TEST'; then
   pass "pending-test (--as-shipped and a shipped spec → MISSING-TEST, exit 1, no PENDING line)"
 else failc "pending-test" "as-shipped: exit $rc2: $out_ship / shipped: exit $rc3: $out_shipped"; fi
+
+# 49. pre33-specs: a spec with NO Status line and EVERY task ticked predates 3.3 and is shipped
+# in all but name. The briefing prints no progress line for it and the hook no drift line; one
+# briefing line counts the specs with no Status line and gives the fix. A no-Status spec with an
+# unticked task is still reported as open. spec-check.sh is not touched (spec-contract/REQ-7).
+# Reuses bspec/brief from check 30. Cites: run-wounds/REQ-1 run-wounds/REQ-2 run-wounds/REQ-3
+# run-wounds/REQ-4
+P33="$WORK/pre33"; mkdir -p "$P33"
+(cd "$P33" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+p33sha=$(cd "$P33" && git rev-parse --short HEAD)
+bspec "$P33" old-a none 2 2; bspec "$P33" old-b none 3 3; bspec "$P33" old-c none 1 1
+bspec "$P33" gamma none 0 2; bspec "$P33" delta open 2 2
+for s in old-a old-b old-c gamma delta; do
+  sed "s/abc1234/$p33sha/" "$P33/.shipkit/specs/$s/spec.md" > "$WORK/p33.tmp" && mv "$WORK/p33.tmp" "$P33/.shipkit/specs/$s/spec.md"
+done
+(cd "$P33" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m specs \
+  && i=0 && while [ "$i" -lt 16 ]; do git -c user.email=s@s -c user.name=s commit -q --allow-empty -m "c$i"; i=$((i + 1)); done)
+out=$(brief "$P33")
+if ! printf '%s\n' "$out" | grep -q 'old-[abc]' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: gamma: 0 of 2 tasks done, next T1 — Do step 1$' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: delta: 2 of 2 tasks done, all ticked$' \
+   && printf '%s\n' "$out" | grep -q '^shipkit: 4 specs predate 3.3' \
+   && printf '%s\n' "$out" | grep '^shipkit: 4 specs predate 3.3' | grep -q 'Status: shipped'; then
+  pass "pre33-specs (briefing: all-ticked no-Status specs silent; unticked one still open; one line counts 4 and names the fix)"
+else failc "pre33-specs" "briefing: $out"; fi
+hook=$(cd "$P33" && CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>/dev/null)
+if ! printf '%s\n' "$hook" | grep 'behind HEAD' | grep -q 'old-[abc]' \
+   && printf '%s\n' "$hook" | grep 'behind HEAD' | grep -q 'gamma\|delta'; then
+  pass "pre33-specs (hook: no drift line for all-ticked no-Status specs; still one for the open ones)"
+else failc "pre33-specs" "hook drift lines: $(printf '%s\n' "$hook" | grep 'behind HEAD\|stale')"; fi
+
+# 50. headless-questions: a run that cannot ask leaves its questions on disk, not in the reply.
+# Like checks 22 and 23 this asks sonnet to do real work, twice: /shipkit:intake with nobody to
+# answer must still write intake.md with its questions marked unanswered (run-wounds/REQ-9);
+# /shipkit:product with no answers given must write product.md with an "Open questions for the
+# owner" block under the review line, keeping the seven-heading shape check 23 holds
+# (run-wounds/REQ-11). The files are read here; the model's word is not.
+HQ="$WORK/hq-intake"; mkdir -p "$HQ"
+(cd "$HQ" && bash "$COPY/evals/intake/limit/fixture.sh" >/dev/null 2>&1)
+(cd "$HQ" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
+  -p "/shipkit:intake Add refunds.
+This run is not interactive and you cannot ask me anything, and I have given no answers." \
+  </dev/null >"$WORK/hq-intake.out" 2>&1)
+hq_file=$(find "$HQ/.shipkit/specs" -name intake.md 2>/dev/null | head -1)
+if [ -n "$hq_file" ] && grep -q '^## Answers' "$hq_file" && grep -qi 'unanswered' "$hq_file"; then
+  pass "headless-questions (intake with nobody to answer wrote $(printf '%s' "$hq_file" | sed "s|$HQ/||") with its questions marked unanswered)"
+else failc "headless-questions" "intake.md: [${hq_file:-none}] — model said: $(tail -3 "$WORK/hq-intake.out")"; fi
+HP="$WORK/hq-product"; mkdir -p "$HP"; cp -R "$COPY/evals/fixtures/sample-app/." "$HP/"
+(cd "$HP" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$HP" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Skill \
+  -p "/shipkit:product
+This run is not interactive and you cannot ask me anything, and I have given no answers." \
+  </dev/null >"$WORK/hq-product.out" 2>&1)
+hp="$HP/.shipkit/product.md"
+hp_heads=$([ -f "$hp" ] && grep '^## ' "$hp" | sed 's/^## //; s/[[:space:]]*$//' | tr '\n' '|')
+if [ -f "$hp" ] && grep -q '^> Open questions for the owner' "$hp" \
+   && [ "$hp_heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ]; then
+  pass "headless-questions (product with no answers wrote the open-questions block; seven headings kept)"
+else failc "headless-questions" "product.md block missing or shape changed: heads=[$hp_heads] — model said: $(tail -3 "$WORK/hq-product.out")"; fi
+
+# 51. version-and-goal: two lines the real run wanted. (a) Claude Code keeps each installed
+# version at ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a session keeps the root it
+# started with: a HIGHER version directory beside the running root → the hook prints one line
+# naming both and "restart"; run from the highest, or beside only older or non-version
+# directories (3.1.0 sits beside 4.2.0 today), no line. 4.10.0 beside 4.3.0 catches a string
+# compare. (b) a top goal whose metric, target and date are all "none set" prints the goal and
+# "(no metric set)", none of the three fields. No claude needed. Cites: run-wounds/REQ-12
+# run-wounds/REQ-13 run-wounds/REQ-14
+VC="$WORK/cache/shipkit/shipkit"; mkdir -p "$VC/3.1.0" "$VC/notes"
+cp -R "$COPY" "$VC/4.3.0"; cp -R "$COPY" "$VC/4.10.0"
+VP="$WORK/ver-proj"; mkdir -p "$VP"
+vrun() { (cd "$VP" && CLAUDE_PLUGIN_ROOT="$VC/$1" sh "$VC/$1/scripts/session-start.sh" </dev/null 2>/dev/null); }
+out=$(vrun 4.3.0)
+if [ "$(printf '%s\n' "$out" | grep -c 'restart')" -eq 1 ] \
+   && printf '%s\n' "$out" | grep -q '^shipkit: 4\.10\.0 is installed; this session runs 4\.3\.0 — restart'; then
+  pass "version-and-goal (hook run from 4.3.0 beside 4.10.0: one line naming both and restart)"
+else failc "version-and-goal" "run from 4.3.0: $(printf '%s\n' "$out" | grep 'restart\|installed' | head -2)"; fi
+out=$(vrun 4.10.0)
+if printf '%s\n' "$out" | grep -q '^shipkit: plugin root is ' && ! printf '%s\n' "$out" | grep -q 'restart\|is installed'; then
+  pass "version-and-goal (hook run from the highest version, 3.1.0 and a non-version dir beside it: no line)"
+else failc "version-and-goal" "run from 4.10.0: $(printf '%s\n' "$out" | grep 'restart\|installed' | head -2)"; fi
+out=$(cd "$ROOT" && sh plugins/shipkit/scripts/session-start.sh </dev/null 2>/dev/null)
+if ! printf '%s\n' "$out" | grep -q 'restart to use'; then pass "version-and-goal (hook run from this repository: no version line)"
+else failc "version-and-goal" "repository run: $(printf '%s\n' "$out" | grep 'restart to use')"; fi
+VG="$WORK/ver-goal"; mkdir -p "$VG/.shipkit"
+printf '# Product: demo\n\n> Product reviewed on 2026-10-01.\n\n## One line\nx\n\n## Users\n- y\n\n## Goals this quarter\n- Ship refunds — metric: none set; target: none set; by: none set\n- Second — metric: m; target: t; by: 2026-12-31\n\n## Non-goals\n- z\n' > "$VG/.shipkit/product.md"
+out=$(cd "$VG" && sh "$COPY/scripts/briefing.sh" 2>/dev/null)
+if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds (no metric set)$' && ! printf '%s\n' "$out" | grep -q 'metric:'; then
+  pass "version-and-goal (top goal with three none-set fields → \"(no metric set)\", no fields)"
+else failc "version-and-goal" "goal line: $(printf '%s\n' "$out" | grep 'top goal')"; fi
+out=$(cd "$VG" && printf '# Product: demo\n\n## Goals this quarter\n- Ship refunds — metric: none set; target: 2%%; by: 2026-12-31\n' > .shipkit/product.md && sh "$COPY/scripts/briefing.sh" 2>/dev/null)
+if printf '%s\n' "$out" | grep -q '^shipkit: top goal: Ship refunds — metric: none set; target: 2%; by: 2026-12-31$'; then
+  pass "version-and-goal (a goal with one field set keeps all three)"
+else failc "version-and-goal" "partial goal: $(printf '%s\n' "$out" | grep 'top goal')"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

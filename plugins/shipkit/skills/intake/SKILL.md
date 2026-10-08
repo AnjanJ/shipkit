@@ -44,6 +44,10 @@ line it comes from, **before** asking anything:
 - **Open spec** — an open spec already covers it, wholly or in part. Name the spec.
 - **Decision** — it contradicts a decision record. Name the record and its reversal condition.
 
+When you say that something does **not** exist in the project — no source for a value, no
+earlier decision, no doc — name the places you searched for it, in the same sentence. A claim
+of absence with no search behind it was wrong once already ("queue status has no source": it did).
+
 A conflict does not end the intake: the user may have changed their mind. Ask whether to go
 ahead anyway (that is one of your four questions). If they do, the non-goal or the decision
 is what must change first — say so. If there is no conflict, say "No conflicts found" in one line.
@@ -59,12 +63,19 @@ One of the four is which quarterly goal this serves — unless `product.md` make
 which case state it ("this serves the goal 'Ship refunds'") and do not ask. "None" is an
 allowed answer.
 
-If no user is present to answer (a non-interactive run): state the conflicts, list your
-questions, and stop there. Do not answer your own questions and do not write `intake.md`.
+If no user is present to answer (a non-interactive run): state the conflicts and the questions
+in the reply, then **write `intake.md` anyway** (step 5) with each question under "## Answers"
+followed by `— *unanswered*`. Do not answer your own questions. The file is where the next
+session looks; a reply is gone with the session that wrote it.
+
+If `intake.md` already exists with unanswered questions: fill in the answers the request gives,
+keep the rest marked unanswered, and ask only those — never a question the file or the request
+already answers.
 
 ## 5. Write `.shipkit/specs/<slug>/intake.md`
 
-`<slug>` is a short kebab-case name for the feature. Once the questions are answered, write:
+`<slug>` is a short kebab-case name for the feature. Once the questions are answered — or, when
+nobody could answer, with them marked unanswered — write:
 
 ```markdown
 # Intake: <feature>
@@ -81,7 +92,7 @@ questions, and stop there. Do not answer your own questions and do not write `in
 <each conflict and what the user decided about it — or "None">
 
 ## Answers
-<each question and its answer>
+<each question and its answer — or the question followed by "— *unanswered*">
 
 ## Assumptions made
 <what you decided without asking, so the user can object>

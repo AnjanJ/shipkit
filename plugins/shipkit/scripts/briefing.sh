@@ -3,7 +3,11 @@
 # session-start.sh, so every line reaches Claude's context. Run from the project root.
 #
 # What it prints, at most eight lines and 800 bytes, each starting "shipkit: ":
-#   <slug>: N of M tasks done, next T4 — <title>     one per open spec, at most three
+#   <slug>: N of M tasks done, next T4 — <title>     one per open spec, at most three. A spec
+#                                                     with NO Status line and every task ticked
+#                                                     predates 3.3 and is shipped in all but name:
+#                                                     it gets no line (run-wounds/REQ-1)
+#   N specs predate 3.3 and have no Status line …    only when such specs exist (run-wounds/REQ-3)
 #   spec-check: N gap(s) — run spec-check.sh         only when spec-check.sh finds a gap
 #   top goal: <first goal in .shipkit/product.md>    only when the product file exists
 #   last handoff (<date>, N commits ago): <the "Next step" line of .shipkit/state.md>
@@ -29,11 +33,17 @@ MAXBYTES=800
   for spec in .shipkit/specs/*/spec.md; do
     [ -f "$spec" ] || continue
     [ "$n" -lt 3 ] || break
-    case "$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$spec" 2>/dev/null | sed -n 1p)" in
+    status=$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$spec" 2>/dev/null | sed -n 1p)
+    case "$status" in
       shipped|dropped|draft) continue ;;
     esac
     dir=${spec%/spec.md}; slug=${dir##*/}
     [ -f "$dir/tasks.md" ] || continue
+    # No Status line (written before 3.3) and nothing left unticked: shipped in all but name.
+    # spec-check.sh still reads it as open (spec-contract/REQ-7); only this briefing and the
+    # hook's drift nag stay quiet about it (run-wounds/REQ-1, REQ-4).
+    if [ -z "$status" ] && grep -q '^- \[[xX]\] \*\*' "$dir/tasks.md" 2>/dev/null \
+       && ! grep -q '^- \[ \] \*\*' "$dir/tasks.md" 2>/dev/null; then continue; fi
     line=$(awk -v slug="$slug" '
       /^- \[[xX]\] \*\*[A-Za-z0-9_-]+\*\*/ { done++; total++; next }
       /^- \[ \] \*\*[A-Za-z0-9_-]+\*\*/ {
@@ -54,6 +64,18 @@ MAXBYTES=800
     n=$((n + 1))
   done
 
+  # 1b. specs with no Status line at all, counted over every spec (the loop above stops at
+  # three open ones): one line, with the fix in it (run-wounds/REQ-3)
+  nostatus=0
+  for spec in .shipkit/specs/*/spec.md; do
+    [ -f "$spec" ] || continue
+    grep -q '^> *Status:' "$spec" 2>/dev/null || nostatus=$((nostatus + 1))
+  done
+  if [ "$nostatus" -gt 0 ]; then
+    if [ "$nostatus" -eq 1 ]; then w="spec predates"; else w="specs predate"; fi
+    echo "shipkit: $nostatus $w 3.3 and have no Status line — add \`> Status: shipped\` (or open, dropped) under each title so the briefing and spec-check read them right."
+  fi
+
   # 2. gaps, from spec-check.sh's last line ("spec-check: N spec(s) checked, G gap(s)")
   if [ -f "$HERE/spec-check.sh" ]; then
     gaps=$(sh "$HERE/spec-check.sh" . 2>/dev/null | sed -n 's/^spec-check: .* checked, \([0-9]*\) gap(s)$/\1/p' | sed -n 1p)
@@ -66,6 +88,12 @@ MAXBYTES=800
   # 3. the top goal
   if [ -f .shipkit/product.md ]; then
     goal=$(awk '/^## /{on=($0 ~ /^## Goals this quarter/); next} on && /^(- |[0-9]+\. )/{sub(/^(- |[0-9]+\. )/, ""); print; exit}' .shipkit/product.md 2>/dev/null)
+    # Metric, target and date all unset: the goal alone and "(no metric set)" — three "none
+    # set" fields say less than two words (run-wounds/REQ-14). One field set keeps all three.
+    case "$goal" in
+      *"metric: none set"*"target: none set"*"by: no"*"set"*)
+        goal="$(printf '%s' "$goal" | sed 's/[[:space:]]*— *metric:.*$//; s/[[:space:]]*- *metric:.*$//') (no metric set)" ;;
+    esac
     [ -n "$goal" ] && echo "shipkit: top goal: $goal"
   fi
 

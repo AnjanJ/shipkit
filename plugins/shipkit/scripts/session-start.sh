@@ -68,6 +68,31 @@ if [ -n "$ROOT" ] && [ -d "$ROOT/rules" ]; then
   if mkdir -p "$HOME/.claude/shipkit" 2>/dev/null; then
     printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root" 2>/dev/null || true
   fi
+  # A newer version installed beside this one? Claude Code keeps each installed version at
+  # ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a running session keeps the root it
+  # started with, so an update is invisible until a restart (run-wounds/REQ-12, REQ-13). When
+  # the root's own name is a version and a HIGHER one sits beside it, say so in one line.
+  # Higher, never different: an older directory (3.1.0 beside 4.2.0) is a leftover, not an
+  # update. Three-field numeric compare in awk — no sort -V on macOS. A function, as
+  # spec_is_closed below: bash 3.2 misparses a case pattern inside a command substitution.
+  version_dirs() {  # the version-named directories beside $1, one per line
+    for d in "$1"/../*/; do
+      d=$(basename "$d")
+      case "$d" in [0-9]*.[0-9]*.[0-9]*) printf '%s\n' "$d" ;; esac
+    done
+  }
+  cur=$(basename "$ROOT")
+  case "$cur" in
+    [0-9]*.[0-9]*.[0-9]*)
+      newer=$(version_dirs "$ROOT" | awk -F. -v cur="$cur" 'BEGIN { split(cur, c, ".") }
+          { a = $1 + 0; b = $2 + 0; d = $3 + 0
+            if (a > c[1] + 0 || (a == c[1] + 0 && (b > c[2] + 0 || (b == c[2] + 0 && d > c[3] + 0)))) {
+              if (!best || a > ba || (a == ba && (b > bb || (b == bb && d > bd)))) { best = $0; ba = a; bb = b; bd = d }
+            } }
+          END { if (best) print best }' 2>/dev/null)
+      [ -n "$newer" ] && echo "shipkit: $newer is installed; this session runs $cur — restart to use it."
+      ;;
+  esac
 fi
 
 # --- 1b. Installed rules older than the plugin? -----------------------------------------
@@ -182,6 +207,14 @@ spec_is_closed() {
   case "$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$1" | sed -n 1p)" in
     shipped|dropped|draft) return 0 ;;
   esac
+  # No Status line (a spec written before 3.3) and every task ticked: shipped in all but name,
+  # so no drift nag (run-wounds/REQ-2). spec-check.sh still reads it as open.
+  if ! grep -q '^> *Status:' "$1" 2>/dev/null; then
+    _t="${1%/spec.md}/tasks.md"
+    if [ -f "$_t" ] && grep -q '^- \[[xX]\] \*\*' "$_t" 2>/dev/null && ! grep -q '^- \[ \] \*\*' "$_t" 2>/dev/null; then
+      return 0
+    fi
+  fi
   return 1
 }
 SPEC_CAP=3

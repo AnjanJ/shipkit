@@ -52,6 +52,11 @@ From the user (optional): $ARGUMENTS
    The five headings, in this order, all present. **Exactly one line under "Next step"** — the
    briefing prints it, so it must stand alone. **At most 30 lines in all**: this is a note,
    not a diary. Each "In flight" line names the files, so the next session can open them.
+
+   **Only when the next step cannot start** — it waits on an answer, a review, a merge, a
+   credential, a machine — add a sixth heading, `## Blocked on`, directly after "Next step",
+   with one line saying what it waits for. When the next step can start, leave the heading
+   out: its absence says so.
    The commit sha is `git rev-parse --short HEAD`; the branch is `git branch --show-current`
    (or `detached` when there is none).
 
