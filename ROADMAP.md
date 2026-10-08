@@ -59,11 +59,13 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   is worth its tokens, is the next plan's question.
 - **The intake names the answering file only because the grader asks** — nothing in
   `skills/intake/SKILL.md` says to; the 4.4.0 case passed 3 of 3 before any sentence existed
-  (PR #13 "What was awkward"; `CHANGELOG.md` 4.4.0).
+  (`CHANGELOG.md` 4.4.0 "What using it for real showed"; the reviewer's note in
+  `.shipkit/releases/2026-10-08-run-wounds.md`, section 4).
 - **`spec-check.sh` cannot check a draft spec** — the spec skill flips the status to run it
   (`docs/design/field-notes-4.3.md` §6; left out of Sprint 12 by the owner's answer).
 - **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
-  record's case-against, now observed on three gate runs (PR #14 "What was awkward").
+  record's case-against (`.shipkit/specs/gate-blind-spots/design.md`, "Exit codes are echoed on
+  the command line"), now observed on four gate runs.
 - **The eval sandbox denies writing a dotfile at the workspace root** — every `trap2/notebooks`
   run in both arms wrote the right `.pre-commit-config.yaml` and was refused; the case asks for a
   Makefile instead (`eval-results-4.6.md`, the `notebooks` row). A case that needs a dotfile
@@ -73,10 +75,13 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   (`eval-results-4.6.md`, "The elder's step 1", attempt 2).
 - **The smoke suite overwrites `~/.claude/shipkit/plugin-root`** with scratch paths while it
   runs; the last hook run restores it only by luck of ordering, and a session started mid-run
-  reads a scratch root (PR #13 "What was awkward"; restored by hand in Sprint 13).
+  reads a scratch root (`scripts/smoke.sh` header, "except that the session hook writes
+  ~/.claude/shipkit/plugin-root"; `CHANGELOG.md` 4.6.0 "What using it for real showed").
 - **Rule 5 and the gate disagree on when a branch-not-taken note lands** — the rule says the
   ship commit, the gate reads the spec before it; the note must be committed before the gate
-  (PR #13 "What was awkward"; both Sprint 12 and 13 did it that way).
+  (`docs/plans/field-sprint-plan.md` §1 rule 5 against `.shipkit/specs/gate-blind-spots/tasks.md`
+  "After the gate"; the 4.4.0 gate's first run in `CHANGELOG.md` 4.4.0 "What using it for real
+  showed").
 - **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5).

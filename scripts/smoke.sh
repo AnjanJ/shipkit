@@ -1479,6 +1479,7 @@ else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"
 # a 60 KB file under evals/ and one "build the map first" line in the README must fail the lint
 # with exactly those two errors (the gate's reviewer asked for a repeatable red, not a
 # one-time one). No claude needed. Cites: map-on-trial/REQ-7 map-on-trial/REQ-15
+# second-traps/REQ-1 (the limit is 163,840 since 4.6.0)
 LN="$WORK/lint-neg"; mkdir -p "$LN"
 # only the repo-root .git and .claude (agent worktrees) are skipped; the overlays' .claude/ must copy
 if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$LN/"
