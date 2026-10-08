@@ -71,6 +71,10 @@ with the old text too, the lever was not the text.
 case passes 2 of 3 with the 4.3.0 text in S11-T2's with/without run — the sentence would then be
 bytes without effect.
 **Fired-if.** manual
+**Fired 2026-10-08 (S11-T2):** the case passed 3 of 3 against the 4.3.0 text before the list was
+written, so the list was never added; only step 3's sentence (a claim of absence names what was
+searched, REQ-7) went in, and the case stays as the regression watch. The reading is in
+`docs/design/eval-history.md`.
 
 ---
 

@@ -40,14 +40,18 @@ Source: `docs/plans/field-sprint-plan.md`, Sprint 11 (S11-T1 to S11-T4), decisio
 
 ### The intake searches before it asks (S11-T2)
 
-- **REQ-6.** When a candidate question is answered by a file in the repository (ROADMAP, `docs/`,
-  `.shipkit/research/`, `.shipkit/decisions/`, configuration comments, the commit log), the intake
-  shall write it as an assumption with the file and line, and shall not ask it.
+- **REQ-6.** When a candidate question is answered by a file in the repository, the intake shall
+  not ask it and shall name the file. *(Amended at the ship commit, branch not taken: the fixed
+  list of places and the "assumption with file and line" form were not added — the
+  `intake/answered` case passed 3 of 3 on the 4.3.0 text, so the design record's clause fired
+  before the list was written; the case now tests the text as it stands.)*
 - **REQ-7.** When the intake states that the repository has no answer to a question, it shall name
   the places it searched. [untested: prose, verified by reading; the eval case reads the reply's
   questions, not its absence claims]
-- **REQ-8.** The intake shall delegate the search to the `grandfather` agent. [untested: prose;
-  whether a headless run obeys is not visible in a reply]
+- **REQ-8.** The intake shall ask the `grandfather` agent, not read the codebase itself, for how
+  the code works today. [untested: prose; whether a headless run obeys is not visible in a reply]
+  *(Amended at the ship commit, branch not taken: the per-question delegation of the search list
+  went with the list — see REQ-6.)*
 
 ### Headless runs leave their questions on disk (S11-T3)
 
@@ -56,8 +60,10 @@ Source: `docs/plans/field-sprint-plan.md`, Sprint 11 (S11-T1 to S11-T4), decisio
 - **REQ-10.** When an intake pass finds an `intake.md` with unanswered questions and the request
   carries answers, the intake shall fill them and ask nothing the file or the request already
   answers. [untested: prose, verified by reading; the second pass is the owner's interactive run]
-- **REQ-11.** When no user is present, `/shipkit:product` shall write a "## Open questions for the
-  owner" section in `product.md` holding the questions it would have asked.
+- **REQ-11.** When no user is present, `/shipkit:product` shall write a block under the review
+  line in `product.md` beginning `> Open questions for the owner:` holding the questions it would
+  have asked. *(Reworded at the ship commit with the owner's yes: a section would be an eighth
+  heading, and smoke check 23 holds the file to seven.)*
 
 ### Three lines (S11-T4)
 
