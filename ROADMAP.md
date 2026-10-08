@@ -40,7 +40,47 @@ the gate's blind spots (12), second traps and the elder's first step (13).
 |--------|---------|--------------------|
 | 11 | 4.4.0 | A briefing that is right on a project with pre-3.3 specs; an intake whose claims of absence name what it searched (the fixed search list was not added — its case passed 3 of 3 before the sentence existed, and the record's clause fired first); headless intake and product runs that leave their questions on disk; a version line in the hook, a quiet top-goal line, a "Blocked on" heading in the handoff |
 | 12 | 4.5.0 | A `Fired-if` that cannot fire before the code exists (`decision-check.sh` strips a trailing comment, its `ERROR` line says why; the spec skill runs it on its own output); everything under `.shipkit/` but another spec's folder allowed by `brief-verify.sh` and the reviewer; the gate's How column echoes exit codes and pastes output from files; ignored files closed by record (C6) |
-| 13 | 4.6.0 | *planned* |
+| 13 | 4.6.0 | Path-scoped loading measured (the globs fire on a read, not a mention); sixteen trap-2 cases with and without — four lines separate, twelve are named cut candidates; the Gemfile lock-diff line conditional on the install; the elder's step 1 tried twice (1 → 4 → 8 of 15 map reads, both reverted, record 0001 unchanged); the history case on a "wip" log (3 of 3 with the map, 0 of 3 without); housekeeping rows D1–D3 done; this section |
+
+**Still open after Sprint 13** (every item names its evidence; these seed the plan after):
+
+- **Twelve rule files pass without their text on both named traps** — `hotwire`, `liveview`,
+  `migrations`, `mix-deps`, `monorepo`, `notebooks`, `package-json`, `pyproject`, `react`,
+  `testing`, `ui-ux`, and `rails` at the threshold: named cut candidates with two measurements
+  each (`docs/design/eval-results-4.6.md`, "The three readings"; C8 forbade cutting on the
+  sprint's own numbers). The plan after decides which lines are kept as a statement of standards.
+- **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
+  registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
+  "The wip history"; C11).
+- **The elder reads the map in 8 of 15 runs at best from step 1 alone** — step 0's "cheap grep
+  first" wins whenever the grep lands, and a sentence in step 1 cannot override a triage that
+  happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended
+  note). Whether step 0 itself should change, and whether a read that never changes an answer
+  is worth its tokens, is the next plan's question.
+- **The intake names the answering file only because the grader asks** — nothing in
+  `skills/intake/SKILL.md` says to; the 4.4.0 case passed 3 of 3 before any sentence existed
+  (PR #13 "What was awkward"; `CHANGELOG.md` 4.4.0).
+- **`spec-check.sh` cannot check a draft spec** — the spec skill flips the status to run it
+  (`docs/design/field-notes-4.3.md` §6; left out of Sprint 12 by the owner's answer).
+- **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
+  record's case-against, now observed on three gate runs (PR #14 "What was awkward").
+- **The eval sandbox denies writing a dotfile at the workspace root** — every `trap2/notebooks`
+  run in both arms wrote the right `.pre-commit-config.yaml` and was refused; the case asks for a
+  Makefile instead (`eval-results-4.6.md`, the `notebooks` row). A case that needs a dotfile
+  cannot be written until this is understood.
+- **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` with the map's path, not a shell
+  `cat`** — one run in fifteen read the map through Bash and is counted as not reading it
+  (`eval-results-4.6.md`, "The elder's step 1", attempt 2).
+- **The smoke suite overwrites `~/.claude/shipkit/plugin-root`** with scratch paths while it
+  runs; the last hook run restores it only by luck of ordering, and a session started mid-run
+  reads a scratch root (PR #13 "What was awkward"; restored by hand in Sprint 13).
+- **Rule 5 and the gate disagree on when a branch-not-taken note lands** — the rule says the
+  ship commit, the gate reads the spec before it; the note must be committed before the gate
+  (PR #13 "What was awkward"; both Sprint 12 and 13 did it that way).
+- **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
+- **A second real run on another repository** — the field notes are one project, one run
+  (`docs/plans/field-sprint-plan.md` §5).
+
 
 ## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
 

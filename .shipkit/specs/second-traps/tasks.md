@@ -40,7 +40,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: none beyond lint — each row's command and its output go in the commit message
   - After: T5
   - Done when: the ROADMAP records each of D1 to D5 as removed or kept with the date; D4 says who does it after the tag; lint 0/0
-- [ ] **T7** The roadmap for the plan after (S13-T7) → REQ-15
+- [x] **T7** The roadmap for the plan after (S13-T7) → REQ-15
   - Files: ROADMAP.md
   - Test: none beyond lint — every open item names a file and section
   - After: T6
