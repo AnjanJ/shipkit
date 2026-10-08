@@ -19,7 +19,7 @@ gate run is a measurement run: intake question 1 says whether it is in the budge
   - Test: a headless `/shipkit:ship real-run` on this branch (the shipped spec; a dry run) — every step that runs a command quotes `exit N` captured by the command line; no "not captured"; the report is read and then deleted
   - After: T1, T2
   - Done when: the dry run's report quotes every exit code; `git status --short` shows no report left; lint 0/0
-- [ ] **T4** `brief-verify.sh` and ignored files, closed by record (S12-T4) → REQ-10
+- [x] **T4** `brief-verify.sh` and ignored files, closed by record (S12-T4) → REQ-10
   - Files: plugins/shipkit/scripts/brief-verify.sh, ROADMAP.md
   - Test: none beyond lint — a header sentence and a roadmap edit; the record is in design.md (C6)
   - After: T2

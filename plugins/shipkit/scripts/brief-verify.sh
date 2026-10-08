@@ -15,7 +15,9 @@
 # is always allowed — product.md, state.md, releases/, decisions/ and the spec's own folder are
 # written by shipkit's own loop and no Files line will ever name them — EXCEPT a file inside
 # another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). Ignored files
-# (.gitignore) are not seen.
+# (.gitignore) are not seen, by design: this check sees what git sees, and a build artifact an
+# agent leaves in an ignored path shows in the task's Done-when output, which you run yourself
+# (gate-blind-spots/REQ-10, closed by record C6).
 #
 # This checks WHICH files changed, not WHAT changed in them. Run the task's Done when command
 # yourself as well: the agent's own claim is not proof.

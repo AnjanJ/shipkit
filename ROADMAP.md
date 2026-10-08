@@ -73,6 +73,10 @@ numbers are its sections):
   runs `spec-check.sh`; `spec-check` cannot check a draft, so the skill flipped the status to run it.
 - **Files no spec will ever list are "outside the spec"** (§7, §8): `.shipkit/product.md` and the
   release report, to the reviewer and to `brief-verify.sh`, which allows only the spec's `tasks.md`.
+  *4.5.0 (S12-T2): everything under `.shipkit/` except another spec's folder is allowed, by both.
+  The ignored-files question beside it (Playbook 4's `__pycache__`, open since 4.0.0) is closed by
+  record (S12-T4, `gate-blind-spots/design.md`, C6): `brief-verify.sh` sees what git sees, on
+  purpose; a build artifact shows in the task's Done-when output.*
 - **Headless runs leave their questions in the reply, not on disk** (§2, §3): product's eight
   and intake's four questions vanish with the session; an unanswered intake writes nothing.
   *Shipped in 4.4.0 (S11-T3).*
