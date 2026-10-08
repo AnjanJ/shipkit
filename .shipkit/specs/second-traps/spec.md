@@ -1,7 +1,7 @@
 # Spec: Second traps and the elder's first step (Sprint 13, release 4.6.0)
 
 > Spec accepted at commit `c1c7b18` on sprint-13/second-traps (2026-10-08).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/evals/, plugins/shipkit/agents/grandfather.md, plugins/shipkit/stacks/rails/.claude/rules/gemfile.md, scripts/, docs/design/, docs/plans/field-sprint-plan.md, .shipkit/decisions/0001-project-map-default.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
