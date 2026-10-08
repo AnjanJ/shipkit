@@ -1,7 +1,7 @@
 # Spec: The gate's blind spots (Sprint 12, release 4.5.0)
 
 > Spec accepted at commit `e0ba01a` on sprint-12/gate-blind-spots (2026-10-08).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/decision-check.sh, plugins/shipkit/scripts/brief-verify.sh, plugins/shipkit/skills/spec/, plugins/shipkit/skills/ship/, plugins/shipkit/agents/reviewer.md, scripts/, docs/design/eval-history.md, docs/plans/field-sprint-plan.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
