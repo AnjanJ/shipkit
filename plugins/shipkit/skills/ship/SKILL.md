@@ -40,17 +40,23 @@ last lines of its output. **Never record a result for a command you did not run.
 
 | # | Step | How | PASS means |
 |---|------|-----|-----------|
-| 1 | Spec check, as shipped | `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped` | exit 0 |
-| 2 | Tests | Run the project's test command; keep the last 20 lines | exit 0 |
-| 3 | Tasks ticked | `grep -n '^- \[ \]' .shipkit/specs/<slug>/tasks.md` | no line found |
+| 1 | Spec check, as shipped | `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped; echo "exit $?"` | exit 0 |
+| 2 | Tests | `( <the project's test command> ) > "${TMPDIR:-/tmp}/shipkit-ship-tests.out" 2>&1; echo "exit $?"`, then read the file's last 20 lines | exit 0 |
+| 3 | Tasks ticked | `grep -n '^- \[ \]' .shipkit/specs/<slug>/tasks.md; echo "exit $?"` | exit 1 (no line found) |
 | 4 | Independent review | Start the **`reviewer`** agent (below) | its last line is `VERDICT: PASS` |
 | 5 | Migration rollback | Is there a database migration in `git diff <base>...HEAD --name-only`? If so, is the way to roll it back written down? | no migration, or a written rollback |
 | 6 | Decisions | Every live decision in `design.md` has a concrete reversal condition | none is vague or missing |
 | 7 | Clean tree | The `git status --porcelain` you captured before step 1 | empty, apart from an earlier report for this slug |
-| 8 | Decisions fired | `sh "<plugin root>/scripts/decision-check.sh" . --run` | no `FIRED` line |
+| 8 | Decisions fired | `sh "<plugin root>/scripts/decision-check.sh" . --run > "${TMPDIR:-/tmp}/shipkit-ship-decisions.out" 2>&1; echo "exit $?"`, then read the file | no `FIRED` line |
 
 Notes on the steps:
 
+- **Exit codes and output.** The number `echo "exit $?"` prints *is* the step's exit code:
+  quote it, and never infer one from the output or pipe the command into anything before the
+  `echo`. Long output goes to the file the row names — the parentheses matter when the command
+  is `a && b`, or only `b` is captured; read the file (`tail -20`) and paste from it.
+  A report that says "exit code not captured" or carries output typed from memory is a defect
+  in the run, not a result.
 - **Step 2 — the test command.** Take it from the project's `CLAUDE.md` (its test or commands
   section). If it names none, ask the user once and use the answer. If no user is present and
   none was given in the request, record `FAIL: no test command known` — do not guess one and

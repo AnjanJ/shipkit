@@ -14,7 +14,7 @@ gate run is a measurement run: intake question 1 says whether it is in the budge
   - Test: scripts/smoke.sh check 53 "shipkit-allowed" (a task whose run wrote `.shipkit/product.md`, `.shipkit/releases/<date>-x.md`, `.shipkit/state.md`, `.shipkit/decisions/0001-x.md` and its own spec's `design.md` → exit 0, no OUTSIDE line; a write to `.shipkit/specs/other/spec.md` → one OUTSIDE line, exit 1) — written first, red
   - After: T1
   - Done when: check 53 → PASS; check 26 → PASS; `bash scripts/evals.sh --group reviewer` → both cases ≥ 2 of 3; lint 0/0
-- [ ] **T3** The gate keeps its exit codes and its output (S12-T3) → REQ-8, REQ-9
+- [x] **T3** The gate keeps its exit codes and its output (S12-T3) → REQ-8, REQ-9
   - Files: plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md
   - Test: a headless `/shipkit:ship real-run` on this branch (the shipped spec; a dry run) — every step that runs a command quotes `exit N` captured by the command line; no "not captured"; the report is read and then deleted
   - After: T1, T2
