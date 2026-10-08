@@ -2,6 +2,67 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.6.0] — 2026-10-09
+
+Sprint 13, the last of the field plan (`docs/plans/field-sprint-plan.md`): the two biggest
+unmeasured claims get their numbers, the one experiment 4.1 named is tried and reverted on its
+own measurement, one rule line is reworded, and the housekeeping the owner approved row by row
+is done. Requirements and decision records in
+[`.shipkit/specs/second-traps/`](.shipkit/specs/second-traps/); every number in
+[`docs/design/eval-results-4.6.md`](docs/design/eval-results-4.6.md).
+
+### Changed
+
+- **The Gemfile rule's lock-diff step is conditional on `bundle install` having run.**
+  `stacks/rails/.claude/rules/gemfile.md`, first bullet (C10): the 4.2.0 line halted three
+  sandbox runs that had no network. `stacks/gemfile` with the new text: 3 of 3, none halted.
+- **The XL generator takes `--wip`**: the same files and tree hashes, every commit message
+  "wip" — the log most real projects have (smoke check 39 asserts both).
+- **`trace-tools.sh` prints a `map_read` column**: a `Read` or `Grep` whose input path ends in
+  `PROJECT_MAP.md`, main session or subagent.
+- `plugins/shipkit/evals/` may now be 160 KB (lint check 17, was 128 KB; C1): the evals
+  README's five baselines moved to `docs/design/eval-history.md` so the room is visible.
+- `ROADMAP.md`: the field plan marked shipped; "Still open after Sprint 13" lists twelve items,
+  each citing its evidence, and seeds the plan after.
+
+### Added
+
+- **Sixteen trap-2 eval cases** under `evals/trap2/`, one per rule file whose 4.2.0 case passed
+  without the rule, each on the file's *second* named line. 55 cases.
+- Smoke check 54 (`scoped-loading`), the `--wip` assertion in check 39, check 47 over 34 rule
+  cases; 146 checks in all.
+
+### Removed
+
+- The `shipkit/real-run` branch in `rails_error_dashboard`; the unused `4.2.0` and `4.4.0`
+  directories in the owner's plugin cache; 26 scratch entries under `$TMPDIR` from Sprints 8
+  to 10 (C12 D1 to D3, each its own yes; the commands are in the S13-T6 commit). The merged
+  `sprint-8` to `sprint-12` branches go after this release's tag (D4).
+
+### What using it for real showed
+
+**Path-scoped rules load on a read, not a mention.** In a normal headless session the `paths:`
+rules installed under `.claude/rules/shipkit/` reached context when the model *read*
+`pyproject.toml` or `Gemfile`, not when the prompt only named them, and never for `README.md`.
+The plan's claim was half right; the smoke check says which form fired. **Four of sixteen rule
+lines earn their bytes on the second trap; twelve do not.** `data`, `gemfile`, `go-mod` and
+`experiments` separate three to none or three to one — without the rule the model vendored for
+an offline build, chose the `anthropic` gem, fell back to CPU silently, or would not write a
+dataset README without the facts. The other twelve pass without their text on both named
+lines, and are named cut candidates for the plan after; none was cut here (C8). Three of the
+sixteen first failed *with* the rule and the traces said why: a fixture with nothing to train,
+a root dotfile the eval sandbox refuses to write, and a regex that found `npm install` inside
+`pnpm install` — each corrected on that evidence and re-run with the owner's yes. **The elder
+reads the map in 8 of 15 runs at best from step 1 alone.** Baseline 1 of 15; "Read it as your
+first tool call" 4 of 15; a heading that names drift, gap, why and how questions 8 of 15. Every
+one of 45 answers was right, so the sentence was reverted both times and record 0001 stays
+closed with the map optional: step 0's "cheap grep first" wins whenever the grep lands. **On a
+"wip" log the map is the only place the *why* survives**: the history case reads 3 of 3 with
+the map and 0 of 3 without, where the elder found the commit and its date and said the
+repository records no reason. Smaller: a housekeeping loop over an unquoted zsh variable ran
+once and removed nothing; the smoke suite overwrites `~/.claude/shipkit/plugin-root` while it
+runs and it was restored by hand.
+
 ## [4.5.0] — 2026-10-08
 
 Sprint 12 of the field plan (`docs/plans/field-sprint-plan.md`): the four findings about the

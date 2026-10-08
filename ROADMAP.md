@@ -12,11 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-08, v4.5.0):** Sprints 1 to 7 of the quality-gate plan and 8 to 10 of
-the evidence plan are done; Sprints 11 and 12 of the field plan (`docs/plans/field-sprint-plan.md`,
-approved 2026-10-08) shipped as 4.4.0 and 4.5.0 — see "The field plan" below. Everything in this
-document is shipped except the items under "Still open after Sprint 10" not marked shipped,
-which Sprint 13 of the field plan takes up.
+**Status (as of 2026-10-09, v4.6.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan and 11 to 13 of the field plan (`docs/plans/field-sprint-plan.md`, approved
+2026-10-08) are done — the last three shipped as 4.4.0, 4.5.0 and 4.6.0; see "The field plan"
+below. Everything in this document is shipped except the items under "Still open after
+Sprint 13", which seed the plan after.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -30,7 +30,7 @@ which Sprint 13 of the field plan takes up.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The field plan — Sprints 11–12 SHIPPED 2026-10-08 as 4.4.0, 4.5.0; Sprint 13 in flight
+## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
 Full plan: [`docs/plans/field-sprint-plan.md`](docs/plans/field-sprint-plan.md). What the real
 run showed, fixed in three sprints: shipkit's own behaviour on a project it had not seen (11),
