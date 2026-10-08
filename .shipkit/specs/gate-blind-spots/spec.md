@@ -51,10 +51,13 @@ Source: `docs/plans/field-sprint-plan.md`, Sprint 12 (S12-T1 to S12-T4), decisio
 
 ### The gate keeps its exit codes and its output (S12-T3)
 
-- **REQ-8.** The ship report shall quote, for every step that runs a command, the exit code the
-  command returned, captured by the command line itself and never inferred from its output.
-  [untested: verified by a headless dry run of the gate on the shipped `real-run` spec, its report
-  read and then deleted]
+- **REQ-8.** The ship report shall quote, for each step whose How column is a command (steps 1,
+  2, 3 and 8), the exit code the command returned, captured by the command line's own
+  `echo "exit $?"` and never inferred from its output. Steps 5 and 6 are reads of the diff and
+  the design, and step 7 reuses the `git status` captured before step 1; none of them has an
+  exit code to quote. [untested: verified by a headless dry run of the gate on the shipped
+  `real-run` spec on 2026-10-08 — steps 1, 2, 3, 5 and 8 quoted `→ exit N`, no "not captured";
+  the report was deleted by design and its lines are quoted in the S12-T3 commit message]
 - **REQ-9.** The ship report's evidence blocks shall carry output pasted from the command's
   captured output, never typed from memory, and the report template shall say so. [untested:
   prose, verified by reading and by the same dry run]
