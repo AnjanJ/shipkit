@@ -43,6 +43,17 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.4.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-08, at `53f223b`: 39 cases, $12.45, exit 1 —
+`grandfather-xl/drift` 1 of 3, the shape of the 4.1.0 results and of the 4.3.0 release run (with
+four cases running at once the elder reads the map in fewer than one run in three, so has no
+Redis claim to call wrong). Re-run alone with `--keep-temp`: 3 of 3, every reply naming
+`PROJECT_MAP.md:25` as wrong; traces read with `trace-tools.sh`: 1 Agent call, 4–6 tools,
+68.6k–69.2k input tokens each (44.8k in the main session) — within a few hundred tokens of the
+4.3.0 re-run. Nothing in 4.4.0 touched the elders or the map. Every other case 3 of 3,
+`intake/answered` included; `digest-attention` 2 of 3 as in 4.2.0 and 4.3.0.
+
 *Written 2026-10-08 (Sprint 11, S11-T2), moved here the same day for room:*
 
 ## The intake case that passed before its sentence existed (4.4.0)
