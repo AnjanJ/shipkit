@@ -48,7 +48,7 @@ of the procedure below.
    to today's date.
 
 6. **Report** in three or four lines: where the file is, the goals as written, and any gap
-   left open (`metric: none set`). Do not paste the file back.
+   left open (`metric: none set`, or the open-questions block). Do not paste the file back.
 
 ## Studio priorities (`--studio`)
 
@@ -88,4 +88,7 @@ from which repository was touched last.
 - This file says *what the product is for*, not how it is built — no architecture here; that
   is `PROJECT_MAP.md` and the decision records.
 - When no user is present to answer (a non-interactive run), use the answers given in the
-  request, ask nothing, and mark what is missing as a gap.
+  request, ask nothing, mark what is missing as a gap, and write the questions you would have
+  asked as **one blockquote directly under the review line**, starting `> Open questions for the
+  owner:` — numbered, one line each. It is not a heading: the seven headings stay as they are.
+  Remove the block when the owner has answered.

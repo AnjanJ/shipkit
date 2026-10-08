@@ -1695,6 +1695,37 @@ if ! printf '%s\n' "$hook" | grep 'behind HEAD' | grep -q 'old-[abc]' \
   pass "pre33-specs (hook: no drift line for all-ticked no-Status specs; still one for the open ones)"
 else failc "pre33-specs" "hook drift lines: $(printf '%s\n' "$hook" | grep 'behind HEAD\|stale')"; fi
 
+# 50. headless-questions: a run that cannot ask leaves its questions on disk, not in the reply.
+# Like checks 22 and 23 this asks sonnet to do real work, twice: /shipkit:intake with nobody to
+# answer must still write intake.md with its questions marked unanswered (run-wounds/REQ-9);
+# /shipkit:product with no answers given must write product.md with an "Open questions for the
+# owner" block under the review line, keeping the seven-heading shape check 23 holds
+# (run-wounds/REQ-11). The files are read here; the model's word is not.
+HQ="$WORK/hq-intake"; mkdir -p "$HQ"
+(cd "$HQ" && bash "$COPY/evals/intake/limit/fixture.sh" >/dev/null 2>&1)
+(cd "$HQ" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
+  -p "/shipkit:intake Add refunds.
+This run is not interactive and you cannot ask me anything, and I have given no answers." \
+  </dev/null >"$WORK/hq-intake.out" 2>&1)
+hq_file=$(find "$HQ/.shipkit/specs" -name intake.md 2>/dev/null | head -1)
+if [ -n "$hq_file" ] && grep -q '^## Answers' "$hq_file" && grep -qi 'unanswered' "$hq_file"; then
+  pass "headless-questions (intake with nobody to answer wrote $(printf '%s' "$hq_file" | sed "s|$HQ/||") with its questions marked unanswered)"
+else failc "headless-questions" "intake.md: [${hq_file:-none}] — model said: $(tail -3 "$WORK/hq-intake.out")"; fi
+HP="$WORK/hq-product"; mkdir -p "$HP"; cp -R "$COPY/evals/fixtures/sample-app/." "$HP/"
+(cd "$HP" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+(cd "$HP" && claude --plugin-dir "$COPY" --model sonnet \
+  --allowedTools Read Glob Grep Write Edit Skill \
+  -p "/shipkit:product
+This run is not interactive and you cannot ask me anything, and I have given no answers." \
+  </dev/null >"$WORK/hq-product.out" 2>&1)
+hp="$HP/.shipkit/product.md"
+hp_heads=$([ -f "$hp" ] && grep '^## ' "$hp" | sed 's/^## //; s/[[:space:]]*$//' | tr '\n' '|')
+if [ -f "$hp" ] && grep -q '^> Open questions for the owner' "$hp" \
+   && [ "$hp_heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ]; then
+  pass "headless-questions (product with no answers wrote the open-questions block; seven headings kept)"
+else failc "headless-questions" "product.md block missing or shape changed: heads=[$hp_heads] — model said: $(tail -3 "$WORK/hq-product.out")"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

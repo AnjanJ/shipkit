@@ -14,9 +14,9 @@ first moves README history only with the owner's yes (intake question 1).**
   - Test: eval case `intake-answered` (sample-app + docs/decisions.md answering two of three natural refunds questions; grader: at most one question asked, the other two cited to the file) — run with the 4.3.0 text first (expect < 2 of 3), then with the new text (≥ 2 of 3)
   - After: none
   - Done when: `bash scripts/evals.sh --case intake-answered` → ≥ 2 of 3 with the new text; the old-text arm's numbers recorded in evals/README.md; `--group intake` → every case ≥ 2 of 3; evals bytes ≤ 131072; lint 0/0
-- [ ] **T3** Headless runs leave their questions on disk (S11-T3) → REQ-9, REQ-10, REQ-11
-  - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/product/SKILL.md, scripts/smoke.sh
-  - Test: scripts/smoke.sh check 50 "headless-questions" (sonnet, scratch project: a non-interactive `/shipkit:intake` with no answers → `.shipkit/specs/*/intake.md` exists and contains "unanswered"; a non-interactive `/shipkit:product` with no answers → product.md contains "## Open questions for the owner") — written first, red
+- [x] **T3** Headless runs leave their questions on disk (S11-T3) → REQ-9, REQ-10, REQ-11
+  - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/product/SKILL.md, scripts/smoke.sh, docs/design/eval-history.md
+  - Test: scripts/smoke.sh check 50 "headless-questions" (sonnet, scratch project: a non-interactive `/shipkit:intake` with no answers → `.shipkit/specs/*/intake.md` exists and contains "unanswered"; a non-interactive `/shipkit:product` with no answers → product.md contains a `> Open questions for the owner:` block under the review line, seven headings kept) — written first, red
   - After: T1, T2
   - Done when: check 50 → PASS; `bash scripts/evals.sh --group intake` → every case ≥ 2 of 3; lint 0/0
 - [ ] **T4** Three lines: version, quiet goal, Blocked on (S11-T4) → REQ-12, REQ-13, REQ-14, REQ-15

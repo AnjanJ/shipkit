@@ -57,3 +57,10 @@ repository where the answers sat in `.shipkit/research/` and a configuration com
 fixture is one file under `docs/`. A harder fixture would be a case built to justify a
 sentence, so it was not built.
 
+
+*Added 2026-10-08 (S11-T3):* the intake group on the T3 text (intake writes `intake.md` when nobody
+can answer): `answered` **2 of 3**, `limit` 3 of 3, `nongoal` 3 of 3, `trivial` 3 of 3 ($1.71).
+The failed `answered` run cited `docs/decisions.md:3-6` and treated its rules as binding, then
+asked "How does the 'one partial refund' rule treat full refunds?" — a refinement of the
+documented rule, which the three judges read as re-asking it. The grader is left as written: a
+question whose answer is in the file's rule is the thing the case is for.
