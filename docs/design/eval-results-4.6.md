@@ -73,6 +73,61 @@ Tool calls per run from the traces: 1 to 11 with the rule, 2 to 10 without; no `
 any run.
 
 
+## The elder's step 1 (S13-T4)
+
+Decision 0001 left one experiment open: a step-1 sentence that makes `grandfather` read the map
+on explanation questions. `eval-results-4.1.md` measured the elder reading the map in fewer
+than one run in three. C9: at most two one-sentence changes, each judged by the read rate over
+the five `grandfather-xl` cases (15 runs) and by every answer still right; keep the first that
+reads in ≥ 10 of 15; otherwise revert and append the rates to record 0001. The read rate is
+`trace-tools.sh`'s new `map_read` column — a `Read` tool_use naming `PROJECT_MAP.md`, main
+session or subagent — checked by hand against two traces before it was trusted.
+
+**Baseline, the 4.5.0 text** (2026-10-08, `-j 4`, `--keep-temp`, $1.65): 15 of 15 answers
+right; the map read in **1 of 15** runs (one `history` run). The explain, drift and gap runs
+all began with a `Grep` — step 0's "try the cheap grep first" wins over step 1's "read the map
+if there is one" every time, because the grep lands.
+
+**Attempt 1** — step 1's first bullet became "**`Read` it as your first tool call, before any
+grep** — a grep that lands first settles the answer without it; the map tells you where to
+look." 15 runs, $1.68: 15 of 15 right; the map read in **4 of 15** (`history` 3, `explain` 1).
+Drift, gap and lookup still began with a grep.
+
+**Attempt 2** — attempt 1 reverted; step 1's heading became "Read the index, when there is one
+(for every question but a one-fact lookup — 'where is X cached', 'what is missing', 'why' and
+'how does X work' all read it)". 15 runs, $1.67: 15 of 15 right; the map read in **8 of 15**
+(`history` 3, `explain` 3, `drift` 2, `gap` 0, `lookup` 0). Counting a shell `cat` or `grep`
+on the map as well, which the plan's definition does not, 9 of 15.
+
+**Decision.** Neither attempt reached 10 of 15; both are reverted and `agents/grandfather.md` is
+unchanged. The rates are appended to decision 0001, which stays closed with the map optional.
+The reading: the elder's step 0 ("try the cheap grep first; escalate to the map if it does not
+land") is followed, and on a fixture where every grep lands the map is never needed; a sentence
+in step 1 cannot override a triage that happens before it. Two attempts cost $3.35 with the
+baseline's $1.65, within C9's budget. Every one of the 45 answers was right.
+
+
+## The "wip" history (S13-T5)
+
+`grandfather-xl/history` asks why orders moved off the JSON file and when. On the generated
+fixture the answer sits in two places: the body of commit 20 of 27 and the map's Evolution
+section. `eval-results-4.1.md` could not separate them. The XL generator now takes `--wip`:
+the same files and the same tree hash for every commit (smoke check 39 asserts both), with
+every commit message "wip" — the log most real projects have. Two scratch copies of the plugin
+whose history scaffold passes `--wip` and `--wip --no-map`, three runs each, 2026-10-08, $0.80:
+
+| Arm | Runs passed | What the elder said |
+|-----|-------------|---------------------|
+| wip log, with the map | **3 of 3** | the reason from the map's Evolution section, the commit found by its diff and dated |
+| wip log, no map | **0 of 3** | the commit (`0674ad6`, 2025-01-11) found by its diff, and "the repository does not record why" — no reason invented, so the judges failed it on the reason alone |
+
+**Reading.** On a log that says nothing, the map is the only place the *why* survives, and the
+elder reads it there. This is the one case in two releases of measurement where the map changed
+an answer, and it is the case decision 0001 named as the exception ("unless the question is
+about how the project evolved and the commit history cannot say"). eve's loss when fewer
+projects carry a map stays unmeasured: it needs a multi-project fixture this plan does not
+build (C11), and the ROADMAP says so.
+
 ## What this does not show
 
 One line per file, one model, one day — the same limits as 4.2.0. A rule whose both traps pass

@@ -25,7 +25,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: `bash scripts/evals.sh --case stacks-gemfile` 3× with the new text (and `trap2/gemfile` if its line is this one); lint check 14 holds the byte limit
   - After: T2
   - Done when: `--case stacks-gemfile` → 3 of 3, no run halted on the network; lint 0/0
-- [ ] **T4** The elder's step 1 (S13-T4) → REQ-9, REQ-10, REQ-11
+- [x] **T4** The elder's step 1 (S13-T4) → REQ-9, REQ-10, REQ-11
   - Files: plugins/shipkit/agents/grandfather.md, scripts/trace-tools.sh, docs/design/eval-results-4.6.md, .shipkit/decisions/0001-project-map-default.md
   - Test: the read-rate column of trace-tools.sh checked by hand against one kept trace; the five `grandfather-xl` cases on the 4.5.0 text (baseline, 15 runs) and after each attempt (15 runs each, at most two); Check first: the read-rate claim in the plan's §3
   - After: T3
