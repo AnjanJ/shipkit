@@ -297,6 +297,13 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
   `aggregate-result.json`. Pass it a directory of sandboxes (`/private/tmp`) to count kept
   runs without a summary.
 
+## The Gemfile line (4.6.0)
+
+`gemfile.md`'s first bullet now reads "when `bundle install` has run, read the `Gemfile.lock`
+diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" halted three
+runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
+run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
+
 ## Trap 2 (4.6.0)
 
 Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the

@@ -20,7 +20,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: scripts/smoke.sh check 47 extended to `trap2/*` (case format parses, 34 cases); `bash scripts/evals.sh --group trap2` with the rule and on a scratch copy without it, counts from trace-tools.sh
   - After: T1
   - Done when: check 47 → PASS for 34 cases; `--group trap2` → every case ≥ 2 of 3 with the rule; the sixteen-row table has no empty cell; evals bytes ≤ 163,840; lint 0/0; **stop: the owner sees the table before T3**
-- [ ] **T3** The Gemfile line that stopped work (S13-T3) → REQ-8
+- [x] **T3** The Gemfile line that stopped work (S13-T3) → REQ-8
   - Files: plugins/shipkit/stacks/rails/.claude/rules/gemfile.md, plugins/shipkit/evals/README.md
   - Test: `bash scripts/evals.sh --case stacks-gemfile` 3× with the new text (and `trap2/gemfile` if its line is this one); lint check 14 holds the byte limit
   - After: T2
