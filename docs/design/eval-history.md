@@ -43,6 +43,17 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.6.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-09, at `04fed37`: 55 cases (the sixteen `trap2` cases
+included), $16.73, exit 1 — `digest/attention` 1 of 3, its first drop below 2 of 3 since it was
+added in 3.6.0; `grandfather-xl/drift` and `trap2/react` 2 of 3; every other case 3 of 3. Nothing
+in 4.6.0 touched the digest, eve or the briefing. Re-run alone with `--keep-temp`: **3 of 3**
+($0.39) — the shape `grandfather-xl/drift` has shown since 4.1.0, a case that reads a built
+registry losing a run when four cases build at once. The parallel run's failing traces are not
+kept by `evals.sh`, so the reading rests on the re-run and the pattern; the case is unchanged.
+The release run's cost is within C13's "about $16".
+
 ## Release run 4.5.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-08, at `682d0f3`: 39 cases, $12.30, exit 0 — every case
