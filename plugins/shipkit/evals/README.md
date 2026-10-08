@@ -169,6 +169,18 @@ The directory's ceiling (lint check 17) is 131,072 bytes since 4.2.0, raised fro
 with the owner's yes: eighteen cases and their harness needed about 33 KB against 21 KB of
 room. The room is for cases; fixtures are still generated, never committed.
 
+### Path-scoped loading, measured (4.6.0)
+
+Smoke check 54 (`scoped-loading`), 2026-10-08, Claude Code 2.1.291, `haiku`: with the rules
+installed by `install-rules.sh` into a scratch project and a nonce appended to `dependencies.md`
+and to a copied `rails/gemfile.md`, the nonce **did not** reach context when the prompt merely
+named `pyproject.toml` or `Gemfile` with no tool use, and **did** when the model read the file
+(`--allowedTools Read`, "Read the file pyproject.toml, then …"): `dependencies.md` for
+`pyproject.toml`, `gemfile.md` for `Gemfile`, and neither for `README.md`. So `paths:` globs
+fire on a file access, not on a mention — the eval cases, whose model edits the matching file,
+would meet the rule either way, and the always-on delivery through the hook stands in for a
+load the sandbox cannot do. The ROADMAP item "measured by nothing" now carries this number.
+
 ## Cases
 
 Each case has exactly one scored grader, so a run is a plain pass or fail and "two of three

@@ -1835,6 +1835,50 @@ if sed -n 1,30p "$BV" | grep -q 'another spec' \
   pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
 else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
 
+# 54. scoped-loading: does a path-scoped rule under .claude/rules/shipkit/ load in a normal
+# headless session when a matching file is named, and stay out when a non-matching one is?
+# Every rule eval delivers its text always-on through the hook (the sandbox loads no .claude/
+# file), so until now nothing measured whether the `paths:` globs fire at all (ROADMAP
+# "measured by nothing"). Two forms are tried, in order: the prompt names the file and no tool
+# runs; the prompt has the model Read the file. The PASS line says which form fired. Rules are
+# installed by install-rules.sh (dependencies.md, nonce ZEBRA-5401) and one stack rule copied
+# in as install-stack.sh would (rails/gemfile.md, ZEBRA-5402). haiku, four to eight short runs.
+# The evals README states the result under "How a case gets the fixture". Cites:
+# second-traps/REQ-3
+SL="$WORK/scoped-load"; mkdir -p "$SL"
+(cd "$SL" && git init -q && printf '[project]\nname = "demo"\n' > pyproject.toml && printf '# Demo\n' > README.md \
+  && printf 'source "https://rubygems.org"\n' > Gemfile && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$SL" >/dev/null 2>&1
+printf '\n\nSmoke codeword: ZEBRA-5401.\n' >> "$SL/.claude/rules/shipkit/dependencies.md"
+cp "$COPY/stacks/rails/.claude/rules/gemfile.md" "$SL/.claude/rules/shipkit/gemfile.md"
+printf '\n\nSmoke codeword: ZEBRA-5402.\n' >> "$SL/.claude/rules/shipkit/gemfile.md"
+slask() {  # slask <file> <named|read> → the model's last lines
+  if [ "$2" = read ]; then
+    (cd "$SL" && claude --plugin-dir "$COPY" --model haiku --allowedTools Read -p "Read the file $1 in this directory. Then: $CW_Q" 2>/dev/null | tail -5)
+  else
+    (cd "$SL" && claude --plugin-dir "$COPY" --model haiku -p "I am about to edit $1 in this directory. $CW_Q Do not use tools." 2>/dev/null | tail -5)
+  fi
+}
+sl_form=""; sl_py=""; sl_gem=""; sl_readme=""
+for form in named read; do
+  sl_py=$(slask pyproject.toml "$form"); sl_gem=$(slask Gemfile "$form")
+  case "$sl_py" in *ZEBRA-5401*) case "$sl_gem" in *ZEBRA-5402*) sl_form="$form";; esac;; esac
+  [ -n "$sl_form" ] && break
+done
+if [ -n "$sl_form" ]; then
+  sl_readme=$(slask README.md "$sl_form")
+  case "$sl_readme" in
+    *ZEBRA-540*) failc "scoped-loading" "form '$sl_form': the rules loaded for README.md too — the globs did not scope: $sl_readme";;
+    *) pass "scoped-loading (path-scoped rules load when the prompt $( [ "$sl_form" = read ] && echo 'has the file read' || echo 'names the file' ) — pyproject.toml → dependencies.md, Gemfile → gemfile.md — and not for README.md)";;
+  esac
+else
+  failc "scoped-loading" "neither form loaded both rules — named: py[$(printf '%s' "$sl_py" | tail -1)] gem[$(printf '%s' "$sl_gem" | tail -1)]"
+fi
+if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -q 'check 54' \
+   && sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -qi 'path-scoped'; then
+  pass "scoped-loading (the evals README states the measured result and names check 54)"
+else failc "scoped-loading" "evals/README.md has no path-scoped loading paragraph naming check 54"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

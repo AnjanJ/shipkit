@@ -10,7 +10,7 @@ after its table; T4's keep and each T6 row are the owner's own yes.**
   - Test: scripts/smoke.sh check 42 "lint-negative" (expects "the limit is 163,840"; a 60 KB file still trips it)
   - After: none
   - Done when: `spec-check.sh . second-traps` → 0 gaps; check 42 → PASS; evals bytes reported; lint 0/0
-- [ ] **T1** Path-scoped loading, measured (S13-T1) → REQ-3
+- [x] **T1** Path-scoped loading, measured (S13-T1) → REQ-3
   - Files: scripts/smoke.sh, plugins/shipkit/evals/README.md, ROADMAP.md
   - Test: scripts/smoke.sh check 54 "scoped-loading" (haiku, scratch project: `dependencies.md` installed by install-rules.sh with a nonce; prompt naming `pyproject.toml` → nonce seen; naming `README.md` → not seen; the same for `rails/gemfile.md` and `Gemfile`) — written first, red; Check first: the loading claim in the plan's §3
   - After: T0

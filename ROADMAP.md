@@ -120,10 +120,13 @@ Carried from Sprint 9:
   `sonnet` clears each file's first named trap unaided. One line per file was probed, one
   model. A second-trap case for the doubted files, or a decision that a line the model already
   follows still earns its bytes, belongs to the next plan.
-- **Path-scoped loading is measured by nothing.** The eval sandbox loads no `.claude/` file,
-  so every rule eval delivers the text always-on through the hook. A smoke check in a normal
-  headless session (where the nonce did load) could measure whether `paths:` globs fire.
-  (`docs/design/eval-results-4.2.md`, first paragraph, and `evals/README.md` "How runs are isolated".)
+- **Path-scoped loading, measured** (4.6.0, S13-T1, smoke check 54): in a normal headless
+  session the `paths:` rules installed under `.claude/rules/shipkit/` load when the model
+  *reads* a matching file (`pyproject.toml` → `dependencies.md`, `Gemfile` → `gemfile.md`), not
+  when the prompt only names it, and not for a non-matching file (`README.md`). 2 of 2 matches
+  and 0 of 1 non-match, `haiku`, 2026-10-08. The eval sandbox still loads no `.claude/` file, so
+  rule evals deliver the text through the hook (`evals/README.md`, "Path-scoped loading,
+  measured").
 - **A rule that names a network step can stop work where there is none** — `gemfile.md`'s
   "read the lock diff after `bundle install`" halted three runs in a sandbox with no network
   (`docs/design/eval-results-4.2.md`, the `gemfile` row and its reading).
