@@ -924,14 +924,15 @@ else
   if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE'; then
     pass "brief-verify (only allowed files changed, committed and not → exit 0)"
   else failc "brief-verify" "allowed only: exit $rc: $out"; fi
-  # b. one extra tracked file
-  printf 'z\n' >> "$BP/.shipkit/specs/refunds/spec.md"
+  # b. one extra tracked file — another spec's spec.md (since 4.5.0 the spec's OWN folder is
+  # allowed, check 53; another spec's folder is still outside)
+  printf 'z\n' >> "$BP/.shipkit/specs/old/spec.md"
   out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
-  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/refunds/spec.md$' \
+  if [ "$rc" -eq 1 ] && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/old/spec.md$' \
      && ! printf '%s\n' "$out" | grep -q 'OUTSIDE app/billing/refunds.py'; then
-    pass "brief-verify (a changed file outside the list → OUTSIDE, exit 1)"
+    pass "brief-verify (a changed tracked file outside the list → OUTSIDE, exit 1)"
   else failc "brief-verify" "extra file: exit $rc: $out"; fi
-  (cd "$BP" && git checkout -q -- .shipkit/specs/refunds/spec.md)
+  (cd "$BP" && git checkout -q -- .shipkit/specs/old/spec.md)
   # c. a new untracked file outside the list
   printf 'n\n' > "$BP/app/notes.txt"
   out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
@@ -1801,6 +1802,38 @@ if grep -q 'decision-check.sh" \. --run' "$COPY/skills/spec/SKILL.md" \
    && grep -q 'exit 1 on the tree' "$COPY/skills/spec/reference.md"; then
   pass "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
 else failc "fired-if-early" "spec skill or reference lacks the decision-check sentence"; fi
+
+# 53. shipkit-allowed: the files shipkit's own loop writes are never "outside the spec". On the
+# real run brief-verify called the spec's own intake.md/spec.md/design.md OUTSIDE before they
+# were committed and the reviewer called .shipkit/product.md outside the Paths line (field
+# notes §7, §8). Now everything under .shipkit/ is allowed except another spec's folder — for
+# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25 and
+# 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
+# gate-blind-spots/REQ-7
+mkdir -p "$BP/.shipkit/releases" "$BP/.shipkit/decisions"
+printf '# Product: x\n' > "$BP/.shipkit/product.md"
+printf 'READY\n' > "$BP/.shipkit/releases/2026-10-08-refunds.md"
+printf '# Handoff\n' > "$BP/.shipkit/state.md"
+printf '# Decision\n' > "$BP/.shipkit/decisions/0001-x.md"
+printf '\nnote\n' >> "$BP/.shipkit/specs/refunds/design.md"
+out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^OUTSIDE' \
+   && printf '%s\n' "$out" | grep -q 'all inside the Files'; then
+  pass "shipkit-allowed (product.md, a release report, state.md, a decision record and the spec's own design.md → exit 0, nothing OUTSIDE)"
+else failc "shipkit-allowed" "shipkit files: exit $rc: $out"; fi
+mkdir -p "$BP/.shipkit/specs/other"; printf '# Spec: other\n' > "$BP/.shipkit/specs/other/spec.md"
+out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^OUTSIDE')" -eq 1 ] \
+   && printf '%s\n' "$out" | grep -q '^OUTSIDE .shipkit/specs/other/spec.md$'; then
+  pass "shipkit-allowed (a write into another spec's folder → the one OUTSIDE line, exit 1)"
+else failc "shipkit-allowed" "other spec: exit $rc: $out"; fi
+rm -rf "$BP/.shipkit/specs/other" "$BP/.shipkit/releases" "$BP/.shipkit/decisions" "$BP/.shipkit/product.md" "$BP/.shipkit/state.md"
+(cd "$BP" && git checkout -q -- .shipkit/specs/refunds/design.md)
+if sed -n 1,30p "$BV" | grep -q 'another spec' \
+   && grep -q 'another spec' "$COPY/agents/reviewer.md" \
+   && grep -A3 'Changes beyond the spec\.\*\*' "$COPY/agents/reviewer.md" | grep -q 'under `\.shipkit/`'; then
+  pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
+else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

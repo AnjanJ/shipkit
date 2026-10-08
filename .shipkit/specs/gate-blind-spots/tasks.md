@@ -9,7 +9,7 @@ gate run is a measurement run: intake question 1 says whether it is in the budge
   - Test: scripts/smoke.sh check 52 "fired-if-early" (a design.md whose Fired-if names a missing file → `ERROR` with the exit code and stderr naming the file; the same line with a trailing `<!-- … -->` → parsed, same result; after `touch` of the file with 10 lines → `FIRED`; the summary line's words unchanged) — written first, red
   - After: none
   - Done when: check 52 → PASS; check 35 → PASS; `sh plugins/shipkit/scripts/decision-check.sh . --run` on this repository → 0 error(s); lint 0/0
-- [ ] **T2** `.shipkit/` is never "outside the spec" (S12-T2) → REQ-5, REQ-6, REQ-7
+- [x] **T2** `.shipkit/` is never "outside the spec" (S12-T2) → REQ-5, REQ-6, REQ-7
   - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/scripts/brief-verify.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 53 "shipkit-allowed" (a task whose run wrote `.shipkit/product.md`, `.shipkit/releases/<date>-x.md`, `.shipkit/state.md`, `.shipkit/decisions/0001-x.md` and its own spec's `design.md` → exit 0, no OUTSIDE line; a write to `.shipkit/specs/other/spec.md` → one OUTSIDE line, exit 1) — written first, red
   - After: T1
