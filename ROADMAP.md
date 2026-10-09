@@ -63,9 +63,12 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   `.shipkit/releases/2026-10-08-run-wounds.md`, section 4).
 - **`spec-check.sh` cannot check a draft spec** — the spec skill flips the status to run it
   (`docs/design/field-notes-4.3.md` §6; left out of Sprint 12 by the owner's answer).
+  *4.7.0 (S14-T1, E4): `--as-open` reads a draft as open for one run, changing no file; the
+  spec skill asks for it and never flips the status (smoke check 55).*
 - **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
   record's case-against (`.shipkit/specs/gate-blind-spots/design.md`, "Exit codes are echoed on
-  the command line"), now observed on four gate runs.
+  the command line"), now observed on four gate runs. *4.7.0 (S14-T2, E5): the gate removes
+  them once the report holds their content; a dry run on `second-traps` left none.*
 - **The eval sandbox denies writing a dotfile at the workspace root** — *4.7.0 (S14-T5): it
   does not; it denies a file whose name is on Claude Code's protected list
   (`.pre-commit-config.yaml` is), in the mode the eval tool runs under. Two probe runs wrote
@@ -73,16 +76,24 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   `plugins/shipkit/evals/README.md`, "What a case cannot ask for" (smoke check 57).*
 - **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` with the map's path, not a shell
   `cat`** — one run in fifteen read the map through Bash and is counted as not reading it
-  (`eval-results-4.6.md`, "The elder's step 1", attempt 2).
+  (`eval-results-4.6.md`, "The elder's step 1", attempt 2). *4.7.0 (S14-T4, E7): the code
+  counted `Read` only, not `Read` or `Grep` as documented; it now counts both as `map_read`
+  and a `Bash` command naming the map as `map_shell`; 4.6's rates stand as `Read`-only counts
+  (the appended note in `eval-results-4.6.md`; smoke check 40).*
 - **The smoke suite overwrites `~/.claude/shipkit/plugin-root`** with scratch paths while it
   runs; the last hook run restores it only by luck of ordering, and a session started mid-run
   reads a scratch root (`scripts/smoke.sh` header, "except that the session hook writes
   ~/.claude/shipkit/plugin-root"; `CHANGELOG.md` 4.6.0 "What using it for real showed").
+  *4.7.0 (S14-T3, E6): the runner saves the file before its first session and restores it
+  from its EXIT trap, on every exit path; the mid-run window stays and the header names it
+  (smoke check 56).*
 - **Rule 5 and the gate disagree on when a branch-not-taken note lands** — the rule says the
   ship commit, the gate reads the spec before it; the note must be committed before the gate
   (`docs/plans/field-sprint-plan.md` §1 rule 5 against `.shipkit/specs/gate-blind-spots/tasks.md`
   "After the gate"; the 4.4.0 gate's first run in `CHANGELOG.md` 4.4.0 "What using it for real
-  showed").
+  showed"). *4.7.0 (S14-T6, E9): closed by the portfolio plan's rule 16 — the note is committed
+  before the gate — and its rule 5, which points there (`docs/plans/portfolio-sprint-plan.md`
+  §1); no plugin file changed.*
 - **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5).
