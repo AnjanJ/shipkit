@@ -15,7 +15,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: scripts/smoke.sh check 55 "spec-check-draft" (a draft with a task lacking `Files:` → `SKIPPED` without the flag, `MISSING-FIELD` with it; a draft with an unnamed requirement → `MISSING-TASK` with it; a shipped spec with the flag → same output as without; the skill's text has no status flip) — written first, red; Check first: the status claim in the plan's §3
   - After: T0
   - Done when: check 55 → PASS; `spec-check.sh .` on this repository → 0 gaps as before; lint 0/0
-- [ ] **T2** The gate cleans up after itself (S14-T2) → REQ-4, REQ-5
+- [x] **T2** The gate cleans up after itself (S14-T2) → REQ-4, REQ-5
   - Files: plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md
   - Test: a headless `/shipkit:ship second-traps` dry run on this branch (≈ $0.50, in the budget): `/bin/ls "$TMPDIR"/shipkit-ship-*.out` before and after, both in the commit message; the report read, then deleted
   - After: T1

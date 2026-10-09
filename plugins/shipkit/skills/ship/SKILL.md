@@ -94,7 +94,9 @@ Write `.shipkit/releases/<YYYY-MM-DD>-<slug>.md` in the shape in @reference.md. 
 line is exactly `READY` or `NOT READY`** — `READY` only if all eight steps are `PASS`. A
 `SKIPPED` step makes it `NOT READY`. Then the table of eight results, the count of
 requirements and how many are waived as `[untested]` (from step 1's `WAIVED` lines), the
-commit sha, and the evidence for every step. Writing this file is the only change you make.
+commit sha, and the evidence for every step. Then remove the scratch files this run wrote —
+`rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out` — the report holds their content. Writing the report
+and removing those files are the only changes you make.
 
 Then tell the user, in a few lines: the first line of the report, each step that did not pass
 and what would fix it, and where the report is.

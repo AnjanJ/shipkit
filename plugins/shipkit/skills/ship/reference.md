@@ -34,7 +34,7 @@ Requirements: 3 (1 waived as `[untested]`).
 
 ### 2. Tests
 `python3 -m unittest discover -s tests` → exit 0
-<the last 20 lines of shipkit-ship-tests.out, pasted from the file>
+<the last 20 lines of shipkit-ship-tests.out, pasted from the file — which is removed once the report holds it>
 
 ### 3. Tasks ticked
 `grep -n '^- \[ \]' .shipkit/specs/refunds/tasks.md` → exit 1
@@ -56,7 +56,7 @@ Requirements: 3 (1 waived as `[untested]`).
 
 ### 8. Decisions fired
 `sh <plugin root>/scripts/decision-check.sh . --run` → exit 0
-<every FIRED, HOLDS, MANUAL and ERROR line and the summary line, pasted from shipkit-ship-decisions.out>
+<every FIRED, HOLDS, MANUAL and ERROR line and the summary line, pasted from shipkit-ship-decisions.out — removed once the report holds it>
 ```
 
 Rules:
