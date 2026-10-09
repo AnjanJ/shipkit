@@ -94,3 +94,18 @@ otherwise, without calling the answer slower; `eve` greps a registered repo that
 rather than reporting it as a gap; `/shipkit:map`'s description says when a map earns its keep.
 Lint check 18 keeps the three documents from presenting the map as required again. The
 archivist, `/shipkit:map`, the stale-map nag and the registry are unchanged. **Closed.**
+
+**The elder's step 1, measured (4.6.0, S13-T4, field plan C9).** The one experiment this record
+left open — a step-1 sentence that makes `grandfather` read the map on explanation questions —
+was tried twice on the five `grandfather-xl` cases, 15 runs each, read rate counted from the
+traces (`trace-tools.sh --map_read`: a tool_use whose input path ends in `PROJECT_MAP.md`,
+main session or subagent), answers judged as before. Baseline, the 4.5.0 text: 15 of 15 right,
+the map read in **1 of 15**. Attempt 1 (step 1's first bullet: "`Read` it as your first tool
+call, before any grep"): 15 of 15 right, **4 of 15**. Attempt 2 (step 1's heading: "for every
+question but a one-fact lookup — 'where is X cached', 'what is missing', 'why' and 'how does X
+work' all read it"): 15 of 15 right, **8 of 15** (`history` 3, `explain` 3, `drift` 2, `gap` 0,
+`lookup` 0). Neither reached 10 of 15; both reverted, the agent is unchanged. What the traces
+say: step 0's "try the cheap grep first" wins whenever the grep lands, and on this fixture it
+lands; the one question where the map changed the answer is `history` on a "wip" log
+(`eval-results-4.6.md`, S13-T5), which is the exception this record already names. **Still
+closed; the map is optional.**

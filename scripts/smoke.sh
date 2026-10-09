@@ -1409,6 +1409,16 @@ if [ -f "$XL/history/fixture.sh" ]; then
 fi
 if [ "$xl_ok" -eq 1 ]; then pass "xl-scaffold (five cases scaffold the XL fixture with a map; SHIPKIT_EVAL_NO_MAP=1 → without)"
 else failc "xl-scaffold" "$xl_why"; fi
+# --wip: the same history with every commit message "wip" — same files, same tree hash per
+# commit, only the messages differ (the map is untracked, so it does not enter any tree).
+# A "wip" log is where a map's Evolution section would earn its place (second-traps/REQ-12).
+XW="$WORK/xl-wip"; mkdir -p "$XW"
+(cd "$XW" && python3 "$COPY/evals/fixtures/ledger-gen/generate.py" --wip >/dev/null 2>&1)
+xw_trees=$(git -C "$XW" log --format=%T 2>/dev/null); xn_trees=$(git -C "$WORK/xl-case-history" log --format=%T 2>/dev/null)
+xw_msgs=$(git -C "$XW" log --format=%s%n%b 2>/dev/null | grep -v '^$' | sort -u | tr '\n' '|')
+if [ -n "$xw_trees" ] && [ "$xw_trees" = "$xn_trees" ] && [ "$xw_msgs" = "wip|" ] && [ -f "$XW/PROJECT_MAP.md" ]; then
+  pass "xl-scaffold (--wip: $(printf '%s\n' "$xw_trees" | wc -l | tr -d ' ') commits with the same tree hashes, every message \"wip\", the map still written)"
+else failc "xl-scaffold" "--wip: trees equal=$([ "$xw_trees" = "$xn_trees" ] && echo yes || echo no) messages=[$xw_msgs] map=$([ -f "$XW/PROJECT_MAP.md" ] && echo yes || echo no)"; fi
 
 # 40. trace-tools: scripts/trace-tools.sh reads an eval output directory's aggregate-result.json
 # and prints one line per run with the counts the map comparison reads — from the trace, never
@@ -1469,6 +1479,7 @@ else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"
 # a 60 KB file under evals/ and one "build the map first" line in the README must fail the lint
 # with exactly those two errors (the gate's reviewer asked for a repeatable red, not a
 # one-time one). No claude needed. Cites: map-on-trial/REQ-7 map-on-trial/REQ-15
+# second-traps/REQ-1 (the limit is 163,840 since 4.6.0)
 LN="$WORK/lint-neg"; mkdir -p "$LN"
 # only the repo-root .git and .claude (agent worktrees) are skipped; the overlays' .claude/ must copy
 if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$LN/"
@@ -1478,7 +1489,7 @@ head -c 61440 /dev/zero | tr '\0' 'x' > "$LN/plugins/shipkit/evals/fixtures/over
 printf '\nStart by building the map: run /shipkit:map first.\n' >> "$LN/README.md"
 ln_out=$(python3 "$LN/scripts/lint.py" 2>&1)
 if printf '%s\n' "$ln_clean" | grep -q '^lint: 0 error(s)' \
-   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 131,072' \
+   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 163,840' \
    && printf '%s\n' "$ln_out" | grep -q 'README.md: line [0-9]*: presents the map as required or the first step' \
    && printf '%s\n' "$ln_out" | grep -q '^lint: 2 error(s)'; then
   pass "lint-negative (a 60 KB eval file and a 'build the map first' line → exactly those two lint errors; the clean copy → 0)"
@@ -1614,12 +1625,12 @@ if printf '%s\n' "$eg_group" | grep -q -- '--case stacks-\*' && ! printf '%s\n' 
   pass "evals-group (--group stacks → --case 'stacks-*'; no flag → every case; --case still passes through)"
 else failc "evals-group" "group=[$(printf '%s' "$eg_group" | head -c 120)] all=[$(printf '%s' "$eg_all" | head -c 80)]"; fi
 
-# 47. rule-cases: every rule case (evals/scoped/*, evals/stacks/*) has the four files, exactly
+# 47. rule-cases: every rule case (evals/scoped/*, evals/stacks/*, evals/trap2/*) has the four files, exactly
 # one scored grader, a description naming the rule file it probes, a scaffold that calls
 # lib/with-rule.sh for that rule, and a case name equal to <group>-<folder>. Each scaffold is
 # run in a scratch directory and must leave the rule and the marker in place.
-# Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12
-RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux stacks/mix-deps stacks/go-mod stacks/hotwire stacks/liveview stacks/data stacks/experiments stacks/notebooks stacks/jobs stacks/pyproject stacks/gemfile stacks/rails stacks/package-json stacks/react"
+# Cites: rule-evals/REQ-10 rule-evals/REQ-11 rule-evals/REQ-12 second-traps/REQ-4
+RC_EXPECT="scoped/dependencies scoped/migrations scoped/monorepo scoped/testing scoped/ui-ux stacks/mix-deps stacks/go-mod stacks/hotwire stacks/liveview stacks/data stacks/experiments stacks/notebooks stacks/jobs stacks/pyproject stacks/gemfile stacks/rails stacks/package-json stacks/react trap2/migrations trap2/monorepo trap2/testing trap2/ui-ux trap2/mix-deps trap2/go-mod trap2/hotwire trap2/liveview trap2/data trap2/experiments trap2/notebooks trap2/pyproject trap2/gemfile trap2/rails trap2/package-json trap2/react"
 rc_ok=1; rc_why=""
 for c in $RC_EXPECT; do
   CD="$COPY/evals/$c"; g=${c%%/*}; n=${c##*/}
@@ -1834,6 +1845,50 @@ if sed -n 1,30p "$BV" | grep -q 'another spec' \
    && grep -A3 'Changes beyond the spec\.\*\*' "$COPY/agents/reviewer.md" | grep -q 'under `\.shipkit/`'; then
   pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
 else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
+
+# 54. scoped-loading: does a path-scoped rule under .claude/rules/shipkit/ load in a normal
+# headless session when a matching file is named, and stay out when a non-matching one is?
+# Every rule eval delivers its text always-on through the hook (the sandbox loads no .claude/
+# file), so until now nothing measured whether the `paths:` globs fire at all (ROADMAP
+# "measured by nothing"). Two forms are tried, in order: the prompt names the file and no tool
+# runs; the prompt has the model Read the file. The PASS line says which form fired. Rules are
+# installed by install-rules.sh (dependencies.md, nonce ZEBRA-5401) and one stack rule copied
+# in as install-stack.sh would (rails/gemfile.md, ZEBRA-5402). haiku, four to eight short runs.
+# The evals README states the result under "How a case gets the fixture". Cites:
+# second-traps/REQ-3
+SL="$WORK/scoped-load"; mkdir -p "$SL"
+(cd "$SL" && git init -q && printf '[project]\nname = "demo"\n' > pyproject.toml && printf '# Demo\n' > README.md \
+  && printf 'source "https://rubygems.org"\n' > Gemfile && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$SL" >/dev/null 2>&1
+printf '\n\nSmoke codeword: ZEBRA-5401.\n' >> "$SL/.claude/rules/shipkit/dependencies.md"
+cp "$COPY/stacks/rails/.claude/rules/gemfile.md" "$SL/.claude/rules/shipkit/gemfile.md"
+printf '\n\nSmoke codeword: ZEBRA-5402.\n' >> "$SL/.claude/rules/shipkit/gemfile.md"
+slask() {  # slask <file> <named|read> → the model's last lines
+  if [ "$2" = read ]; then
+    (cd "$SL" && claude --plugin-dir "$COPY" --model haiku --allowedTools Read -p "Read the file $1 in this directory. Then: $CW_Q" 2>/dev/null | tail -5)
+  else
+    (cd "$SL" && claude --plugin-dir "$COPY" --model haiku -p "I am about to edit $1 in this directory. $CW_Q Do not use tools." 2>/dev/null | tail -5)
+  fi
+}
+sl_form=""; sl_py=""; sl_gem=""; sl_readme=""
+for form in named read; do
+  sl_py=$(slask pyproject.toml "$form"); sl_gem=$(slask Gemfile "$form")
+  case "$sl_py" in *ZEBRA-5401*) case "$sl_gem" in *ZEBRA-5402*) sl_form="$form";; esac;; esac
+  [ -n "$sl_form" ] && break
+done
+if [ -n "$sl_form" ]; then
+  sl_readme=$(slask README.md "$sl_form")
+  case "$sl_readme" in
+    *ZEBRA-540*) failc "scoped-loading" "form '$sl_form': the rules loaded for README.md too — the globs did not scope: $sl_readme";;
+    *) pass "scoped-loading (path-scoped rules load when the prompt $( [ "$sl_form" = read ] && echo 'has the file read' || echo 'names the file' ) — pyproject.toml → dependencies.md, Gemfile → gemfile.md — and not for README.md)";;
+  esac
+else
+  failc "scoped-loading" "neither form loaded both rules — named: py[$(printf '%s' "$sl_py" | tail -1)] gem[$(printf '%s' "$sl_gem" | tail -1)]"
+fi
+if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -q 'check 54' \
+   && sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -qi 'path-scoped'; then
+  pass "scoped-loading (the evals README states the measured result and names check 54)"
+else failc "scoped-loading" "evals/README.md has no path-scoped loading paragraph naming check 54"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

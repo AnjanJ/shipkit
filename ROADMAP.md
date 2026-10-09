@@ -12,11 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-08, v4.5.0):** Sprints 1 to 7 of the quality-gate plan and 8 to 10 of
-the evidence plan are done; Sprints 11 and 12 of the field plan (`docs/plans/field-sprint-plan.md`,
-approved 2026-10-08) shipped as 4.4.0 and 4.5.0 — see "The field plan" below. Everything in this
-document is shipped except the items under "Still open after Sprint 10" not marked shipped,
-which Sprint 13 of the field plan takes up.
+**Status (as of 2026-10-09, v4.6.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan and 11 to 13 of the field plan (`docs/plans/field-sprint-plan.md`, approved
+2026-10-08) are done — the last three shipped as 4.4.0, 4.5.0 and 4.6.0; see "The field plan"
+below. Everything in this document is shipped except the items under "Still open after
+Sprint 13", which seed the plan after.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -30,7 +30,7 @@ which Sprint 13 of the field plan takes up.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The field plan — Sprints 11–12 SHIPPED 2026-10-08 as 4.4.0, 4.5.0; Sprint 13 in flight
+## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
 Full plan: [`docs/plans/field-sprint-plan.md`](docs/plans/field-sprint-plan.md). What the real
 run showed, fixed in three sprints: shipkit's own behaviour on a project it had not seen (11),
@@ -40,7 +40,52 @@ the gate's blind spots (12), second traps and the elder's first step (13).
 |--------|---------|--------------------|
 | 11 | 4.4.0 | A briefing that is right on a project with pre-3.3 specs; an intake whose claims of absence name what it searched (the fixed search list was not added — its case passed 3 of 3 before the sentence existed, and the record's clause fired first); headless intake and product runs that leave their questions on disk; a version line in the hook, a quiet top-goal line, a "Blocked on" heading in the handoff |
 | 12 | 4.5.0 | A `Fired-if` that cannot fire before the code exists (`decision-check.sh` strips a trailing comment, its `ERROR` line says why; the spec skill runs it on its own output); everything under `.shipkit/` but another spec's folder allowed by `brief-verify.sh` and the reviewer; the gate's How column echoes exit codes and pastes output from files; ignored files closed by record (C6) |
-| 13 | 4.6.0 | *planned* |
+| 13 | 4.6.0 | Path-scoped loading measured (the globs fire on a read, not a mention); sixteen trap-2 cases with and without — four lines separate, twelve are named cut candidates; the Gemfile lock-diff line conditional on the install; the elder's step 1 tried twice (1 → 4 → 8 of 15 map reads, both reverted, record 0001 unchanged); the history case on a "wip" log (3 of 3 with the map, 0 of 3 without); housekeeping rows D1–D3 done; this section |
+
+**Still open after Sprint 13** (every item names its evidence; these seed the plan after):
+
+- **Twelve rule files pass without their text on both named traps** — `hotwire`, `liveview`,
+  `migrations`, `mix-deps`, `monorepo`, `notebooks`, `package-json`, `pyproject`, `react`,
+  `testing`, `ui-ux`, and `rails` at the threshold: named cut candidates with two measurements
+  each (`docs/design/eval-results-4.6.md`, "The three readings"; C8 forbade cutting on the
+  sprint's own numbers). The plan after decides which lines are kept as a statement of standards.
+- **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
+  registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
+  "The wip history"; C11).
+- **The elder reads the map in 8 of 15 runs at best from step 1 alone** — step 0's "cheap grep
+  first" wins whenever the grep lands, and a sentence in step 1 cannot override a triage that
+  happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended
+  note). Whether step 0 itself should change, and whether a read that never changes an answer
+  is worth its tokens, is the next plan's question.
+- **The intake names the answering file only because the grader asks** — nothing in
+  `skills/intake/SKILL.md` says to; the 4.4.0 case passed 3 of 3 before any sentence existed
+  (`CHANGELOG.md` 4.4.0 "What using it for real showed"; the reviewer's note in
+  `.shipkit/releases/2026-10-08-run-wounds.md`, section 4).
+- **`spec-check.sh` cannot check a draft spec** — the spec skill flips the status to run it
+  (`docs/design/field-notes-4.3.md` §6; left out of Sprint 12 by the owner's answer).
+- **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
+  record's case-against (`.shipkit/specs/gate-blind-spots/design.md`, "Exit codes are echoed on
+  the command line"), now observed on four gate runs.
+- **The eval sandbox denies writing a dotfile at the workspace root** — every `trap2/notebooks`
+  run in both arms wrote the right `.pre-commit-config.yaml` and was refused; the case asks for a
+  Makefile instead (`eval-results-4.6.md`, the `notebooks` row). A case that needs a dotfile
+  cannot be written until this is understood.
+- **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` with the map's path, not a shell
+  `cat`** — one run in fifteen read the map through Bash and is counted as not reading it
+  (`eval-results-4.6.md`, "The elder's step 1", attempt 2).
+- **The smoke suite overwrites `~/.claude/shipkit/plugin-root`** with scratch paths while it
+  runs; the last hook run restores it only by luck of ordering, and a session started mid-run
+  reads a scratch root (`scripts/smoke.sh` header, "except that the session hook writes
+  ~/.claude/shipkit/plugin-root"; `CHANGELOG.md` 4.6.0 "What using it for real showed").
+- **Rule 5 and the gate disagree on when a branch-not-taken note lands** — the rule says the
+  ship commit, the gate reads the spec before it; the note must be committed before the gate
+  (`docs/plans/field-sprint-plan.md` §1 rule 5 against `.shipkit/specs/gate-blind-spots/tasks.md`
+  "After the gate"; the 4.4.0 gate's first run in `CHANGELOG.md` 4.4.0 "What using it for real
+  showed").
+- **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
+- **A second real run on another repository** — the field notes are one project, one run
+  (`docs/plans/field-sprint-plan.md` §5).
+
 
 ## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
 
@@ -103,6 +148,28 @@ commands and their output are in that task's commit message):
   changes, all already on `main` (two overlay skills byte-identical; `lint.py`'s addition is
   main's check 13), so the force discarded nothing unmerged. `git worktree list` shows one line.
 
+Housekeeping done in Sprint 13 (S13-T6, 2026-10-09, field plan C12, each row its own yes from
+the owner; the commands and their output are in that task's commit message):
+
+- **D1** — `~/code/RED/rails_error_dashboard`'s branch `shipkit/real-run` (two commits of
+  shipkit artifacts from the real run, never for merge) deleted with `git branch -D`
+  ("Deleted branch shipkit/real-run (was 14771c1)"); the owner's checkout stayed on
+  `docs/http-reference`. What the run showed is in `docs/design/field-notes-4.3.md`.
+- **D2** — the unused `4.2.0` and `4.4.0` directories beside `4.5.0` in
+  `~/.claude/plugins/cache/shipkit/shipkit/` removed. **`3.1.0` is kept until the owner's next
+  restart:** the session that did the housekeeping was running it (`plugin-root`), and deleting
+  it from inside that session would have broken its skills. Delete it by hand after restarting.
+- **D3** — the 25 scratch directories and one log under `$TMPDIR` from Sprints 8 to 10
+  (`xl-*`, `t4-*`, `t5-*`, `s9-*`, `exit-4.2.0`, `shipkit-nomap`, `shipkit-norule`,
+  `shipkit-pretrim`, `shipkit-evals`; about 14 MB) removed, one per `read` line — the first
+  attempt looped once over the whole list because zsh does not word-split an unquoted variable,
+  and removed nothing.
+- **D4** — the merged branches `sprint-8/map-on-trial` … `sprint-12/gate-blind-spots`, local
+  and on GitHub, are deleted by the release step **after `v4.6.0` is tagged** (the owner's yes
+  given at T6); `sprint-13/second-traps` stays until the owner says.
+- **D5** — the owner's cache was updated to 4.4.0 and 4.5.0 at their releases (each its own
+  yes); 4.6.0 is asked at its release.
+
 Carried from Sprint 9:
 
 - **The map on a project with an uninformative commit log, and `eve`'s portfolio reads.** The
@@ -111,6 +178,12 @@ Carried from Sprint 9:
   section properly. `eve` reads maps across repositories without opening them; nothing has
   measured what she loses when fewer projects have one. Neither changes the 4.1.0 default.
   (`docs/design/eval-results-4.1.md`, the history question's rows.)
+  *4.6.0 (S13-T5): the XL generator takes `--wip` (same trees, every message "wip") and
+  `grandfather-xl/history` on that log reads 3 of 3 with the map, 0 of 3 without — the one
+  question in two releases where the map changed the answer, and the exception decision 0001
+  names (`docs/design/eval-results-4.6.md`). `eve`'s loss when fewer projects carry a map stays
+  **unmeasured and open**: it needs a multi-project registry fixture (about 20 KB of generator,
+  a sprint of its own — C11), which no plan has built.*
 - **The elder reads the map in fewer than one run in three** even when its instructions said
   to read it first (9 of 30 runs). If a map is to be worth building for the elders at all, the
   agent's step 1 is where the next experiment is, not the map's content.
@@ -120,10 +193,18 @@ Carried from Sprint 9:
   `sonnet` clears each file's first named trap unaided. One line per file was probed, one
   model. A second-trap case for the doubted files, or a decision that a line the model already
   follows still earns its bytes, belongs to the next plan.
-- **Path-scoped loading is measured by nothing.** The eval sandbox loads no `.claude/` file,
-  so every rule eval delivers the text always-on through the hook. A smoke check in a normal
-  headless session (where the nonce did load) could measure whether `paths:` globs fire.
-  (`docs/design/eval-results-4.2.md`, first paragraph, and `evals/README.md` "How runs are isolated".)
+  *4.6.0 (S13-T2): the second trap measured (`docs/design/eval-results-4.6.md`). Four files
+  separate on it — `ml/data`, `rails/gemfile`, `go/go-mod`, `ml/experiments` — and twelve pass
+  without on both traps: **named cut candidates for the next plan** (C8, no rule text changed
+  on these numbers): `hotwire`, `liveview`, `migrations`, `mix-deps`, `monorepo`, `notebooks`,
+  `package-json`, `pyproject`, `react`, `testing`, `ui-ux`, and `rails` at the threshold.*
+- **Path-scoped loading, measured** (4.6.0, S13-T1, smoke check 54): in a normal headless
+  session the `paths:` rules installed under `.claude/rules/shipkit/` load when the model
+  *reads* a matching file (`pyproject.toml` → `dependencies.md`, `Gemfile` → `gemfile.md`), not
+  when the prompt only names it, and not for a non-matching file (`README.md`). 2 of 2 matches
+  and 0 of 1 non-match, `haiku`, 2026-10-08. The eval sandbox still loads no `.claude/` file, so
+  rule evals deliver the text through the hook (`evals/README.md`, "Path-scoped loading,
+  measured").
 - **A rule that names a network step can stop work where there is none** — `gemfile.md`'s
   "read the lock diff after `bundle install`" halted three runs in a sandbox with no network
   (`docs/design/eval-results-4.2.md`, the `gemfile` row and its reading).

@@ -12,6 +12,9 @@
 # rule-evals/REQ-7 rule-evals/REQ-8 (--group) rule-evals/REQ-10 rule-evals/REQ-11 (the five
 # scoped and thirteen stacks cases install their rule through evals/lib/with-rule.sh)
 # run-wounds/REQ-6 (intake-answered: a question a repository file answers is not asked)
+# second-traps/REQ-4 second-traps/REQ-5 (the sixteen trap2-* cases: each rule file's second named
+# line, run with the rule; the without arm is a scratch copy — docs/design/eval-results-4.6.md)
+# second-traps/REQ-8 (stacks-gemfile, 3 of 3 on the reworded lock-diff line)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \

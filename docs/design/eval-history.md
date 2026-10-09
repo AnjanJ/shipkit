@@ -43,6 +43,17 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.6.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-09, at `04fed37`: 55 cases (the sixteen `trap2` cases
+included), $16.73, exit 1 — `digest/attention` 1 of 3, its first drop below 2 of 3 since it was
+added in 3.6.0; `grandfather-xl/drift` and `trap2/react` 2 of 3; every other case 3 of 3. Nothing
+in 4.6.0 touched the digest, eve or the briefing. Re-run alone with `--keep-temp`: **3 of 3**
+($0.39) — the shape `grandfather-xl/drift` has shown since 4.1.0, a case that reads a built
+registry losing a run when four cases build at once. The parallel run's failing traces are not
+kept by `evals.sh`, so the reading rests on the re-run and the pattern; the case is unchanged.
+The release run's cost is within C13's "about $16".
+
 ## Release run 4.5.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-08, at `682d0f3`: 39 cases, $12.30, exit 0 — every case
@@ -86,3 +97,126 @@ The failed `answered` run cited `docs/decisions.md:3-6` and treated its rules as
 asked "How does the 'one partial refund' rule treat full refunds?" — a refinement of the
 documented rule, which the three judges read as re-asking it. The grader is left as written: a
 question whose answer is in the file's rule is the thing the case is for.
+
+---
+
+*Moved 2026-10-08 (Sprint 13, S13-T0, field plan C1): the five baselines the evals README held, unchanged.*
+
+## Baseline 3.1.0
+
+Recorded 2026-10-05 with `bash scripts/evals.sh` on Claude Code 2.1.289, shipkit 3.1.0 with the
+always-on rules at 11,867 bytes, model `sonnet`, judge `haiku`, three runs per case.
+
+| Case | Runs passed | Result |
+|------|-------------|--------|
+| `hello` | 3 of 3 | pass |
+| `grandfather/lookup` | 3 of 3 | pass |
+| `grandfather/explain` | 3 of 3 | pass |
+| `grandfather/drift` | 3 of 3 | pass |
+| `grandfather/gap` | 3 of 3 | pass |
+| `rules/nontrivial` | 1 of 3 | **fail** |
+| `rules/trivial` | 3 of 3 (both graders, every run) | pass |
+| `rules/decision` | 3 of 3 | pass |
+
+`rules/nontrivial` fails at the baseline, and the grader is right to fail it. In two of three
+runs (and in a fourth trial run) Claude went straight to building refunds — test first, but
+with no requirements, spec or question to the user — and reported the design choices it had
+"made without asking". One run stopped and asked before writing code. So at 3.1.0 the
+11,867 bytes of always-on rules produce the test-first habit reliably and the spec-first habit
+about one time in three on this prompt. Sprint 1 must not make this worse (REQ-17); making it
+better is what the later sprints are for.
+
+The five cases above the `rules` rows took 62 seconds at four runs at a time and cost about
+$1.63 at list price; the three `rules` cases took 76 seconds and about $1.14.
+
+## After the rule shrink (3.2.0)
+
+The three always-on rules went from 11,867 bytes to 2,960 in sprint task S1-T6. Same command,
+same models, 2026-10-05:
+
+| Case | Baseline 3.1.0 | After the shrink |
+|------|----------------|------------------|
+| `rules/trivial` | 3 of 3 | 3 of 3 |
+| `rules/decision` | 3 of 3 | 3 of 3 |
+| `rules/nontrivial` | 1 of 3 (fail) | 0 of 3 (fail) |
+
+Because 0 of 3 against 1 of 3 could have been a real drop, `rules/nontrivial` was run six more
+times on each version. In all: 1 of 10 runs passed with the old rules, 1 of 9 with the new.
+These runs cannot tell the two apart.
+
+## Baseline 4.1.0 (scoped)
+
+The five `scoped` cases on the 4.1.0 tree (branch `sprint-9/rule-evals`, S9-T2), with the
+rule installed by `with-rule.sh` and delivered by the hook. Claude Code 2.1.291, model
+`sonnet`, `-j 4`, 2026-10-07. Tool calls from the traces (`scripts/trace-tools.sh`); no
+`Agent` call in any run.
+
+| Case | Runs passed | Tool calls per run | Cost |
+|------|-------------|--------------------|------|
+| `scoped/dependencies` | 3 of 3 | 4, 4, 5 | $0.26 |
+| `scoped/migrations` | 3 of 3 | 4, 3, 4 | $0.27 |
+| `scoped/monorepo` | 3 of 3 | 9, 8, 6 | $0.27 |
+| `scoped/testing` | 3 of 3 | 9, 9, 10 | $0.32 |
+| `scoped/ui-ux` | 3 of 3 | 6, 5, 5 | $0.30 |
+
+15 of 15 runs, about $1.42, roughly 20 seconds a run at four in flight. Two graders were
+corrected after the first run, each on the evidence of the traces, not to make a run pass:
+`migrations` scored 1 of 3 because its regex knew `in_batches` and `find_each` but not the
+id-range loop two runs wrote (`(min_id..max_id).step(BATCH_SIZE)` — batched, which is what the
+rule asks); `monorepo` did not load at all, first because an `llm` grader may no longer take
+a file `target:`, then because the replacement regex held a quote character the eval tool's
+YAML parser rejects (write `\x27`). Whether any of the five passes without the rule is
+S9-T4's question; these numbers are the with arm only.
+
+## Baseline 4.1.0 (stacks)
+
+The thirteen `stacks` cases on the 4.1.0 tree (S9-T3), rule installed and delivered as above.
+Same tool, model and date; `-j 4`. Tool calls from the traces; no `Agent` call in any run.
+
+| Case | Runs passed | Tool calls per run | Cost |
+|------|-------------|--------------------|------|
+| `stacks/mix-deps` | 3 of 3 | 5, 5, 4 | $0.27 |
+| `stacks/go-mod` | 3 of 3 | 2, 2, 2 | $0.21 |
+| `stacks/hotwire` | 3 of 3 | 8, 6, 4 | $0.33 |
+| `stacks/liveview` | 3 of 3 | 5, 3, 3 | $0.26 |
+| `stacks/data` | 3 of 3 | 9, 14, 3 | $0.42 |
+| `stacks/experiments` | 3 of 3 | 5, 10, 7 | $0.32 |
+| `stacks/notebooks` | 3 of 3 | 18, 16, 21 | $0.46 |
+| `stacks/jobs` | 3 of 3 | 6, 5, 6 | $0.27 |
+| `stacks/pyproject` | 3 of 3 | 5, 5, 6 | $0.27 |
+| `stacks/gemfile` | 3 of 3 | 2, 2, 2 | $0.21 |
+| `stacks/rails` | 3 of 3 | 3, 3, 3 | $0.23 |
+| `stacks/package-json` | 3 of 3 | 3, 3, 4 | $0.24 |
+| `stacks/react` | 3 of 3 | 8, 5, 7 | $0.30 |
+
+39 of 39 runs, about $3.80, 204 seconds for the thirteen at four in flight. Two prompts were
+changed after the first run, on the evidence of the traces: `gemfile` scored 0 of 3 because
+all three runs **refused to edit** — the sandbox has no network, and the rule's own second
+clause ("read the `Gemfile.lock` diff after `bundle install`") left the model unwilling to
+guess a version for `~>`; the prompt now gives the major version and says there is no
+network, as the `go-mod` and `package-json` prompts already did. `hotwire` scored 2 of 3
+because one run put a correct `turbo_frame_tag` in a partial the regex does not read; the
+prompt now asks for the markup in `show.html.erb` itself. The `gemfile` refusal is itself a
+finding for `eval-results-4.2.md`: a rule that names a network step can stop an edit where
+there is no network. With-arm numbers only; S9-T4 adds the other two arms.
+
+## Baseline 4.0.0 (XL)
+
+The five `grandfather-xl` cases on the 4.0.0 tree (branch `sprint-8/map-on-trial`, before any
+map change), with the map, plugin on. Claude Code 2.1.289, model `sonnet`, judge `haiku`,
+`-j 4`, 2026-10-07. Tool calls are from the traces (`scripts/trace-tools.sh`), main session and
+subagent together; the one `Agent` call per run is included.
+
+| Case | Runs passed | Tool calls per run | Input tokens per run (main session) |
+|------|-------------|--------------------|-------------------------------------|
+| `grandfather-xl/lookup` | 3 of 3 | 2, 2, 2 | 56.8k, 56.5k, 56.5k (45.1k, 44.8k, 44.8k) |
+| `grandfather-xl/explain` | 3 of 3 | 3, 4, 5 | 68.6k, 68.7k, 80.9k (45.0k, 44.9k, 44.8k) |
+| `grandfather-xl/drift` | 3 of 3 | 4, 3, 4 | 68.5k, 104.0k, 68.6k (44.8k, 68.1k, 44.7k) |
+| `grandfather-xl/gap` | 3 of 3 | 6, 3, 4 | 81.5k, 105.0k, 69.0k (44.8k, 68.1k, 45.0k) |
+| `grandfather-xl/history` | 3 of 3 | 7, 9, 7 | 82.4k, 82.0k, 83.6k (45.1k, 45.0k, 44.9k) |
+
+15 of 15 runs, 65 tool calls (4.3 per run), $1.60. `lookup` is still answered in two calls —
+the hand-off and one search — so the decoys did not cost the elder a step; `history` needed
+seven to nine. The comparison against the no-map and plugin-off arms is in
+`docs/design/eval-results-4.1.md`.
+

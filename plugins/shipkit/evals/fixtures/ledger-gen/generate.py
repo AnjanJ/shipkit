@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """The XL eval fixture: `ledger`, 200+ files and 25+ commits, written into the CURRENT (empty)
-directory. Deterministic (fixed dates, no clock); standard library only. `--no-map` omits
+directory. Deterministic (fixed dates, no clock); standard library only. `--wip` makes every
+commit message "wip" (same files, same trees); `--no-map` omits
 PROJECT_MAP.md, which is left untracked so both arms share one git history. Facts: ../FACTS-XL.md."""
 import os, subprocess, sys
 
 NO_MAP = "--no-map" in sys.argv[1:]
+WIP = "--wip" in sys.argv[1:]  # every commit message "wip": the same trees, a log that says nothing (second-traps/REQ-12)
 PKGS = [("api", "Request"), ("auth", "Session"), ("billing", "Invoice"), ("inventory", "Stock"),
         ("jobs", "Job"), ("notifications", "Message"), ("orders", "Order"), ("reports", "Report")]
 GIT = ["git", "-c", "user.name=ledger", "-c", "user.email=dev@ledger.example", "-c", "commit.gpgsign=false"]
@@ -23,7 +25,7 @@ def commit(msg):
     day = f"2025-01-{6 + n_commits // 4:02d}T{9 + n_commits % 4 * 3:02d}:00:00+00:00"
     env = dict(os.environ, GIT_AUTHOR_DATE=day, GIT_COMMITTER_DATE=day)
     subprocess.run(GIT + ["add", "-A"], check=True, env=env)
-    subprocess.run(GIT + ["commit", "-q", "-m", msg], check=True, env=env)
+    subprocess.run(GIT + ["commit", "-q", "-m", "wip" if WIP else msg], check=True, env=env)
 
 
 # --- module templates: {p} package, {e} entity, {l} entity lower-cased -------------------

@@ -14,6 +14,8 @@
 #                  (split rows repeat the usage block); every assistant row, so subagent included
 #   in_tokens_main the same for main-session rows only — what the elder keeps out of your context
 #   cost           total_cost_usd from the last result row
+#   map_read       1 if any Read tool_use (main session or subagent) names a file ending in
+#                  PROJECT_MAP.md, else 0 — the elder's read rate (second-traps/REQ-9)
 #
 # Where runs come from: an output dir with aggregate-result.json (what `scripts/evals.sh`
 # writes; --output-dir) maps case → arm → run → tracePath, and `passed` is the grader verdict.
@@ -24,13 +26,14 @@
 # are content blocks inside "assistant" rows, not rows of their own; subagent turns appear in
 # the same trace with parent_tool_use_id set; one API response may arrive as several assistant
 # rows sharing message.id and usage; the result row carries total_cost_usd. POSIX sh + python3.
-# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11
+# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11 second-traps/REQ-9
 [ $# -ge 1 ] || { echo "usage: trace-tools.sh <eval output dir | sandbox dir | trace.jsonl> ..." >&2; exit 2; }
 exec python3 - "$@" <<'PY'
 import json, os, sys, glob
 
 def count(path):
     tools, tools_main, agent = set(), set(), 0
+    map_read = 0
     tokens, tokens_main, seen = 0, 0, set()
     cost = 0.0
     try:
@@ -52,6 +55,8 @@ def count(path):
                         tools_main.add(bid)
                     if c.get("name") == "Agent":
                         agent += 1
+                    if c.get("name") == "Read" and str((c.get("input") or {}).get("file_path", "")).endswith("PROJECT_MAP.md"):
+                        map_read = 1
             mid = msg.get("id") or r.get("request_id") or r.get("uuid")
             if mid not in seen:
                 seen.add(mid)
@@ -62,7 +67,7 @@ def count(path):
                     tokens_main += n
         elif t == "result" and r.get("total_cost_usd") is not None:
             cost = float(r["total_cost_usd"])
-    return (len(tools), len(tools_main), agent, tokens, tokens_main, cost), None
+    return (len(tools), len(tools_main), agent, tokens, tokens_main, cost, map_read), None
 
 def runs_in(arg):
     agg = os.path.join(arg, "aggregate-result.json") if os.path.isdir(arg) else None
@@ -81,13 +86,13 @@ def runs_in(arg):
     else:
         yield "?", "-", 1, "-", arg
 
-print("case\tarm\trun\tpassed\ttools\ttools_main\tagent\tin_tokens\tin_tokens_main\tcost")
+print("case\tarm\trun\tpassed\ttools\ttools_main\tagent\tin_tokens\tin_tokens_main\tcost\tmap_read")
 bad = 0
 for arg in sys.argv[1:]:
     for case, arm, i, passed, path in runs_in(arg):
         c, err = count(path)
         if err:
             print(f"{case}\t{arm}\t{i}\t{passed}\tERROR\t{path}: {err}", file=sys.stderr); bad = 1; continue
-        print(f"{case}\t{arm}\t{i}\t{passed}\t{c[0]}\t{c[1]}\t{c[2]}\t{c[3]}\t{c[4]}\t{c[5]:.4f}")
+        print(f"{case}\t{arm}\t{i}\t{passed}\t{c[0]}\t{c[1]}\t{c[2]}\t{c[3]}\t{c[4]}\t{c[5]:.4f}\t{c[6]}")
 sys.exit(bad)
 PY
