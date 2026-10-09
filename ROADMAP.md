@@ -12,11 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-09, v4.6.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan and 11 to 13 of the field plan (`docs/plans/field-sprint-plan.md`, approved
-2026-10-08) are done — the last three shipped as 4.4.0, 4.5.0 and 4.6.0; see "The field plan"
-below. Everything in this document is shipped except the items under "Still open after
-Sprint 13", which seed the plan after.
+**Status (as of 2026-10-09, v4.7.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan and 11 to 13 of the field plan are done; Sprint 14 of the portfolio plan
+(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and Sprints 15
+and 16 are next; see "The portfolio plan" below. Everything in this document is shipped except
+the six items still open under "Still open after Sprint 13", which the portfolio plan carries.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,6 +29,18 @@ Sprint 13", which seed the plan after.
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The portfolio plan — Sprint 14 SHIPPED 2026-10-09 as 4.7.0; Sprints 15–16 to come
+
+Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
+harness's debts (14), act on the numbers the rules carry (15), measure what still has none —
+`eve`'s portfolio and a second real project (16).
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 14 | 4.7.0 | `spec-check --as-open` for a draft; a gate that removes its scratch files; a smoke runner that restores `plugin-root`; `map_read` counting what its document says and `map_shell` beside it; the sandbox's refusal understood (a protected file name, not a root dotfile); the rule-5 contradiction closed by the rulebook |
+| 15 | 4.8.0 | *(next)* the twenty-two measured lines cut or kept by name, each with its watch case; the intake's assumption sentence; the elder's step 0 closed by record; two cache directories |
+| 16 | 4.9.0 | *(after)* a three-project fixture and `eve`'s first number; shipkit end to end on `~/code/pulse`; the roadmap for the plan after |
 
 ## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
