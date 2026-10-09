@@ -30,7 +30,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: scripts/smoke.sh check 40 extended (the synthetic trace gains a `Grep` on the map's path and a `Bash` whose command is `cat PROJECT_MAP.md`; run 1 asserts `map_read 1 map_shell 1`, run 2 asserts `0 0`) — written first, red
   - After: T3
   - Done when: check 40 → PASS with the new columns; the header's column list names both; the appended line in the 4.6 document says its rates were counted by `Read` alone; lint 0/0
-- [ ] **T5** The root-dotfile refusal, understood (S14-T5) → REQ-10
+- [x] **T5** The root-dotfile refusal, understood (S14-T5) → REQ-10
   - Files: plugins/shipkit/evals/README.md, ROADMAP.md
   - Test: scripts/smoke.sh check 57 "dotfile-paragraph" (the README's "How a case gets the fixture" section has a "What a case cannot ask for" paragraph naming the workspace root and a subdirectory form) — written first, red; the two probe runs on a scratch copy (≈ $0.30, in the budget) are the evidence, quoted in the commit message; Check first: the tool's documentation through the `claude-code-guide` agent
   - After: T4

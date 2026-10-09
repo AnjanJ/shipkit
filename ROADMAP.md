@@ -66,10 +66,11 @@ the gate's blind spots (12), second traps and the elder's first step (13).
 - **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
   record's case-against (`.shipkit/specs/gate-blind-spots/design.md`, "Exit codes are echoed on
   the command line"), now observed on four gate runs.
-- **The eval sandbox denies writing a dotfile at the workspace root** — every `trap2/notebooks`
-  run in both arms wrote the right `.pre-commit-config.yaml` and was refused; the case asks for a
-  Makefile instead (`eval-results-4.6.md`, the `notebooks` row). A case that needs a dotfile
-  cannot be written until this is understood.
+- **The eval sandbox denies writing a dotfile at the workspace root** — *4.7.0 (S14-T5): it
+  does not; it denies a file whose name is on Claude Code's protected list
+  (`.pre-commit-config.yaml` is), in the mode the eval tool runs under. Two probe runs wrote
+  `.editorconfig` at the root and below it. The rule for case authors is in
+  `plugins/shipkit/evals/README.md`, "What a case cannot ask for" (smoke check 57).*
 - **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` with the map's path, not a shell
   `cat`** — one run in fifteen read the map through Bash and is counted as not reading it
   (`eval-results-4.6.md`, "The elder's step 1", attempt 2).

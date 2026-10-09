@@ -1969,6 +1969,17 @@ if grep -q "^trap 'pr_restore" "$ROOT/scripts/smoke.sh" \
   pass "plugin-root-restore (the restore is on the EXIT trap; the header says so and names the mid-run window)"
 else failc "plugin-root-restore" "no trap 'pr_restore…' EXIT line, or the header does not say it restores on exit / that a session started during a run reads a scratch root"; fi
 
+# 57. dotfile-paragraph: the evals README tells a case author what the sandbox will refuse —
+# a file whose NAME is on Claude Code's protected list (.pre-commit-config.yaml is), not "a
+# dotfile at the workspace root" as 4.6.0 read it: two probe runs wrote .editorconfig at the
+# root and under config/ (S14-T5, 2026-10-09). The paragraph sits under "How a case gets the
+# fixture". No claude needed. Cites: harness-debts/REQ-10
+dp=$(sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | sed -n '/^### What a case cannot ask for/,/^## Cases/p')
+if [ -n "$dp" ] && printf '%s\n' "$dp" | grep -q 'protected' && printf '%s\n' "$dp" | grep -q 'workspace root' \
+   && printf '%s\n' "$dp" | grep -q 'pre-commit-config.yaml' && printf '%s\n' "$dp" | grep -q 'config/.editorconfig'; then
+  pass "dotfile-paragraph (the evals README says what a case cannot ask for: a protected file name, with the root and subdirectory probes)"
+else failc "dotfile-paragraph" "evals/README.md has no 'What a case cannot ask for' paragraph under 'How a case gets the fixture' naming the protected list, the workspace root, .pre-commit-config.yaml and config/.editorconfig"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
