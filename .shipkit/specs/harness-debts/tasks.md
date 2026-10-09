@@ -25,7 +25,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: scripts/smoke.sh check 56 "plugin-root-restore" (the save and restore functions run in a subshell with `HOME` pointed at a scratch directory: a sentinel file is overwritten and restored; an absent file is absent again after an overwrite) — written first, red; the full-run proof is the Done-when `cmp`
   - After: T2
   - Done when: check 56 → PASS; `cp ~/.claude/shipkit/plugin-root "$TMPDIR/pr.save"; sh scripts/smoke.sh </dev/null; cmp ~/.claude/shipkit/plugin-root "$TMPDIR/pr.save"` → identical and `smoke: all checks passed`; a scratch copy of the script with a forced `exit 1` after check 3 also restores; lint 0/0
-- [ ] **T4** `map_read` counts what the document says; `map_shell` beside it (S14-T4) → REQ-8, REQ-9
+- [x] **T4** `map_read` counts what the document says; `map_shell` beside it (S14-T4) → REQ-8, REQ-9
   - Files: scripts/trace-tools.sh, scripts/smoke.sh, docs/design/eval-results-4.6.md
   - Test: scripts/smoke.sh check 40 extended (the synthetic trace gains a `Grep` on the map's path and a `Bash` whose command is `cat PROJECT_MAP.md`; run 1 asserts `map_read 1 map_shell 1`, run 2 asserts `0 0`) — written first, red
   - After: T3

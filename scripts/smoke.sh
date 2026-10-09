@@ -1432,7 +1432,11 @@ else failc "xl-scaffold" "--wip: trees equal=$([ "$xw_trees" = "$xn_trees" ] && 
 # and prints one line per run with the counts the map comparison reads — from the trace, never
 # the summary. A synthetic two-run trace with known numbers: run 1 has three tool calls (one
 # Agent, one by the subagent, one split across two rows of the same message, which must not
-# double-count), run 2 has one. Cites: map-on-trial/REQ-10 map-on-trial/REQ-11
+# double-count), run 2 has one. Since 4.7.0 run 1's subagent Grep has the map's path and its
+# last message also holds a Bash `cat PROJECT_MAP.md`, so map_read and map_shell read 1 1 for
+# run 1 and 0 0 for run 2 — the two columns the elder's read rate is counted from (4.6's rates
+# were Read only; a Grep on the map's path and a shell read were both missed).
+# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11 harness-debts/REQ-8 harness-debts/REQ-9
 TT="$ROOT/scripts/trace-tools.sh"
 TD="$WORK/tt"; mkdir -p "$TD/r1/out" "$TD/r2/out"
 tt_asst() {  # tt_asst <msg-id> <parent-or-null> <input> <cache_create> <cache_read> <content-json>
@@ -1442,8 +1446,8 @@ tt_asst() {  # tt_asst <msg-id> <parent-or-null> <input> <cache_create> <cache_r
   printf '{"type":"system","subtype":"init"}\n'
   tt_asst m1 null 10 100 1000 '[{"type":"text","text":"x"}]'
   tt_asst m1 null 10 100 1000 '[{"type":"tool_use","id":"t1","name":"Agent","input":{}}]'
-  tt_asst m2 '"t1"' 5 50 500 '[{"type":"tool_use","id":"t2","name":"Grep","input":{}}]'
-  tt_asst m3 null 20 0 2000 '[{"type":"tool_use","id":"t3","name":"Read","input":{}}]'
+  tt_asst m2 '"t1"' 5 50 500 '[{"type":"tool_use","id":"t2","name":"Grep","input":{"pattern":"orders","path":"/w/PROJECT_MAP.md"}}]'
+  tt_asst m3 null 20 0 2000 '[{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"/w/app.py"}},{"type":"tool_use","id":"t4","name":"Bash","input":{"command":"cat PROJECT_MAP.md | head"}}]'
   printf '{"type":"result","subtype":"success","total_cost_usd":0.5,"num_turns":3}\n'
 } > "$TD/r1/out/trace.jsonl"
 {
@@ -1460,11 +1464,11 @@ else
   tt_l1=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*1[[:space:]]')
   tt_l2=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*2[[:space:]]')
   tt_grep=$(grep -o '"type":"tool_use"' "$TD/r1/out/trace.jsonl" | wc -l | tr -d ' ')
-  # fields: case arm run passed tools tools_main agent in_tokens in_tokens_main cost
-  if [ "$tt_rc" -eq 0 ] && printf '%s\n' "$tt_l1" | awk -v g="$tt_grep" '{ok = ($4=="pass" && $5==g && $5==3 && $6==2 && $7==1 && $8==3685 && $9==3130 && $10=="0.5000")} END{exit ok?0:1}' \
-     && printf '%s\n' "$tt_l2" | awk '{ok = ($4=="fail" && $5==1 && $6==1 && $7==0 && $8==6 && $9==6 && $10=="0.2500")} END{exit ok?0:1}' \
+  # fields: case arm run passed tools tools_main agent in_tokens in_tokens_main cost map_read map_shell
+  if [ "$tt_rc" -eq 0 ] && printf '%s\n' "$tt_l1" | awk -v g="$tt_grep" '{ok = ($4=="pass" && $5==g && $5==4 && $6==3 && $7==1 && $8==3685 && $9==3130 && $10=="0.5000" && $11==1 && $12==1)} END{exit ok?0:1}' \
+     && printf '%s\n' "$tt_l2" | awk '{ok = ($4=="fail" && $5==1 && $6==1 && $7==0 && $8==6 && $9==6 && $10=="0.2500" && $11==0 && $12==0)} END{exit ok?0:1}' \
      && [ "$(printf '%s\n' "$tt_out" | grep -c '^grandfather-xl-lookup')" -eq 2 ]; then
-    pass "trace-tools (one line per run; tool calls = $tt_grep tool_use blocks, main/subagent split, tokens deduped per message, cost)"
+    pass "trace-tools (one line per run; tool calls = $tt_grep tool_use blocks, main/subagent split, tokens deduped per message, cost; map_read counts a Grep on the map, map_shell a shell cat)"
   else failc "trace-tools" "exit $tt_rc, grep says $tt_grep; output: $(printf '%s' "$tt_out" | head -4 | tr '\n' '|')"; fi
 fi
 

@@ -4,7 +4,7 @@
 # Prints one line per eval run with the numbers the map comparison reads — counted from each
 # run's trace.jsonl, never from the eval summary (eval summaries are not evidence):
 #
-#   case  arm  run  passed  tools  tools_main  agent  in_tokens  in_tokens_main  cost
+#   case  arm  run  passed  tools  tools_main  agent  in_tokens  in_tokens_main  cost  map_read  map_shell
 #
 #   tools          tool_use content blocks across every assistant row, deduplicated by block id
 #                  (a message split over several rows must not count twice); subagent included
@@ -14,8 +14,11 @@
 #                  (split rows repeat the usage block); every assistant row, so subagent included
 #   in_tokens_main the same for main-session rows only — what the elder keeps out of your context
 #   cost           total_cost_usd from the last result row
-#   map_read       1 if any Read tool_use (main session or subagent) names a file ending in
-#                  PROJECT_MAP.md, else 0 — the elder's read rate (second-traps/REQ-9)
+#   map_read       1 if any Read or Grep tool_use (main session or subagent) has an input path
+#                  ending in PROJECT_MAP.md, else 0 — the elder's read rate (second-traps/REQ-9;
+#                  Grep counted since 4.7.0, harness-debts/REQ-8 — 4.6's rates were Read only)
+#   map_shell      1 if any Bash tool_use's command mentions PROJECT_MAP.md (cat, grep, sed…),
+#                  else 0 — a read the model made without the Read tool (harness-debts/REQ-9)
 #
 # Where runs come from: an output dir with aggregate-result.json (what `scripts/evals.sh`
 # writes; --output-dir) maps case → arm → run → tracePath, and `passed` is the grader verdict.
@@ -34,6 +37,7 @@ import json, os, sys, glob
 def count(path):
     tools, tools_main, agent = set(), set(), 0
     map_read = 0
+    map_shell = 0
     tokens, tokens_main, seen = 0, 0, set()
     cost = 0.0
     try:
@@ -55,8 +59,11 @@ def count(path):
                         tools_main.add(bid)
                     if c.get("name") == "Agent":
                         agent += 1
-                    if c.get("name") == "Read" and str((c.get("input") or {}).get("file_path", "")).endswith("PROJECT_MAP.md"):
+                    inp = c.get("input") or {}
+                    if c.get("name") in ("Read", "Grep") and str(inp.get("file_path") or inp.get("path") or "").endswith("PROJECT_MAP.md"):
                         map_read = 1
+                    if c.get("name") == "Bash" and "PROJECT_MAP.md" in str(inp.get("command") or ""):
+                        map_shell = 1
             mid = msg.get("id") or r.get("request_id") or r.get("uuid")
             if mid not in seen:
                 seen.add(mid)
@@ -67,7 +74,7 @@ def count(path):
                     tokens_main += n
         elif t == "result" and r.get("total_cost_usd") is not None:
             cost = float(r["total_cost_usd"])
-    return (len(tools), len(tools_main), agent, tokens, tokens_main, cost, map_read), None
+    return (len(tools), len(tools_main), agent, tokens, tokens_main, cost, map_read, map_shell), None
 
 def runs_in(arg):
     agg = os.path.join(arg, "aggregate-result.json") if os.path.isdir(arg) else None
@@ -86,13 +93,13 @@ def runs_in(arg):
     else:
         yield "?", "-", 1, "-", arg
 
-print("case\tarm\trun\tpassed\ttools\ttools_main\tagent\tin_tokens\tin_tokens_main\tcost\tmap_read")
+print("case\tarm\trun\tpassed\ttools\ttools_main\tagent\tin_tokens\tin_tokens_main\tcost\tmap_read\tmap_shell")
 bad = 0
 for arg in sys.argv[1:]:
     for case, arm, i, passed, path in runs_in(arg):
         c, err = count(path)
         if err:
             print(f"{case}\t{arm}\t{i}\t{passed}\tERROR\t{path}: {err}", file=sys.stderr); bad = 1; continue
-        print(f"{case}\t{arm}\t{i}\t{passed}\t{c[0]}\t{c[1]}\t{c[2]}\t{c[3]}\t{c[4]}\t{c[5]:.4f}\t{c[6]}")
+        print(f"{case}\t{arm}\t{i}\t{passed}\t{c[0]}\t{c[1]}\t{c[2]}\t{c[3]}\t{c[4]}\t{c[5]:.4f}\t{c[6]}\t{c[7]}")
 sys.exit(bad)
 PY
