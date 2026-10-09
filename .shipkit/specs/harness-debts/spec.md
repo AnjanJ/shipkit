@@ -73,7 +73,7 @@ echoed"; `CHANGELOG.md` 4.6.0 "What using it for real showed".
 
 ### The root-dotfile refusal, understood (S14-T5)
 
-- **REQ-10.** The evals README shall state, under "How runs are isolated", what a case cannot
+- **REQ-10.** The evals README shall state, under "How a case gets the fixture", what a case cannot
   ask for: a dotfile at the workspace root, with the refusal as the trace or the tool's
   documentation gives it, the form that works, and the rule for case authors. [untested:
   prose, verified by reading and by smoke check 57's grep of the README; the two probe runs are

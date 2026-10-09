@@ -32,7 +32,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Done when: check 40 → PASS with the new columns; the header's column list names both; the appended line in the 4.6 document says its rates were counted by `Read` alone; lint 0/0
 - [ ] **T5** The root-dotfile refusal, understood (S14-T5) → REQ-10
   - Files: plugins/shipkit/evals/README.md, ROADMAP.md
-  - Test: scripts/smoke.sh check 57 "dotfile-paragraph" (the README's "How runs are isolated" section has a "What a case cannot ask for" paragraph naming the workspace root and a subdirectory form) — written first, red; the two probe runs on a scratch copy (≈ $0.30, in the budget) are the evidence, quoted in the commit message; Check first: the tool's documentation through the `claude-code-guide` agent
+  - Test: scripts/smoke.sh check 57 "dotfile-paragraph" (the README's "How a case gets the fixture" section has a "What a case cannot ask for" paragraph naming the workspace root and a subdirectory form) — written first, red; the two probe runs on a scratch copy (≈ $0.30, in the budget) are the evidence, quoted in the commit message; Check first: the tool's documentation through the `claude-code-guide` agent
   - After: T4
   - Done when: check 57 → PASS; the paragraph quotes the refusal (or the documentation, with the fallback stated); the ROADMAP item is replaced by the pointer; nothing under `$TMPDIR` from this task remains; lint 0/0
 - [ ] **T6** Rule 5 and the gate, closed (S14-T6) → release step
