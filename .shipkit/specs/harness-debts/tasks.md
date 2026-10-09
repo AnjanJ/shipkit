@@ -20,7 +20,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: a headless `/shipkit:ship second-traps` dry run on this branch (≈ $0.50, in the budget): `/bin/ls "$TMPDIR"/shipkit-ship-*.out` before and after, both in the commit message; the report read, then deleted
   - After: T1
   - Done when: no `shipkit-ship-*.out` under `$TMPDIR` after the run; the report still quotes every step's exit code and pasted output; lint 0/0
-- [ ] **T3** The smoke suite restores the plugin root (S14-T3) → REQ-6, REQ-7
+- [x] **T3** The smoke suite restores the plugin root (S14-T3) → REQ-6, REQ-7
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check 56 "plugin-root-restore" (the save and restore functions run in a subshell with `HOME` pointed at a scratch directory: a sentinel file is overwritten and restored; an absent file is absent again after an overwrite) — written first, red; the full-run proof is the Done-when `cmp`
   - After: T2

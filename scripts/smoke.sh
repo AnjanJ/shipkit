@@ -10,7 +10,9 @@
 #
 # Needs: a logged-in `claude` CLI, git, python3 (only to generate padding). Uses --model haiku.
 # Makes a scratch copy of this working tree under mktemp; never touches the repo or ~/.claude
-# except that the session hook writes ~/.claude/shipkit/plugin-root (which it always does).
+# except that the session hook writes ~/.claude/shipkit/plugin-root (which it always does): the
+# runner saves that file before the first session and restores it on exit, on every exit path;
+# a session started during a run reads the scratch root until the run ends (harness-debts/REQ-7).
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,7 +22,13 @@ CORE="$ROOT/plugins/shipkit"
 command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
 
 WORK=$(mktemp -d) || exit 1
-[ -n "$SMOKE_KEEP" ] || trap 'rm -rf "$WORK"' EXIT
+# ~/.claude/shipkit/plugin-root: every session below rewrites it with the scratch copy's path;
+# save it now, put it back on exit (harness-debts/REQ-6). Functions, so check 56 can test them.
+PR_FILE="$HOME/.claude/shipkit/plugin-root"
+pr_save() { if [ -f "$PR_FILE" ]; then PR_SAVED=$(cat "$PR_FILE"); PR_HAD=1; else PR_SAVED=""; PR_HAD=0; fi; }
+pr_restore() { if [ "$PR_HAD" = 1 ]; then mkdir -p "${PR_FILE%/*}" && printf '%s\n' "$PR_SAVED" > "$PR_FILE"; else rm -f "$PR_FILE"; fi; }
+pr_save
+trap 'pr_restore; [ -n "$SMOKE_KEEP" ] || rm -rf "$WORK"' EXIT
 COPY="$WORK/plugin"; PROJ="$WORK/proj"
 mkdir -p "$COPY" "$PROJ"
 # copy the working tree without .git (rsync if present, tar otherwise)
@@ -1928,6 +1936,34 @@ else failc "spec-check-draft" "shipped $rc1/$rc2 [$ao_plain] vs [$ao_flag]; drop
 if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the status to `open` for one run\|set .*Status.* to .*open.* for one run' "$COPY/skills/spec/SKILL.md"; then
   pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
 else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
+
+# 56. plugin-root-restore: the session hook rewrites ~/.claude/shipkit/plugin-root on every
+# start, so by the end of this suite it names the scratch copy — restored by luck of ordering
+# or by hand until 4.7.0. The runner now saves it (pr_save) before the first session and puts
+# it back (pr_restore) from its EXIT trap, on every exit path. Tested here in a subshell with
+# HOME pointed at a scratch directory: a sentinel overwritten is restored; an absent file
+# overwritten is absent again. The trap line and the header sentence are grepped from the
+# script itself. No claude needed. Cites: harness-debts/REQ-6 harness-debts/REQ-7
+if command -v pr_save >/dev/null 2>&1 && command -v pr_restore >/dev/null 2>&1; then
+  pr_rc=$(
+    HOME="$WORK/prhome"; mkdir -p "$HOME/.claude/shipkit"; PR_FILE="$HOME/.claude/shipkit/plugin-root"
+    printf 'sentinel\n' > "$PR_FILE"; pr_save; printf '%s\n' "$WORK/plugin" > "$PR_FILE"; pr_restore
+    [ "$(cat "$PR_FILE")" = sentinel ] || { echo 1; exit; }
+    rm "$PR_FILE"; pr_save; printf '%s\n' "$WORK/plugin" > "$PR_FILE"; pr_restore
+    [ ! -f "$PR_FILE" ] || { echo 2; exit; }
+    echo 0
+  )
+  case "$pr_rc" in
+    0) pass "plugin-root-restore (a sentinel overwritten is restored; an absent file is absent again)";;
+    1) failc "plugin-root-restore" "the sentinel was not restored";;
+    *) failc "plugin-root-restore" "an absent plugin-root was left behind";;
+  esac
+else failc "plugin-root-restore" "pr_save / pr_restore are not defined (check written first, by design)"; fi
+if grep -q "^trap 'pr_restore" "$ROOT/scripts/smoke.sh" \
+   && sed -n '1,20p' "$ROOT/scripts/smoke.sh" | grep -q 'restores it on exit' \
+   && sed -n '1,20p' "$ROOT/scripts/smoke.sh" | grep -q 'started during a run'; then
+  pass "plugin-root-restore (the restore is on the EXIT trap; the header says so and names the mid-run window)"
+else failc "plugin-root-restore" "no trap 'pr_restore…' EXIT line, or the header does not say it restores on exit / that a session started during a run reads a scratch root"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
