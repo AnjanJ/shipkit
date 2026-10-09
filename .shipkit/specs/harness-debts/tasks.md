@@ -40,7 +40,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: none beyond lint — the item is struck with a pointer to the plan's rule 16 and amended rule 5
   - After: T5
   - Done when: lint 0/0; the ROADMAP's open list has six items left (E1, E2, E3, E10, E11, F1/F2), each still citing its evidence
-- [ ] **T-REL** Release 4.7.0 (S14-T-REL)
+- [x] **T-REL** Release 4.7.0 (S14-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/harness-debts/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals, spec-check, the two byte lines); the gate headless
   - After: T6
