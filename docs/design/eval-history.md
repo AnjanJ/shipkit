@@ -43,6 +43,24 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.7.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-09, at `607035c`: 55 cases, 1,273 s, $16.44, exit 1 —
+`digest/attention` 1 of 3 (its shape since 4.6.0) and **`intake/limit` 0 of 3**; every other
+case 3 of 3, `grandfather-xl/drift` and `trap2/react` included. `digest/attention` re-run alone
+with `--keep-temp`: **3 of 3** ($0.38), the known shape, the case unchanged. `intake/limit`
+re-run once alone with `--keep-temp` ($0.15): **0 of 1**, and the trace read before anything
+else (rule 10): the reply asks three numbered questions, but the second holds a second question
+("which cases do you expect to need a manual step?") and the third asks two things, and the
+grader counts a sub-part that needs its own answer as a question of its own — three judges in
+each of the four runs counted five or more. The grader is reading its own rule; nothing in 4.7.0
+touches the intake skill, its cases or the hook, and the same case passed 3 of 3 in the 4.6.0
+release run at `04fed37` the same morning (and 3 of 3 in 4.6.0's exit run, 3 of 3 in 4.4.0,
+2 of 3 in 4.5.0). The drop is in the shape of the model's reply on this day, not in this
+release; whether to carry it as a known failure or to change the skill's "at most four
+questions" wording is the owner's call, recorded in the sprint report and the pull request.
+Nothing was changed on these numbers. The release run cost is within E13's "about $17".
+
 ## Release run 4.6.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-09, at `04fed37`: 55 cases (the sixteen `trap2` cases

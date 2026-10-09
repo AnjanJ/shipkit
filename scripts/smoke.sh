@@ -10,7 +10,9 @@
 #
 # Needs: a logged-in `claude` CLI, git, python3 (only to generate padding). Uses --model haiku.
 # Makes a scratch copy of this working tree under mktemp; never touches the repo or ~/.claude
-# except that the session hook writes ~/.claude/shipkit/plugin-root (which it always does).
+# except that the session hook writes ~/.claude/shipkit/plugin-root (which it always does): the
+# runner saves that file before the first session and restores it on exit, on every exit path;
+# a session started during a run reads the scratch root until the run ends (harness-debts/REQ-7).
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,7 +22,13 @@ CORE="$ROOT/plugins/shipkit"
 command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
 
 WORK=$(mktemp -d) || exit 1
-[ -n "$SMOKE_KEEP" ] || trap 'rm -rf "$WORK"' EXIT
+# ~/.claude/shipkit/plugin-root: every session below rewrites it with the scratch copy's path;
+# save it now, put it back on exit (harness-debts/REQ-6). Functions, so check 56 can test them.
+PR_FILE="$HOME/.claude/shipkit/plugin-root"
+pr_save() { if [ -f "$PR_FILE" ]; then PR_SAVED=$(cat "$PR_FILE"); PR_HAD=1; else PR_SAVED=""; PR_HAD=0; fi; }
+pr_restore() { if [ "$PR_HAD" = 1 ]; then mkdir -p "${PR_FILE%/*}" && printf '%s\n' "$PR_SAVED" > "$PR_FILE"; else rm -f "$PR_FILE"; fi; }
+pr_save
+trap 'pr_restore; [ -n "$SMOKE_KEEP" ] || rm -rf "$WORK"' EXIT
 COPY="$WORK/plugin"; PROJ="$WORK/proj"
 mkdir -p "$COPY" "$PROJ"
 # copy the working tree without .git (rsync if present, tar otherwise)
@@ -1424,7 +1432,11 @@ else failc "xl-scaffold" "--wip: trees equal=$([ "$xw_trees" = "$xn_trees" ] && 
 # and prints one line per run with the counts the map comparison reads — from the trace, never
 # the summary. A synthetic two-run trace with known numbers: run 1 has three tool calls (one
 # Agent, one by the subagent, one split across two rows of the same message, which must not
-# double-count), run 2 has one. Cites: map-on-trial/REQ-10 map-on-trial/REQ-11
+# double-count), run 2 has one. Since 4.7.0 run 1's subagent Grep has the map's path and its
+# last message also holds a Bash `cat PROJECT_MAP.md`, so map_read and map_shell read 1 1 for
+# run 1 and 0 0 for run 2 — the two columns the elder's read rate is counted from (4.6's rates
+# were Read only; a Grep on the map's path and a shell read were both missed).
+# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11 harness-debts/REQ-8 harness-debts/REQ-9
 TT="$ROOT/scripts/trace-tools.sh"
 TD="$WORK/tt"; mkdir -p "$TD/r1/out" "$TD/r2/out"
 tt_asst() {  # tt_asst <msg-id> <parent-or-null> <input> <cache_create> <cache_read> <content-json>
@@ -1434,8 +1446,8 @@ tt_asst() {  # tt_asst <msg-id> <parent-or-null> <input> <cache_create> <cache_r
   printf '{"type":"system","subtype":"init"}\n'
   tt_asst m1 null 10 100 1000 '[{"type":"text","text":"x"}]'
   tt_asst m1 null 10 100 1000 '[{"type":"tool_use","id":"t1","name":"Agent","input":{}}]'
-  tt_asst m2 '"t1"' 5 50 500 '[{"type":"tool_use","id":"t2","name":"Grep","input":{}}]'
-  tt_asst m3 null 20 0 2000 '[{"type":"tool_use","id":"t3","name":"Read","input":{}}]'
+  tt_asst m2 '"t1"' 5 50 500 '[{"type":"tool_use","id":"t2","name":"Grep","input":{"pattern":"orders","path":"/w/PROJECT_MAP.md"}}]'
+  tt_asst m3 null 20 0 2000 '[{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"/w/app.py"}},{"type":"tool_use","id":"t4","name":"Bash","input":{"command":"cat PROJECT_MAP.md | head"}}]'
   printf '{"type":"result","subtype":"success","total_cost_usd":0.5,"num_turns":3}\n'
 } > "$TD/r1/out/trace.jsonl"
 {
@@ -1452,11 +1464,11 @@ else
   tt_l1=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*1[[:space:]]')
   tt_l2=$(printf '%s\n' "$tt_out" | grep '^grandfather-xl-lookup[[:space:]]*with[[:space:]]*2[[:space:]]')
   tt_grep=$(grep -o '"type":"tool_use"' "$TD/r1/out/trace.jsonl" | wc -l | tr -d ' ')
-  # fields: case arm run passed tools tools_main agent in_tokens in_tokens_main cost
-  if [ "$tt_rc" -eq 0 ] && printf '%s\n' "$tt_l1" | awk -v g="$tt_grep" '{ok = ($4=="pass" && $5==g && $5==3 && $6==2 && $7==1 && $8==3685 && $9==3130 && $10=="0.5000")} END{exit ok?0:1}' \
-     && printf '%s\n' "$tt_l2" | awk '{ok = ($4=="fail" && $5==1 && $6==1 && $7==0 && $8==6 && $9==6 && $10=="0.2500")} END{exit ok?0:1}' \
+  # fields: case arm run passed tools tools_main agent in_tokens in_tokens_main cost map_read map_shell
+  if [ "$tt_rc" -eq 0 ] && printf '%s\n' "$tt_l1" | awk -v g="$tt_grep" '{ok = ($4=="pass" && $5==g && $5==4 && $6==3 && $7==1 && $8==3685 && $9==3130 && $10=="0.5000" && $11==1 && $12==1)} END{exit ok?0:1}' \
+     && printf '%s\n' "$tt_l2" | awk '{ok = ($4=="fail" && $5==1 && $6==1 && $7==0 && $8==6 && $9==6 && $10=="0.2500" && $11==0 && $12==0)} END{exit ok?0:1}' \
      && [ "$(printf '%s\n' "$tt_out" | grep -c '^grandfather-xl-lookup')" -eq 2 ]; then
-    pass "trace-tools (one line per run; tool calls = $tt_grep tool_use blocks, main/subagent split, tokens deduped per message, cost)"
+    pass "trace-tools (one line per run; tool calls = $tt_grep tool_use blocks, main/subagent split, tokens deduped per message, cost; map_read counts a Grep on the map, map_shell a shell cat)"
   else failc "trace-tools" "exit $tt_rc, grep says $tt_grep; output: $(printf '%s' "$tt_out" | head -4 | tr '\n' '|')"; fi
 fi
 
@@ -1889,6 +1901,84 @@ if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.m
    && sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -qi 'path-scoped'; then
   pass "scoped-loading (the evals README states the measured result and names check 54)"
 else failc "scoped-loading" "evals/README.md has no path-scoped loading paragraph naming check 54"; fi
+
+# 55. spec-check-draft: a DRAFT spec can be checked with --as-open — read as open for the run
+# (the task-format checks, MISSING-TASK, PENDING-TEST), no file changed — so the spec skill
+# never flips a Status line to get a check (the real run did; field notes §6). Without the
+# flag a draft is still SKIPPED; open, shipped and dropped specs print the same with the flag
+# as without. Reuses scspec, sctasks and sc. No claude needed. Cites: harness-debts/REQ-1
+# harness-debts/REQ-2 harness-debts/REQ-3
+# a. a draft whose T2 has no Files line: SKIPPED without the flag, MISSING-FIELD with it
+P="$WORK/ao-a"; scspec "$P" demo draft; sctasks "$P" demo T1
+grep -v 'Files: app/c.py' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+ao_before=$(cat "$P/.shipkit/specs/demo/spec.md")
+rc=$(sc "$P" demo)
+if [ "$rc" -eq 0 ] && grep -q '^SKIPPED demo (draft)$' "$WORK/sc.out"; then
+  rc=$(sc "$P" demo --as-open)
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-FIELD demo T2 Files$' "$WORK/sc.out" && ! grep -q 'SKIPPED' "$WORK/sc.out" \
+     && grep -q '^PENDING-TEST\|^MISSING-TASK\|^MISSING-FIELD' "$WORK/sc.out" && ! grep -q 'MISSING-TEST' "$WORK/sc.out" \
+     && [ "$ao_before" = "$(cat "$P/.shipkit/specs/demo/spec.md")" ]; then
+    pass "spec-check-draft (draft + --as-open → MISSING-FIELD, exit 1, no MISSING-TEST, spec.md untouched; without the flag → SKIPPED)"
+  else failc "spec-check-draft" "with the flag: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+else failc "spec-check-draft" "without the flag a draft should be SKIPPED, exit 0: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# b. a draft whose tasks.md never names REQ-2 → MISSING-TASK with the flag
+P="$WORK/ao-b"; scspec "$P" demo draft; sctasks "$P" demo T1
+sed -i '' 's/→ REQ-2/→ REQ-1/' "$P/.shipkit/specs/demo/tasks.md"
+rc=$(sc "$P" demo --as-open)
+if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out"; then pass "spec-check-draft (draft with an unnamed requirement + --as-open → MISSING-TASK)"
+else failc "spec-check-draft" "missing task: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# c. shipped and dropped specs: the flag changes nothing
+P="$WORK/ao-c"; scspec "$P" demo shipped
+rc1=$(sc "$P" demo); ao_plain=$(cat "$WORK/sc.out")
+rc2=$(sc "$P" demo --as-open); ao_flag=$(cat "$WORK/sc.out")
+P="$WORK/ao-d"; scspec "$P" demo dropped
+rc3=$(sc "$P" demo --as-open)
+if [ "$rc1" = "$rc2" ] && [ "$ao_plain" = "$ao_flag" ] && [ "$rc3" -eq 0 ] && grep -q '^SKIPPED demo (dropped)$' "$WORK/sc.out"; then
+  pass "spec-check-draft (shipped + --as-open → same output as without; dropped → still SKIPPED)"
+else failc "spec-check-draft" "shipped $rc1/$rc2 [$ao_plain] vs [$ao_flag]; dropped $rc3: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# d. the spec skill asks for the flag on a draft and never flips the status (prose, REQ-3)
+if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the status to `open` for one run\|set .*Status.* to .*open.* for one run' "$COPY/skills/spec/SKILL.md"; then
+  pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
+else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
+
+# 56. plugin-root-restore: the session hook rewrites ~/.claude/shipkit/plugin-root on every
+# start, so by the end of this suite it names the scratch copy — restored by luck of ordering
+# or by hand until 4.7.0. The runner now saves it (pr_save) before the first session and puts
+# it back (pr_restore) from its EXIT trap, on every exit path. Tested here in a subshell with
+# HOME pointed at a scratch directory: a sentinel overwritten is restored; an absent file
+# overwritten is absent again. The trap line and the header sentence are grepped from the
+# script itself. No claude needed. Cites: harness-debts/REQ-6 harness-debts/REQ-7
+if command -v pr_save >/dev/null 2>&1 && command -v pr_restore >/dev/null 2>&1; then
+  pr_rc=$(
+    HOME="$WORK/prhome"; mkdir -p "$HOME/.claude/shipkit"; PR_FILE="$HOME/.claude/shipkit/plugin-root"
+    printf 'sentinel\n' > "$PR_FILE"; pr_save; printf '%s\n' "$WORK/plugin" > "$PR_FILE"; pr_restore
+    [ "$(cat "$PR_FILE")" = sentinel ] || { echo 1; exit; }
+    rm "$PR_FILE"; pr_save; printf '%s\n' "$WORK/plugin" > "$PR_FILE"; pr_restore
+    [ ! -f "$PR_FILE" ] || { echo 2; exit; }
+    echo 0
+  )
+  case "$pr_rc" in
+    0) pass "plugin-root-restore (a sentinel overwritten is restored; an absent file is absent again)";;
+    1) failc "plugin-root-restore" "the sentinel was not restored";;
+    *) failc "plugin-root-restore" "an absent plugin-root was left behind";;
+  esac
+else failc "plugin-root-restore" "pr_save / pr_restore are not defined (check written first, by design)"; fi
+if grep -q "^trap 'pr_restore" "$ROOT/scripts/smoke.sh" \
+   && sed -n '1,20p' "$ROOT/scripts/smoke.sh" | grep -q 'restores it on exit' \
+   && sed -n '1,20p' "$ROOT/scripts/smoke.sh" | grep -q 'started during a run'; then
+  pass "plugin-root-restore (the restore is on the EXIT trap; the header says so and names the mid-run window)"
+else failc "plugin-root-restore" "no trap 'pr_restore…' EXIT line, or the header does not say it restores on exit / that a session started during a run reads a scratch root"; fi
+
+# 57. dotfile-paragraph: the evals README tells a case author what the sandbox will refuse —
+# a file whose NAME is on Claude Code's protected list (.pre-commit-config.yaml is), not "a
+# dotfile at the workspace root" as 4.6.0 read it: two probe runs wrote .editorconfig at the
+# root and under config/ (S14-T5, 2026-10-09). The paragraph sits under "How a case gets the
+# fixture". No claude needed. Cites: harness-debts/REQ-10
+dp=$(sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | sed -n '/^### What a case cannot ask for/,/^## Cases/p')
+if [ -n "$dp" ] && printf '%s\n' "$dp" | grep -q 'protected' && printf '%s\n' "$dp" | grep -q 'workspace root' \
+   && printf '%s\n' "$dp" | grep -q 'pre-commit-config.yaml' && printf '%s\n' "$dp" | grep -q 'config/.editorconfig'; then
+  pass "dotfile-paragraph (the evals README says what a case cannot ask for: a protected file name, with the root and subdirectory probes)"
+else failc "dotfile-paragraph" "evals/README.md has no 'What a case cannot ask for' paragraph under 'How a case gets the fixture' naming the protected list, the workspace root, .pre-commit-config.yaml and config/.editorconfig"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

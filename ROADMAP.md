@@ -12,11 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-09, v4.6.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan and 11 to 13 of the field plan (`docs/plans/field-sprint-plan.md`, approved
-2026-10-08) are done — the last three shipped as 4.4.0, 4.5.0 and 4.6.0; see "The field plan"
-below. Everything in this document is shipped except the items under "Still open after
-Sprint 13", which seed the plan after.
+**Status (as of 2026-10-09, v4.7.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan and 11 to 13 of the field plan are done; Sprint 14 of the portfolio plan
+(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and Sprints 15
+and 16 are next; see "The portfolio plan" below. Everything in this document is shipped except
+the six items still open under "Still open after Sprint 13", which the portfolio plan carries.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,6 +29,18 @@ Sprint 13", which seed the plan after.
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The portfolio plan — Sprint 14 SHIPPED 2026-10-09 as 4.7.0; Sprints 15–16 to come
+
+Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
+harness's debts (14), act on the numbers the rules carry (15), measure what still has none —
+`eve`'s portfolio and a second real project (16).
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 14 | 4.7.0 | `spec-check --as-open` for a draft; a gate that removes its scratch files; a smoke runner that restores `plugin-root`; `map_read` counting what its document says and `map_shell` beside it; the sandbox's refusal understood (a protected file name, not a root dotfile); the rule-5 contradiction closed by the rulebook |
+| 15 | 4.8.0 | *(next)* the twenty-two measured lines cut or kept by name, each with its watch case; the intake's assumption sentence; the elder's step 0 closed by record; two cache directories |
+| 16 | 4.9.0 | *(after)* a three-project fixture and `eve`'s first number; shipkit end to end on `~/code/pulse`; the roadmap for the plan after |
 
 ## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
@@ -63,25 +75,37 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   `.shipkit/releases/2026-10-08-run-wounds.md`, section 4).
 - **`spec-check.sh` cannot check a draft spec** — the spec skill flips the status to run it
   (`docs/design/field-notes-4.3.md` §6; left out of Sprint 12 by the owner's answer).
+  *4.7.0 (S14-T1, E4): `--as-open` reads a draft as open for one run, changing no file; the
+  spec skill asks for it and never flips the status (smoke check 55).*
 - **The gate leaves `shipkit-ship-*.out` files under `$TMPDIR` after every run** — the design
   record's case-against (`.shipkit/specs/gate-blind-spots/design.md`, "Exit codes are echoed on
-  the command line"), now observed on four gate runs.
-- **The eval sandbox denies writing a dotfile at the workspace root** — every `trap2/notebooks`
-  run in both arms wrote the right `.pre-commit-config.yaml` and was refused; the case asks for a
-  Makefile instead (`eval-results-4.6.md`, the `notebooks` row). A case that needs a dotfile
-  cannot be written until this is understood.
+  the command line"), now observed on four gate runs. *4.7.0 (S14-T2, E5): the gate removes
+  them once the report holds their content; a dry run on `second-traps` left none.*
+- **The eval sandbox denies writing a dotfile at the workspace root** — *4.7.0 (S14-T5): it
+  does not; it denies a file whose name is on Claude Code's protected list
+  (`.pre-commit-config.yaml` is), in the mode the eval tool runs under. Two probe runs wrote
+  `.editorconfig` at the root and below it. The rule for case authors is in
+  `plugins/shipkit/evals/README.md`, "What a case cannot ask for" (smoke check 57).*
 - **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` with the map's path, not a shell
   `cat`** — one run in fifteen read the map through Bash and is counted as not reading it
-  (`eval-results-4.6.md`, "The elder's step 1", attempt 2).
+  (`eval-results-4.6.md`, "The elder's step 1", attempt 2). *4.7.0 (S14-T4, E7): the code
+  counted `Read` only, not `Read` or `Grep` as documented; it now counts both as `map_read`
+  and a `Bash` command naming the map as `map_shell`; 4.6's rates stand as `Read`-only counts
+  (the appended note in `eval-results-4.6.md`; smoke check 40).*
 - **The smoke suite overwrites `~/.claude/shipkit/plugin-root`** with scratch paths while it
   runs; the last hook run restores it only by luck of ordering, and a session started mid-run
   reads a scratch root (`scripts/smoke.sh` header, "except that the session hook writes
   ~/.claude/shipkit/plugin-root"; `CHANGELOG.md` 4.6.0 "What using it for real showed").
+  *4.7.0 (S14-T3, E6): the runner saves the file before its first session and restores it
+  from its EXIT trap, on every exit path; the mid-run window stays and the header names it
+  (smoke check 56).*
 - **Rule 5 and the gate disagree on when a branch-not-taken note lands** — the rule says the
   ship commit, the gate reads the spec before it; the note must be committed before the gate
   (`docs/plans/field-sprint-plan.md` §1 rule 5 against `.shipkit/specs/gate-blind-spots/tasks.md`
   "After the gate"; the 4.4.0 gate's first run in `CHANGELOG.md` 4.4.0 "What using it for real
-  showed").
+  showed"). *4.7.0 (S14-T6, E9): closed by the portfolio plan's rule 16 — the note is committed
+  before the gate — and its rule 5, which points there (`docs/plans/portfolio-sprint-plan.md`
+  §1); no plugin file changed.*
 - **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5).

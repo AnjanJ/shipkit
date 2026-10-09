@@ -2,6 +2,56 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.7.0] — 2026-10-09
+
+Sprint 14, the first of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`): six debts in
+the harness, the gate and the skills paid, with no rule, agent or eval prompt changed.
+Requirements and decision records in [`.shipkit/specs/harness-debts/`](.shipkit/specs/harness-debts/).
+
+### Changed
+
+- **`spec-check.sh --as-open` reads a draft as an open spec for one run** — the task-format
+  checks, `MISSING-TASK`, `PENDING-TEST` — and changes no file; open, shipped and dropped specs
+  print what they print without it (E4). The spec skill asks for it on the draft it just wrote
+  and never changes the `Status` line to get a check — which it did on the real run.
+- **The ship gate removes its own scratch files** (`$TMPDIR/shipkit-ship-*.out`) once the report
+  holds their content; the report template says so at the two pasted blocks (E5).
+- **The smoke runner saves `~/.claude/shipkit/plugin-root` before its first session and restores
+  it from its `EXIT` trap**, on every exit path; a session started during a run still reads the
+  scratch root until the run ends, and the header says so (E6).
+- **`trace-tools.sh`'s `map_read` counts a `Read` or a `Grep` on the map's path**, as the 4.6.0
+  results document and CHANGELOG said it did — the code counted `Read` only — **and a new
+  `map_shell` column** counts a `Bash` command naming the map (E7). 4.6's 1, 4 and 8 of 15
+  stand as `Read`-only counts; a note under "The elder's step 1" says so.
+- `ROADMAP.md`: six of the twelve items under "Still open after Sprint 13" carry their 4.7.0
+  note; the rule-5 item is closed by the portfolio plan's rule 16 and amended rule 5 (E9).
+
+### Added
+
+- The evals README's **"What a case cannot ask for"** (E8): a file whose *name* is on Claude
+  Code's protected list, not a dotfile at the workspace root — see below.
+- Smoke checks 55 (`spec-check-draft`), 56 (`plugin-root-restore`), 57 (`dotfile-paragraph`);
+  check 40 asserts the two map columns; 153 checks in all.
+
+### What using it for real showed
+
+**The sandbox refuses a protected file name, not a root dotfile.** Two probe runs on a scratch
+copy of the plugin ($0.12) wrote `.editorconfig` at the workspace root and `config/.editorconfig`
+below it, both "File created successfully". What every `trap2/notebooks` run hit was
+`.pre-commit-config.yaml`, which the permission-modes documentation lists as protected
+(with `.gitconfig`, `.zshrc`, `.npmrc`, `.mcp.json`), denied in the non-interactive mode the
+eval tool runs under; `--allow-tools Write` does not override it. 4.6.0's reading was wrong
+in its premise and right in its remedy. **This sprint's own T0 hit the defect T1 fixes**: the
+draft spec could only be checked on a scratch copy read as open. **Every `--plugin-dir`
+session rewrites `plugin-root`**, not only the smoke suite — the gate dry run left it naming
+this checkout and it was put back by hand; the runner's fix covers the suite. **The dry-run
+gate wrote a separate `-rerun` report by its own choice** rather than overwrite the committed
+4.6.0 one, and gave step 2's evidence as one line where the template asks for the last twenty
+pasted (`gate-blind-spots` REQ-9's wording held, the model's reading of it did not; noted, not
+fixed). Smaller: the T0 commit carried a `Co-Authored-By` trailer the rulebook forbids and was
+amended before any push (rule 12 followed); the plan's S14-T6 said "eleven items left" where
+its own tasks said six, and the tasks were right.
+
 ## [4.6.0] — 2026-10-09
 
 Sprint 13, the last of the field plan (`docs/plans/field-sprint-plan.md`): the two biggest

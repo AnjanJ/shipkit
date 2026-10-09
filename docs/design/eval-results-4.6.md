@@ -106,6 +106,13 @@ land") is followed, and on a fixture where every grep lands the map is never nee
 in step 1 cannot override a triage that happens before it. Two attempts cost $3.35 with the
 baseline's $1.65, within C9's budget. Every one of the 45 answers was right.
 
+*Appended 2026-10-09 (Sprint 14, S14-T4, portfolio plan E7):* the `map_read` column that counted
+the 1, 4 and 8 of 15 above was, in the code, a `Read` tool_use only — not "a `Read` or a `Grep`"
+as this section and the 4.6.0 CHANGELOG say. Since 4.7.0 `trace-tools.sh` counts `Read` or
+`Grep` on the map's path as `map_read`, as written here, and a `Bash` command naming the map as
+a second column, `map_shell` — the shell `cat` that made attempt 2's "9 of 15" above. The three
+rates stand as `Read`-only counts; the kept sandboxes are gone, so they were not recounted.
+
 
 ## The "wip" history (S13-T5)
 
