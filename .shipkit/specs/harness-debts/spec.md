@@ -1,7 +1,7 @@
 # Spec: The harness pays its debts (Sprint 14, release 4.7.0)
 
 > Spec accepted at commit `66a993f` on sprint-14/harness-debts (2026-10-09).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/skills/spec/, plugins/shipkit/skills/ship/, plugins/shipkit/evals/README.md, scripts/, docs/design/eval-results-4.6.md, docs/design/eval-history.md, docs/plans/portfolio-sprint-plan.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
