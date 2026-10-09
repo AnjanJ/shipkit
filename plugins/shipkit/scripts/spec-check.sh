@@ -2,12 +2,17 @@
 # Shipkit spec-check: does every requirement in a spec have a task, and — once the spec is
 # shipped — a test that cites it?
 #
-#   spec-check.sh <project-dir> [slug] [--as-shipped]
+#   spec-check.sh <project-dir> [slug] [--as-shipped | --as-open]
 #
 #   no slug        every spec under .shipkit/specs/
 #   --as-shipped   ask an OPEN spec for what a shipped one owes — a cited test for every
 #                  requirement that is not excused. Changes no file. It is how the ship gate
 #                  asks "would this pass if it shipped now?" before the status is changed.
+#   --as-open      read a DRAFT spec as an open one for this run — the task-format checks,
+#                  MISSING-TASK and PENDING-TEST — changing no file. It is how the spec skill
+#                  checks a draft before the owner accepts it; without it a draft is SKIPPED
+#                  (the real run flipped the status to open for one run to get this; 4.7.0).
+#                  Open, shipped and dropped specs are read as without the flag.
 #
 # Reads the spec files as plain text and prints one line per finding:
 #
@@ -49,15 +54,17 @@
 # POSIX sh + awk + git. No bash-only syntax, no python. Spec: .shipkit/specs/spec-contract/.
 
 usage() {
-  echo "usage: spec-check.sh <project-dir> [slug] [--as-shipped]" >&2
+  echo "usage: spec-check.sh <project-dir> [slug] [--as-shipped | --as-open]" >&2
   exit 64
 }
 AS_SHIPPED=0
+AS_OPEN=0
 PROJ=""
 ONLY=""
 for arg in "$@"; do
   case "$arg" in
     --as-shipped) AS_SHIPPED=1 ;;
+    --as-open) AS_OPEN=1 ;;
     -*) usage ;;
     *) if [ -z "$PROJ" ]; then PROJ=$arg; elif [ -z "$ONLY" ]; then ONLY=$arg; else usage; fi ;;
   esac
@@ -181,6 +188,7 @@ for spec in "$SPECS"/*/spec.md; do
   slug=${dir##*/}
   [ -z "$ONLY" ] || [ "$slug" = "$ONLY" ] || continue
   status=$(spec_status "$spec")
+  [ "$AS_OPEN" -eq 1 ] && [ "$status" = draft ] && status=open   # harness-debts/REQ-1
   case "$status" in
     draft|dropped) echo "SKIPPED $slug ($status)"; continue ;;
   esac

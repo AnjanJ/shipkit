@@ -10,7 +10,7 @@ T5; any other needs the owner's yes (rule 15).**
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . harness-debts` → 0 gaps once stamped open
   - After: none
   - Done when: `spec-check.sh . harness-debts` → 0 gaps; the owner's approval is in the thread; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** `spec-check` checks a draft (S14-T1) → REQ-1, REQ-2, REQ-3
+- [x] **T1** `spec-check` checks a draft (S14-T1) → REQ-1, REQ-2, REQ-3
   - Files: plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/skills/spec/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 55 "spec-check-draft" (a draft with a task lacking `Files:` → `SKIPPED` without the flag, `MISSING-FIELD` with it; a draft with an unnamed requirement → `MISSING-TASK` with it; a shipped spec with the flag → same output as without; the skill's text has no status flip) — written first, red; Check first: the status claim in the plan's §3
   - After: T0

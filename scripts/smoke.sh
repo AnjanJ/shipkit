@@ -1890,6 +1890,45 @@ if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.m
   pass "scoped-loading (the evals README states the measured result and names check 54)"
 else failc "scoped-loading" "evals/README.md has no path-scoped loading paragraph naming check 54"; fi
 
+# 55. spec-check-draft: a DRAFT spec can be checked with --as-open — read as open for the run
+# (the task-format checks, MISSING-TASK, PENDING-TEST), no file changed — so the spec skill
+# never flips a Status line to get a check (the real run did; field notes §6). Without the
+# flag a draft is still SKIPPED; open, shipped and dropped specs print the same with the flag
+# as without. Reuses scspec, sctasks and sc. No claude needed. Cites: harness-debts/REQ-1
+# harness-debts/REQ-2 harness-debts/REQ-3
+# a. a draft whose T2 has no Files line: SKIPPED without the flag, MISSING-FIELD with it
+P="$WORK/ao-a"; scspec "$P" demo draft; sctasks "$P" demo T1
+grep -v 'Files: app/c.py' "$P/.shipkit/specs/demo/tasks.md" > "$WORK/sc.tmp" && mv "$WORK/sc.tmp" "$P/.shipkit/specs/demo/tasks.md"
+ao_before=$(cat "$P/.shipkit/specs/demo/spec.md")
+rc=$(sc "$P" demo)
+if [ "$rc" -eq 0 ] && grep -q '^SKIPPED demo (draft)$' "$WORK/sc.out"; then
+  rc=$(sc "$P" demo --as-open)
+  if [ "$rc" -eq 1 ] && grep -q '^MISSING-FIELD demo T2 Files$' "$WORK/sc.out" && ! grep -q 'SKIPPED' "$WORK/sc.out" \
+     && grep -q '^PENDING-TEST\|^MISSING-TASK\|^MISSING-FIELD' "$WORK/sc.out" && ! grep -q 'MISSING-TEST' "$WORK/sc.out" \
+     && [ "$ao_before" = "$(cat "$P/.shipkit/specs/demo/spec.md")" ]; then
+    pass "spec-check-draft (draft + --as-open → MISSING-FIELD, exit 1, no MISSING-TEST, spec.md untouched; without the flag → SKIPPED)"
+  else failc "spec-check-draft" "with the flag: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+else failc "spec-check-draft" "without the flag a draft should be SKIPPED, exit 0: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# b. a draft whose tasks.md never names REQ-2 → MISSING-TASK with the flag
+P="$WORK/ao-b"; scspec "$P" demo draft; sctasks "$P" demo T1
+sed -i '' 's/→ REQ-2/→ REQ-1/' "$P/.shipkit/specs/demo/tasks.md"
+rc=$(sc "$P" demo --as-open)
+if [ "$rc" -eq 1 ] && grep -q '^MISSING-TASK demo REQ-2$' "$WORK/sc.out"; then pass "spec-check-draft (draft with an unnamed requirement + --as-open → MISSING-TASK)"
+else failc "spec-check-draft" "missing task: exit $rc: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# c. shipped and dropped specs: the flag changes nothing
+P="$WORK/ao-c"; scspec "$P" demo shipped
+rc1=$(sc "$P" demo); ao_plain=$(cat "$WORK/sc.out")
+rc2=$(sc "$P" demo --as-open); ao_flag=$(cat "$WORK/sc.out")
+P="$WORK/ao-d"; scspec "$P" demo dropped
+rc3=$(sc "$P" demo --as-open)
+if [ "$rc1" = "$rc2" ] && [ "$ao_plain" = "$ao_flag" ] && [ "$rc3" -eq 0 ] && grep -q '^SKIPPED demo (dropped)$' "$WORK/sc.out"; then
+  pass "spec-check-draft (shipped + --as-open → same output as without; dropped → still SKIPPED)"
+else failc "spec-check-draft" "shipped $rc1/$rc2 [$ao_plain] vs [$ao_flag]; dropped $rc3: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
+# d. the spec skill asks for the flag on a draft and never flips the status (prose, REQ-3)
+if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the status to `open` for one run\|set .*Status.* to .*open.* for one run' "$COPY/skills/spec/SKILL.md"; then
+  pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
+else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
