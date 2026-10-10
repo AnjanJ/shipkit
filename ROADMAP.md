@@ -43,6 +43,29 @@ harness's debts (14), act on the numbers the rules carry (15), measure what stil
 | 15 | 4.8.0 | Fourteen measured lines cut from seven rule files, each with its watch case and a return clause; four whole-body files and `rails` kept by record; the intake's two sentences (file and line; parts count); the elder's step 0 closed by record; the `3.1.0` and `4.5.0` cache directories gone |
 | 16 | 4.9.0 | *(after)* a three-project fixture and `eve`'s first number; shipkit end to end on `~/code/pulse`; the roadmap for the plan after |
 
+**Still open after Sprint 16** (the second real run's findings, `docs/design/field-notes-4.9.md`,
+by section; nothing here was fixed in Sprint 16, by the plan's E11; every item seeds the plan after):
+
+- **`install-stack.sh` appends a stack section under a heading the project already has** —
+  `office_bestie` had its own `## Elixir-Specific`; setup added a second one with a different
+  test command (`field-notes-4.9.md` §2.1).
+- **Setup does not notice a same-named rule beside its own directory** — `dependencies.md`,
+  `migrations.md` and `testing.md` in `.claude/rules/` next to shipkit's three (§2.2).
+- **Setup moves a previous backup that git tracks** — fourteen deletions in `git status` after
+  `.shipkit-backup-20260321-…` was nested into the new backup (§2.3).
+- **A background-agent wait sentence leaks into the final reply** — "I'll stop here until its
+  notification arrives", then the full answer; in the intake and in the gate (§4.1, §9.3).
+- **`brief-verify.sh` counts changes already in the tree at hand-over** — fourteen OUTSIDE
+  lines that were setup's, none the agent's; nothing says "hand over from a clean tree" (§8.1).
+- **The reviewer's MET citation named diff positions, not file lines** — `accounts.ex:18-23`
+  for a function at line 605; and the gate summarised the reviewer's reply again, where
+  `gate-blind-spots` REQ-9 asks for it pasted (§9.1, §9.2).
+- **Setup's files are "changes beyond the spec" on every first spec** — `.claude/rules/shipkit/`,
+  `.gitignore`, `CLAUDE.md`, as `product.md` was before 4.5.0 allowed it (§9.4).
+- **The project's, not shipkit's** (recorded so the next run knows): `CLAUDE.md`'s test command
+  assumes the pinned Elixir is on `PATH` (§7); a tracked backup directory (§2.3); a
+  `settings.json` deny rule that never matches (§2.4).
+
 ## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
 Full plan: [`docs/plans/field-sprint-plan.md`](docs/plans/field-sprint-plan.md). What the real
