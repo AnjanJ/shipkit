@@ -322,6 +322,18 @@ diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" ha
 runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
 run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
 
+## The cuts (4.8.0)
+
+Seven rule files lost their two measured lines in 4.8.0 (`.shipkit/specs/measured-cuts/design.md`,
+plan E1): `ui-ux`, `hotwire`, `liveview`, `mix-deps`, `notebooks`, `pyproject`, `react` — the
+line each 4.2.0 case walks into and the line each `trap2/` case walks into, both passed without
+the text on both days. Their fourteen cases are unchanged and still install the file: they are
+the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
+release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
+`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. The numbers on
+the trimmed text are in `docs/design/eval-results-4.8.md`; smoke check 58 keeps this list and
+the files honest.
+
 ## Trap 2 (4.6.0)
 
 Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the
@@ -340,3 +352,14 @@ The baselines (3.1.0; 3.2.0 after the rule shrink; 4.0.0 XL; 4.1.0 scoped and st
 
 3 of 3 on the 4.3.0 text before its sentence existed, so the planned search list was not added;
 3 of 3 after; the reading is in `docs/design/eval-history.md`.
+
+*4.8.0 (S15-T2, plan E3):* step 4 of the intake gained two sentences — an assumption a file
+answers names the file and line (the standard `answered`'s grader already asked for; added as a
+standard, not on a number), and a question with several parts counts as several, four being
+the ceiling on parts (the reading `limit`'s grader already applied; the case fell to 0 of 3 in
+the 4.7.0 release run on replies that packed five parts into three numbers). The group once on
+the new text, 2026-10-10, $1.80: `answered` 3 of 3, `nongoal` 3 of 3, `trivial` 3 of 3,
+**`limit` 2 of 3** — the failing run's three numbered questions carried five parts, as before;
+the two passing runs' three carried three and four. The sentence is a standard the case
+watches, not a lever with a number behind it; its record says it comes out if `limit` is still
+below 2 of 3 on a release run.

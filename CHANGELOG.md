@@ -2,6 +2,60 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.8.0] — 2026-10-10
+
+Sprint 15 of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`): the rule files act on
+the two measurements each of their lines carries. Requirements and decision records in
+[`.shipkit/specs/measured-cuts/`](.shipkit/specs/measured-cuts/); the numbers in
+[`docs/design/eval-results-4.8.md`](docs/design/eval-results-4.8.md).
+
+### Changed
+
+- **Seven rule files lost the two lines the model follows unaided** — `rules/ui-ux.md`,
+  `stacks/hotwire/hotwire.md`, `stacks/liveview/liveview.md`, `stacks/elixir/mix-deps.md`,
+  `stacks/ml/notebooks.md`, `stacks/python/pyproject.md`, `stacks/react/react.md`: 2,342 bytes,
+  33 lines (E1). Each cut line passed its case without the text in 4.2.0 and 4.6.0, and the
+  fourteen cases, unchanged, hold on the trimmed file: 12 at 3 of 3, 2 at 2 of 3 with neither
+  failing run in its trap. **The cases stay as the watch**: a release run below 2 of 3 returns
+  the line (`evals/README.md`, "The cuts (4.8.0)"; smoke check 58). Four files whose whole body
+  is their two measured lines — `migrations`, `monorepo`, `testing`, `package-json` — and
+  `rails`, at the threshold, keep theirs by record.
+- **The intake's step 4** says an assumption a file answers names the file and line, and that a
+  question with several parts counts as several, four being the ceiling on parts (E3; both
+  sentences the owner's word). The group on the new text: `answered`, `nongoal`, `trivial`
+  3 of 3; `limit` 2 of 3, up from 0 of 3 in the 4.7.0 release run — recorded as a standard the
+  case watches, not as a lever.
+- **Decision 0001 closes the elder's step 0 by record** (E2): 45 of 45 answers right while the
+  map was read in 1, 4 and 8 of 15; a read costs about 23k more main-session tokens on the
+  4.0.0 XL baseline; step 0 stays, and Sprint 16's portfolio `why` case is named as what would
+  reopen it.
+- `ROADMAP.md`: the cut-candidates, elder-step-0, intake and `3.1.0` items carry their 4.8.0
+  notes; three items stay open for Sprint 16.
+
+### Removed
+
+- The `3.1.0` and `4.5.0` directories in the owner's plugin cache (E12 F1, F2), each its own yes.
+
+### Added
+
+- Smoke check 58 (`cuts-recorded`): the fourteen lines are out, the five kept files' lines are
+  in, the README's cut list exists, the intake's two sentences are there; 156 checks in all.
+
+### What using it for real showed
+
+**Four candidates could not be cut without being removed.** `migrations`, `monorepo`, `testing`
+and `package-json` have exactly two bullets, both measured; the plan counted twenty-two lines
+across eleven files and the files held fourteen across seven. The owner kept the four whole.
+**A grader can be narrower than its line.** `trap2/notebooks`' failing run cleared every
+output with a standard-library script because the prompt forbids installing anything; the
+regex knows `nbstripout` and `nbconvert`. Left as written so the watch stays comparable; the
+widening is named for the plan after. **A headless run that follows the spec-driven rule
+builds nothing**, and a file grader then fails it (`trap2/react`, one run). **`--as-open` was
+used on its first day**: this sprint's own draft was checked with it, where Sprint 14's had to
+be copied. Smaller: `intake/limit`'s failing run still packed five parts into three numbers
+after the sentence, so the sentence is a standard, not a fix, and its record says when it
+comes out.
+
 ## [4.7.0] — 2026-10-09
 
 Sprint 14, the first of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`): six debts in

@@ -12,11 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-09, v4.7.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan and 11 to 13 of the field plan are done; Sprint 14 of the portfolio plan
-(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and Sprints 15
-and 16 are next; see "The portfolio plan" below. Everything in this document is shipped except
-the six items still open under "Still open after Sprint 13", which the portfolio plan carries.
+**Status (as of 2026-10-10, v4.8.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan and 11 to 13 of the field plan are done; Sprints 14 and 15 of the portfolio plan
+(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and 4.8.0 and
+Sprint 16 is next; see "The portfolio plan" below. Everything in this document is shipped except
+the three items still open under "Still open after Sprint 13" (`eve`'s loss, the second real
+run, and whatever Sprint 16's run finds), which the portfolio plan carries.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -30,7 +31,7 @@ the six items still open under "Still open after Sprint 13", which the portfolio
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The portfolio plan — Sprint 14 SHIPPED 2026-10-09 as 4.7.0; Sprints 15–16 to come
+## The portfolio plan — Sprints 14–15 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0; Sprint 16 to come
 
 Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
 harness's debts (14), act on the numbers the rules carry (15), measure what still has none —
@@ -39,7 +40,7 @@ harness's debts (14), act on the numbers the rules carry (15), measure what stil
 | Sprint | Release | What the owner got |
 |--------|---------|--------------------|
 | 14 | 4.7.0 | `spec-check --as-open` for a draft; a gate that removes its scratch files; a smoke runner that restores `plugin-root`; `map_read` counting what its document says and `map_shell` beside it; the sandbox's refusal understood (a protected file name, not a root dotfile); the rule-5 contradiction closed by the rulebook |
-| 15 | 4.8.0 | *(next)* the twenty-two measured lines cut or kept by name, each with its watch case; the intake's assumption sentence; the elder's step 0 closed by record; two cache directories |
+| 15 | 4.8.0 | Fourteen measured lines cut from seven rule files, each with its watch case and a return clause; four whole-body files and `rails` kept by record; the intake's two sentences (file and line; parts count); the elder's step 0 closed by record; the `3.1.0` and `4.5.0` cache directories gone |
 | 16 | 4.9.0 | *(after)* a three-project fixture and `eve`'s first number; shipkit end to end on `~/code/pulse`; the roadmap for the plan after |
 
 ## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
@@ -61,6 +62,12 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   `testing`, `ui-ux`, and `rails` at the threshold: named cut candidates with two measurements
   each (`docs/design/eval-results-4.6.md`, "The three readings"; C8 forbade cutting on the
   sprint's own numbers). The plan after decides which lines are kept as a statement of standards.
+  *4.8.0 (S15-T1, E1): seven files lost their two measured lines (`ui-ux`, `hotwire`, `liveview`,
+  `mix-deps`, `notebooks`, `pyproject`, `react`; 2,342 bytes) and their fourteen cases hold on the
+  trimmed text, 12 at 3 of 3 and 2 at 2 of 3 with neither failing run in its trap; the cases
+  stay as the watch and a release run below 2 of 3 returns the line. `migrations`, `monorepo`,
+  `testing` and `package-json` — whose whole body is the two lines — and `rails` are kept by
+  record on the owner's word (`docs/design/eval-results-4.8.md`; smoke check 58).*
 - **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
   registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
   "The wip history"; C11).
@@ -69,6 +76,11 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended
   note). Whether step 0 itself should change, and whether a read that never changes an answer
   is worth its tokens, is the next plan's question.
+  *4.8.0 (S15-T3, E2): closed by record, no run — 45 of 45 answers right while the map was
+  read in 1, 4 and 8 of 15, a read costing about 23k more main-session tokens on the 4.0.0 XL
+  baseline's `drift` and `gap` rows; step 0 stays, and the record names the fixture where the
+  grep does not land (Sprint 16's `why` case) as the thing that would reopen it
+  (`.shipkit/decisions/0001-project-map-default.md`, "Step 0, closed").*
 - **The intake names the answering file only because the grader asks** — nothing in
   `skills/intake/SKILL.md` says to; the 4.4.0 case passed 3 of 3 before any sentence existed
   (`CHANGELOG.md` 4.4.0 "What using it for real showed"; the reviewer's note in
@@ -106,7 +118,10 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   showed"). *4.7.0 (S14-T6, E9): closed by the portfolio plan's rule 16 — the note is committed
   before the gate — and its rule 5, which points there (`docs/plans/portfolio-sprint-plan.md`
   §1); no plugin file changed.*
-- **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
+- **The `3.1.0` cache directory** waits for the owner's restart (D2 above). *4.8.0 (S15-T4,
+  E12 F1 and F2): `3.1.0` and `4.5.0` removed from `~/.claude/plugins/cache/shipkit/shipkit/` on
+  2026-10-10, each its own yes ("both"), neither the running version (the session's hook said
+  `4.6.0`; `4.7.0` installed beside it awaits the restart); the commands are in the S15-T4 commit.*
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5).
 

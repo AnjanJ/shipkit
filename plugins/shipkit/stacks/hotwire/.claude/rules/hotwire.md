@@ -10,17 +10,11 @@ paths:
 # Hotwire (Turbo + Stimulus)
 
 ## Pick the lightest tool that works
-- **Turbo Frames** for a scoped region that navigates on its own. One frame, one concern.
-- **Turbo Streams** only when a single response must update *several* disjoint regions, or when
-  the update is pushed from the server (broadcast). A Stream that touches one region should
-  have been a Frame.
 - Reach for a Stimulus controller only when no server round-trip is involved (toggles, focus,
   clipboard, keyboard shortcuts). Anything that changes data goes through the server.
 
 ## Stimulus
 - Small controllers, one responsibility, named after the behavior (`clipboard`, not `utils`).
-- Use `static values`, `static targets`, `static outlets` — never `document.querySelector` or
-  `getElementById` from inside a controller.
 - Use `data-action` in the markup; never inline `onclick`/`onchange`.
 - Clean up in `disconnect()` — timers, listeners, observers. Turbo caches and restores pages,
   so a leaked listener fires twice on the next visit.

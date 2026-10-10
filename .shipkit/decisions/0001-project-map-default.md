@@ -109,3 +109,18 @@ say: step 0's "try the cheap grep first" wins whenever the grep lands, and on th
 lands; the one question where the map changed the answer is `history` on a "wip" log
 (`eval-results-4.6.md`, S13-T5), which is the exception this record already names. **Still
 closed; the map is optional.**
+
+**Step 0, closed (4.8.0, S15-T3, portfolio plan E2).** The question 4.6.0 left — should step 0's
+triage itself change, and is a read that never changes an answer worth its tokens — is answered
+by the numbers already in hand, with no new run. Across the baseline and the two attempts, 45
+runs on three texts gave 45 right answers while the map was read in 1, 4 and 8 of 15; no read
+changed an answer. The one question the map decided, `history` on a "wip" log, is the exception
+this record names, and there the elder read it 3 of 3 without a sentence telling it to
+(`eval-results-4.6.md`, S13-T5). The cost of a read is visible in the 4.0.0 XL baseline's token
+columns (`docs/design/eval-history.md`, "Baseline 4.0.0 (XL)"): the `drift` and `gap` runs whose
+main session read the map carried 68.1k input tokens against 44.7k–45.0k for those that did not
+— about 23k more per run for an answer the grep had already found. So step 0 stays as written:
+the cheap grep first, the map when the grep does not land or the question is about evolution.
+**Reversal:** we would run one attempt at step 0, or change it, if an elder case on a fixture
+where the grep does *not* land (Sprint 16's portfolio `why` case is the first such) gives a
+wrong answer that the map, when read, gets right. **Still closed; the map is optional.**

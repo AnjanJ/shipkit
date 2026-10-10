@@ -56,8 +56,10 @@ is what must change first — say so. If there is no conflict, say "No conflicts
 
 List what is still unknown. Keep only the unknowns whose answer would **change what gets
 built** — drop anything a file already answers and anything you could decide with a sensible
-default (write those down as assumptions instead). Then ask **at most four** questions, the
-most important first, numbered. Four is a ceiling, not a target: two good questions beat four.
+default (write those down as assumptions instead, each with the file and line that answers
+it). Then ask **at most four** questions, the most important first, numbered. Four is a
+ceiling, not a target: two good questions beat four — and a question with several parts
+counts as several; four is the ceiling on parts, not on numbers.
 
 One of the four is which quarterly goal this serves — unless `product.md` makes it obvious, in
 which case state it ("this serves the goal 'Ship refunds'") and do not ask. "None" is an

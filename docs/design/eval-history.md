@@ -43,6 +43,17 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.8.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-10, at `e2f80a4`: 55 cases, 919 s, $15.48, **exit 0** —
+every case passed; 53 at 3 of 3, `intake/limit` and `intake/answered` 2 of 3. `digest/attention`
+and `grandfather-xl/drift` 3 of 3 in parallel this time (their 1–2 of 3 under `-j 4` is a shape,
+not a rule). The fourteen watch cases of the seven cut files (`eval-results-4.8.md`) all 3 of 3
+on the shipped text, `trap2/notebooks` and `trap2/react` included. `intake/limit` 2 of 3 as on
+the S15-T2 group run (its first release-run pass since 4.6.0; 0 of 3 in 4.7.0); `intake/answered`
+2 of 3 as in 4.5.0 — the threshold held for both, so neither was re-run and no trace was read
+(`evals.sh` keeps none). Nothing changed on these numbers. Cost within E13's "about $17".
+
 ## Release run 4.7.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-09, at `607035c`: 55 cases, 1,273 s, $16.44, exit 1 —
