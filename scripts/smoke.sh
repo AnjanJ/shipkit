@@ -2018,6 +2018,73 @@ if printf '%s\n' "$in4" | grep -q 'file and line that answers' && printf '%s\n' 
   pass "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
 else failc "cuts-recorded" "skills/intake/SKILL.md step 4 lacks 'file and line that answers' or 'several parts'"; fi
 
+# 59. portfolio-gen: the portfolio fixture is GENERATED, never committed (spec: .shipkit/specs/
+# portfolio-run/). generate.py [--maps 3|1|0] writes three projects (shopfront, pulse, insight)
+# under projects/, a registry under shipkit-home/, and a PROJECT_MAP.md for the first N of them;
+# the maps are untracked so every arm shares one history. Two generations give the same HEAD
+# tree per project; --maps 1 leaves pulse and insight unmapped and the registry says —; the
+# three signals grep as FACTS-PORTFOLIO.md says; the vacuum-lock reason lives in pulse's map and
+# nowhere else. No claude needed. Cites: portfolio-run/REQ-2 portfolio-run/REQ-3
+# portfolio-run/REQ-4 portfolio-run/REQ-5
+PG="$COPY/evals/fixtures/portfolio-gen/generate.py"
+if [ ! -f "$PG" ]; then
+  failc "portfolio-gen" "evals/fixtures/portfolio-gen/generate.py does not exist (check written first, by design)"
+else
+  PG_A="$WORK/pf-a"; PG_B="$WORK/pf-b"; PG_1="$WORK/pf-1"; PG_0="$WORK/pf-0"; mkdir -p "$PG_A" "$PG_B" "$PG_1" "$PG_0"
+  (cd "$PG_A" && python3 "$PG" --maps 3 >/dev/null 2>&1) && (cd "$PG_B" && python3 "$PG" >/dev/null 2>&1) \
+    && (cd "$PG_1" && python3 "$PG" --maps 1 >/dev/null 2>&1) && (cd "$PG_0" && python3 "$PG" --maps 0 >/dev/null 2>&1) \
+    || failc "portfolio-gen" "generate.py exited non-zero"
+  pg_fail=""
+  for p in shopfront pulse insight; do
+    pg_ta=$(git -C "$PG_A/projects/$p" rev-parse 'HEAD^{tree}' 2>/dev/null); pg_tb=$(git -C "$PG_B/projects/$p" rev-parse 'HEAD^{tree}' 2>/dev/null)
+    pg_t1=$(git -C "$PG_1/projects/$p" rev-parse 'HEAD^{tree}' 2>/dev/null); pg_t0=$(git -C "$PG_0/projects/$p" rev-parse 'HEAD^{tree}' 2>/dev/null)
+    if [ -z "$pg_ta" ] || [ "$pg_ta" != "$pg_tb" ] || [ "$pg_ta" != "$pg_t1" ] || [ "$pg_ta" != "$pg_t0" ]; then pg_fail="$pg_fail [$p: HEAD trees differ or missing]"; fi
+    pg_n=$(cd "$PG_A/projects/$p" && find . -type f -not -path './.git/*' -not -name PROJECT_MAP.md | wc -l | tr -d ' ')
+    [ "$pg_n" -ge 20 ] || pg_fail="$pg_fail [$p: $pg_n files, want >= 20]"
+    pg_msgs=$(git -C "$PG_A/projects/$p" log --format=%s 2>/dev/null | sort -u | tr '\n' ',')
+    [ "$pg_msgs" = "wip," ] || pg_fail="$pg_fail [$p: commit subjects: $pg_msgs]"
+  done
+  if [ -z "$pg_fail" ]; then pass "portfolio-gen (three projects, 20+ files each, every commit 'wip'; each HEAD tree identical across four generations)"
+  else failc "portfolio-gen" "$pg_fail"; fi
+  # --maps N maps the first N of shopfront, pulse, insight; the registry's Map column says so
+  pg_col() { grep "^| $2 " "$1" 2>/dev/null | awk -F'|' '{gsub(/^ +| +$/, "", $4); print $4}'; }   # pg_col <registry> <project> → the Map cell
+  pg_rA="$PG_A/shipkit-home/project-registry.md"; pg_r1="$PG_1/shipkit-home/project-registry.md"; pg_r0="$PG_0/shipkit-home/project-registry.md"
+  if [ -f "$PG_1/projects/shopfront/PROJECT_MAP.md" ] && [ ! -e "$PG_1/projects/pulse/PROJECT_MAP.md" ] && [ ! -e "$PG_1/projects/insight/PROJECT_MAP.md" ] \
+     && [ "$(pg_col "$pg_r1" shopfront)" = "PROJECT_MAP.md" ] && [ "$(pg_col "$pg_r1" pulse)" = "—" ] && [ "$(pg_col "$pg_r1" insight)" = "—" ] \
+     && [ "$(pg_col "$pg_rA" pulse)" = "PROJECT_MAP.md" ] && [ -f "$PG_A/projects/insight/PROJECT_MAP.md" ] \
+     && [ ! -e "$PG_0/projects/shopfront/PROJECT_MAP.md" ] && [ "$(pg_col "$pg_r0" shopfront)" = "—" ] && [ "$(pg_col "$pg_r0" insight)" = "—" ]; then
+    pass "portfolio-gen (--maps 1 maps shopfront only and the registry says — for pulse and insight; --maps 3 maps all, --maps 0 none)"
+  else failc "portfolio-gen" "Map cells: --maps 1 → [$(pg_col "$pg_r1" shopfront)|$(pg_col "$pg_r1" pulse)|$(pg_col "$pg_r1" insight)], --maps 0 → [$(pg_col "$pg_r0" shopfront)]"; fi
+  # the three signals, as FACTS-PORTFOLIO.md lists them
+  pg_sig=""
+  grep -q 'sidekiq' "$PG_A/projects/shopfront/Gemfile" 2>/dev/null || pg_sig="$pg_sig [shopfront Gemfile: no sidekiq]"
+  grep -q "gem .stripe." "$PG_A/projects/shopfront/Gemfile" 2>/dev/null || pg_sig="$pg_sig [shopfront Gemfile: no stripe]"
+  [ -f "$PG_A/projects/shopfront/config/deploy.yml" ] || pg_sig="$pg_sig [shopfront: no config/deploy.yml]"
+  grep -q ':oban' "$PG_A/projects/pulse/mix.exs" 2>/dev/null || pg_sig="$pg_sig [pulse mix.exs: no oban]"
+  grep -q ':stripity_stripe' "$PG_A/projects/pulse/mix.exs" 2>/dev/null || pg_sig="$pg_sig [pulse mix.exs: no stripity_stripe]"
+  [ -f "$PG_A/projects/pulse/fly.toml" ] || pg_sig="$pg_sig [pulse: no fly.toml]"
+  grep -q 'celery' "$PG_A/projects/insight/pyproject.toml" 2>/dev/null || pg_sig="$pg_sig [insight pyproject.toml: no celery]"
+  { [ -f "$PG_A/projects/insight/Dockerfile" ] && [ -f "$PG_A/projects/insight/render.yaml" ]; } || pg_sig="$pg_sig [insight: Dockerfile or render.yaml missing]"
+  pg_pay=$(cd "$PG_A/projects/insight" 2>/dev/null && grep -rliw --exclude-dir=.git -e stripe -e paddle -e braintree -e lemonsqueezy -e paypal . | tr '\n' ' ')
+  [ -z "$pg_pay" ] || pg_sig="$pg_sig [insight names a payment provider: $pg_pay]"
+  if [ -z "$pg_sig" ]; then pass "portfolio-gen (sidekiq+stripe+deploy.yml; oban+stripity_stripe+fly.toml; celery+Dockerfile+render.yaml; insight names no payment provider)"
+  else failc "portfolio-gen" "$pg_sig"; fi
+  # the why: the vacuum-lock reason is in pulse's map and nowhere else — no file under projects/, no commit body, nothing in the no-map arm
+  pg_vac=$(cd "$PG_A" && grep -rli vacuum . --exclude-dir=.git | sort | tr '\n' ' ')
+  pg_vac_log=$(for p in shopfront pulse insight; do git -C "$PG_A/projects/$p" log --format=%B 2>/dev/null | grep -ci vacuum; done | tr '\n' ' ')
+  if [ "$pg_vac" = "./projects/pulse/PROJECT_MAP.md " ] && [ "$pg_vac_log" = "0 0 0 " ] \
+     && grep -qi 'cookie' "$PG_A/projects/pulse/PROJECT_MAP.md" && grep -q '2025-03-14' "$PG_A/projects/pulse/PROJECT_MAP.md" \
+     && ! (cd "$PG_0" && grep -rqi vacuum . --exclude-dir=.git); then
+    pass "portfolio-gen (the vacuum-lock reason and its date are in pulse's map only; no file, no commit body, nothing in the no-map arm)"
+  else failc "portfolio-gen" "vacuum named in: [$pg_vac]; in commit bodies: [$pg_vac_log]"; fi
+  # FACTS-PORTFOLIO.md lists every graded fact
+  PF="$COPY/evals/fixtures/FACTS-PORTFOLIO.md"
+  if [ -f "$PF" ] && grep -q 'sidekiq' "$PF" && grep -q 'oban' "$PF" && grep -q 'celery' "$PF" && grep -q 'stripity_stripe' "$PF" \
+     && grep -qi 'vacuum' "$PF" && grep -q '2025-03-14' "$PF" && grep -q 'config/deploy.yml' "$PF" && grep -q 'render.yaml' "$PF"; then
+    pass "portfolio-gen (FACTS-PORTFOLIO.md names the three job libraries, the Stripe manifests, the deploy files, the vacuum reason and its date)"
+  else failc "portfolio-gen" "evals/fixtures/FACTS-PORTFOLIO.md is missing or misses a graded fact"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

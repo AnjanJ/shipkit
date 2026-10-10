@@ -12,7 +12,7 @@ own yes.**
   - Test: scripts/smoke.sh check 42 "lint-negative" (its expected message becomes "the limit is 196,608") — run alone, red before the lint change, green after; `sh plugins/shipkit/scripts/spec-check.sh . portfolio-run --as-open` → 0 gaps on the draft
   - After: none
   - Done when: 0 gaps; check 42 → PASS; evals bytes reported; lint 0/0; the owner's approval, with E11's repository path and the intake's answers, is in the thread; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** The portfolio fixture (S16-T1) → REQ-2, REQ-3, REQ-4, REQ-5, REQ-6
+- [x] **T1** The portfolio fixture (S16-T1) → REQ-2, REQ-3, REQ-4, REQ-5, REQ-6
   - Files: plugins/shipkit/evals/fixtures/portfolio-gen/generate.py, plugins/shipkit/evals/fixtures/FACTS-PORTFOLIO.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 59 "portfolio-gen" (two generations into two directories give identical HEAD tree hashes per project; `--maps 1` leaves `pulse` and `insight` without a map and the registry says `—` for both; the three stack signals grep as the facts file says; the vacuum reason is in `pulse`'s map and in no file or commit under `projects/`) — written first, red
   - After: T0
