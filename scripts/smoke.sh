@@ -2085,6 +2085,47 @@ else
   else failc "portfolio-gen" "evals/fixtures/FACTS-PORTFOLIO.md is missing or misses a graded fact"; fi
 fi
 
+# 60. heading-seen: install-stack.sh looks for the section's heading before it appends (spec:
+# .shipkit/specs/run-debts/; field-notes-4.9.md §2.1: office_bestie had its own
+# `## Elixir-Specific`, setup added a second). A CLAUDE.md that already has the stack's first
+# `## ` heading outside shipkit's markers gets the section under its marker as before, the
+# sha recorded, and ONE stderr line naming the heading and /shipkit:update-rules; one without
+# gets the heading once and no line; on a re-run the heading inside shipkit's own block is
+# shipkit's and is not counted. The setup skill relays the line, shows the diff and edits
+# neither section. No claude needed. Cites: run-debts/REQ-1 run-debts/REQ-2
+hs_args="TEST_COMMAND=pytest API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest"
+HS="$WORK/heading-seen"; mkdir -p "$HS"
+printf '# demo\n\n## Python-Specific\n\nRun `uv run pytest -x` here.\n' > "$HS/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$HS" >/dev/null
+# shellcheck disable=SC2086
+hs_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS" $hs_args 2>&1 >/dev/null); hs_rc=$?
+hs_n=$(grep -c '^## Python-Specific$' "$HS/CLAUDE.md")
+hs_lines=$(printf '%s\n' "$hs_err" | grep -c 'already has "## Python-Specific"')
+if [ "$hs_rc" -eq 0 ] && [ "$hs_n" -eq 2 ] && [ "$hs_lines" -eq 1 ] \
+   && grep -q '<!-- shipkit:stack:python -->' "$HS/CLAUDE.md" && grep -q '<!-- /shipkit:stack:python -->' "$HS/CLAUDE.md" \
+   && [ -s "$HS/.claude/rules/shipkit/.section-python.sha" ] \
+   && grep -q 'uv run pytest -x' "$HS/CLAUDE.md" \
+   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:update-rules'; then
+  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:update-rules)"
+else failc "heading-seen" "exit $hs_rc, headings $hs_n, lines $hs_lines, stderr: $hs_err"; fi
+HS2="$WORK/heading-absent"; mkdir -p "$HS2"
+printf '# demo\n' > "$HS2/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$HS2" >/dev/null
+# shellcheck disable=SC2086
+hs2_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS2" $hs_args 2>&1 >/dev/null)
+# shellcheck disable=SC2086
+hs2_rerun=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS2" $hs_args 2>&1 >/dev/null)
+hs2_n=$(grep -c '^## Python-Specific$' "$HS2/CLAUDE.md")
+if [ "$hs2_n" -eq 1 ] && ! printf '%s\n%s\n' "$hs2_err" "$hs2_rerun" | grep -q 'already has'; then
+  pass "heading-seen (heading absent → one heading, no line; a re-run sees the heading in its own block as shipkit's, no line)"
+else failc "heading-seen" "headings $hs2_n; first run: $hs2_err; re-run: $hs2_rerun"; fi
+if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'update-rules' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
+  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:update-rules and edits neither section)"
+else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

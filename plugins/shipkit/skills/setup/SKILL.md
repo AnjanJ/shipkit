@@ -256,6 +256,11 @@ record", it left the section alone and printed a diff: show the user that diff, 
 replace the section, and only on an explicit yes re-run that overlay with
 `SHIPKIT_REFRESH_CLAUDE_MD=1`.
 
+If the script reports that `CLAUDE.md` "already has" the overlay's heading, the project wrote
+its own section with that name before shipkit came: relay the line, show the diff of the two
+sections (the project's against shipkit's block), and name `/shipkit:update-rules` as the way
+to merge them. Edit neither section — the project's is theirs, shipkit's is refreshed in place.
+
 **Bases:**
 
 | Base | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |

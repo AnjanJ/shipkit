@@ -11,7 +11,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . run-debts --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh .` → no FIRED; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec is in the thread; stamped at the branch-point commit, `Status: open`; the plan carries its approval line
-- [ ] **T1** The installer sees the heading (S17-T1) → REQ-1, REQ-2
+- [x] **T1** The installer sees the heading (S17-T1) → REQ-1, REQ-2
   - Files: plugins/shipkit/scripts/install-stack.sh, plugins/shipkit/skills/setup/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 60 "heading-seen" (a `CLAUDE.md` with the heading → the stderr line names it and `/shipkit:update-rules`, both sections present, the marker and `.section-<stack>.sha` intact; without → one heading, no line; the setup skill's text carries the relay) — written first, red; Check first: the installer reads `CLAUDE.md` before it appends (plan §3, first claim)
   - After: T0

@@ -167,6 +167,23 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
   # record — a section written before this existed — the block is treated as edited: asking
   # once too often is the cheap failure, eating someone's notes is not.
   SECSHA="$PROJ/.claude/rules/shipkit/.section-$STACK.sha"
+  # The project's own heading. The run on office_bestie (field-notes-4.9.md §2.1) had its own
+  # `## Elixir-Specific` above shipkit's: the installer checked for its marker, not for the
+  # heading it was about to add, and two sections with one heading and two test commands
+  # loaded into every session. Look for the section's first `## ` line among the CLAUDE.md
+  # lines OUTSIDE every shipkit block (a heading inside one is shipkit's own, from an earlier
+  # run); found → the section is still written under its marker (the manifest and the sha stay
+  # true) and one line says so, naming /shipkit:update-rules as the way to merge (run-debts
+  # REQ-1). The user's heading is never touched.
+  HEADING=$(grep -m1 '^## ' "$SRC/CLAUDE.md.append")
+  OWN_HEADING=0
+  if [ -n "$HEADING" ] && [ -f "$CM" ] && awk -v h="$HEADING" '
+      /<!-- shipkit:stack:[A-Za-z0-9_-]+ -->/ { inb = 1; next }
+      /<!-- \/shipkit:stack:[A-Za-z0-9_-]+ -->/ { inb = 0; next }
+      !inb && $0 == h { found = 1 }
+      END { exit !found }' "$CM"; then
+    OWN_HEADING=1
+  fi
   sec_sha() {
     if [ "$HAVE_MANIFEST" = "1" ]; then file_sha "$1"; else cksum "$1" | cut -d' ' -f1; fi
   }
@@ -235,6 +252,9 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
     rm -f "$CUR"
   fi
   rm -f "$SECTION" "$NEW"
+  if [ "$OWN_HEADING" = "1" ]; then
+    echo "install-stack: $CM already has \"$HEADING\"; shipkit's section is below it under its marker — review with /shipkit:update-rules" >&2
+  fi
 fi
 
 # --- safety net over the files this run copied (never the user's whole CLAUDE.md) ---------
