@@ -68,9 +68,13 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   stay as the watch and a release run below 2 of 3 returns the line. `migrations`, `monorepo`,
   `testing` and `package-json` — whose whole body is the two lines — and `rails` are kept by
   record on the owner's word (`docs/design/eval-results-4.8.md`; smoke check 58).*
-- **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
-  registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
-  "The wip history"; C11).
+- **`eve`'s loss when fewer projects carry a map** — *measured in 4.9.0 (S16-T2, E10):* on a
+  generated three-project portfolio under three arms, the sweep and the where held 3 of 3 and
+  2 of 3 in every arm and read no map in any of 18 runs; the why came back 3 of 3 from
+  `pulse`'s map and "not recorded" 6 of 6 without it (`docs/design/eval-results-4.9.md`, "The
+  table"; decision 0001's appended note). What the traces named beyond that — the
+  `payments` manifest clause, `eve`'s labelled guesses after "not recorded", the map found by
+  the grep rather than chosen — is under "Still open after Sprint 16".
 - **The elder reads the map in 8 of 15 runs at best from step 1 alone** — step 0's "cheap grep
   first" wins whenever the grep lands, and a sentence in step 1 cannot override a triage that
   happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended

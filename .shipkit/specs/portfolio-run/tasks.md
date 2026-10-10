@@ -17,7 +17,7 @@ own yes.**
   - Test: scripts/smoke.sh check 59 "portfolio-gen" (two generations into two directories give identical HEAD tree hashes per project; `--maps 1` leaves `pulse` and `insight` without a map and the registry says `—` for both; the three stack signals grep as the facts file says; the vacuum reason is in `pulse`'s map and in no file or commit under `projects/`) — written first, red
   - After: T0
   - Done when: check 59 → PASS; evals bytes ≤ 196,608; lint 0/0
-- [ ] **T2** Three `eve` cases, three arms (S16-T2) → REQ-7, REQ-8, REQ-9
+- [x] **T2** Three `eve` cases, three arms (S16-T2) → REQ-7, REQ-8, REQ-9
   - Files: plugins/shipkit/evals/eve/jobs/, plugins/shipkit/evals/eve/payments/, plugins/shipkit/evals/eve/why/, scripts/evals.sh, plugins/shipkit/evals/README.md, docs/design/eval-results-4.9.md, ROADMAP.md, .shipkit/decisions/0001-project-map-default.md
   - Test: `bash scripts/evals.sh --group eve` (3 cases × 3 arms × 3 runs, `--keep-temp`, counts from `scripts/trace-tools.sh`; the two scratch-copy arms made under the scratchpad and removed after their traces are read); Check first: `why` answered from `pulse`'s map in the three-map arm and "not recorded" in the no-map arm on the first run (§3) — if not, traces read and the fixture or question corrected (rule 10), never `agents/eve.md`
   - After: T1
