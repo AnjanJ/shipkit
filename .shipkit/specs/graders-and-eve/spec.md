@@ -1,7 +1,7 @@
 # Spec: Graders and `eve` (Sprint 18, release 4.11.0)
 
 > Spec accepted at commit `c99ddcc` on sprint-18/graders-and-eve (2026-10-10).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/evals/, plugins/shipkit/agents/, plugins/shipkit/rules/, plugins/shipkit/stacks/, scripts/, docs/design/, .shipkit/decisions/, .shipkit/specs/measured-cuts/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
