@@ -227,8 +227,9 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
 | `digest/attention` | `/shipkit:ask --all digest` | names `ledger` and cites its digest line (`Escapes (30 days)` or `requirement missing`) | regex |
 | `eve/jobs` | `/shipkit:ask --all` Which of my projects run background jobs, and with which library? | pairs `shopfront` with Sidekiq, `pulse` with Oban, `insight` with Celery (P1) | regex |
-| `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and names `Gemfile` or `mix.exs` (P2) | regex |
+| `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and cites a manifest (`Gemfile`, `mix.exs`) or a file that handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) (P2; widened in 4.11.0) | regex |
 | `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
+| `eve/why-reworded` | `/shipkit:ask --all` Why did pulse stop logging everyone out at three in the morning, and since when? | the same as `eve/why`; a probe of whether the map is reached when the question shares no word with its Evolution line (P4; 4.11.0) | llm |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
@@ -338,6 +339,12 @@ the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why wa
 only where `pulse` had a map and said "not recorded" where it had none. The table and the
 readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
 
+**4.11.0 (second-run plan E9, E11).** `payments`' evidence clause now accepts the file that
+handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) beside `Gemfile` and `mix.exs`:
+one right reply per arm in 4.9 cited the handling file and no manifest, and failed on that
+clause alone. `why-reworded` asks the why in words the map does not hold; read `map_read` and
+`map_shell` beside its count. Both in `docs/design/eval-results-4.11.md` (§1, §3).
+
 ## The cuts (4.8.0)
 
 Seven rule files lost their two measured lines in 4.8.0 (`.shipkit/specs/measured-cuts/design.md`,
@@ -346,7 +353,13 @@ line each 4.2.0 case walks into and the line each `trap2/` case walks into, both
 the text on both days. Their fourteen cases are unchanged and still install the file: they are
 the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
 release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
-`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. The numbers on
+`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. `migrations` lost its two
+lines in 4.11.0 on `haiku`'s measurement (`eval-results-4.11.md` §5); its two cases stay as
+the watch. `trap2/notebooks`'
+regex was widened in 4.11.0 (E12) to the other forms a Makefile can clear outputs by —
+`execution_count`, a quoted `outputs`, a script named for it (`clean_notebook`,
+`strip_outputs`) — after a 4.8 run did the job through a standard-library script and the
+grader missed it; the 4.6 and 4.8 counts stay beside (`eval-results-4.11.md` §4). The numbers on
 the trimmed text are in `docs/design/eval-results-4.8.md`; smoke check 58 keeps this list and
 the files honest.
 

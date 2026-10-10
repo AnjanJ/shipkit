@@ -135,3 +135,12 @@ landing on its Evolution lines, which is step 0 as written. So `eve` is the same
 the map's worth is its Evolution section, for the question nothing else records; a registry
 row without a map is answered by a grep at no loss for a sweep or a where. **Still closed; the
 map is optional — and `--register` should keep saying the map is for the why.**
+
+**`eve`'s guesses (4.11.0, S18-T2, second-run plan E10).** Five of six map-less `why` replies in
+4.9 said "not recorded" and then listed motives marked as guesses. Measured on the no-map arm
+under a strict wording (a labelled guess is a reason offered): 1 of 3 before one sentence in
+`agents/eve.md` step 4 ("A why that no map, record or commit holds is answered 'not recorded';
+offer no motives of your own"), 2 of 3 after it, and the three-map arm still 3 of 3 with the map
+read in every run (`docs/design/eval-results-4.11.md` §2). The sentence stays. The map's place
+is unchanged: with it the why is answered from its Evolution section; without it `eve` now
+says "not recorded" and stops. **Still closed; the map is optional.**

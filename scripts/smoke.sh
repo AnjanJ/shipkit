@@ -2045,11 +2045,12 @@ if [ -n "$dp" ] && printf '%s\n' "$dp" | grep -q 'protected' && printf '%s\n' "$
   pass "dotfile-paragraph (the evals README says what a case cannot ask for: a protected file name, with the root and subdirectory probes)"
 else failc "dotfile-paragraph" "evals/README.md has no 'What a case cannot ask for' paragraph under 'How a case gets the fixture' naming the protected list, the workspace root, .pre-commit-config.yaml and config/.editorconfig"; fi
 
-# 58. cuts-recorded: the fourteen lines cut in 4.8.0 (measured-cuts, plan E1) are out of their
-# seven files, the five files kept by record still carry theirs, and the evals README names the
+# 58. cuts-recorded: the fourteen lines cut in 4.8.0 (measured-cuts, plan E1) and migrations'
+# two cut in 4.11.0 on haiku are out of their eight files, the four files kept still carry theirs, and the evals README names the
 # cut files and the watch rule (a case below 2 of 3 in a release run returns its line). Each
 # line is identified by a phrase only it carries. No claude needed. Cites: measured-cuts/REQ-1
-# measured-cuts/REQ-3 measured-cuts/REQ-4
+# measured-cuts/REQ-3 measured-cuts/REQ-4 graders-and-eve/REQ-10 (the kept list below agrees with
+# the measured-cuts record's 4.11.0 note: the five files on haiku, docs/design/eval-results-4.11.md §5)
 cr_fail=""
 cr_gone() {  # cr_gone <file> <phrase> — the phrase must be absent
   grep -qF -- "$2" "$COPY/$1" && cr_fail="$cr_fail [$1 still has: $2]"; :
@@ -2064,12 +2065,12 @@ cr_gone stacks/elixir/.claude/rules/mix-deps.md "pessimistic constraint"; cr_gon
 cr_gone stacks/ml/.claude/rules/notebooks.md "Notebooks are for exploration"; cr_gone stacks/ml/.claude/rules/notebooks.md "Clear outputs before committing"
 cr_gone stacks/python/.claude/rules/pyproject.md "Flexible constraints"; cr_gone stacks/python/.claude/rules/pyproject.md "Detect the package manager"
 cr_gone stacks/react/.claude/rules/react.md "Inertia props are the API contract"; cr_gone stacks/react/.claude/rules/react.md "Routing stays in Rails"
-cr_kept rules/migrations.md "backfill in batches"; cr_kept rules/migrations.md "CONCURRENTLY"
+cr_gone rules/migrations.md "backfill in batches"; cr_gone rules/migrations.md "CONCURRENTLY"   # cut in 4.11.0 on haiku (graders-and-eve/REQ-10)
 cr_kept rules/monorepo.md "consumes it"; cr_kept rules/monorepo.md -- "--filter"
 cr_kept rules/testing.md "factories, fixtures and helpers"; cr_kept rules/testing.md "second runner"
 cr_kept stacks/react/.claude/rules/package-json.md "frozen-lockfile"; cr_kept stacks/react/.claude/rules/package-json.md "Detect the package manager"
 cr_kept stacks/rails/.claude/rules/rails.md "update_column"
-if [ -z "$cr_fail" ]; then pass "cuts-recorded (the fourteen measured lines are out of their seven files; the five kept files still carry theirs)"
+if [ -z "$cr_fail" ]; then pass "cuts-recorded (the sixteen measured lines are out of their eight files; the four kept files still carry theirs)"
 else failc "cuts-recorded" "$cr_fail"; fi
 cr_sec=$(sed -n '/^## The cuts (4.8.0)/,/^## /p' "$COPY/evals/README.md")
 if [ -n "$cr_sec" ] && for f in ui-ux hotwire liveview mix-deps notebooks pyproject react; do printf '%s\n' "$cr_sec" | grep -q "\`$f\`" || exit 1; done \
