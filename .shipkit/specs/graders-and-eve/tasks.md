@@ -19,7 +19,7 @@ sentence is kept or a line is cut (rule 6). Every count is read from traces with
   - Test: `node` on the pattern (rule 18) against one reply assembled from the quoted 4.9 miss (gem and constraint, handling files, no manifest) — the shipped pattern FAIL, the corrected PASS — and against a reply that cites `Gemfile` only (PASS still); then the three arms once (the committed plugin and the two scratch copies, 9 runs, `--keep-temp`), the traces read, the first table of `eval-results-4.11.md` with the 4.9 counts beside; `scripts/evals.sh`'s header cites graders-and-eve/REQ-1
   - After: T0
   - Done when: the table has no empty cell; the reading is written after the traces; the three sandboxes removed; lint 0/0
-- [ ] **T2** `eve` on her guesses: measure, one sentence, measure (S18-T2) → REQ-3, REQ-4, REQ-5
+- [x] **T2** `eve` on her guesses: measure, one sentence, measure (S18-T2) → REQ-3, REQ-4, REQ-5
   - Files: plugins/shipkit/agents/eve.md, docs/design/eval-results-4.11.md, .shipkit/decisions/0001-project-map-default.md
   - Test: the no-map arm (T1's scratch copy, its `why` grader rewritten to the strict wording) 3 runs → the baseline; **STOP: the owner sees the baseline**; the sentence in `agents/eve.md` step 4; the same arm 3 runs and the three-map arm 3 runs (the committed plugin, the shipped grader); the three cells in the results document; `git diff v4.10.0 --stat -- plugins/shipkit/evals/eve/why` empty
   - After: T1

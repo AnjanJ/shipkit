@@ -142,7 +142,8 @@ entirely — see the cheap path above.)
 ### 4. Verify per project before claiming
 A map can drift. Before stating "project X uses Y", confirm against that repo (Glob/Grep the
 specific path). For a portfolio sweep, a quick confirming grep per hit is enough — you are
-not doing a full audit of each repo, just confirming the one fact.
+not doing a full audit of each repo, just confirming the one fact. A why that no map, record
+or commit holds is answered "not recorded"; offer no motives of your own.
 
 ### 5. Answer as a consolidated view
 Return:
