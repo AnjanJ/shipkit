@@ -353,7 +353,9 @@ line each 4.2.0 case walks into and the line each `trap2/` case walks into, both
 the text on both days. Their fourteen cases are unchanged and still install the file: they are
 the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
 release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
-`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. `trap2/notebooks`'
+`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. `migrations` lost its two
+lines in 4.11.0 on `haiku`'s measurement (`eval-results-4.11.md` §5); its two cases stay as
+the watch. `trap2/notebooks`'
 regex was widened in 4.11.0 (E12) to the other forms a Makefile can clear outputs by —
 `execution_count`, a quoted `outputs`, a script named for it (`clean_notebook`,
 `strip_outputs`) — after a 4.8 run did the job through a standard-library script and the
