@@ -2,6 +2,69 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.9.0] — 2026-10-10
+
+Sprint 16 of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`), the plan's last: the
+two things still without a number get theirs — what `eve` loses when fewer projects carry a
+map, and what shipkit's loop does on a second real project of another stack — and the roadmap
+the plan after starts from. Requirements and decision records in
+[`.shipkit/specs/portfolio-run/`](.shipkit/specs/portfolio-run/); the numbers in
+[`docs/design/eval-results-4.9.md`](docs/design/eval-results-4.9.md); the run in
+[`docs/design/field-notes-4.9.md`](docs/design/field-notes-4.9.md).
+
+### Added
+
+- **A generated portfolio fixture** (E10): `evals/fixtures/portfolio-gen/generate.py [--maps
+  3|1|0]` writes three projects of three stack shapes — `shopfront` (Rails: Sidekiq, Stripe,
+  Kamal), `pulse` (Phoenix: Oban, `stripity_stripe`, Fly.io), `insight` (Python: Celery,
+  Render) — every commit "wip", a registry, and a map for the first N whose Evolution holds the
+  one *why* no file or commit records. `FACTS-PORTFOLIO.md` lists every graded fact. Smoke
+  check 59 (`portfolio-gen`, five sub-checks): identical HEAD trees across generations and
+  arms, `--maps 1` as named, the three signals, the reason in `pulse`'s map and nowhere else.
+- **Three `eve` cases** — `eve/jobs`, `eve/payments`, `eve/why` — through `/shipkit:ask --all`,
+  run under three arms (three maps, one, none; 30 runs, $3.85). The sweep and the where held
+  3 of 3 and 2 of 3 in every arm and read no map in any of 18 runs; the why came back 3 of 3
+  from `pulse`'s map and "not recorded" 6 of 6 without it. The table and three readings in
+  `eval-results-4.9.md`; decision 0001 carries `eve`'s number.
+- **The second real run** (E11): shipkit's loop on `~/code/office_bestie` (Elixir/Phoenix
+  1.8, LiveView) — hook, setup, product, intake twice, spec, one task built from `brief.sh`
+  and checked with `brief-verify.sh`, the gate — each step as Asked for / Produced / Took /
+  Awkward / Whose fault / Evidence. Six of 4.3's eleven awkwardnesses seen closed; seven new
+  findings and three of the project's own, **none fixed**, each an item under the ROADMAP's
+  "Still open after Sprint 16". The branch was deleted on the owner's yes (F3).
+
+### Changed
+
+- Lint check 17's ceiling for `plugins/shipkit/evals/` is 196,608 bytes, "for cases and
+  generators" (E10); smoke check 42 expects the new number. The tree is at 191,778.
+- `plugins/shipkit/evals/README.md`: the three cases, an "`eve`'s portfolio (4.9.0)" section,
+  and a limit the run found — **the `regex` grader is a JavaScript `RegExp`**; a Python inline
+  flag throws and every run fails with no model error.
+- `ROADMAP.md`: the portfolio table complete; "Still open after Sprint 16" lists the second
+  run's findings, the measurements' third reading and what the three releases named for the
+  plan after, every item citing a file and section.
+
+### What using it for real showed
+
+**The plan's repository was not on disk.** E11 named `~/code/pulse`; the owner named
+`~/code/office_bestie` at T0, and the intake records both. **Two graders were corrected on
+trace evidence, one was not.** The `jobs` and `payments` patterns used `(?is)` and the eval
+tool's JavaScript `RegExp` threw on all 18 runs with every reply right; the patterns were
+rewritten and the same replies graded from their traces through `node`. The `why` grader's "a
+labelled guess is still a reason" was stricter than REQ-8's "invents no reason": 0 of 3 under
+it, 3 of 3 after, both in the table. The `payments` manifest clause was kept at 2 of 3 in
+every arm — the one miss per arm cites the handling file and the gem, not the manifest.
+**`eve` reaches the map by grep, not by choice**: with three maps on disk the sweep and the
+where opened none, and the why read `pulse`'s map because `Grep session` landed on its
+Evolution lines. **The second stack held.** Every step produced the file the next needed; the
+gate said NOT READY on a spec one task in, with 2,855 tests in 13 s; the project's test
+command failed as written (the shell's Elixir was not the pinned one) exactly as 4.3's Ruby
+did, and `mise exec` was the way through. The reviewer's one MET citation pointed at diff
+positions, not file lines, and a background-agent wait sentence leaked into two replies.
+Smaller: the plan's "smoke check 56" was 59 by the time Sprint 16 ran; the release's full
+smoke run was 160 of 161 with check 2 (`rules-skip`, haiku) failing on variance and passing
+alone with its dependency, the known shape.
+
 ## [4.8.0] — 2026-10-10
 
 Sprint 15 of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`): the rule files act on

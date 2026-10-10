@@ -32,7 +32,7 @@ own yes.**
   - Test: none beyond lint — check 16 reads the status line
   - After: T3
   - Done when: Sprints 14–16 shipped in the table; every "Still open after Sprint 16" item names a file and section; lint 0/0
-- [ ] **T-REL** Release 4.9.0 (S16-T-REL)
+- [x] **T-REL** Release 4.9.0 (S16-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/portfolio-run/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals at 58 cases, spec-check, the two byte lines with the new ceiling); the gate headless
   - After: T4

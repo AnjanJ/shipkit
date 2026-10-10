@@ -12,10 +12,10 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-10, v4.8.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan and 11 to 13 of the field plan are done; Sprints 14 and 15 of the portfolio plan
-(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and 4.8.0 and
-Sprint 16 is at its release; see "The portfolio plan" below. Everything in this document is
+**Status (as of 2026-10-10, v4.9.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan and 14 to 16 of the portfolio plan
+(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09, shipped as 4.7.0, 4.8.0 and 4.9.0)
+are done; see "The portfolio plan" below. Everything in this document is
 shipped except the items under "Still open after Sprint 16", which seed the plan after.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
@@ -30,7 +30,7 @@ shipped except the items under "Still open after Sprint 16", which seed the plan
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The portfolio plan — Sprints 14–15 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0; Sprint 16 to come
+## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 
 Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
 harness's debts (14), act on the numbers the rules carry (15), measure what still has none —
