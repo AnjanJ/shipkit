@@ -14,7 +14,7 @@ sentence is kept or a line is cut (rule 6). Every count is read from traces with
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . graders-and-eve --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh .` → no FIRED; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec is in the thread; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** `payments` graded on what the question asked (S18-T1) → REQ-1, REQ-2
+- [x] **T1** `payments` graded on what the question asked (S18-T1) → REQ-1, REQ-2
   - Files: plugins/shipkit/evals/eve/payments/graders/stripe-twice-insight-none.md, plugins/shipkit/evals/README.md, docs/design/eval-results-4.11.md, scripts/evals.sh
   - Test: `node` on the pattern (rule 18) against one reply assembled from the quoted 4.9 miss (gem and constraint, handling files, no manifest) — the shipped pattern FAIL, the corrected PASS — and against a reply that cites `Gemfile` only (PASS still); then the three arms once (the committed plugin and the two scratch copies, 9 runs, `--keep-temp`), the traces read, the first table of `eval-results-4.11.md` with the 4.9 counts beside; `scripts/evals.sh`'s header cites graders-and-eve/REQ-1
   - After: T0

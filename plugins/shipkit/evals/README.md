@@ -227,7 +227,7 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
 | `digest/attention` | `/shipkit:ask --all digest` | names `ledger` and cites its digest line (`Escapes (30 days)` or `requirement missing`) | regex |
 | `eve/jobs` | `/shipkit:ask --all` Which of my projects run background jobs, and with which library? | pairs `shopfront` with Sidekiq, `pulse` with Oban, `insight` with Celery (P1) | regex |
-| `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and names `Gemfile` or `mix.exs` (P2) | regex |
+| `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and cites a manifest (`Gemfile`, `mix.exs`) or a file that handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) (P2; widened in 4.11.0) | regex |
 | `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
@@ -337,6 +337,15 @@ scratch copies whose `fixture.sh` defaults `SHIPKIT_EVAL_MAPS` to `1` or `0`. Th
 the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why was answered
 only where `pulse` had a map and said "not recorded" where it had none. The table and the
 readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
+
+**`payments`' evidence clause (4.11.0, second-run plan E9).** The 4.9 grader required `Gemfile`
+or `mix.exs` in the reply, and one right reply per arm — the gem and its constraint, the file
+that makes the charge, no manifest — failed on that clause alone (`eval-results-4.9.md`,
+reading 3; the 4.10.0 release run's one miss, `eval-history.md`). The question asks where
+payments are handled, and the handling file is the better answer, so the clause now accepts
+`stripe_charge.rb` or `billing/stripe.ex` beside the two manifests; the three other clauses
+are unchanged. The three arms re-run once under the corrected grader are in
+`docs/design/eval-results-4.11.md`, the 4.9 counts beside.
 
 ## The cuts (4.8.0)
 
