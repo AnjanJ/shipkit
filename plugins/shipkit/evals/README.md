@@ -190,18 +190,19 @@ load the sandbox cannot do. The ROADMAP item "measured by nothing" now carries t
 A file whose **name** is on Claude Code's protected list. Every `trap2/notebooks` run in both
 arms wrote `.pre-commit-config.yaml` at the workspace root and was refused
 (`docs/design/eval-results-4.6.md`), and 4.6.0 read that as "the sandbox refuses a root
-dotfile". It does not: two probe runs on 2026-10-09 (a scratch copy of the plugin, one run
-each, `--keep-temp`, $0.12) wrote `.editorconfig` at the workspace root and `config/.editorconfig`
-in a subdirectory, and both `Write` tool_results read `File created successfully`. What is
-refused is the name: the permission-modes documentation lists `.pre-commit-config.yaml` with
-`.gitconfig`, `.zshrc`, `.npmrc` and `.mcp.json` as protected files whose writes are *denied*
-in the non-interactive mode the eval tool runs under, and `--allow-tools Write` does not
-override it (the plugin-evals page says nothing about it; the rule is on the permission-modes
-page). The refusal's own tool_result text was not captured — the 4.6.0 sandboxes are gone and
-the probes were not refused. The rule for a case author: do not ask for a file on that list;
-a dotfile with any other name is fine at the root or below, and a case that needs a protected
-file's effect asks for what does the same job (as `trap2/notebooks` asks for a Makefile target
-that runs `nbstripout`). Smoke check 57 keeps this paragraph here.
+dotfile". It does not: two probes on 2026-10-09 wrote `.editorconfig` at the workspace root
+and `config/.editorconfig` in a subdirectory; both tool_results read `File created
+successfully`. What is refused is the name: the permission-modes documentation lists
+`.pre-commit-config.yaml` (with `.gitconfig`, `.zshrc`, `.npmrc`, `.mcp.json`) as protected
+files whose writes are *denied* in the eval tool's non-interactive mode; `--allow-tools
+Write` does not override it. The refusal itself, read from a probe's trace on
+2026-10-11 (Claude Code 2.1.296): a `tool_result` with `is_error: true` that begins
+"Permission to use Write has been denied because Claude Code is running in don't ask mode."
+then the standard advice to try other tools reasonably or stop and explain (the full text:
+`docs/design/eval-results-4.12.md`). The rule for a
+case author: do not ask for a file on that list; a dotfile with any other name is fine at the
+root or below, and a case that needs a protected file's effect asks for what does the same
+job (`trap2/notebooks` asks for a Makefile target). Smoke check 57 keeps this paragraph.
 
 ## Cases
 

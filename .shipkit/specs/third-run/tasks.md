@@ -19,7 +19,7 @@ task creates is removed after reading (rule 13).**
   - Test: Check first (plan §3, fourth claim): one headless `-p` session on `haiku` from a scratch copy whose `hooks.json` carries a `SessionEnd` hook that prints to a file → the file exists or not (≈ $0.10); scripts/smoke.sh check 62 "plugin-root-back" (the four script branches of REQ-3 from a scratch `HOME`; plus one headless session from the scratch root when the check-first says `SessionEnd` fires for `-p`) — written first, red; the README's window note says which sessions restore
   - After: T0
   - Done when: check 62 → PASS; `sh -n` clean on both scripts; lint 0/0
-- [ ] **T2** The refusal text, captured (S19-T2) → REQ-5
+- [x] **T2** The refusal text, captured (S19-T2) → REQ-5
   - Files: plugins/shipkit/evals/README.md, docs/design/eval-results-4.12.md
   - Test: a probe case on a scratch copy of the plugin (never committed) whose prompt asks for `.pre-commit-config.yaml` at the workspace root, `--runs 1 --keep-temp` with `Write` allowed; the `Write` call and its `tool_result` read from the trace; the text quoted in the README's paragraph with the Claude Code version, or the paragraph says what the trace held instead; smoke check 57 (keeps the paragraph) → PASS; the sandbox and the copy removed
   - After: T1
