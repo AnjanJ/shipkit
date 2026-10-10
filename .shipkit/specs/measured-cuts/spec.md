@@ -1,7 +1,7 @@
 # Spec: What the numbers allow (Sprint 15, release 4.8.0)
 
 > Spec accepted at commit `ce58c95` on sprint-15/measured-cuts (2026-10-09).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/rules/, plugins/shipkit/stacks/, plugins/shipkit/skills/intake/, plugins/shipkit/evals/README.md, scripts/, docs/design/, docs/plans/portfolio-sprint-plan.md, .shipkit/decisions/0001-project-map-default.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
