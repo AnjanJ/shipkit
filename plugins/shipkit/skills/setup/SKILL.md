@@ -165,8 +165,13 @@ Look for `.shipkit-baseline/` at the project root.
 Create `.shipkit-backup-<YYYYMMDD-HHMMSS>/` at the project root and copy into it (only what
 exists): `CLAUDE.md` and the entire `.claude/` directory.
 
-If an older `.shipkit-backup-*` directory exists, move it inside the new one as
-`previous-backup/` (nesting, as before) and remove it from the project root.
+If an older `.shipkit-backup-*` directory exists, first ask git whether it is tracked:
+`git ls-files --error-unmatch <dir> >/dev/null 2>&1` exits 0 when it is. A **tracked** backup
+is left where it is — nesting it would show up as deletions of every file in it — and the
+reply names it: "`.shipkit-backup-<old>/` is tracked by git; left as is — remove it from git
+yourself if you want it gone." An **untracked** one (exit 1), or one in a project that is not
+a repository (exit 128), is moved inside the new backup as `previous-backup/` (nesting, as
+before) and removed from the project root.
 
 **Never offer to delete an existing backup.** The old preserve-or-delete prompt is gone: the
 delete branch silently destroyed the only record of an earlier state, and "free up a directory"
@@ -219,7 +224,9 @@ Claude Code does not load rules from a plugin, only from a project's `.claude/ru
 It copies all nine rules to `.claude/rules/shipkit/` and stamps `.installed` with the plugin
 version and a digest, so the session hook can tell you when a plugin upgrade has made the copies
 stale. Once the directory exists the hook stops injecting the always-on rules — nothing loads
-twice. If the script exits non-zero, show its message and stop.
+twice. If the script exits non-zero, show its message and stop. If it prints a line naming
+rule files of the same name in the project's own `.claude/rules/`, relay it as it is: both
+load on the same paths, and whether to merge or remove theirs is the user's call.
 
 ## Phase 5: Install Stack-Specific Content
 

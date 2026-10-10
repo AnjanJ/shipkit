@@ -96,6 +96,20 @@ VER=$(plugin_version "$ROOT")
 STACKS=$(manifest_stacks "$PROJ" 2>/dev/null || true)
 manifest_commit "$PROJ" "${VER:-unknown}" "$STACKS" || die "cannot write the manifest"
 
+# --- a rule of the same name beside ours -----------------------------------------------------
+# Claude Code loads every *.md under .claude/rules/ recursively, so a project's own
+# testing.md at .claude/rules/ and shipkit's at .claude/rules/shipkit/ both load on the same
+# paths. office_bestie kept three such files and setup said nothing (field-notes-4.9.md
+# §2.2). Name them, once, on stdout; change, move and remove none of them — they are the
+# project's (run-debts REQ-3). Top level only: the shape the run showed.
+SAME=""
+for f in "$PROJ"/.claude/rules/*.md; do
+  [ -f "$f" ] || continue
+  base=${f##*/}
+  [ -f "$ROOT/rules/$base" ] && SAME="$SAME, $base"
+done
+[ -n "$SAME" ] && echo "install-rules: your .claude/rules/ has ${SAME#, } beside shipkit's copies under shipkit/; both load on the same paths — yours were left as they are"
+
 msg="install-rules: installed $n rule files to $DEST (shipkit ${VER:-unknown}, manifest written)"
 [ "$CARRIED" -gt 0 ] && msg="$msg; kept $CARRIED overlay file(s) under management"
 [ "$LEGACY" -eq 1 ] && msg="$msg; upgraded a pre-3.1 stamp (nothing removed — ownership starts now)"

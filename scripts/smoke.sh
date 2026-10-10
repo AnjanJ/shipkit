@@ -2126,6 +2126,41 @@ if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
   pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:update-rules and edits neither section)"
 else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
 
+# 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
+# a tracked backup where it is (spec: .shipkit/specs/run-debts/; field-notes-4.9.md §2.2,
+# §2.3: office_bestie kept dependencies.md, migrations.md and testing.md at .claude/rules/
+# beside shipkit's three, unnamed; its tracked old backup was nested and became fourteen
+# deletions). install-rules.sh prints ONE line naming every top-level .claude/rules/*.md whose
+# basename it installs, and changes none of them; none → no line. The setup skill's backup
+# phase asks `git ls-files --error-unmatch` and leaves a tracked backup at the root, named in
+# the reply. No claude needed. Cites: run-debts/REQ-3 run-debts/REQ-4
+SN="$WORK/same-named"; mkdir -p "$SN/.claude/rules"
+printf '# My testing rule\nKEEP-ME-TESTING\n' > "$SN/.claude/rules/testing.md"
+printf '# My migrations rule\nKEEP-ME-MIGRATIONS\n' > "$SN/.claude/rules/migrations.md"
+printf '# Not a shipkit name\n' > "$SN/.claude/rules/house-style.md"
+sn_out=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN" 2>&1); sn_rc=$?
+sn_lines=$(printf '%s\n' "$sn_out" | grep -c 'same paths')
+if [ "$sn_rc" -eq 0 ] && [ "$sn_lines" -eq 1 ] \
+   && printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'migrations.md' \
+   && printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'testing.md' \
+   && ! printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'house-style' \
+   && grep -q 'KEEP-ME-TESTING' "$SN/.claude/rules/testing.md" && grep -q 'KEEP-ME-MIGRATIONS' "$SN/.claude/rules/migrations.md" \
+   && [ -f "$SN/.claude/rules/house-style.md" ] && [ -f "$SN/.claude/rules/shipkit/testing.md" ]; then
+  pass "same-named (two same-named rules beside shipkit's → one line naming both, not the third; all three untouched; shipkit's own installed)"
+else failc "same-named" "exit $sn_rc, lines $sn_lines: $sn_out"; fi
+SN2="$WORK/same-named-none"; mkdir -p "$SN2/.claude/rules"
+printf '# Not a shipkit name\n' > "$SN2/.claude/rules/house-style.md"
+sn2_out=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN2" 2>&1)
+sn2_re=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN2" 2>&1)
+if ! printf '%s\n%s\n' "$sn2_out" "$sn2_re" | grep -q 'same paths'; then
+  pass "same-named (no same-named rule → no line, on the first run and a re-run)"
+else failc "same-named" "a line with no match: $sn2_out / $sn2_re"; fi
+if grep -q 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" \
+   && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'tracked' \
+   && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'leave it\|left in place\|left as is\|left where it is'; then
+  pass "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
+else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git before nesting the old backup"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

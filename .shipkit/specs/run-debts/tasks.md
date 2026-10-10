@@ -16,7 +16,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: scripts/smoke.sh check 60 "heading-seen" (a `CLAUDE.md` with the heading → the stderr line names it and `/shipkit:update-rules`, both sections present, the marker and `.section-<stack>.sha` intact; without → one heading, no line; the setup skill's text carries the relay) — written first, red; Check first: the installer reads `CLAUDE.md` before it appends (plan §3, first claim)
   - After: T0
   - Done when: check 60 → PASS; lint 0/0
-- [ ] **T2** Same-named rules named; a tracked backup left alone (S17-T2) → REQ-3, REQ-4
+- [x] **T2** Same-named rules named; a tracked backup left alone (S17-T2) → REQ-3, REQ-4
   - Files: plugins/shipkit/scripts/install-rules.sh, plugins/shipkit/skills/setup/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 61 "same-named" (a project with `.claude/rules/testing.md` beside `shipkit/` → the one line names it and the file is unchanged; without → no line; the setup skill's backup phase carries `git ls-files --error-unmatch` and the left-in-place sentence) — written first, red; Check first: `git ls-files --error-unmatch` outside a repository (plan §3, second claim)
   - After: T1
