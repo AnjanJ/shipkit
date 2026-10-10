@@ -117,7 +117,10 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   showed"). *4.7.0 (S14-T6, E9): closed by the portfolio plan's rule 16 — the note is committed
   before the gate — and its rule 5, which points there (`docs/plans/portfolio-sprint-plan.md`
   §1); no plugin file changed.*
-- **The `3.1.0` cache directory** waits for the owner's restart (D2 above).
+- **The `3.1.0` cache directory** waits for the owner's restart (D2 above). *4.8.0 (S15-T4,
+  E12 F1 and F2): `3.1.0` and `4.5.0` removed from `~/.claude/plugins/cache/shipkit/shipkit/` on
+  2026-10-10, each its own yes ("both"), neither the running version (the session's hook said
+  `4.6.0`; `4.7.0` installed beside it awaits the restart); the commands are in the S15-T4 commit.*
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5).
 

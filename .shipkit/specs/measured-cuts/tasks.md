@@ -26,7 +26,7 @@ stops after its table; each T4 row is the owner's own yes.**
   - Test: none beyond lint — a record; `decision-check.sh . --run` → 0 errors
   - After: T2
   - Done when: the note is appended with its numbers; the ROADMAP item carries the pointer; lint 0/0
-- [ ] **T4** Two cache directories (S15-T4, E12 F1 and F2) → release step
+- [x] **T4** Two cache directories (S15-T4, E12 F1 and F2) → release step
   - Files: ROADMAP.md
   - Test: none beyond lint — each row's command and its output go in the commit message; the owner's interactive hook line reads `4.7.0` first
   - After: T3
