@@ -31,7 +31,7 @@ stops after its table; each T4 row is the owner's own yes.**
   - Test: none beyond lint — each row's command and its output go in the commit message; the owner's interactive hook line reads `4.7.0` first
   - After: T3
   - Done when: the ROADMAP records each row as removed or kept, with the date; lint 0/0
-- [ ] **T-REL** Release 4.8.0 (S15-T-REL)
+- [x] **T-REL** Release 4.8.0 (S15-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/measured-cuts/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals, spec-check, the two byte lines); the gate headless
   - After: T4
