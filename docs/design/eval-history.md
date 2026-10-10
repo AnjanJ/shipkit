@@ -43,6 +43,29 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.11.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-11, at `e554a1f` (`plugins/` byte-identical through the
+ship commit `baf5e82`): 59 cases, 1,069 s, $16.79, **exit 1** — `trap2/experiments` 1 of 3;
+every other case passed, 55 at 3 of 3, `grandfather-xl/drift`, `intake/answered` and
+`intake/limit` 2 of 3 (their shapes in 4.9.0 and 4.10.0; the threshold held, none re-run).
+`eve/payments` 3 of 3 under its corrected clause, `eve/why` 3 of 3 with the sentence, the new
+`eve/why-reworded` 3 of 3, `trap2/notebooks` 3 of 3 on its widened pattern; the fourteen watch
+cases of the seven cut files all 3 of 3, and `scoped/migrations` and `trap2/migrations` 3 of 3
+on the heading-only file (its first release run as a watch). `trap2/experiments` re-run alone
+with `--keep-temp` (3 runs, 26 s, $0.30): **2 of 3**, and the three `train.py` files read from
+the traces' `Write` calls: all three pick the device from `configs/train.yaml`
+(`cfg["device"]`) through an explicit `cuda` / `mps` / `cpu` function and log it — the two
+passes with `print(f"device={device} …")` and `print(f"training on {device} …")`, the miss
+with `log.info("device=%s seed=%d config=%s", device, seed, cfg)`. The grader's second
+lookahead wants `logging|logger|print|log\(` on the same line as `device`, and `log.info(`
+is none of those: the line was followed, the grader is narrower than it — the third grader of
+that shape this sprint (`notebooks` E12, `package-json` on `haiku`, `eval-results-4.11.md`
+§4, §5). Nothing in 4.11.0 touches `experiments.md` or its case, which is unchanged (3 of 3
+in every release run since 4.6.0); the correction (`log(\.\w+)?\(`) is named for the plan
+after beside `package-json`'s, as 4.10.0 named `payments`' for this one. The 1 of 3 under
+`-j 4` reads as the same shape landing twice. Cost within E19's "about $17.80" for 59 cases.
+
 ## Release run 4.10.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-10, at `20b6a78` (`plugins/` byte-identical through the

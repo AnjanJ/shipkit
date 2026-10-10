@@ -130,6 +130,13 @@ What the measurements and the three releases named for the plan after, with thei
   the clause on the owner's go; `monorepo`, `testing`, `rails` kept on a number;
   `package-json`'s trap-2 cell unread (its grader forbids the run-time detector the line asks
   for — named for the plan after); `eval-results-4.11.md` §5, the record's note.*
+- **Two graders narrower than their line, found by 4.11.0** — `trap2/package-json` forbids
+  the run-time lockfile detector the line asks for (0 of 3 with the rule on `haiku`, every run
+  following the line; `docs/design/eval-results-4.11.md` §5), and `trap2/experiments` does not
+  see `log.info(… device …)` as a logged device (the 4.11.0 release run, 1 of 3 under `-j 4`,
+  2 of 3 alone, the miss following the line; `docs/design/eval-history.md`, "Release run
+  4.11.0"). Both cases unchanged; corrected on their traces in the plan after, as E9 and E12
+  were in this one.
 - **The gate condenses the reviewer's reply** where `gate-blind-spots` REQ-9 asks for it pasted,
   and once gave one line where the template asks for twenty — seen again in 4.9's run
   (`CHANGELOG.md` 4.7.0, "What using it for real showed"; `field-notes-4.9.md` §9.2). *4.10.0
