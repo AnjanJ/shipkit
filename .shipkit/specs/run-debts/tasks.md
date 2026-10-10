@@ -31,7 +31,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: scripts/smoke.sh check 27 extended (the reviewer's text carries the `grep -n` sentence) and check 29 extended (the ship skill's step 4 names `shipkit-ship-review.out`; the READY report's review block holds `## Review:`, a row per requirement of the fixture's spec, the `Requirements:` line and `VERDICT: PASS`) — written first, red; check 29 alone is the sprint's gate dry run (≈ $0.50); Check first: the Agent result reaches the skill as text it can `Write` (plan §3, third claim)
   - After: T3
   - Done when: checks 27 and 29 → PASS; lint 0/0
-- [ ] **T5** The wait sentence, closed by record; two cache directories (S17-T5) → REQ-10, REQ-11
+- [x] **T5** The wait sentence, closed by record; two cache directories (S17-T5) → REQ-10, REQ-11
   - Files: .shipkit/specs/run-debts/design.md, ROADMAP.md
   - Test: none beyond lint — prose, read; F1 and F2 each on the owner's yes, `/bin/ls` of the target and the interactive session's hook line first, the command and its output in the commit message
   - After: T4
