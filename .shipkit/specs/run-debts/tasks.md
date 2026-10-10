@@ -21,7 +21,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: scripts/smoke.sh check 61 "same-named" (a project with `.claude/rules/testing.md` beside `shipkit/` → the one line names it and the file is unchanged; without → no line; the setup skill's backup phase carries `git ls-files --error-unmatch` and the left-in-place sentence) — written first, red; Check first: `git ls-files --error-unmatch` outside a repository (plan §3, second claim)
   - After: T1
   - Done when: check 61 → PASS; lint 0/0
-- [ ] **T3** The brief warns on a dirty tree; setup's files always allowed (S17-T3) → REQ-5, REQ-6, REQ-7
+- [x] **T3** The brief warns on a dirty tree; setup's files always allowed (S17-T3) → REQ-5, REQ-6, REQ-7
   - Files: plugins/shipkit/scripts/brief.sh, plugins/shipkit/scripts/brief-verify.sh, plugins/shipkit/agents/reviewer.md, scripts/smoke.sh
   - Test: scripts/smoke.sh checks 25, 26 and 53 extended (a dirty tree → the stderr line with the count and a byte-identical brief on stdout, a clean tree → none; a change under `.claude/rules/shipkit/` and `.shipkit-baseline/` → not OUTSIDE; `CLAUDE.md` and `.gitignore` → OUTSIDE still; the reviewer's step 4 names the four) — written first, red
   - After: T2

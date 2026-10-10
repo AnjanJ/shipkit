@@ -901,6 +901,22 @@ else
      && printf '%s\n' "$out" | grep -q '^RESULT: done | blocked$'; then
     pass "brief (goal, files, test, binding decision, scope and report form all present; superseded decision left out)"
   else failc "brief" "a section is wrong: $out"; fi
+  # The tree is dirty here (the spec files are untracked until check 26 commits them): one
+  # stderr line says how many files already differ from HEAD, and the brief on stdout is the
+  # same one a clean tree prints (compared in check 26). A project that is not a repository
+  # gets no line. Cites: run-debts/REQ-5
+  bp_dirty=$(cd "$BP" && git status --short -uall | grep -c .)
+  printf '%s\n' "$out" > "$WORK/brief.dirty.out"
+  if [ "$bp_dirty" -gt 0 ] && [ "$(grep -c 'already differ from HEAD' "$WORK/brief.err")" -eq 1 ] \
+     && grep -q "^brief: $bp_dirty file(s) already differ from HEAD; brief-verify will count them\$" "$WORK/brief.err" \
+     && ! printf '%s\n' "$out" | grep -q 'already differ'; then
+    pass "brief (a dirty tree at hand-over → one stderr line with the count, $bp_dirty here; nothing on stdout)"
+  else failc "brief" "dirty tree ($bp_dirty files): stderr [$(cat "$WORK/brief.err")]"; fi
+  BNR="$WORK/brief-norepo"; mkdir -p "$BNR" && cp -R "$BP/.shipkit" "$BNR/"
+  out=$(sh "$BRIEF" "$BNR" refunds T3 2>"$WORK/brief.err"); rc=$?
+  if [ "$rc" -eq 0 ] && ! grep -q 'differ' "$WORK/brief.err" && [ "$out" = "$(cat "$WORK/brief.dirty.out")" ]; then
+    pass "brief (not a git repository → no line, the same brief)"
+  else failc "brief" "no repo: exit $rc, stderr [$(cat "$WORK/brief.err")]"; fi
   sh "$BRIEF" "$BP" refunds T9 >/dev/null 2>"$WORK/brief.err"; rc=$?
   if [ "$rc" -eq 1 ] && grep -q 'T9' "$WORK/brief.err" && grep -q 'refunds' "$WORK/brief.err"; then
     pass "brief (unknown task → exit 1, naming the task and the spec)"
@@ -923,6 +939,12 @@ else
   mkdir -p "$BP/app/billing" "$BP/tests"
   (cd "$BP" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
   bv_base=$(cd "$BP" && git rev-parse HEAD)
+  # the tree is clean now: brief.sh prints no line, and the same brief as on the dirty tree
+  # (check 25). Cites: run-debts/REQ-5
+  out=$(sh "$BRIEF" "$BP" refunds T3 2>"$WORK/brief.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ ! -s "$WORK/brief.err" ] && [ "$out" = "$(cat "$WORK/brief.dirty.out")" ]; then
+    pass "brief (a clean tree at hand-over → nothing on stderr; the brief is byte-identical to the dirty tree's)"
+  else failc "brief" "clean tree: exit $rc, stderr [$(cat "$WORK/brief.err")], stdout differs: $(printf '%s\n' "$out" | diff - "$WORK/brief.dirty.out" | head -3)"; fi
   # a. only allowed files: one committed, one left uncommitted, plus the task's own tick box
   printf 'x\n' > "$BP/app/billing/refunds.py"
   (cd "$BP" && git add app/billing/refunds.py && git -c user.email=s@s -c user.name=s commit -q -m work)
@@ -948,6 +970,18 @@ else
     pass "brief-verify (a new untracked file outside the list → OUTSIDE, exit 1)"
   else failc "brief-verify" "untracked: exit $rc: $out"; fi
   rm -f "$BP/app/notes.txt"
+  # c2. setup's own directories are never OUTSIDE; CLAUDE.md and .gitignore still are (the
+  # second real run's gate called all four "beyond the spec", field-notes-4.9.md §9.4).
+  # Cites: run-debts/REQ-6
+  mkdir -p "$BP/.claude/rules/shipkit" "$BP/.shipkit-baseline"
+  printf 'r\n' > "$BP/.claude/rules/shipkit/testing.md"; printf 'b\n' > "$BP/.shipkit-baseline/CLAUDE.md"
+  printf 'c\n' > "$BP/CLAUDE.md"; printf '.shipkit-backup-*/\n' > "$BP/.gitignore"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^OUTSIDE')" -eq 2 ] \
+     && printf '%s\n' "$out" | grep -q '^OUTSIDE CLAUDE.md$' && printf '%s\n' "$out" | grep -q '^OUTSIDE .gitignore$'; then
+    pass "brief-verify (setup's .claude/rules/shipkit/ and .shipkit-baseline/ → not OUTSIDE; CLAUDE.md and .gitignore → OUTSIDE still)"
+  else failc "brief-verify" "setup files: exit $rc: $out"; fi
+  rm -rf "$BP/.claude" "$BP/.shipkit-baseline" "$BP/CLAUDE.md" "$BP/.gitignore"
   # d. wrong usage and an unknown task
   sh "$BV" "$BP" refunds T3 >/dev/null 2>&1; rc=$?
   sh "$BV" "$BP" refunds T9 "$bv_base" >/dev/null 2>&1; rc2=$?
@@ -1857,6 +1891,13 @@ if sed -n 1,30p "$BV" | grep -q 'another spec' \
    && grep -A3 'Changes beyond the spec\.\*\*' "$COPY/agents/reviewer.md" | grep -q 'under `\.shipkit/`'; then
   pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
 else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
+# setup's files, in both places (run-debts T3). Cites: run-debts/REQ-6 run-debts/REQ-7
+sa_step4=$(awk '/^4\. \*\*Changes beyond the spec/ { on = 1 } /^5\. / { on = 0 } on' "$COPY/agents/reviewer.md")
+if sed -n 1,40p "$BV" | grep -q '\.claude/rules/shipkit/' && sed -n 1,40p "$BV" | grep -q '\.shipkit-baseline/' \
+   && printf '%s\n' "$sa_step4" | grep -q '\.claude/rules/shipkit/' && printf '%s\n' "$sa_step4" | grep -q '\.shipkit-baseline/' \
+   && printf '%s\n' "$sa_step4" | grep -q 'CLAUDE\.md' && printf '%s\n' "$sa_step4" | grep -q '\.gitignore'; then
+  pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both name setup's two directories as allowed, CLAUDE.md and .gitignore as reported)"
+else failc "shipkit-allowed" "setup's directories are not named in both places"; fi
 
 # 54. scoped-loading: does a path-scoped rule under .claude/rules/shipkit/ load in a normal
 # headless session when a matching file is named, and stay out when a non-matching one is?

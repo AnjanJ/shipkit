@@ -14,7 +14,10 @@
 # A Files entry ending in "/" allows everything under that folder. Everything under .shipkit/
 # is always allowed — product.md, state.md, releases/, decisions/ and the spec's own folder are
 # written by shipkit's own loop and no Files line will ever name them — EXCEPT a file inside
-# another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). Ignored files
+# another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). So is everything
+# under .claude/rules/shipkit/ and .shipkit-baseline/: only the installer writes there
+# (run-debts/REQ-6). CLAUDE.md and .gitignore are still reported even when setup changed them:
+# they hold the project's own content, and a line about them is worth reading. Ignored files
 # (.gitignore) are not seen, by design: this check sees what git sees, and a build artifact an
 # agent leaves in an ignored path shows in the task's Done-when output, which you run yourself
 # (gate-blind-spots/REQ-10, closed by record C6).
@@ -55,6 +58,8 @@ OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" awk -v tasks="$TASKS_FILE
     ok = ($0 == tasks)
     # under .shipkit/: allowed, except inside another spec folder (see the header)
     if (!ok && index($0, ".shipkit/") == 1) ok = (index($0, ".shipkit/specs/") != 1 || index($0, own) == 1)
+    # the two directories setup owns: written only by the installer (see the header)
+    if (!ok && (index($0, ".claude/rules/shipkit/") == 1 || index($0, ".shipkit-baseline/") == 1)) ok = 1
     for (i = 1; i <= n && !ok; i++) {
       if ($0 == a[i]) ok = 1
       else if (a[i] ~ /\/$/ && index($0, a[i]) == 1) ok = 1

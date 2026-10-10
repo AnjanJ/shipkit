@@ -43,8 +43,10 @@ If either of the two is missing, say which and stop.
    file that is not under the spec's `> Paths:`. A file under `.shipkit/` is not beyond the spec
    (`product.md`, `state.md`, `releases/`, `decisions/`, this spec's own folder: shipkit's loop
    writes them and no `Paths` line will name them) — except one inside another spec's folder
-   (`.shipkit/specs/<other>/`), which is. No `Paths` line: write "The spec has no Paths line;
-   not checked."
+   (`.shipkit/specs/<other>/`), which is. Nor is a file under `.claude/rules/shipkit/` or
+   `.shipkit-baseline/`: only `/shipkit:setup`'s installer writes there. `CLAUDE.md` and
+   `.gitignore` are listed even when setup changed them — they hold the project's own content.
+   No `Paths` line: write "The spec has no Paths line; not checked."
 5. **Decisions not followed.** For each `## Decision:` in `design.md` that is not marked
    superseded, check the code follows it. List each one it does not, with `path:line`.
 

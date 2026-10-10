@@ -135,6 +135,16 @@ FILES=$(task files) || {
 }
 REQS=$(task reqs)
 
+# Hand over from a clean tree. brief-verify.sh reads every difference from the base ref,
+# committed or not, and cannot tell the agent's change from one already there at hand-over:
+# the second real run counted fourteen of setup's deletions as the agent's (field-notes-4.9.md
+# §8.1). One line on stderr when the tree is dirty; the brief on stdout is unchanged (run-debts
+# REQ-5). Not a repository: nothing to count, no line.
+if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  DIRTY=$(git -C "$PROJ" status --short --untracked-files=all 2>/dev/null | grep -c .)
+  [ "$DIRTY" -gt 0 ] && echo "brief: $DIRTY file(s) already differ from HEAD; brief-verify will count them" >&2
+fi
+
 echo "# Brief: $SLUG / $TASK — $(task title)"
 echo
 echo "## Goal"
