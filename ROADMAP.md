@@ -12,11 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-10, v4.9.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan, 11 to 13 of the field plan and 14 to 16 of the portfolio plan
-(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09, shipped as 4.7.0, 4.8.0 and 4.9.0)
-are done; see "The portfolio plan" below. Everything in this document is
-shipped except the items under "Still open after Sprint 16", which seed the plan after.
+**Status (as of 2026-10-10, v4.10.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 of the
+second-run plan (`docs/plans/second-run-sprint-plan.md`, approved 2026-10-10; Sprint 17 shipped
+as 4.10.0, Sprints 18 and 19 open) are done; see "The second-run plan" below. Everything in
+this document is shipped except the items under "Still open after Sprint 16" that Sprints 18
+and 19 still owe (each item carries a note when a sprint paid it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,6 +30,18 @@ shipped except the items under "Still open after Sprint 16", which seed the plan
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The second-run plan — Sprint 17 SHIPPED 2026-10-10 as 4.10.0; Sprints 18–19 open
+
+Full plan: [`docs/plans/second-run-sprint-plan.md`](docs/plans/second-run-sprint-plan.md). Pay
+the second run's debts (17), act on the graders and on `eve` (18), close the harness window and
+run the loop a third time on the third stack (19).
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 17 | 4.10.0 | An installer that sees a heading the project already has; setup that names a same-named rule and leaves a tracked backup alone; a brief that warns on a dirty tree; setup's two directories always allowed; a reviewer told where a line number comes from and a gate that pastes its reply from a file (smoke checks 60, 61; 25, 26, 27, 29, 53 extended); the wait sentence closed by record; the `4.6.0` and `4.7.0` cache directories gone |
+| 18 | 4.11.0 | — |
+| 19 | 4.12.0 | — |
 
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 

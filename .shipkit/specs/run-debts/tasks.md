@@ -36,7 +36,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: none beyond lint — prose, read; F1 and F2 each on the owner's yes, `/bin/ls` of the target and the interactive session's hook line first, the command and its output in the commit message
   - After: T4
   - Done when: the record exists with the three quotes and the reopen condition; the ROADMAP rows are written; lint 0/0
-- [ ] **T-REL** Release 4.10.0 (S17-T-REL)
+- [x] **T-REL** Release 4.10.0 (S17-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/run-debts/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals at 58 cases, spec-check, the two byte lines); the gate headless
   - After: T5

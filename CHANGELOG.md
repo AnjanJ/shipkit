@@ -2,6 +2,72 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.10.0] — 2026-10-10
+
+Sprint 17 of the second-run plan (`docs/plans/second-run-sprint-plan.md`), the plan's first:
+the debts the second real run left in setup, the brief and the gate, each fixed where it lives
+with a smoke check written first; the one finding that is the platform's closed by record;
+two cache directories gone. Requirements and decision records in
+[`.shipkit/specs/run-debts/`](.shipkit/specs/run-debts/); the findings in
+[`docs/design/field-notes-4.9.md`](docs/design/field-notes-4.9.md).
+
+### Added
+
+- **The installer sees a heading the project already has** (E1): before appending a stack's
+  `CLAUDE.md` section, `install-stack.sh` looks for the section's first `## ` heading among
+  the lines outside every shipkit block; found → the section still goes under its marker with
+  its sha recorded, and one stderr line names the heading and `/shipkit:update-rules`. The
+  setup skill relays the line, shows the two sections' diff and edits neither. Smoke check 60
+  (`heading-seen`): present, absent, and a re-run that must not warn about its own block.
+- **A same-named rule beside shipkit's is named** (E2): `install-rules.sh` prints one line
+  naming every top-level `.claude/rules/*.md` whose name it installs — "both load on the same
+  paths" — and touches none. **A tracked backup stays where it is** (E3): the setup skill asks
+  `git ls-files --error-unmatch` before nesting an older `.shipkit-backup-*`; tracked → left at
+  the root and named in the reply. Smoke check 61 (`same-named`).
+- **The brief warns on a dirty tree** (E4): `brief.sh` prints `brief: N file(s) already differ
+  from HEAD; brief-verify will count them` to stderr when `git status` is not clean; the brief
+  on stdout is byte-identical, and a project that is not a repository gets no line. Smoke
+  check 25 extended; the plan's rule 19 is the discipline.
+- **Setup's directories are never "beyond the spec"** (E5): `.claude/rules/shipkit/` and
+  `.shipkit-baseline/` join the always-allowed list in `brief-verify.sh` and in the reviewer's
+  step 4, as `.shipkit/` did in 4.5.0; `CLAUDE.md` and `.gitignore` are still reported — they
+  hold the project's own content. Smoke checks 26 and 53 extended.
+- **A `MET` citation is a tree line** (E6): one sentence in `agents/reviewer.md` — the line is
+  the working tree's, as `grep -n` prints it, never a position inside a diff hunk. Smoke check
+  27 holds the text; the third real run is the measure.
+- **The gate pastes the reviewer's reply from a file** (E7): step 4 writes the reply to
+  `shipkit-ship-review.out` and pastes the report's review block from it, the mechanism step 2
+  has used for test output since 4.5.0; the file goes with the gate's other scratch files.
+  Smoke check 29 reads the READY report for the reviewer's heading, every requirement row, the
+  count line and the verdict line, and found them all on the first run.
+
+### Changed
+
+- `ROADMAP.md`: the second-run plan's table; the seven "Still open after Sprint 16" items this
+  sprint paid carry their notes; the wait-sentence item points at its record (E8); the cache
+  row records F1 and F2.
+- The owner's plugin cache holds `4.9.0` alone: `4.6.0` and `4.7.0` removed, each its own yes
+  (E18 F1, F2; the commands in the S17-T5 commit).
+
+### What using it for real showed
+
+**The wait sentence is the harness's, and is now a record.** Three headless replies in one
+day opened with "I'll stop here until its notification arrives" and then answered; the record
+in `run-debts/design.md` holds the quotes and reopens on an interactive reply that does the
+same. **An apostrophe inside a single-quoted awk program ends it** — the first draft of
+`brief-verify`'s new line had one in its comment, and `sh -n` said so before any check ran.
+**A check number's range runs to the end of the file when the closing header does not exist.**
+A runner built from `# 8.` to `# 13.` (there is no 12 or 13) ran the rest of the suite and was
+stopped; the killed runner's `EXIT` trap did not fire, so `plugin-root` held a scratch path
+and the scratch directory stayed until both were put back by hand. **The gate pasted on the
+first run** once the reply went through a file: heading, three rows, count line and verdict,
+where the 4.9.0 release gate had written "summarised table rows condensed only in layout".
+**A hook from an older session rewrote `plugin-root` to a directory just removed** — at F2,
+with this session's hook line at `4.9.0`, the file came back holding the `4.7.0` path from a
+session started before the cache update (a compaction re-runs SessionStart); written back by
+hand, and a line for S19-T1's end hook: put a saved value back only if that root still exists.
+Smoke: 174 checks, all passed on the tree before this commit (161 at 4.9.0; checks 60 and 61 and the seven extensions add 13).
+
 ## [4.9.0] — 2026-10-10
 
 Sprint 16 of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`), the plan's last: the
