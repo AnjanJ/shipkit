@@ -124,3 +124,14 @@ the cheap grep first, the map when the grep does not land or the question is abo
 **Reversal:** we would run one attempt at step 0, or change it, if an elder case on a fixture
 where the grep does *not* land (Sprint 16's portfolio `why` case is the first such) gives a
 wrong answer that the map, when read, gets right. **Still closed; the map is optional.**
+
+**`eve`'s number (4.9.0, S16-T2, portfolio plan E10).** The loss C11 left unmeasured, measured on a
+generated three-project portfolio under three arms (three maps, one, none), 27 runs
+(`docs/design/eval-results-4.9.md`): the sweep (`jobs`) and the cross-project where
+(`payments`) held the same counts in every arm — 3 of 3 and 2 of 3 — and read no map in any
+of their 18 runs; the why (`why`: a reason no file and no commit records) came back 3 of 3
+from `pulse`'s map and was "not recorded" 6 of 6 without it. The map was reached by the grep
+landing on its Evolution lines, which is step 0 as written. So `eve` is the same as the elder:
+the map's worth is its Evolution section, for the question nothing else records; a registry
+row without a map is answered by a grep at no loss for a sweep or a where. **Still closed; the
+map is optional — and `--register` should keep saying the map is for the why.**

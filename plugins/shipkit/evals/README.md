@@ -86,6 +86,9 @@ Limits worth knowing before writing a case:
   (`--ablation with-without`); they show whether the plugin fired.
 - `llm` graders call a judge model three times per run and can disagree with themselves.
   Prefer `regex`, `tool_used` and `file_exists` where they can express the check.
+- **A `regex` grader is a JavaScript `RegExp`.** A Python inline flag such as `(?is)` makes the
+  grader throw ("Invalid regular expression") and every run fails with no model error. Use
+  `[\s\S]*` for "across lines" and `[Ss]idekiq` for case (4.9.0, the three `eve` cases).
 
 ## How a case gets the fixture
 
@@ -223,6 +226,9 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `reviewer/all-met` | the same, on a complete feature | ends `VERDICT: PASS` with no `NOT MET` row | regex |
 | `escape/missing-req` | `/shipkit:escape` Refunds above the charge were accepted in production… | names the cause `requirement missing` and proposes a new `REQ-3 … shall …` | regex |
 | `digest/attention` | `/shipkit:ask --all digest` | names `ledger` and cites its digest line (`Escapes (30 days)` or `requirement missing`) | regex |
+| `eve/jobs` | `/shipkit:ask --all` Which of my projects run background jobs, and with which library? | pairs `shopfront` with Sidekiq, `pulse` with Oban, `insight` with Celery (P1) | regex |
+| `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and names `Gemfile` or `mix.exs` (P2) | regex |
+| `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
@@ -321,6 +327,16 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
 diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" halted three
 runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
 run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
+
+## `eve`'s portfolio (4.9.0)
+
+Three `eve` cases on the generated portfolio fixture (`fixtures/portfolio-gen/generate.py`,
+facts in `fixtures/FACTS-PORTFOLIO.md`): a sweep (`jobs`), a cross-project where (`payments`)
+and a why only a map holds (`why`). Each scaffolds three maps; the one-map and no-map arms are
+scratch copies whose `fixture.sh` defaults `SHIPKIT_EVAL_MAPS` to `1` or `0`. The sweep and
+the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why was answered
+only where `pulse` had a map and said "not recorded" where it had none. The table and the
+readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
 
 ## The cuts (4.8.0)
 

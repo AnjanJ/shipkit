@@ -578,16 +578,17 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
-# --- 17. The eval budget: plugins/shipkit/evals/ stays under 160 KB ------------------
+# --- 17. The eval budget: plugins/shipkit/evals/ stays under 192 KB ------------------
 # Proves map-on-trial/REQ-7 and rule-evals/REQ-9. Decision A9 of the quality-gate plan set a
 # 100 KB ceiling in 3.2.0 and nothing enforced it; 4.1.0 added this check and generated the XL
 # fixture at scaffold time precisely to stay inside. 4.2.0 raised it to 128 KB with the
 # owner's yes: eighteen rule cases plus their harness need about 33 KB against 21 KB of room.
 # 4.6.0 raised it to 160 KB (field plan C1) for the sixteen trap-2 cases, with the README's
-# history moved to docs/design/eval-history.md so the room is visible. The room is for cases;
-# a committed fixture is still the first thing this should catch.
+# history moved to docs/design/eval-history.md so the room is visible. 4.9.0 raised it to
+# 192 KB (portfolio plan E10) for the portfolio generator and the three eve cases. The room is
+# for cases and generators; a committed fixture is still the first thing this should catch.
 
-EVALS_MAX_BYTES = 163840
+EVALS_MAX_BYTES = 196608
 
 _evals_dir = CORE / "evals"
 _evals_bytes = sum(p.stat().st_size for p in _evals_dir.rglob("*") if p.is_file())

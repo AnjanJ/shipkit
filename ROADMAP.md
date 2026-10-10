@@ -12,12 +12,11 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-10, v4.8.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan and 11 to 13 of the field plan are done; Sprints 14 and 15 of the portfolio plan
-(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09) shipped as 4.7.0 and 4.8.0 and
-Sprint 16 is next; see "The portfolio plan" below. Everything in this document is shipped except
-the three items still open under "Still open after Sprint 13" (`eve`'s loss, the second real
-run, and whatever Sprint 16's run finds), which the portfolio plan carries.
+**Status (as of 2026-10-10, v4.9.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan and 14 to 16 of the portfolio plan
+(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09, shipped as 4.7.0, 4.8.0 and 4.9.0)
+are done; see "The portfolio plan" below. Everything in this document is
+shipped except the items under "Still open after Sprint 16", which seed the plan after.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -31,7 +30,7 @@ run, and whatever Sprint 16's run finds), which the portfolio plan carries.
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The portfolio plan — Sprints 14–15 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0; Sprint 16 to come
+## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 
 Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
 harness's debts (14), act on the numbers the rules carry (15), measure what still has none —
@@ -41,7 +40,64 @@ harness's debts (14), act on the numbers the rules carry (15), measure what stil
 |--------|---------|--------------------|
 | 14 | 4.7.0 | `spec-check --as-open` for a draft; a gate that removes its scratch files; a smoke runner that restores `plugin-root`; `map_read` counting what its document says and `map_shell` beside it; the sandbox's refusal understood (a protected file name, not a root dotfile); the rule-5 contradiction closed by the rulebook |
 | 15 | 4.8.0 | Fourteen measured lines cut from seven rule files, each with its watch case and a return clause; four whole-body files and `rails` kept by record; the intake's two sentences (file and line; parts count); the elder's step 0 closed by record; the `3.1.0` and `4.5.0` cache directories gone |
-| 16 | 4.9.0 | *(after)* a three-project fixture and `eve`'s first number; shipkit end to end on `~/code/pulse`; the roadmap for the plan after |
+| 16 | 4.9.0 | A generated three-project portfolio fixture (`portfolio-gen`, smoke check 59) and `eve`'s first number: the sweep and the where need no map (18 runs, 0 map reads), the why is answered only from one (3 of 3 with, "not recorded" 6 of 6 without); the eval ceiling at 196,608; shipkit's loop end to end on `~/code/office_bestie` (Phoenix, not the plan's `pulse`), nothing fixed, seven findings and three of the project's own; this roadmap for the plan after |
+
+**Still open after Sprint 16** (the second real run's findings, `docs/design/field-notes-4.9.md`,
+by section; nothing here was fixed in Sprint 16, by the plan's E11; every item seeds the plan after):
+
+- **`install-stack.sh` appends a stack section under a heading the project already has** —
+  `office_bestie` had its own `## Elixir-Specific`; setup added a second one with a different
+  test command (`field-notes-4.9.md` §2.1).
+- **Setup does not notice a same-named rule beside its own directory** — `dependencies.md`,
+  `migrations.md` and `testing.md` in `.claude/rules/` next to shipkit's three (§2.2).
+- **Setup moves a previous backup that git tracks** — fourteen deletions in `git status` after
+  `.shipkit-backup-20260321-…` was nested into the new backup (§2.3).
+- **A background-agent wait sentence leaks into the final reply** — "I'll stop here until its
+  notification arrives", then the full answer; in the intake and in the gate (§4.1, §9.3).
+- **`brief-verify.sh` counts changes already in the tree at hand-over** — fourteen OUTSIDE
+  lines that were setup's, none the agent's; nothing says "hand over from a clean tree" (§8.1).
+- **The reviewer's MET citation named diff positions, not file lines** — `accounts.ex:18-23`
+  for a function at line 605; and the gate summarised the reviewer's reply again, where
+  `gate-blind-spots` REQ-9 asks for it pasted (§9.1, §9.2).
+- **Setup's files are "changes beyond the spec" on every first spec** — `.claude/rules/shipkit/`,
+  `.gitignore`, `CLAUDE.md`, as `product.md` was before 4.5.0 allowed it (§9.4).
+- **The project's, not shipkit's** (recorded so the next run knows): `CLAUDE.md`'s test command
+  assumes the pinned Elixir is on `PATH` (§7); a tracked backup directory (§2.3); a
+  `settings.json` deny rule that never matches (§2.4).
+
+What the measurements and the three releases named for the plan after, with their evidence:
+
+- **`eve/payments`' manifest clause measures a citation habit** — one reply per arm cites the
+  file that handles the charge and the gem's constraint but no manifest file, 2 of 3 in every
+  arm (`docs/design/eval-results-4.9.md`, "The three readings", 3).
+- **`eve` speculates after saying "not recorded"** — five of six map-less `why` replies append
+  motives marked as guesses; whether the agent should offer any is a question for
+  `agents/eve.md`, which the portfolio plan did not edit (`eval-results-4.9.md`, "The three
+  readings", 3).
+- **The map is found by the grep, not chosen** — `eve` read `pulse`'s map because `Grep session`
+  landed on its Evolution lines; a map in other words would not have been read
+  (`eval-results-4.9.md`, "The three readings", 3; decision 0001's `eve` note).
+- **`trap2/notebooks`' grader is narrower than its line** — a standard-library output-clearing
+  script is not matched; left as written so the watch stays comparable (`CHANGELOG.md` 4.8.0,
+  "What using it for real showed"; `eval-results-4.8.md`, "The two runs below 3 of 3").
+- **A headless run that follows the spec-driven rule builds nothing, and a file grader fails
+  it** — `trap2/react`, one run (`CHANGELOG.md` 4.8.0, "What using it for real showed").
+- **The four kept whole-body files and `rails` are cut only on a third model's measurement** —
+  the record's own clause (`.shipkit/specs/measured-cuts/design.md`, the first decision's
+  Falsifiability).
+- **The gate condenses the reviewer's reply** where `gate-blind-spots` REQ-9 asks for it pasted,
+  and once gave one line where the template asks for twenty — seen again in 4.9's run
+  (`CHANGELOG.md` 4.7.0, "What using it for real showed"; `field-notes-4.9.md` §9.2).
+- **The mid-run `plugin-root` window** — every `--plugin-dir` session rewrites
+  `~/.claude/shipkit/plugin-root`; the smoke runner restores it, a session started during an
+  eval or a real run does not (`CHANGELOG.md` 4.7.0, "What using it for real showed";
+  `docs/plans/portfolio-sprint-plan.md` §1 rule 17).
+- **The exact refusal text of `.pre-commit-config.yaml` was never captured** — the sandbox's
+  denial is documented from the permission-modes list and the trace's effect, not its message
+  (`plugins/shipkit/evals/README.md`, "What a case cannot ask for (4.7.0)").
+- **No line returned from S15-T1** — the fourteen watch cases held at or above 2 of 3 on the
+  trimmed text and in the 4.8.0 release run (`eval-results-4.8.md`, "Reading"); the clause
+  stands for every release run after.
 
 ## The field plan — ✅ Sprints 11–13 SHIPPED 2026-10-08 to 2026-10-09 as 4.4.0, 4.5.0, 4.6.0
 
@@ -68,9 +124,13 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   stay as the watch and a release run below 2 of 3 returns the line. `migrations`, `monorepo`,
   `testing` and `package-json` — whose whole body is the two lines — and `rails` are kept by
   record on the owner's word (`docs/design/eval-results-4.8.md`; smoke check 58).*
-- **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
-  registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
-  "The wip history"; C11).
+- **`eve`'s loss when fewer projects carry a map** — *measured in 4.9.0 (S16-T2, E10):* on a
+  generated three-project portfolio under three arms, the sweep and the where held 3 of 3 and
+  2 of 3 in every arm and read no map in any of 18 runs; the why came back 3 of 3 from
+  `pulse`'s map and "not recorded" 6 of 6 without it (`docs/design/eval-results-4.9.md`, "The
+  table"; decision 0001's appended note). What the traces named beyond that — the
+  `payments` manifest clause, `eve`'s labelled guesses after "not recorded", the map found by
+  the grep rather than chosen — is under "Still open after Sprint 16".
 - **The elder reads the map in 8 of 15 runs at best from step 1 alone** — step 0's "cheap grep
   first" wins whenever the grep lands, and a sentence in step 1 cannot override a triage that
   happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended
@@ -123,7 +183,10 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   2026-10-10, each its own yes ("both"), neither the running version (the session's hook said
   `4.6.0`; `4.7.0` installed beside it awaits the restart); the commands are in the S15-T4 commit.*
 - **A second real run on another repository** — the field notes are one project, one run
-  (`docs/plans/field-sprint-plan.md` §5).
+  (`docs/plans/field-sprint-plan.md` §5). *4.9.0 (S16-T3, E11): run on `~/code/office_bestie`
+  (Elixir/Phoenix 1.8, LiveView), setup to gate, nothing fixed; six of 4.3's eleven
+  awkwardnesses seen closed, seven new findings under "Still open after Sprint 16"
+  (`docs/design/field-notes-4.9.md`, "What the run showed, in one place").*
 
 
 ## The evidence plan — ✅ Sprints 8–10 SHIPPED 2026-10-07 as 4.1.0, 4.2.0, 4.3.0
