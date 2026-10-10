@@ -22,7 +22,7 @@ own yes.**
   - Test: `bash scripts/evals.sh --group eve` (3 cases × 3 arms × 3 runs, `--keep-temp`, counts from `scripts/trace-tools.sh`; the two scratch-copy arms made under the scratchpad and removed after their traces are read); Check first: `why` answered from `pulse`'s map in the three-map arm and "not recorded" in the no-map arm on the first run (§3) — if not, traces read and the fixture or question corrected (rule 10), never `agents/eve.md`
   - After: T1
   - Done when: the 3 × 3 table has no empty cell; the three readings are written after the traces are read (rule 10); every `eve` case ≥ 2 of 3 in the three-map arm; evals bytes ≤ 196,608; lint 0/0; **stop: the owner sees the table before T3**
-- [ ] **T3** The second real run (S16-T3) → REQ-10, REQ-11
+- [x] **T3** The second real run (S16-T3) → REQ-10, REQ-11
   - Files: docs/design/field-notes-4.9.md, ROADMAP.md
   - Test: none beyond lint — a measurement written up; `git status` in the notes before the first step; rule 17 for the run's length; `~/.claude/shipkit/plugin-root` written back after every `--plugin-dir` session
   - After: T2

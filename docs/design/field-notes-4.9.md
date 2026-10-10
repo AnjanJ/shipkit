@@ -377,6 +377,8 @@ the three releases and seen closed here.
 8. The project's: `CLAUDE.md`'s test command assumes the pinned toolchain is on `PATH` (§7);
    a tracked backup directory (§2.3); a `settings.json` deny rule that never matches (§2.4).
 
-**The branch.** `shipkit/real-run-2` holds two commits (`6adcb14` the setup, product, intake
-and spec files; `61dc902` T1) and one untracked report; never for merge. Its fate is recorded
-below once the owner decides (F3).
+**The branch.** `shipkit/real-run-2` held two commits (`6adcb14` the setup, product, intake
+and spec files; `61dc902` T1) and one untracked report; never for merge. **Deleted 2026-10-10
+on the owner's yes (F3)**, the log read first (rule 13): `git worktree remove --force` on the
+worktree, `git branch -D shipkit/real-run-2` ("was 61dc902"). The owner's checkout stayed on
+`main` at `179f99d` with its 29 untracked entries, as before the run.
