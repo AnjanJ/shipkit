@@ -43,6 +43,21 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.9.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-10, at `2d753a1` (`plugins/` byte-identical through the
+ship commit `e8e5fb0`): 58 cases, 988 s, $16.52, **exit 0** — every case passed; 55 at 3 of 3,
+`grandfather/drift`, `intake/answered` and `intake/limit` 2 of 3. The three new `eve` cases
+3 of 3 each, graded live by the tool — `eve/payments` 3 of 3 where the S16-T2 measurement
+read 2 of 3 in every arm (the manifest clause; `eval-results-4.9.md`), and the two regex
+graders, rewritten in JavaScript syntax after they threw on the measurement runs, grade as
+the offline pass through `node` said they would. `digest/attention` and `grandfather-xl/drift`
+3 of 3 in parallel, as in 4.8.0. `grandfather/drift` 2 of 3 is new at the threshold (3 of 3 in
+4.8.0); the threshold held, so it was not re-run and no trace was read (`evals.sh` keeps none);
+nothing in 4.9.0 touches the elders or the nine-file fixture, and a release run below 2 of 3
+would be the signal. The fourteen watch cases of the seven cut files all 3 of 3 on the shipped
+text. Cost within E13's "about $17.50" for 58 cases.
+
 ## Release run 4.8.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-10, at `e2f80a4`: 55 cases, 919 s, $15.48, **exit 0** —
