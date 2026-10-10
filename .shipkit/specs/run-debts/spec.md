@@ -1,7 +1,7 @@
 # Spec: The run's debts (Sprint 17, release 4.10.0)
 
 > Spec accepted at commit `3d1e73f` on sprint-17/run-debts (2026-10-10).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/, plugins/shipkit/skills/setup/, plugins/shipkit/skills/ship/, plugins/shipkit/agents/, scripts/, docs/plans/, docs/design/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
