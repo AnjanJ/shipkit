@@ -12,11 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-10, v4.9.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan, 11 to 13 of the field plan and 14 to 16 of the portfolio plan
-(`docs/plans/portfolio-sprint-plan.md`, approved 2026-10-09, shipped as 4.7.0, 4.8.0 and 4.9.0)
-are done; see "The portfolio plan" below. Everything in this document is
-shipped except the items under "Still open after Sprint 16", which seed the plan after.
+**Status (as of 2026-10-10, v4.10.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 of the
+second-run plan (`docs/plans/second-run-sprint-plan.md`, approved 2026-10-10; Sprint 17 shipped
+as 4.10.0, Sprints 18 and 19 open) are done; see "The second-run plan" below. Everything in
+this document is shipped except the items under "Still open after Sprint 16" that Sprints 18
+and 19 still owe (each item carries a note when a sprint paid it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -29,6 +30,18 @@ shipped except the items under "Still open after Sprint 16", which seed the plan
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The second-run plan — Sprint 17 SHIPPED 2026-10-10 as 4.10.0; Sprints 18–19 open
+
+Full plan: [`docs/plans/second-run-sprint-plan.md`](docs/plans/second-run-sprint-plan.md). Pay
+the second run's debts (17), act on the graders and on `eve` (18), close the harness window and
+run the loop a third time on the third stack (19).
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 17 | 4.10.0 | An installer that sees a heading the project already has; setup that names a same-named rule and leaves a tracked backup alone; a brief that warns on a dirty tree; setup's two directories always allowed; a reviewer told where a line number comes from and a gate that pastes its reply from a file (smoke checks 60, 61; 25, 26, 27, 29, 53 extended); the wait sentence closed by record; the `4.6.0` and `4.7.0` cache directories gone |
+| 18 | 4.11.0 | — |
+| 19 | 4.12.0 | — |
 
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 
@@ -47,20 +60,40 @@ by section; nothing here was fixed in Sprint 16, by the plan's E11; every item s
 
 - **`install-stack.sh` appends a stack section under a heading the project already has** —
   `office_bestie` had its own `## Elixir-Specific`; setup added a second one with a different
-  test command (`field-notes-4.9.md` §2.1).
+  test command (`field-notes-4.9.md` §2.1). *4.10.0 (S17-T1, E1): the installer looks for the
+  section's heading outside its markers before it appends; found → the section still goes under
+  its marker and one line names the heading and `/shipkit:update-rules`; setup relays it and
+  shows the diff (smoke check 60).*
 - **Setup does not notice a same-named rule beside its own directory** — `dependencies.md`,
-  `migrations.md` and `testing.md` in `.claude/rules/` next to shipkit's three (§2.2).
+  `migrations.md` and `testing.md` in `.claude/rules/` next to shipkit's three (§2.2). *4.10.0
+  (S17-T2, E2): `install-rules.sh` names every top-level same-named rule in one line and
+  touches none (smoke check 61).*
 - **Setup moves a previous backup that git tracks** — fourteen deletions in `git status` after
-  `.shipkit-backup-20260321-…` was nested into the new backup (§2.3).
+  `.shipkit-backup-20260321-…` was nested into the new backup (§2.3). *4.10.0 (S17-T2, E3): the
+  setup skill asks `git ls-files --error-unmatch` first; a tracked backup stays at the root,
+  named in the reply (smoke check 61 holds the text; the third real run is the measure).*
 - **A background-agent wait sentence leaks into the final reply** — "I'll stop here until its
   notification arrives", then the full answer; in the intake and in the gate (§4.1, §9.3).
+  *4.10.0 (S17-T5, E8): closed by record — `.shipkit/specs/run-debts/design.md`, "The leaked
+  wait sentence is closed by record", holds the three quotes (the intake, the gate, the 4.9.0
+  release gate) and the condition that reopens it: an interactive session's reply that opens
+  with a wait sentence and continues. No skill changed.*
 - **`brief-verify.sh` counts changes already in the tree at hand-over** — fourteen OUTSIDE
   lines that were setup's, none the agent's; nothing says "hand over from a clean tree" (§8.1).
+  *4.10.0 (S17-T3, E4): `brief.sh` prints one stderr line with the count when the tree is
+  dirty, the brief unchanged; the plan's rule 19 is the discipline (smoke check 25).*
 - **The reviewer's MET citation named diff positions, not file lines** — `accounts.ex:18-23`
   for a function at line 605; and the gate summarised the reviewer's reply again, where
-  `gate-blind-spots` REQ-9 asks for it pasted (§9.1, §9.2).
+  `gate-blind-spots` REQ-9 asks for it pasted (§9.1, §9.2). *4.10.0 (S17-T4, E6, E7): one
+  sentence in the reviewer — a `MET` line is the working tree's, as `grep -n` prints it, never
+  a diff position (smoke check 27; the third real run is the measure); the gate's step 4 writes
+  the reply to `shipkit-ship-review.out` and pastes from the file, the mechanism step 2 has
+  used since 4.5.0 (smoke check 29 reads the report's heading, rows, count and verdict lines).*
 - **Setup's files are "changes beyond the spec" on every first spec** — `.claude/rules/shipkit/`,
-  `.gitignore`, `CLAUDE.md`, as `product.md` was before 4.5.0 allowed it (§9.4).
+  `.gitignore`, `CLAUDE.md`, as `product.md` was before 4.5.0 allowed it (§9.4). *4.10.0
+  (S17-T3, E5): `.claude/rules/shipkit/` and `.shipkit-baseline/` always allowed in
+  `brief-verify.sh` and the reviewer's step 4; `CLAUDE.md` and `.gitignore` still reported —
+  they hold the project's own content (smoke checks 26, 53).*
 - **The project's, not shipkit's** (recorded so the next run knows): `CLAUDE.md`'s test command
   assumes the pinned Elixir is on `PATH` (§7); a tracked backup directory (§2.3); a
   `settings.json` deny rule that never matches (§2.4).
@@ -87,11 +120,14 @@ What the measurements and the three releases named for the plan after, with thei
   Falsifiability).
 - **The gate condenses the reviewer's reply** where `gate-blind-spots` REQ-9 asks for it pasted,
   and once gave one line where the template asks for twenty — seen again in 4.9's run
-  (`CHANGELOG.md` 4.7.0, "What using it for real showed"; `field-notes-4.9.md` §9.2).
+  (`CHANGELOG.md` 4.7.0, "What using it for real showed"; `field-notes-4.9.md` §9.2). *4.10.0
+  (S17-T4, E7): pasted from `shipkit-ship-review.out`; see the §9.1/§9.2 item above.*
 - **The mid-run `plugin-root` window** — every `--plugin-dir` session rewrites
   `~/.claude/shipkit/plugin-root`; the smoke runner restores it, a session started during an
   eval or a real run does not (`CHANGELOG.md` 4.7.0, "What using it for real showed";
-  `docs/plans/portfolio-sprint-plan.md` §1 rule 17).
+  `docs/plans/portfolio-sprint-plan.md` §1 rule 17). *Seen again at S17-T5 (2026-10-10): an
+  older session's hook, re-run on a compaction, wrote a cache path that had just been removed;
+  S19-T1's end hook (E15) should put a saved value back only if that root still exists.*
 - **The exact refusal text of `.pre-commit-config.yaml` was never captured** — the sandbox's
   denial is documented from the permission-modes list and the trace's effect, not its message
   (`plugins/shipkit/evals/README.md`, "What a case cannot ask for (4.7.0)").
@@ -182,6 +218,12 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   E12 F1 and F2): `3.1.0` and `4.5.0` removed from `~/.claude/plugins/cache/shipkit/shipkit/` on
   2026-10-10, each its own yes ("both"), neither the running version (the session's hook said
   `4.6.0`; `4.7.0` installed beside it awaits the restart); the commands are in the S15-T4 commit.*
+  *4.10.0 (S17-T5, E18 F1 and F2): `4.6.0` and `4.7.0` removed on 2026-10-10, each its own
+  yes, with this session's hook line and `installed_plugins.json` both at `4.9.0`; the commands
+  and their output are in the S17-T5 commit. Right after, `plugin-root` held the `4.7.0` path
+  again, written at 20:04 by the hook of an older session (one started before the cache update;
+  a compaction re-runs SessionStart) — written back to `4.9.0` by hand; a session still running
+  from `4.7.0` needs a restart.*
 - **A second real run on another repository** — the field notes are one project, one run
   (`docs/plans/field-sprint-plan.md` §5). *4.9.0 (S16-T3, E11): run on `~/code/office_bestie`
   (Elixir/Phoenix 1.8, LiveView), setup to gate, nothing fixed; six of 4.3's eleven

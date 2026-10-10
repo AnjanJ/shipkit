@@ -901,6 +901,22 @@ else
      && printf '%s\n' "$out" | grep -q '^RESULT: done | blocked$'; then
     pass "brief (goal, files, test, binding decision, scope and report form all present; superseded decision left out)"
   else failc "brief" "a section is wrong: $out"; fi
+  # The tree is dirty here (the spec files are untracked until check 26 commits them): one
+  # stderr line says how many files already differ from HEAD, and the brief on stdout is the
+  # same one a clean tree prints (compared in check 26). A project that is not a repository
+  # gets no line. Cites: run-debts/REQ-5
+  bp_dirty=$(cd "$BP" && git status --short -uall | grep -c .)
+  printf '%s\n' "$out" > "$WORK/brief.dirty.out"
+  if [ "$bp_dirty" -gt 0 ] && [ "$(grep -c 'already differ from HEAD' "$WORK/brief.err")" -eq 1 ] \
+     && grep -q "^brief: $bp_dirty file(s) already differ from HEAD; brief-verify will count them\$" "$WORK/brief.err" \
+     && ! printf '%s\n' "$out" | grep -q 'already differ'; then
+    pass "brief (a dirty tree at hand-over → one stderr line with the count, $bp_dirty here; nothing on stdout)"
+  else failc "brief" "dirty tree ($bp_dirty files): stderr [$(cat "$WORK/brief.err")]"; fi
+  BNR="$WORK/brief-norepo"; mkdir -p "$BNR" && cp -R "$BP/.shipkit" "$BNR/"
+  out=$(sh "$BRIEF" "$BNR" refunds T3 2>"$WORK/brief.err"); rc=$?
+  if [ "$rc" -eq 0 ] && ! grep -q 'differ' "$WORK/brief.err" && [ "$out" = "$(cat "$WORK/brief.dirty.out")" ]; then
+    pass "brief (not a git repository → no line, the same brief)"
+  else failc "brief" "no repo: exit $rc, stderr [$(cat "$WORK/brief.err")]"; fi
   sh "$BRIEF" "$BP" refunds T9 >/dev/null 2>"$WORK/brief.err"; rc=$?
   if [ "$rc" -eq 1 ] && grep -q 'T9' "$WORK/brief.err" && grep -q 'refunds' "$WORK/brief.err"; then
     pass "brief (unknown task → exit 1, naming the task and the spec)"
@@ -923,6 +939,12 @@ else
   mkdir -p "$BP/app/billing" "$BP/tests"
   (cd "$BP" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
   bv_base=$(cd "$BP" && git rev-parse HEAD)
+  # the tree is clean now: brief.sh prints no line, and the same brief as on the dirty tree
+  # (check 25). Cites: run-debts/REQ-5
+  out=$(sh "$BRIEF" "$BP" refunds T3 2>"$WORK/brief.err"); rc=$?
+  if [ "$rc" -eq 0 ] && [ ! -s "$WORK/brief.err" ] && [ "$out" = "$(cat "$WORK/brief.dirty.out")" ]; then
+    pass "brief (a clean tree at hand-over → nothing on stderr; the brief is byte-identical to the dirty tree's)"
+  else failc "brief" "clean tree: exit $rc, stderr [$(cat "$WORK/brief.err")], stdout differs: $(printf '%s\n' "$out" | diff - "$WORK/brief.dirty.out" | head -3)"; fi
   # a. only allowed files: one committed, one left uncommitted, plus the task's own tick box
   printf 'x\n' > "$BP/app/billing/refunds.py"
   (cd "$BP" && git add app/billing/refunds.py && git -c user.email=s@s -c user.name=s commit -q -m work)
@@ -948,6 +970,18 @@ else
     pass "brief-verify (a new untracked file outside the list → OUTSIDE, exit 1)"
   else failc "brief-verify" "untracked: exit $rc: $out"; fi
   rm -f "$BP/app/notes.txt"
+  # c2. setup's own directories are never OUTSIDE; CLAUDE.md and .gitignore still are (the
+  # second real run's gate called all four "beyond the spec", field-notes-4.9.md §9.4).
+  # Cites: run-debts/REQ-6
+  mkdir -p "$BP/.claude/rules/shipkit" "$BP/.shipkit-baseline"
+  printf 'r\n' > "$BP/.claude/rules/shipkit/testing.md"; printf 'b\n' > "$BP/.shipkit-baseline/CLAUDE.md"
+  printf 'c\n' > "$BP/CLAUDE.md"; printf '.shipkit-backup-*/\n' > "$BP/.gitignore"
+  out=$(sh "$BV" "$BP" refunds T3 "$bv_base" 2>&1); rc=$?
+  if [ "$rc" -eq 1 ] && [ "$(printf '%s\n' "$out" | grep -c '^OUTSIDE')" -eq 2 ] \
+     && printf '%s\n' "$out" | grep -q '^OUTSIDE CLAUDE.md$' && printf '%s\n' "$out" | grep -q '^OUTSIDE .gitignore$'; then
+    pass "brief-verify (setup's .claude/rules/shipkit/ and .shipkit-baseline/ → not OUTSIDE; CLAUDE.md and .gitignore → OUTSIDE still)"
+  else failc "brief-verify" "setup files: exit $rc: $out"; fi
+  rm -rf "$BP/.claude" "$BP/.shipkit-baseline" "$BP/CLAUDE.md" "$BP/.gitignore"
   # d. wrong usage and an unknown task
   sh "$BV" "$BP" refunds T3 >/dev/null 2>&1; rc=$?
   sh "$BV" "$BP" refunds T9 "$bv_base" >/dev/null 2>&1; rc2=$?
@@ -965,6 +999,14 @@ rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
   pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
 else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
+# A MET citation's line number is the working tree's, as `grep -n` prints it — never a position
+# inside a diff hunk: the second real run's reviewer cited accounts.ex:18-23 for a function at
+# line 605 (field-notes-4.9.md §9.1). Cites: run-debts/REQ-8
+rv_met=$(awk '/^3\. \*\*One verdict for every requirement/ { on = 1 } /^4\. / { on = 0 } on' "$rv")
+if printf '%s\n' "$rv_met" | grep -q 'grep -n' && printf '%s\n' "$rv_met" | grep -qi 'working tree' \
+   && printf '%s\n' "$rv_met" | grep -qi 'diff'; then
+  pass "reviewer-tools (a MET citation's path:line is the working tree's, as grep -n prints it, never a diff position)"
+else failc "reviewer-tools" "agents/reviewer.md step 3 does not say where a line number comes from"; fi
 
 # 28. spec-check --as-shipped: an open spec is asked for what a shipped one owes, and no file
 # changes (spec: .shipkit/specs/review-and-ship/). Reuses scspec and sc from section 19.
@@ -1009,6 +1051,22 @@ if [ "$sg_first" = "READY" ] && [ -z "$sg_dirty" ]; then
 else
   failc "ship-gate" "first line [$sg_first], other changes [$sg_dirty] — model said: $(tail -6 "$WORK/ship.out")"
 fi
+# The reviewer's reply is pasted, not condensed: step 4 writes it to shipkit-ship-review.out
+# and pastes from the file, as step 2 does for tests (gate-blind-spots REQ-9 asked for the
+# reply pasted; 4.7.0's and 4.9.0's gates summarised it). The report's review block holds the
+# reviewer's heading, one row per requirement of the fixture's spec, the count line and the
+# verdict line, as the agent's fixed shape prints them. Cites: run-debts/REQ-9
+sg_rev=$(awk '/^### 4\. / { on = 1; next } /^### 5\. / { on = 0 } on' "$sg_report" 2>/dev/null)
+sg_miss=""
+printf '%s\n' "$sg_rev" | grep -q '^## Review: refunds against' || sg_miss="$sg_miss [## Review: heading]"
+for r in 1 2 3; do printf '%s\n' "$sg_rev" | grep -Eq "^\| *REQ-$r( \(waived\))? *\|" || sg_miss="$sg_miss [REQ-$r row]"; done
+printf '%s\n' "$sg_rev" | grep -q '^Requirements: [0-9]* MET' || sg_miss="$sg_miss [Requirements: count line]"
+printf '%s\n' "$sg_rev" | grep -q '^VERDICT: PASS$' || sg_miss="$sg_miss [VERDICT line]"
+grep -q 'shipkit-ship-review.out' "$COPY/skills/ship/SKILL.md" || sg_miss="$sg_miss [SKILL.md names no review file]"
+[ -z "$(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out 2>/dev/null)" ] || sg_miss="$sg_miss [scratch files left: $(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out | tr '\n' ' ')]"
+if [ -z "$sg_miss" ]; then
+  pass "ship-gate (step 4 pastes the reviewer's reply from shipkit-ship-review.out: heading, three REQ rows, count line and verdict line verbatim; no scratch file left)"
+else failc "ship-gate" "the review block is condensed or the file is not named:$sg_miss"; fi
 # the same feature with one task unticked
 rm -rf "$SG/.shipkit/releases"
 sed 's/^- \[x\] \*\*T2\*\*/- [ ] **T2**/' "$SG/.shipkit/specs/refunds/tasks.md" > "$WORK/sg.tmp" \
@@ -1857,6 +1915,13 @@ if sed -n 1,30p "$BV" | grep -q 'another spec' \
    && grep -A3 'Changes beyond the spec\.\*\*' "$COPY/agents/reviewer.md" | grep -q 'under `\.shipkit/`'; then
   pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both say: under .shipkit/ only another spec's folder counts)"
 else failc "shipkit-allowed" "the header or the reviewer's step 4 does not say what is allowed"; fi
+# setup's files, in both places (run-debts T3). Cites: run-debts/REQ-6 run-debts/REQ-7
+sa_step4=$(awk '/^4\. \*\*Changes beyond the spec/ { on = 1 } /^5\. / { on = 0 } on' "$COPY/agents/reviewer.md")
+if sed -n 1,40p "$BV" | grep -q '\.claude/rules/shipkit/' && sed -n 1,40p "$BV" | grep -q '\.shipkit-baseline/' \
+   && printf '%s\n' "$sa_step4" | grep -q '\.claude/rules/shipkit/' && printf '%s\n' "$sa_step4" | grep -q '\.shipkit-baseline/' \
+   && printf '%s\n' "$sa_step4" | grep -q 'CLAUDE\.md' && printf '%s\n' "$sa_step4" | grep -q '\.gitignore'; then
+  pass "shipkit-allowed (brief-verify's header and the reviewer's step 4 both name setup's two directories as allowed, CLAUDE.md and .gitignore as reported)"
+else failc "shipkit-allowed" "setup's directories are not named in both places"; fi
 
 # 54. scoped-loading: does a path-scoped rule under .claude/rules/shipkit/ load in a normal
 # headless session when a matching file is named, and stay out when a non-matching one is?
@@ -2084,6 +2149,82 @@ else
     pass "portfolio-gen (FACTS-PORTFOLIO.md names the three job libraries, the Stripe manifests, the deploy files, the vacuum reason and its date)"
   else failc "portfolio-gen" "evals/fixtures/FACTS-PORTFOLIO.md is missing or misses a graded fact"; fi
 fi
+
+# 60. heading-seen: install-stack.sh looks for the section's heading before it appends (spec:
+# .shipkit/specs/run-debts/; field-notes-4.9.md §2.1: office_bestie had its own
+# `## Elixir-Specific`, setup added a second). A CLAUDE.md that already has the stack's first
+# `## ` heading outside shipkit's markers gets the section under its marker as before, the
+# sha recorded, and ONE stderr line naming the heading and /shipkit:update-rules; one without
+# gets the heading once and no line; on a re-run the heading inside shipkit's own block is
+# shipkit's and is not counted. The setup skill relays the line, shows the diff and edits
+# neither section. No claude needed. Cites: run-debts/REQ-1 run-debts/REQ-2
+hs_args="TEST_COMMAND=pytest API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest"
+HS="$WORK/heading-seen"; mkdir -p "$HS"
+printf '# demo\n\n## Python-Specific\n\nRun `uv run pytest -x` here.\n' > "$HS/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$HS" >/dev/null
+# shellcheck disable=SC2086
+hs_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS" $hs_args 2>&1 >/dev/null); hs_rc=$?
+hs_n=$(grep -c '^## Python-Specific$' "$HS/CLAUDE.md")
+hs_lines=$(printf '%s\n' "$hs_err" | grep -c 'already has "## Python-Specific"')
+if [ "$hs_rc" -eq 0 ] && [ "$hs_n" -eq 2 ] && [ "$hs_lines" -eq 1 ] \
+   && grep -q '<!-- shipkit:stack:python -->' "$HS/CLAUDE.md" && grep -q '<!-- /shipkit:stack:python -->' "$HS/CLAUDE.md" \
+   && [ -s "$HS/.claude/rules/shipkit/.section-python.sha" ] \
+   && grep -q 'uv run pytest -x' "$HS/CLAUDE.md" \
+   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:update-rules'; then
+  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:update-rules)"
+else failc "heading-seen" "exit $hs_rc, headings $hs_n, lines $hs_lines, stderr: $hs_err"; fi
+HS2="$WORK/heading-absent"; mkdir -p "$HS2"
+printf '# demo\n' > "$HS2/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$HS2" >/dev/null
+# shellcheck disable=SC2086
+hs2_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS2" $hs_args 2>&1 >/dev/null)
+# shellcheck disable=SC2086
+hs2_rerun=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$HS2" $hs_args 2>&1 >/dev/null)
+hs2_n=$(grep -c '^## Python-Specific$' "$HS2/CLAUDE.md")
+if [ "$hs2_n" -eq 1 ] && ! printf '%s\n%s\n' "$hs2_err" "$hs2_rerun" | grep -q 'already has'; then
+  pass "heading-seen (heading absent → one heading, no line; a re-run sees the heading in its own block as shipkit's, no line)"
+else failc "heading-seen" "headings $hs2_n; first run: $hs2_err; re-run: $hs2_rerun"; fi
+if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'update-rules' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
+  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:update-rules and edits neither section)"
+else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
+
+# 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
+# a tracked backup where it is (spec: .shipkit/specs/run-debts/; field-notes-4.9.md §2.2,
+# §2.3: office_bestie kept dependencies.md, migrations.md and testing.md at .claude/rules/
+# beside shipkit's three, unnamed; its tracked old backup was nested and became fourteen
+# deletions). install-rules.sh prints ONE line naming every top-level .claude/rules/*.md whose
+# basename it installs, and changes none of them; none → no line. The setup skill's backup
+# phase asks `git ls-files --error-unmatch` and leaves a tracked backup at the root, named in
+# the reply. No claude needed. Cites: run-debts/REQ-3 run-debts/REQ-4
+SN="$WORK/same-named"; mkdir -p "$SN/.claude/rules"
+printf '# My testing rule\nKEEP-ME-TESTING\n' > "$SN/.claude/rules/testing.md"
+printf '# My migrations rule\nKEEP-ME-MIGRATIONS\n' > "$SN/.claude/rules/migrations.md"
+printf '# Not a shipkit name\n' > "$SN/.claude/rules/house-style.md"
+sn_out=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN" 2>&1); sn_rc=$?
+sn_lines=$(printf '%s\n' "$sn_out" | grep -c 'same paths')
+if [ "$sn_rc" -eq 0 ] && [ "$sn_lines" -eq 1 ] \
+   && printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'migrations.md' \
+   && printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'testing.md' \
+   && ! printf '%s\n' "$sn_out" | grep 'same paths' | grep -q 'house-style' \
+   && grep -q 'KEEP-ME-TESTING' "$SN/.claude/rules/testing.md" && grep -q 'KEEP-ME-MIGRATIONS' "$SN/.claude/rules/migrations.md" \
+   && [ -f "$SN/.claude/rules/house-style.md" ] && [ -f "$SN/.claude/rules/shipkit/testing.md" ]; then
+  pass "same-named (two same-named rules beside shipkit's → one line naming both, not the third; all three untouched; shipkit's own installed)"
+else failc "same-named" "exit $sn_rc, lines $sn_lines: $sn_out"; fi
+SN2="$WORK/same-named-none"; mkdir -p "$SN2/.claude/rules"
+printf '# Not a shipkit name\n' > "$SN2/.claude/rules/house-style.md"
+sn2_out=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN2" 2>&1)
+sn2_re=$(sh "$COPY/scripts/install-rules.sh" "$COPY" "$SN2" 2>&1)
+if ! printf '%s\n%s\n' "$sn2_out" "$sn2_re" | grep -q 'same paths'; then
+  pass "same-named (no same-named rule → no line, on the first run and a re-run)"
+else failc "same-named" "a line with no match: $sn2_out / $sn2_re"; fi
+if grep -q 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" \
+   && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'tracked' \
+   && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'leave it\|left in place\|left as is\|left where it is'; then
+  pass "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
+else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git before nesting the old backup"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

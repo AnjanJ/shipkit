@@ -43,6 +43,26 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 4.10.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-10, at `20b6a78` (`plugins/` byte-identical through the
+ship commit `db3e5bf`): 58 cases, 968 s, $16.38, **exit 1** — `eve/payments` 1 of 3; every
+other case passed, 55 at 3 of 3, `grandfather/drift` and `intake/limit` 2 of 3 (their shapes
+in 4.9.0 and 4.8.0; the threshold held, neither re-run). `digest/attention` and
+`grandfather-xl/drift` 3 of 3 in parallel, as in 4.8.0 and 4.9.0. The fourteen watch cases of
+the seven cut files all 3 of 3 on the shipped text; smoke checks 60 and 61 and the seven
+extensions touch no eval. `eve/payments` re-run alone with `--keep-temp` (3 runs, 77 s,
+$0.40): **2 of 3**, the shape of every arm of the S16-T2 measurement
+(`eval-results-4.9.md`, reading 3), and the three traces read through `node` against the
+grader's four lookaheads one at a time: the two passes match all four; the miss matches
+`shopfront`+Stripe, `pulse`+Stripe and `insight` none, and fails only the manifest clause —
+the reply cites the `stripe` gem and `app/services/stripe_charge.rb`, `stripity_stripe` and
+`lib/pulse/billing/stripe.ex`, and no `Gemfile` or `mix.exs`. `map_read` 0 in all three (the
+where needs no map, as in 4.9). Nothing in 4.10.0 touches `eve`, the portfolio fixture or
+the grader; the case is unchanged, and the plan's E9 (S18-T1) is the correction on this
+evidence — the clause measures a citation habit, not the answer. The 1 of 3 under `-j 4` is
+the same miss landing twice. Cost within E19's "about $17.50".
+
 ## Release run 4.9.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-10, at `2d753a1` (`plugins/` byte-identical through the
