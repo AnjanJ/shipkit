@@ -22,6 +22,8 @@
 # graders-and-eve/REQ-1 (eve-payments: a manifest or the handling file is the cited evidence —
 # docs/design/eval-results-4.11.md); graders-and-eve/REQ-6 (eve-why-reworded: the why asked in
 # words pulse's map Evolution line does not hold — map_read is the number, §3 of the same)
+# graders-and-eve/REQ-7 (trap2-notebooks: the regex widened to every form a Makefile clears
+# outputs by — §4 of the same)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \

@@ -157,3 +157,62 @@ What this does not show: a map whose Evolution line used neither `session` nor a
 fixture question for a plan after, not this one. `map_shell` counted 2 of the 3 reaches; a
 reading of `map_read` alone would have said 1 of 3 — the harness-debts note on shell reads
 (4.7.0) is why both columns are read.
+
+## 4. `notebooks` widened on its trace; `react` closed by record (S18-T4, E12, E13)
+
+Claude Code 2.1.291, model `sonnet`, 2026-10-10. `trap2/notebooks` asks for a Makefile with a
+`notebooks-clean` target that lets the notebooks be committed without their outputs, with
+nothing installed; the cut line read "Clear outputs before committing (nbstripout, or jupyter
+nbconvert --clear-output)". The 4.6 and 4.8 grader matched the two named tools in the
+Makefile. The 4.8 measurement's failing run cleared every cell's `outputs` and
+`execution_count` through a standard-library script, `scripts/clean_notebook.py`
+(`eval-results-4.8.md`); that sandbox is gone, so the widening was designed from that
+description and checked through `node` (rule 18) against seven Makefiles before any run:
+
+| Makefile shape | shipped pattern | widened pattern |
+|----------------|-----------------|-----------------|
+| `python3 scripts/clean_notebook.py notebooks/*.ipynb` (the 4.8 shape) | FAIL | PASS |
+| inline `python3 -c` setting `c["outputs"]=[]; c["execution_count"]=None` | FAIL | PASS |
+| `nbstripout notebooks/*.ipynb` | PASS | PASS |
+| `jupyter nbconvert --clear-output --inplace …` | PASS | PASS |
+| `python scripts/strip_outputs.py` | FAIL | PASS |
+| `git add notebooks/` and an echo — nothing about outputs | FAIL | FAIL |
+| only the target name and a `find … -print` | FAIL | FAIL |
+
+The widened pattern: `nbstripout|clear-output|ClearOutput|execution_count|["']outputs["']|(clean|strip|clear)[-_]?(notebook|nb|output)|(notebook|nb)[-_]?(clean|strip|clear)`
+— the two tools, the two cell fields an inline script sets, and a script named for the job.
+A script named for nothing (`fix.py`) still misses, by design: the Makefile is the only file
+the grader reads. One re-run alone on the committed plugin, `bash scripts/evals.sh --case
+trap2-notebooks -j 3 --keep-temp`, the Makefiles read from the traces' `Write` calls.
+
+Runs passed of 3; the Makefile each run wrote, read from the trace's `Write` call; in
+brackets, whether the shipped (4.6/4.8) pattern would have passed the same Makefile.
+
+| Case | 4.6.0 (with / without) | 4.8.0 (trimmed file) | 4.11.0, widened grader | What each run wrote |
+|------|------------------------|----------------------|------------------------|---------------------|
+| `trap2/notebooks` | 3 of 3 / 3 of 3 | 2 of 3 (the script run) | **3 of 3** [3 of 3 under the shipped pattern too] | `uvx nbstripout` over `find notebooks -name '*.ipynb'`; `uv run --with nbconvert jupyter nbconvert --clear-output --inplace`; `uvx nbstripout $(NOTEBOOKS)` |
+
+3 runs, 19 s, $0.24; tools 3–4 per run, no Agent call.
+
+**What the traces show.** All three runs wrote a `notebooks-clean` target that calls one of
+the two tools the cut line named, through `uvx` or `uv run --with` so nothing is installed
+now (the prompt forbids it); run 1 edited `xargs -0 -r` to `xargs -0` after a dry run, run 3
+checked `make -n`. None of the three took the 4.8 route of a standard-library script, so
+the widened alternatives were not what passed them today: the shipped pattern would have
+passed the same three Makefiles.
+
+**Reading.** The case is at 3 of 3 on the widened pattern with the 4.6 and 4.8 counts beside,
+and the widening is justified by the 4.8 trace's description and the `node` table above, not
+by today's runs — today the model reached for `nbstripout` and `nbconvert` every time. What
+the widening changes is the grader's reach, not its strictness: a Makefile that does nothing
+about outputs still fails, and the one shape that fooled it in 4.8 (a script that nulls the
+cell fields) now passes. The watch on the cut line is unchanged: a release run below 2 of 3
+returns the line by the measured-cuts clause.
+
+**`react`, closed by record (E13).** The record is in `.shipkit/specs/graders-and-eve/design.md`
+("`react`'s no-build run is closed by record"): the one run that proposed a spec and wrote no
+file was the always-on spec-driven rule working as written on a prompt that reads as
+non-trivial (`eval-results-4.8.md`); `trap2/react` read 2 of 3 in the 4.6.0 release run and
+3 of 3 in 4.7.0, 4.8.0, 4.9.0 and 4.10.0 (`eval-history.md`). No prompt or grader change; the
+record names the condition that reopens it (below 2 of 3 in a release run with the no-build
+shape in two of three traces).

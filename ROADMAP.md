@@ -113,8 +113,13 @@ What the measurements and the three releases named for the plan after, with thei
 - **`trap2/notebooks`' grader is narrower than its line** — a standard-library output-clearing
   script is not matched; left as written so the watch stays comparable (`CHANGELOG.md` 4.8.0,
   "What using it for real showed"; `eval-results-4.8.md`, "The two runs below 3 of 3").
+  *4.11.0 (S18-T4, E12): the regex widened to every form a Makefile clears outputs by;
+  `docs/design/eval-results-4.11.md` §4.*
 - **A headless run that follows the spec-driven rule builds nothing, and a file grader fails
   it** — `trap2/react`, one run (`CHANGELOG.md` 4.8.0, "What using it for real showed").
+  *4.11.0 (S18-T4, E13): closed by record — `.shipkit/specs/graders-and-eve/design.md`,
+  "`react`'s no-build run is closed by record", with the five release-run counts and the
+  condition that reopens it.*
 - **The four kept whole-body files and `rails` are cut only on a third model's measurement** —
   the record's own clause (`.shipkit/specs/measured-cuts/design.md`, the first decision's
   Falsifiability).

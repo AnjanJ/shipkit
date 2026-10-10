@@ -339,21 +339,11 @@ the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why wa
 only where `pulse` had a map and said "not recorded" where it had none. The table and the
 readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
 
-**`payments`' evidence clause (4.11.0, second-run plan E9).** The 4.9 grader required `Gemfile`
-or `mix.exs` in the reply, and one right reply per arm — the gem and its constraint, the file
-that makes the charge, no manifest — failed on that clause alone (`eval-results-4.9.md`,
-reading 3; the 4.10.0 release run's one miss, `eval-history.md`). The question asks where
-payments are handled, and the handling file is the better answer, so the clause now accepts
-`stripe_charge.rb` or `billing/stripe.ex` beside the two manifests; the three other clauses
-are unchanged. The three arms re-run once under the corrected grader are in
-`docs/design/eval-results-4.11.md`, the 4.9 counts beside.
-
-**`why-reworded` (4.11.0, E11).** In 4.9 the map was reached because `Grep session` landed on
-its Evolution lines. The probe asks the same why in words the map does not hold (`three`,
-`morning`, `logging`, `everyone`: 0 hits in `pulse`'s generated map) and is graded as `why`
-is; the number to read is `map_read` and `map_shell` beside the count (`eval-results-4.11.md` §3). It is kept
-either way: as a watch if it reads 2 of 3 or better, otherwise as the number a step-0 sentence
-for `eve` would need (decision 0001's reversal condition).
+**4.11.0 (second-run plan E9, E11).** `payments`' evidence clause now accepts the file that
+handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) beside `Gemfile` and `mix.exs`:
+one right reply per arm in 4.9 cited the handling file and no manifest, and failed on that
+clause alone. `why-reworded` asks the why in words the map does not hold; read `map_read` and
+`map_shell` beside its count. Both in `docs/design/eval-results-4.11.md` (§1, §3).
 
 ## The cuts (4.8.0)
 
@@ -363,7 +353,11 @@ line each 4.2.0 case walks into and the line each `trap2/` case walks into, both
 the text on both days. Their fourteen cases are unchanged and still install the file: they are
 the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
 release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
-`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. The numbers on
+`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. `trap2/notebooks`'
+regex was widened in 4.11.0 (E12) to the other forms a Makefile can clear outputs by —
+`execution_count`, a quoted `outputs`, a script named for it (`clean_notebook`,
+`strip_outputs`) — after a 4.8 run did the job through a standard-library script and the
+grader missed it; the 4.6 and 4.8 counts stay beside (`eval-results-4.11.md` §4). The numbers on
 the trimmed text are in `docs/design/eval-results-4.8.md`; smoke check 58 keeps this list and
 the files honest.
 

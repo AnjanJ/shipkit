@@ -29,7 +29,7 @@ sentence is kept or a line is cut (rule 6). Every count is read from traces with
   - Test: Check first (plan §3, fifth claim): the question's words against the generated map (`grep -ci` of `three`, `morning`, `logging`, `everyone` → 0 each; reword until so); the case runs 3 times with `--keep-temp` on the committed plugin; `map_read` per run and the pass count from the traces; `case.yaml` cites graders-and-eve/REQ-6; `bash scripts/lint.sh` holds the evals budget (check 17)
   - After: T2
   - Done when: the cell is filled with `map_read` per run; the README says what the probe watches; evals bytes ≤ 196,608; the sandboxes removed; lint 0/0
-- [ ] **T4** `notebooks` widened on its trace; `react` closed by record (S18-T4) → REQ-7, REQ-8
+- [x] **T4** `notebooks` widened on its trace; `react` closed by record (S18-T4) → REQ-7, REQ-8
   - Files: plugins/shipkit/evals/trap2/notebooks/graders/strip-outputs.md, plugins/shipkit/evals/README.md, docs/design/eval-results-4.11.md, scripts/evals.sh, .shipkit/specs/graders-and-eve/design.md, ROADMAP.md
   - Test: `node` on the widened pattern (rule 18) against a Makefile shaped like the 4.8 run's (`python3 scripts/clean_notebook.py`; an inline `execution_count` form) — the shipped pattern FAIL, the widened PASS — and against the `nbstripout` and `nbconvert --clear-output` forms (PASS still) and a target that does nothing about outputs (FAIL); one re-run alone, 3 runs, `--keep-temp`, the Makefiles read from the traces; `scripts/evals.sh`'s header cites graders-and-eve/REQ-7; the `react` record's counts checked against `eval-history.md`
   - After: T3
