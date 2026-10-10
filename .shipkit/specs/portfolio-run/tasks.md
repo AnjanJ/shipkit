@@ -27,7 +27,7 @@ own yes.**
   - Test: none beyond lint — a measurement written up; `git status` in the notes before the first step; rule 17 for the run's length; `~/.claude/shipkit/plugin-root` written back after every `--plugin-dir` session
   - After: T2
   - Done when: the notes have every step with its six parts; the ROADMAP's open list has one item per finding, each citing a section; the branch's fate is recorded (F3 its own yes, `git log shipkit/real-run-2` read first); lint 0/0
-- [ ] **T4** The roadmap for the plan after (S16-T4) → REQ-12
+- [x] **T4** The roadmap for the plan after (S16-T4) → REQ-12
   - Files: ROADMAP.md
   - Test: none beyond lint — check 16 reads the status line
   - After: T3
