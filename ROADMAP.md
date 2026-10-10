@@ -12,10 +12,10 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-10, v4.10.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 of the
+**Status (as of 2026-10-11, v4.11.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 to 18 of the
 second-run plan (`docs/plans/second-run-sprint-plan.md`, approved 2026-10-10; Sprint 17 shipped
-as 4.10.0, Sprints 18 and 19 open) are done; see "The second-run plan" below. Everything in
+as 4.10.0, Sprint 18 as 4.11.0, Sprint 19 open) are done; see "The second-run plan" below. Everything in
 this document is shipped except the items under "Still open after Sprint 16" that Sprints 18
 and 19 still owe (each item carries a note when a sprint paid it).
 
@@ -31,7 +31,7 @@ and 19 still owe (each item carries a note when a sprint paid it).
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The second-run plan — Sprint 17 SHIPPED 2026-10-10 as 4.10.0; Sprints 18–19 open
+## The second-run plan — Sprints 17–18 SHIPPED 2026-10-10 to 2026-10-11 as 4.10.0, 4.11.0; Sprint 19 open
 
 Full plan: [`docs/plans/second-run-sprint-plan.md`](docs/plans/second-run-sprint-plan.md). Pay
 the second run's debts (17), act on the graders and on `eve` (18), close the harness window and
@@ -40,7 +40,7 @@ run the loop a third time on the third stack (19).
 | Sprint | Release | What the owner got |
 |--------|---------|--------------------|
 | 17 | 4.10.0 | An installer that sees a heading the project already has; setup that names a same-named rule and leaves a tracked backup alone; a brief that warns on a dirty tree; setup's two directories always allowed; a reviewer told where a line number comes from and a gate that pastes its reply from a file (smoke checks 60, 61; 25, 26, 27, 29, 53 extended); the wait sentence closed by record; the `4.6.0` and `4.7.0` cache directories gone |
-| 18 | 4.11.0 | — |
+| 18 | 4.11.0 | `payments` graded on what the question asked; `eve` measured on her guesses and given one sentence that stays by its number; the reworded `why` probe (the map reached 3 of 3 without a shared word); `notebooks` widened on its trace; `react` closed by record; the five kept rule files on `haiku` — `migrations` cut by the clause, four kept on a number (`docs/design/eval-results-4.11.md`) |
 | 19 | 4.12.0 | — |
 
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
@@ -102,14 +102,18 @@ What the measurements and the three releases named for the plan after, with thei
 
 - **`eve/payments`' manifest clause measures a citation habit** — one reply per arm cites the
   file that handles the charge and the gem's constraint but no manifest file, 2 of 3 in every
-  arm (`docs/design/eval-results-4.9.md`, "The three readings", 3).
+  arm (`docs/design/eval-results-4.9.md`, "The three readings", 3). *4.11.0 (S18-T1, E9): the
+  clause accepts the handling file; 3 of 3 in every arm; `eval-results-4.11.md` §1.*
 - **`eve` speculates after saying "not recorded"** — five of six map-less `why` replies append
   motives marked as guesses; whether the agent should offer any is a question for
   `agents/eve.md`, which the portfolio plan did not edit (`eval-results-4.9.md`, "The three
-  readings", 3).
+  readings", 3). *4.11.0 (S18-T2, E10): one sentence in step 4, kept by its number — strict
+  1 of 3 → 2 of 3, three-map 3 of 3; `eval-results-4.11.md` §2; decision 0001's note.*
 - **The map is found by the grep, not chosen** — `eve` read `pulse`'s map because `Grep session`
   landed on its Evolution lines; a map in other words would not have been read
-  (`eval-results-4.9.md`, "The three readings", 3; decision 0001's `eve` note).
+  (`eval-results-4.9.md`, "The three readings", 3; decision 0001's `eve` note). *4.11.0
+  (S18-T3, E11): `eve/why-reworded` — the map reached 3 of 3 by the elder's own grep words;
+  kept as a watch; `eval-results-4.11.md` §3.*
 - **`trap2/notebooks`' grader is narrower than its line** — a standard-library output-clearing
   script is not matched; left as written so the watch stays comparable (`CHANGELOG.md` 4.8.0,
   "What using it for real showed"; `eval-results-4.8.md`, "The two runs below 3 of 3").
@@ -122,7 +126,10 @@ What the measurements and the three releases named for the plan after, with thei
   condition that reopens it.*
 - **The four kept whole-body files and `rails` are cut only on a third model's measurement** —
   the record's own clause (`.shipkit/specs/measured-cuts/design.md`, the first decision's
-  Falsifiability).
+  Falsifiability). *4.11.0 (S18-T5, E14): measured on `haiku`, 60 runs — `migrations` cut by
+  the clause on the owner's go; `monorepo`, `testing`, `rails` kept on a number;
+  `package-json`'s trap-2 cell unread (its grader forbids the run-time detector the line asks
+  for — named for the plan after); `eval-results-4.11.md` §5, the record's note.*
 - **The gate condenses the reviewer's reply** where `gate-blind-spots` REQ-9 asks for it pasted,
   and once gave one line where the template asks for twenty — seen again in 4.9's run
   (`CHANGELOG.md` 4.7.0, "What using it for real showed"; `field-notes-4.9.md` §9.2). *4.10.0

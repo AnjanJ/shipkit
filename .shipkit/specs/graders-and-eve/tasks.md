@@ -39,7 +39,7 @@ sentence is kept or a line is cut (rule 6). Every count is read from traces with
   - Test: `EVALS_MODEL=haiku bash scripts/evals.sh --case <name> -j 3 --keep-temp` for the ten cases (`scoped-migrations`, `scoped-monorepo`, `scoped-testing`, `stacks-package-json`, `stacks-rails`, `trap2-migrations`, `trap2-monorepo`, `trap2-testing`, `trap2-package-json`, `trap2-rails`) with the rule, and the same ten through the `claude plugin eval` line on a scratch copy whose `with-rule.sh` installs nothing, 60 runs; the table per file from the traces; **STOP: the owner sees the table before any cut**; smoke check 58's comment cites graders-and-eve/REQ-10 and its kept list names the files still kept — on a cut, check 58 changed first (red) and the lines out (green), in a second commit on the owner's go; the five rule files change only then
   - After: T4
   - Done when: the table has no empty cell; the note is appended to the measured-cuts record; any cut has the owner's go in the thread, its cases staying as the watch; check 58 → PASS; the sandboxes removed; lint 0/0
-- [ ] **T-REL** Release 4.11.0 (S18-T-REL)
+- [x] **T-REL** Release 4.11.0 (S18-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/graders-and-eve/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals at 59 cases, spec-check, the two byte lines); the gate headless
   - After: T5

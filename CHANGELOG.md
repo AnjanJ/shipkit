@@ -2,6 +2,70 @@
 
 All notable changes to Shipkit are documented here. Newest first.
 
+## [4.11.0] — 2026-10-11
+
+Sprint 18 of the second-run plan (`docs/plans/second-run-sprint-plan.md`), the plan's second:
+the three readings the portfolio measurement left and the two grader notes the 4.8.0 release
+carried, each acted on against its own trace; `eve` measured, given one sentence, and
+measured again; the five rule files kept whole by record measured on a third model, one of
+them cut by the clause. Requirements and decision records in
+[`.shipkit/specs/graders-and-eve/`](.shipkit/specs/graders-and-eve/); every number in
+[`docs/design/eval-results-4.11.md`](docs/design/eval-results-4.11.md).
+
+### Added
+
+- **`eve` offers no motives for a why nothing records** (E10): one sentence in
+  `agents/eve.md` step 4 — *a why that no map, record or commit holds is answered "not
+  recorded"; offer no motives of your own* — kept by its own rule: the no-map `why` arm under
+  a strict wording (a labelled guess is a reason offered) read 1 of 3 before it and 2 of 3
+  after, and the three-map arm still 3 of 3 with the map read in every run. The shipped `why`
+  grader is byte-identical to 4.10.0; the strict wording lives in the results document.
+- **`eve/why-reworded`, a probe case** (E11): the why only `pulse`'s map holds, asked in words
+  the map's Evolution line does not use ("stop logging everyone out at three in the morning").
+  3 of 3, the map reached in all three — not by the question's words but by the elder's own
+  grep for the concept (`session`, `logout`, `03:00`). Kept as a watch; 59 cases per release
+  run (E19).
+
+### Changed
+
+- **`eve/payments`' evidence clause accepts the handling file** (E9): `stripe_charge.rb` or
+  `billing/stripe.ex` beside `Gemfile` and `mix.exs`. Under the 4.9 clause one right reply per
+  arm failed for citing the file a user would open and no manifest; under the corrected one
+  the case reads 3 of 3 in every arm, and six of the nine replies that day never named a
+  manifest. The three answer clauses are unchanged.
+- **`trap2/notebooks`' grader widened** (E12): beside `nbstripout` and `nbconvert
+  --clear-output`, a Makefile that nulls `execution_count` or a quoted `outputs`, or calls a
+  script named for the job — the shape a 4.8 run used and the grader missed. Checked through
+  `node` against seven Makefile shapes before the re-run (3 of 3; all three used the named
+  tools that day). The 4.6 and 4.8 counts stay beside.
+- **`rules/migrations.md` is its heading** (E14): its two lines were followed unaided 3 of 3 on
+  both traps by `haiku`, as by `sonnet` on two days, and came out by the measured-cuts clause
+  on the owner's go; `scoped/migrations` and `trap2/migrations` stay as the watch, and smoke
+  check 58 now asserts the two phrases are gone. The other four kept files keep their lines
+  on a number: `monorepo` and `testing` 2 of 3 unaided on trap 1, `rails` 0 of 3 unaided on
+  trap 2 (`update_column` chosen every time), `package-json` unread on trap 2 (below).
+- `trap2/react`'s no-build run is **closed by record** (E13) in the sprint's `design.md`: 2 of
+  3 in the 4.6.0 release run, 3 of 3 in the four since; reopened below 2 of 3 with the shape
+  in two of three traces. `ROADMAP.md`: the six "named for the plan after" items this sprint
+  acted on carry their notes; the table row.
+
+### What using it for real showed
+
+**A grader can be narrower than its line twice in one sprint.** `trap2/package-json` with the
+rule on `haiku` read 0 of 3 because every run wrote a run-time lockfile detector that names
+all four managers, which the regex forbids — the line followed literally, the grader written
+for `sonnet`'s habit of hardcoding `pnpm`. Not corrected here (its file was not on the task's
+Files line); named for the plan after beside `notebooks`' shape. **The plan's own example
+question shared three words with the map** (`signed out`, `users`, `night` via `nightly`);
+the §3 check-first caught it before a run. **`map_read` alone would have undercounted:** two
+of the three probe runs reached the map through a `Bash` grep, which only `map_shell` sees.
+**The evals tree ran to within 153 bytes of its ceiling** after the probe case; the README
+notes were shortened in T4 to make room (196,289 of 196,608 at this commit). **A strict
+judge reads "probably in discussion history outside the repo" as a guess** — the one miss
+after the sentence offered no motive, only a place to look. Smoke: 174 checks, all
+passed on the tree before this commit (174 at 4.10.0; check 58 changed its assertions, no
+check added).
+
 ## [4.10.0] — 2026-10-10
 
 Sprint 17 of the second-run plan (`docs/plans/second-run-sprint-plan.md`), the plan's first:
