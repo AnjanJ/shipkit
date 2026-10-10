@@ -61,9 +61,14 @@ gate said NOT READY on a spec one task in, with 2,855 tests in 13 s; the project
 command failed as written (the shell's Elixir was not the pinned one) exactly as 4.3's Ruby
 did, and `mise exec` was the way through. The reviewer's one MET citation pointed at diff
 positions, not file lines, and a background-agent wait sentence leaked into two replies.
-Smaller: the plan's "smoke check 56" was 59 by the time Sprint 16 ran; the release's full
-smoke run was 160 of 161 with check 2 (`rules-skip`, haiku) failing on variance and passing
-alone with its dependency, the known shape.
+**The gate's first run said NOT READY on a requirement about the release**: REQ-7 said "in a
+release run", the reviewer answered CANNOT TELL because `eval-history.md` had no 4.9 entry
+yet, and the clause was reworded to describe the product (rule 11), the note committed before
+the re-run (rule 16) — the 3.5.0 lesson, met again. The reply also opened with "The reviewer
+is still running. I'll write the report once its notification arrives" and then gave the
+report: the third leaked wait of the day. Smaller: the plan's "smoke check 56" was 59 by the
+time Sprint 16 ran; the release's full smoke run was 160 of 161 with check 2 (`rules-skip`,
+haiku) failing on variance and passing alone with its dependency, the known shape.
 
 ## [4.8.0] — 2026-10-10
 

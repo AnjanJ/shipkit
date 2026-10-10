@@ -64,7 +64,12 @@ wip history" (C11); `docs/plans/field-sprint-plan.md` §5; `docs/design/field-no
 
 - **REQ-7.** The suite shall carry `eve/jobs`, `eve/payments` and `eve/why`, each asked
   through `/shipkit:ask --all` with the digest case's two context lines, each scaffolding the
-  fixture with `--maps 3`; and in a release run each shall pass at least 2 of 3.
+  fixture with `--maps 3`; and when each is run three times on the committed plugin, it shall
+  pass at least 2 of 3. *Wording note (2026-10-10, before the gate's re-run): this said "in a
+  release run"; the first gate read that as a record the release run had not yet written
+  (CANNOT TELL). A requirement describes the product, not the release (plan §1 rule 11); the
+  three-map arm of `docs/design/eval-results-4.9.md` is the evidence, and the release run is
+  recorded in `docs/design/eval-history.md` as a release step.*
 - **REQ-8.** `eve/jobs` shall pass when the reply names all three projects with the right
   library each; `eve/payments` when it names `shopfront` and `pulse` with Stripe, `insight`
   with none, and cites a manifest path; `eve/why` when the reply gives the vacuum-lock reason
