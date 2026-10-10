@@ -110,3 +110,50 @@ points to where a reason might be rather than what it might be. The shipped `why
 unchanged (`git diff v4.10.0 -- plugins/shipkit/evals/eve/why` is empty) and still passes both
 shapes; the number that would show a regression is the strict one, which lives in this
 document and is re-run by hand, not in the suite.
+
+## 3. The reworded `why` probe (S18-T3, E11)
+
+Claude Code 2.1.291, model `sonnet`, 2026-10-10, the committed plugin (three maps), `bash
+scripts/evals.sh --case eve-why-reworded -j 3 --keep-temp`. The question: "Why did pulse stop
+logging everyone out at three in the morning, and since when?" — the plan's example ("no
+longer get signed out overnight") shared `signed out`, `users` and `night` (`nightly`) with
+the map, so it was reworded until `grep -ci` of each word against the generated
+`projects/pulse/PROJECT_MAP.md` read 0 (`three`, `morning`, `logging`, `everyone`, `log`,
+`stop`, `since`; the 4.9 question's `session` reads 6 and `database` 2). The grader is the
+`why` grader with its first sentence changed and clause B widened to "nothing about the
+sign-outs was found". The number to read is `map_read` beside the count: the probe asks
+whether the grep-first path reaches a map that shares no word with the question.
+
+Runs passed of 3, with the clause each passed by; `map` is `map_read` (a `Read` or `Grep` tool
+call on a `PROJECT_MAP.md`) and `shell` is `map_shell` (a `Bash` command that mentions it).
+
+| Case | Three maps | Passed by | map / shell | 4.9 `why`, three maps |
+|------|-----------|-----------|-------------|-----------------------|
+| `eve/why-reworded` — why `pulse` stopped logging everyone out at 3 a.m., and since when | **3 of 3** | A (the reason) ×3 | 1 / 2 — the map reached in 3 of 3 | 3 of 3, A ×3, map 3 |
+
+3 runs, 46 s, $0.43; judge votes unanimous PASS in every run. Tools 6–8 per run, 1 Agent
+call each.
+
+**What the traces show.** All three replies give the vacuum-lock reason from the map
+(`PROJECT_MAP.md:34-38`), the move to a signed cookie, the commit `e98edd7` of 2025-03-14,
+and mark the reason MEDIUM because the map is its only record — the same answer and the same
+hedge as 4.9's three-map `why`. The map was reached in every run, but not by the question's
+words: the elder's first search in each run was a grep for the concept's vocabulary —
+`session|logout|log_out|expire|03:00|3 ?am|cron|quantum|max_age` (run 1, a `Grep` call),
+`session|logout|…|oban|reset|max_age|token` and then `vacuum` (run 2, through `Bash`),
+`logout|log_out|sign_out|expire|session|…` (run 3, through `Bash`) — and `session` and
+`03:00`, which the elder supplied, land on the Evolution lines the question's own words do
+not. Run 1 then `Read` the map's lines 30–45; runs 2 and 3 read the hits from the grep
+output, so `map_read` counts 1 and `map_shell` 2.
+
+**Reading.** The grep-first path reached the map 3 of 3 without a shared word, because the
+elder greps for what the question is about, not for what it says: "logging everyone out at
+three in the morning" became `session`, `logout`, `03:00`. The 4.9 caveat — "a map in other
+words would not have been read" — does not hold on this fixture: the map is found when the
+elder's vocabulary for the concept meets the map's, which it did in all three runs. The probe
+is kept as a **watch** (≥ 2 of 3): a release run below that, with the map unreached, is the
+case decision 0001's reversal condition names. No step-0 sentence is needed on this number.
+What this does not show: a map whose Evolution line used neither `session` nor a time — a
+fixture question for a plan after, not this one. `map_shell` counted 2 of the 3 reaches; a
+reading of `map_read` alone would have said 1 of 3 — the harness-debts note on shell reads
+(4.7.0) is why both columns are read.

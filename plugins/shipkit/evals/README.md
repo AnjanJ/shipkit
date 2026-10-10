@@ -229,6 +229,7 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `eve/jobs` | `/shipkit:ask --all` Which of my projects run background jobs, and with which library? | pairs `shopfront` with Sidekiq, `pulse` with Oban, `insight` with Celery (P1) | regex |
 | `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and cites a manifest (`Gemfile`, `mix.exs`) or a file that handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) (P2; widened in 4.11.0) | regex |
 | `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
+| `eve/why-reworded` | `/shipkit:ask --all` Why did pulse stop logging everyone out at three in the morning, and since when? | the same as `eve/why`; a probe of whether the map is reached when the question shares no word with its Evolution line (P4; 4.11.0) | llm |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
@@ -346,6 +347,13 @@ payments are handled, and the handling file is the better answer, so the clause 
 `stripe_charge.rb` or `billing/stripe.ex` beside the two manifests; the three other clauses
 are unchanged. The three arms re-run once under the corrected grader are in
 `docs/design/eval-results-4.11.md`, the 4.9 counts beside.
+
+**`why-reworded` (4.11.0, E11).** In 4.9 the map was reached because `Grep session` landed on
+its Evolution lines. The probe asks the same why in words the map does not hold (`three`,
+`morning`, `logging`, `everyone`: 0 hits in `pulse`'s generated map) and is graded as `why`
+is; the number to read is `map_read` and `map_shell` beside the count (`eval-results-4.11.md` §3). It is kept
+either way: as a watch if it reads 2 of 3 or better, otherwise as the number a step-0 sentence
+for `eve` would need (decision 0001's reversal condition).
 
 ## The cuts (4.8.0)
 

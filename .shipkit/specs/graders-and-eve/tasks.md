@@ -24,7 +24,7 @@ sentence is kept or a line is cut (rule 6). Every count is read from traces with
   - Test: the no-map arm (T1's scratch copy, its `why` grader rewritten to the strict wording) 3 runs → the baseline; **STOP: the owner sees the baseline**; the sentence in `agents/eve.md` step 4; the same arm 3 runs and the three-map arm 3 runs (the committed plugin, the shipped grader); the three cells in the results document; `git diff v4.10.0 --stat -- plugins/shipkit/evals/eve/why` empty
   - After: T1
   - Done when: the three cells are filled; the sentence stays only if strict ≥ 2 of 3 and three-map 3 of 3, otherwise it is out in the same commit and the record says which number failed; record 0001's `eve` note has the line; the shipped `why` grader byte-identical to v4.10.0; the sandboxes removed; lint 0/0
-- [ ] **T3** The reworded `why` probe (S18-T3) → REQ-6
+- [x] **T3** The reworded `why` probe (S18-T3) → REQ-6
   - Files: plugins/shipkit/evals/eve/why-reworded/, plugins/shipkit/evals/README.md, docs/design/eval-results-4.11.md, scripts/evals.sh
   - Test: Check first (plan §3, fifth claim): the question's words against the generated map (`grep -ci` of `three`, `morning`, `logging`, `everyone` → 0 each; reword until so); the case runs 3 times with `--keep-temp` on the committed plugin; `map_read` per run and the pass count from the traces; `case.yaml` cites graders-and-eve/REQ-6; `bash scripts/lint.sh` holds the evals budget (check 17)
   - After: T2

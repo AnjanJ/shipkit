@@ -1,0 +1,5 @@
+# Proves graders-and-eve/REQ-6
+schema_version: "1.1"
+name: eve-why-reworded
+context:
+  scaffold_script: fixture.sh
