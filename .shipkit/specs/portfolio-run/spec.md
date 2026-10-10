@@ -1,7 +1,7 @@
 # Spec: Eve's portfolio and a second project (Sprint 16, release 4.9.0)
 
 > Spec accepted at commit `af582b4` on sprint-16/portfolio-run (2026-10-10).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/evals/, scripts/, docs/design/, .shipkit/decisions/0001-project-map-default.md, .shipkit/releases/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
