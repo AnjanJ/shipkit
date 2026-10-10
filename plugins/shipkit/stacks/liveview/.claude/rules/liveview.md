@@ -8,11 +8,6 @@ paths:
 # Phoenix LiveView
 
 ## The lifecycle is the source of most bugs
-- **`mount/3` runs twice** — once for the dead HTTP render, once for the connected socket.
-  Guard anything expensive or stateful with `if connected?(socket)`: PubSub subscriptions,
-  timers, presence tracking, and any process registration.
-- Put URL-derived state in `handle_params/3`, not `mount/3` — it is what runs on
-  `push_patch`/`live_patch`.
 - `push_patch` stays in the same LiveView; `push_navigate` mounts a new one. Choose
   deliberately; a `push_navigate` where a patch belonged throws away socket state.
 

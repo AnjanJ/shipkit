@@ -51,10 +51,6 @@ paths:
 Accessibility baseline (WCAG 2.2 AA), applied without being asked. Every screen handles its
 empty, loading and error states, and the error never blames the user.
 
-- **Semantic structure first** — real headings in order, landmarks, lists for lists. A `div`
-  with a click handler is not a button.
-- **Every control has an accessible name** — visible label, `aria-label`, or `aria-labelledby`.
-  Icon-only buttons always need one.
 - **Keyboard reach** — everything interactive is focusable and operable by keyboard, in a
   sensible order, with a visible focus indicator. Never remove the outline without replacing it.
 - **Contrast** — 4.5:1 for body text, 3:1 for large text and meaningful UI boundaries.

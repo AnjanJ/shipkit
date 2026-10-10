@@ -61,6 +61,12 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   `testing`, `ui-ux`, and `rails` at the threshold: named cut candidates with two measurements
   each (`docs/design/eval-results-4.6.md`, "The three readings"; C8 forbade cutting on the
   sprint's own numbers). The plan after decides which lines are kept as a statement of standards.
+  *4.8.0 (S15-T1, E1): seven files lost their two measured lines (`ui-ux`, `hotwire`, `liveview`,
+  `mix-deps`, `notebooks`, `pyproject`, `react`; 2,342 bytes) and their fourteen cases hold on the
+  trimmed text, 12 at 3 of 3 and 2 at 2 of 3 with neither failing run in its trap; the cases
+  stay as the watch and a release run below 2 of 3 returns the line. `migrations`, `monorepo`,
+  `testing` and `package-json` — whose whole body is the two lines — and `rails` are kept by
+  record on the owner's word (`docs/design/eval-results-4.8.md`; smoke check 58).*
 - **`eve`'s loss when fewer projects carry a map is unmeasured** — needs a three-project
   registry fixture, about 20 KB of generator, a sprint of its own (`eval-results-4.6.md`,
   "The wip history"; C11).

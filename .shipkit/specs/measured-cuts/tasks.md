@@ -11,7 +11,7 @@ stops after its table; each T4 row is the owner's own yes.**
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . measured-cuts --as-open` → 0 gaps on the draft
   - After: none
   - Done when: 0 gaps; the owner's approval, with the answers to the intake's questions 1 and 2, is in the thread; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** The cuts, re-measured (S15-T1) → REQ-1, REQ-2, REQ-3, REQ-4
+- [x] **T1** The cuts, re-measured (S15-T1) → REQ-1, REQ-2, REQ-3, REQ-4
   - Files: plugins/shipkit/rules/ui-ux.md, plugins/shipkit/stacks/hotwire/.claude/rules/hotwire.md, plugins/shipkit/stacks/liveview/.claude/rules/liveview.md, plugins/shipkit/stacks/elixir/.claude/rules/mix-deps.md, plugins/shipkit/stacks/ml/.claude/rules/notebooks.md, plugins/shipkit/stacks/python/.claude/rules/pyproject.md, plugins/shipkit/stacks/react/.claude/rules/react.md, scripts/evals.sh, scripts/smoke.sh, plugins/shipkit/evals/README.md, docs/design/eval-results-4.8.md, ROADMAP.md
   - Test: scripts/smoke.sh check 58 "cuts-recorded" (the README names the seven cut files and the watch rule; each cut file no longer contains its two measured lines, each kept file still does) — written first, red; `bash scripts/evals.sh` on the fourteen cases (`--case` per group), three runs each, `--keep-temp`, counts from trace-tools.sh; Check first: each trimmed file read whole, the diff shown to the owner before any run
   - After: T0

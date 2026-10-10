@@ -322,6 +322,18 @@ diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" ha
 runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
 run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
 
+## The cuts (4.8.0)
+
+Seven rule files lost their two measured lines in 4.8.0 (`.shipkit/specs/measured-cuts/design.md`,
+plan E1): `ui-ux`, `hotwire`, `liveview`, `mix-deps`, `notebooks`, `pyproject`, `react` — the
+line each 4.2.0 case walks into and the line each `trap2/` case walks into, both passed without
+the text on both days. Their fourteen cases are unchanged and still install the file: they are
+the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
+release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
+`testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. The numbers on
+the trimmed text are in `docs/design/eval-results-4.8.md`; smoke check 58 keeps this list and
+the files honest.
+
 ## Trap 2 (4.6.0)
 
 Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the
