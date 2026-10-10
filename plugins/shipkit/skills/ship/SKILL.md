@@ -43,7 +43,7 @@ last lines of its output. **Never record a result for a command you did not run.
 | 1 | Spec check, as shipped | `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped; echo "exit $?"` | exit 0 |
 | 2 | Tests | `( <the project's test command> ) > "${TMPDIR:-/tmp}/shipkit-ship-tests.out" 2>&1; echo "exit $?"`, then read the file's last 20 lines | exit 0 |
 | 3 | Tasks ticked | `grep -n '^- \[ \]' .shipkit/specs/<slug>/tasks.md; echo "exit $?"` | exit 1 (no line found) |
-| 4 | Independent review | Start the **`reviewer`** agent (below) | its last line is `VERDICT: PASS` |
+| 4 | Independent review | Start the **`reviewer`** agent (below); write its reply to `"${TMPDIR:-/tmp}/shipkit-ship-review.out"`, then read the file | its last line is `VERDICT: PASS` |
 | 5 | Migration rollback | Is there a database migration in `git diff <base>...HEAD --name-only`? If so, is the way to roll it back written down? | no migration, or a written rollback |
 | 6 | Decisions | Every live decision in `design.md` has a concrete reversal condition | none is vague or missing |
 | 7 | Clean tree | The `git status --porcelain` you captured before step 1 | empty, apart from an earlier report for this slug |
@@ -64,8 +64,12 @@ Notes on the steps:
 - **Step 4 — the reviewer.** Start the `reviewer` agent (`shipkit:reviewer`) and give it
   **only** the slug and the base ref — for example: "Review the spec `refunds` against the base
   ref `a1b2c3d`." Do not tell it what was built, what you think of it, or what the other steps
-  showed: its value is that it has not heard any of that. Copy its whole reply into the report.
-  `VERDICT: FAIL`, or no verdict line, is `FAIL`.
+  showed: its value is that it has not heard any of that. When its reply arrives, `Write` it,
+  whole and unchanged, to `"${TMPDIR:-/tmp}/shipkit-ship-review.out"`, and paste the report's
+  review block from that file, as step 2 pastes test output from its file. A reply pasted
+  from a file arrives whole; one copied from memory arrives as a summary (the 4.7.0 and 4.9.0
+  gates both did that, where the template asks for every line). `VERDICT: FAIL`, or no
+  verdict line, is `FAIL`.
 - **Step 5 — migrations.** A migration is a changed file under `db/migrate/`, `migrations/`,
   `priv/repo/migrations/`, `alembic/`, `prisma/migrations/`, or a changed `*.sql`. "Written
   down" means a `down`/reverse in the migration itself, or a rollback note in the spec or the

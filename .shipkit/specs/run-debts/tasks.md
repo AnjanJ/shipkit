@@ -26,7 +26,7 @@ at T4 and the release gate (≈ $1), the release run (≈ $16.50); any other nee
   - Test: scripts/smoke.sh checks 25, 26 and 53 extended (a dirty tree → the stderr line with the count and a byte-identical brief on stdout, a clean tree → none; a change under `.claude/rules/shipkit/` and `.shipkit-baseline/` → not OUTSIDE; `CLAUDE.md` and `.gitignore` → OUTSIDE still; the reviewer's step 4 names the four) — written first, red
   - After: T2
   - Done when: checks 25, 26, 53 → PASS; lint 0/0
-- [ ] **T4** The reviewer cites file lines; the gate pastes its reply (S17-T4) → REQ-8, REQ-9
+- [x] **T4** The reviewer cites file lines; the gate pastes its reply (S17-T4) → REQ-8, REQ-9
   - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 27 extended (the reviewer's text carries the `grep -n` sentence) and check 29 extended (the ship skill's step 4 names `shipkit-ship-review.out`; the READY report's review block holds `## Review:`, a row per requirement of the fixture's spec, the `Requirements:` line and `VERDICT: PASS`) — written first, red; check 29 alone is the sprint's gate dry run (≈ $0.50); Check first: the Agent result reaches the skill as text it can `Write` (plan §3, third claim)
   - After: T3

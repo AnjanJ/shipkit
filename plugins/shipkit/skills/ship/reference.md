@@ -41,7 +41,7 @@ Requirements: 3 (1 waived as `[untested]`).
 <the lines found, or "no line found">
 
 ### 4. Independent review
-<the reviewer's whole reply, unchanged>
+<the reviewer's whole reply, pasted from shipkit-ship-review.out — its `## Review:` heading, every requirement row, the count line and the verdict line — removed once the report holds it>
 
 ### 5. Migration rollback
 <the migration files found and where the rollback is written, or "no migration in the diff">

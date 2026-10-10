@@ -999,6 +999,14 @@ rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
   pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
 else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
+# A MET citation's line number is the working tree's, as `grep -n` prints it — never a position
+# inside a diff hunk: the second real run's reviewer cited accounts.ex:18-23 for a function at
+# line 605 (field-notes-4.9.md §9.1). Cites: run-debts/REQ-8
+rv_met=$(awk '/^3\. \*\*One verdict for every requirement/ { on = 1 } /^4\. / { on = 0 } on' "$rv")
+if printf '%s\n' "$rv_met" | grep -q 'grep -n' && printf '%s\n' "$rv_met" | grep -qi 'working tree' \
+   && printf '%s\n' "$rv_met" | grep -qi 'diff'; then
+  pass "reviewer-tools (a MET citation's path:line is the working tree's, as grep -n prints it, never a diff position)"
+else failc "reviewer-tools" "agents/reviewer.md step 3 does not say where a line number comes from"; fi
 
 # 28. spec-check --as-shipped: an open spec is asked for what a shipped one owes, and no file
 # changes (spec: .shipkit/specs/review-and-ship/). Reuses scspec and sc from section 19.
@@ -1043,6 +1051,22 @@ if [ "$sg_first" = "READY" ] && [ -z "$sg_dirty" ]; then
 else
   failc "ship-gate" "first line [$sg_first], other changes [$sg_dirty] — model said: $(tail -6 "$WORK/ship.out")"
 fi
+# The reviewer's reply is pasted, not condensed: step 4 writes it to shipkit-ship-review.out
+# and pastes from the file, as step 2 does for tests (gate-blind-spots REQ-9 asked for the
+# reply pasted; 4.7.0's and 4.9.0's gates summarised it). The report's review block holds the
+# reviewer's heading, one row per requirement of the fixture's spec, the count line and the
+# verdict line, as the agent's fixed shape prints them. Cites: run-debts/REQ-9
+sg_rev=$(awk '/^### 4\. / { on = 1; next } /^### 5\. / { on = 0 } on' "$sg_report" 2>/dev/null)
+sg_miss=""
+printf '%s\n' "$sg_rev" | grep -q '^## Review: refunds against' || sg_miss="$sg_miss [## Review: heading]"
+for r in 1 2 3; do printf '%s\n' "$sg_rev" | grep -Eq "^\| *REQ-$r( \(waived\))? *\|" || sg_miss="$sg_miss [REQ-$r row]"; done
+printf '%s\n' "$sg_rev" | grep -q '^Requirements: [0-9]* MET' || sg_miss="$sg_miss [Requirements: count line]"
+printf '%s\n' "$sg_rev" | grep -q '^VERDICT: PASS$' || sg_miss="$sg_miss [VERDICT line]"
+grep -q 'shipkit-ship-review.out' "$COPY/skills/ship/SKILL.md" || sg_miss="$sg_miss [SKILL.md names no review file]"
+[ -z "$(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out 2>/dev/null)" ] || sg_miss="$sg_miss [scratch files left: $(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out | tr '\n' ' ')]"
+if [ -z "$sg_miss" ]; then
+  pass "ship-gate (step 4 pastes the reviewer's reply from shipkit-ship-review.out: heading, three REQ rows, count line and verdict line verbatim; no scratch file left)"
+else failc "ship-gate" "the review block is condensed or the file is not named:$sg_miss"; fi
 # the same feature with one task unticked
 rm -rf "$SG/.shipkit/releases"
 sed 's/^- \[x\] \*\*T2\*\*/- [ ] **T2**/' "$SG/.shipkit/specs/refunds/tasks.md" > "$WORK/sg.tmp" \

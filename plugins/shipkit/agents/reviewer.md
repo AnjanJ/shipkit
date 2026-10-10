@@ -29,8 +29,10 @@ If either of the two is missing, say which and stop.
    runs them.
 3. **One verdict for every requirement** (`REQ-N`) in `spec.md`, none skipped:
    - **`MET`** — you found the code that does it **and** the test that proves it. Give both as
-     `path:line`. The test should cite the requirement as `<slug>/REQ-N`; a test that plainly
-     exercises it without the citation still counts, and you say the citation is missing.
+     `path:line`, where the line is the one in the working tree as `grep -n` prints it — never
+     a position inside a diff hunk (a diff's numbering is its own; a reader opens the file).
+     The test should cite the requirement as `<slug>/REQ-N`; a test that plainly exercises it
+     without the citation still counts, and you say the citation is missing.
    - **`NOT MET`** — say what is missing: the behaviour, the test, or both.
    - **`CANNOT TELL`** — say exactly what you would need to see.
    - **A requirement marked `[untested: <reason>]`** has no test by design. Verify it by
