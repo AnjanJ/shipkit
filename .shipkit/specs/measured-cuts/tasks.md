@@ -16,12 +16,12 @@ stops after its table; each T4 row is the owner's own yes.**
   - Test: scripts/smoke.sh check 58 "cuts-recorded" (the README names the seven cut files and the watch rule; each cut file no longer contains its two measured lines, each kept file still does) — written first, red; `bash scripts/evals.sh` on the fourteen cases (`--case` per group), three runs each, `--keep-temp`, counts from trace-tools.sh; Check first: each trimmed file read whole, the diff shown to the owner before any run
   - After: T0
   - Done when: check 58 → PASS; the fourteen cases ≥ 2 of 3 on the trimmed text (or a returned line named, with the owner's yes); the results document's eleven-row table has no empty cell (bytes and lines before and after, both counts); lint 0/0 (check 14, the 40-line limit); always-on rules unchanged at 2,979 bytes; **stop: the owner sees the table before T2**
-- [ ] **T2** The intake's assumption names its file (S15-T2) → REQ-5
+- [x] **T2** The intake's assumption names its file (S15-T2) → REQ-5
   - Files: plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/evals/README.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 58 extended (the skill's step 4 names the file and line) — written first, red; `bash scripts/evals.sh --group intake` once (≈ $1.70)
   - After: T1
   - Done when: check 58 → PASS; every intake case's count recorded in the README's intake paragraph (`answered`, `nongoal`, `trivial` ≥ 2 of 3; `limit` whichever way it falls, read from its trace if below 2 of 3); lint 0/0
-- [ ] **T3** The elder's step 0, closed by record (S15-T3) → REQ-6
+- [x] **T3** The elder's step 0, closed by record (S15-T3) → REQ-6
   - Files: .shipkit/decisions/0001-project-map-default.md, ROADMAP.md
   - Test: none beyond lint — a record; `decision-check.sh . --run` → 0 errors
   - After: T2

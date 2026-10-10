@@ -352,3 +352,14 @@ The baselines (3.1.0; 3.2.0 after the rule shrink; 4.0.0 XL; 4.1.0 scoped and st
 
 3 of 3 on the 4.3.0 text before its sentence existed, so the planned search list was not added;
 3 of 3 after; the reading is in `docs/design/eval-history.md`.
+
+*4.8.0 (S15-T2, plan E3):* step 4 of the intake gained two sentences — an assumption a file
+answers names the file and line (the standard `answered`'s grader already asked for; added as a
+standard, not on a number), and a question with several parts counts as several, four being
+the ceiling on parts (the reading `limit`'s grader already applied; the case fell to 0 of 3 in
+the 4.7.0 release run on replies that packed five parts into three numbers). The group once on
+the new text, 2026-10-10, $1.80: `answered` 3 of 3, `nongoal` 3 of 3, `trivial` 3 of 3,
+**`limit` 2 of 3** — the failing run's three numbered questions carried five parts, as before;
+the two passing runs' three carried three and four. The sentence is a standard the case
+watches, not a lever with a number behind it; its record says it comes out if `limit` is still
+below 2 of 3 on a release run.

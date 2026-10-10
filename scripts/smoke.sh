@@ -2011,6 +2011,12 @@ if [ -n "$cr_sec" ] && for f in ui-ux hotwire liveview mix-deps notebooks pyproj
    && printf '%s\n' "$cr_sec" | grep -q 'below 2 of 3' && printf '%s\n' "$cr_sec" | grep -qi 'returns'; then
   pass "cuts-recorded (the evals README names the seven cut files and the watch rule)"
 else failc "cuts-recorded" "evals/README.md has no 'The cuts (4.8.0)' section naming the seven files and the rule 'below 2 of 3 … returns'"; fi
+# the intake's step 4 (measured-cuts/REQ-5, 4.8.0): an assumption a file answers names the file
+# and line; a question with several parts counts as several. Prose, as check 15 reads the README.
+in4=$(sed -n '/^## 4\. Ask at most four questions/,/^## 5\./p' "$COPY/skills/intake/SKILL.md")
+if printf '%s\n' "$in4" | grep -q 'file and line that answers' && printf '%s\n' "$in4" | grep -q 'several parts'; then
+  pass "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
+else failc "cuts-recorded" "skills/intake/SKILL.md step 4 lacks 'file and line that answers' or 'several parts'"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
