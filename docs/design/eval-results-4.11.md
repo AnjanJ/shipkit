@@ -216,3 +216,85 @@ non-trivial (`eval-results-4.8.md`); `trap2/react` read 2 of 3 in the 4.6.0 rele
 3 of 3 in 4.7.0, 4.8.0, 4.9.0 and 4.10.0 (`eval-history.md`). No prompt or grader change; the
 record names the condition that reopens it (below 2 of 3 in a release run with the no-build
 shape in two of three traces).
+
+## 5. The five kept files on a third model (S18-T5, E14)
+
+Claude Code 2.1.291, model **`haiku`**, 2026-10-10. The measured-cuts record
+(`.shipkit/specs/measured-cuts/design.md`, first decision) kept four files whose whole body is
+their two measured lines — `rules/migrations.md`, `rules/monorepo.md`, `rules/testing.md`,
+`stacks/react/…/package-json.md` — and `stacks/rails/…/rails.md` (2 of 3 without on trap 2),
+and said their lines are cut in a later plan only if a third measurement on another model
+shows the same reading. Both earlier measurements were of `sonnet` (4.2.0 and 4.6.0). The ten
+cases are each file's trap-1 case (`scoped/migrations`, `scoped/monorepo`, `scoped/testing`,
+`stacks/package-json`, `stacks/rails`) and trap-2 case (`trap2/<file>`). **With the rule:** the
+committed plugin, `EVALS_MODEL=haiku bash scripts/evals.sh --case <name> -j 3 --keep-temp`.
+**Without:** a scratch copy of the same tree whose `evals/lib/with-rule.sh` defaults
+`SHIPKIT_EVAL_NO_RULE` to `1` (the 4.6 method), run with the `claude plugin eval` line
+`evals.sh` uses and `--model haiku`. 60 runs. The clause: a file whose two lines `haiku`
+follows unaided 3 of 3 in both arms loses them, in a second commit on the owner's go, its
+cases staying as the watch; a file it does not follow keeps its lines with the number.
+
+Runs passed of 3 on `haiku`; the `sonnet` columns are the 4.2.0 / 4.6.0 measurements the
+record cites (`eval-results-4.6.md`). A cell below 3 of 3 is read from its traces below.
+
+| File | Trap-1 case | `haiku` with / without | `sonnet` with / without (4.2, 4.6) | Trap-2 case | `haiku` with / without | `sonnet` with / without (4.6) | Reading |
+|------|-------------|------------------------|------------------------------------|-------------|------------------------|-------------------------------|---------|
+| `rules/migrations.md` | `scoped/migrations` | 3 of 3 / **3 of 3** | 3 / 3 | `trap2/migrations` | 3 of 3 / **3 of 3** | 3 / 3 | **followed unaided on both traps, on both models** — the clause's cut condition is met |
+| `rules/monorepo.md` | `scoped/monorepo` | 3 of 3 / **2 of 3** | 3 / 3 | `trap2/monorepo` | 3 of 3 / 3 of 3 | 3 / 3 | kept: one unaided run tested only the changed package |
+| `rules/testing.md` | `scoped/testing` | 3 of 3 / **2 of 3** | 3 / 3 | `trap2/testing` | 3 of 3 / 3 of 3 | 3 / 3 | kept: one unaided run wrote its own fixture instead of the helper |
+| `stacks/react/…/package-json.md` | `stacks/package-json` | 3 of 3 / 3 of 3 | 3 / 3 | `trap2/package-json` | **0 of 3** / 3 of 3 | 3 / 3 | kept: the with-arm 0 of 3 is the grader's — every run detected the manager from the lockfile at run time, which the regex forbids (below) |
+| `stacks/rails/…/rails.md` | `stacks/rails` | 3 of 3 / 3 of 3 | 3 / 3 | `trap2/rails` | 3 of 3 / **0 of 3** | 3 / 2 | kept: the rule separates on trap 2, more sharply than on `sonnet` — unaided, all three used `update_column` on purpose |
+
+60 runs: with the rule 30 runs, $0.21; without 30 runs, $0.19; 8 min wall clock for the two
+arms in parallel (443 s and 289 s of run time). Tools 3–13 per run (the `rails` cases the most), no Agent calls.
+
+**What the traces show, cell by cell.**
+
+- *`monorepo`, unaided, 2 of 3.* `CHECKS.txt` from the miss: `npm install`, `npm --prefix
+  packages/money test` — the changed package's own tests, nothing for `apps/web` and
+  `apps/api` that consume it. The two passes: `npx turbo run test --filter=@ledger/money` then
+  `npm test`; `pnpm --filter @ledger/money test` then `pnpm test`. With the rule, 3 of 3 ran
+  the consumers.
+- *`testing`, unaided, 2 of 3.* The miss built its own fixture: `tempfile.TemporaryDirectory`,
+  an `orders.json`, `create_order` — and never imported `tests/support.py`'s `make_order`. The
+  two passes import `make_order` from `support`. With the rule, 3 of 3 used the helper.
+- *`package-json`, trap 2, with the rule, 0 of 3.* All three `scripts/ci-install.sh` files
+  look for the four lockfiles, refuse to run unless exactly one exists, and dispatch through a
+  `case`: `package-lock.json) npm ci`, `yarn.lock) yarn install --frozen-lockfile`,
+  `pnpm-lock.yaml) pnpm install --frozen-lockfile`, `bun.lockb) bun install
+  --frozen-lockfile` — the line read literally ("detect the package manager from the lockfile
+  … and use only that one"), at run time. The grader's negative lookahead forbids `npm ci`,
+  `yarn` and `bun install` anywhere in the file, because `sonnet` always hardcoded the
+  manager the fixture's `pnpm-lock.yaml` names; `haiku` unaided did the same (3 of 3,
+  `pnpm install --frozen-lockfile` only) and with the rule wrote the detector. The line was
+  followed in all six runs; the grader is narrower than the line, in the `notebooks` way
+  (§4). It is not corrected in this task (its file is not on the task's Files line); it is
+  named for the plan after.
+- *`rails`, trap 2, unaided, 0 of 3.* Each miss wrote `def mark_reviewed! =
+  update_column(:reviewed_at, Time.current)` with a comment saying why: "update_column skips
+  validations, so legacy orders without customer_email can still be marked" — the trap taken
+  deliberately, as a workaround for a validation on another column. With the rule, 3 of 3
+  avoided it (`update!` with the validation handled, or `touch`). `sonnet` unaided was 2 of 3
+  with one `update_columns` and two `update_attribute`; `haiku` unaided is 0 of 3 with
+  `update_column` every time.
+
+**Reading.** One file meets the clause on the third model: `rules/migrations.md`, whose two
+lines `haiku` followed unaided 3 of 3 on both traps, as `sonnet` did on two days. **The owner
+said "cut migrations" (2026-10-11)**: both lines come out in the commit after this one, its two
+cases stay as the watch, and check 58's kept list drops it — the file is then its frontmatter
+and heading, which the installer still installs. The other four keep their lines with the
+number that kept them: `monorepo` and `testing` each lost one unaided trap-1 run on `haiku`
+(the consumers' tests skipped; the helper not reused) where `sonnet` lost none; `rails`
+separates on trap 2 more sharply than on `sonnet` (0 of 3 unaided, `update_column` chosen
+every time); `package-json`'s trap-2 cell cannot be read on `haiku` as graded — the with-arm
+0 of 3 is a grader narrower than the line, which the traces show followed in all six runs, and
+the grader's correction is named for the plan after, not made here. What a weaker model
+adds: a line `sonnet` follows unaided is not always one `haiku` follows, and the two files
+where it is not are the two the clause now keeps on evidence rather than by record.
+
+## What this does not show
+
+`haiku` on one day, on the five files' ten cases; `sonnet` on three days before it. Whether a
+later model follows `migrations`' two lines unaided is what its two cases, unchanged, now
+watch. The `package-json` trap-2 cell on `haiku` is unread until its grader accepts a
+run-time detector. The strict `why` number lives here and is not in the suite.

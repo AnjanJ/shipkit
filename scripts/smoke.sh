@@ -2049,7 +2049,8 @@ else failc "dotfile-paragraph" "evals/README.md has no 'What a case cannot ask f
 # seven files, the five files kept by record still carry theirs, and the evals README names the
 # cut files and the watch rule (a case below 2 of 3 in a release run returns its line). Each
 # line is identified by a phrase only it carries. No claude needed. Cites: measured-cuts/REQ-1
-# measured-cuts/REQ-3 measured-cuts/REQ-4
+# measured-cuts/REQ-3 measured-cuts/REQ-4 graders-and-eve/REQ-10 (the kept list below agrees with
+# the measured-cuts record's 4.11.0 note: the five files on haiku, docs/design/eval-results-4.11.md §5)
 cr_fail=""
 cr_gone() {  # cr_gone <file> <phrase> — the phrase must be absent
   grep -qF -- "$2" "$COPY/$1" && cr_fail="$cr_fail [$1 still has: $2]"; :

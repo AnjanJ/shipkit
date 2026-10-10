@@ -70,6 +70,19 @@ of the next sprint, or the same commit when it happens on this sprint's re-run. 
 lines are cut in a later plan if a third measurement on another model shows the same reading.
 **Fired-if.** manual
 
+**Third model (4.11.0, S18-T5, second-run plan E14).** The five kept files' ten cases on
+`haiku`, with the rule and without, 3 runs each, 60 runs
+(`docs/design/eval-results-4.11.md` §5). `migrations`: 3 of 3 unaided on both traps, as on
+`sonnet` — **its two lines are cut by this record's clause, on the owner's go (2026-10-11)**;
+its cases `scoped/migrations` and `trap2/migrations` stay as the watch, and the line returns
+by the clause above. `monorepo` and `testing`: 2 of 3 unaided on trap 1 (the consumers' tests
+skipped; the helper not reused) — kept, now on a number. `rails`: 0 of 3 unaided on trap 2
+(`update_column` chosen every time, with a comment) — kept, the rule separating more sharply
+than on `sonnet`. `package-json`: trap 2 with the rule 0 of 3 as graded, the line followed in
+every trace (a run-time lockfile detector the regex forbids) — kept with the number; the
+grader is narrower than the line and is named for the plan after. The reversal condition
+above stands for the four files: a third measurement on another model, not this one.
+
 ---
 
 ## Decision: The elder's step 0 stays; a read that changes no answer is not worth its tokens   (→ REQ-6)
