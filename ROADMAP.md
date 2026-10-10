@@ -75,6 +75,11 @@ the gate's blind spots (12), second traps and the elder's first step (13).
   happens before it (`eval-results-4.6.md`, "The elder's step 1"; decision 0001's appended
   note). Whether step 0 itself should change, and whether a read that never changes an answer
   is worth its tokens, is the next plan's question.
+  *4.8.0 (S15-T3, E2): closed by record, no run — 45 of 45 answers right while the map was
+  read in 1, 4 and 8 of 15, a read costing about 23k more main-session tokens on the 4.0.0 XL
+  baseline's `drift` and `gap` rows; step 0 stays, and the record names the fixture where the
+  grep does not land (Sprint 16's `why` case) as the thing that would reopen it
+  (`.shipkit/decisions/0001-project-map-default.md`, "Step 0, closed").*
 - **The intake names the answering file only because the grader asks** — nothing in
   `skills/intake/SKILL.md` says to; the 4.4.0 case passed 3 of 3 before any sentence existed
   (`CHANGELOG.md` 4.4.0 "What using it for real showed"; the reviewer's note in
