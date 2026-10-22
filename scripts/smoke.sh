@@ -10,9 +10,10 @@
 #
 # Needs: a logged-in `claude` CLI, git, python3 (only to generate padding). Uses --model haiku.
 # Makes a scratch copy of this working tree under mktemp; never touches the repo or ~/.claude
-# except that the session hook writes ~/.claude/shipkit/plugin-root (which it always does): the
-# runner saves that file before the first session and restores it on exit, on every exit path;
-# a session started during a run reads the scratch root until the run ends (harness-debts/REQ-7).
+# except that the session hook writes ~/.claude/shipkit/plugin-root.dev (a scratch copy is not
+# an installed root, 4.12.0) and plugin-root only while none exists: the runner saves both
+# before the first session and restores it on exit, on every exit path; a session
+# started during a run reads the scratch root only through plugin-root.dev (harness-debts/REQ-7).
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -22,11 +23,19 @@ CORE="$ROOT/plugins/shipkit"
 command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
 
 WORK=$(mktemp -d) || exit 1
-# ~/.claude/shipkit/plugin-root: every session below rewrites it with the scratch copy's path;
-# save it now, put it back on exit (harness-debts/REQ-6). Functions, so check 56 can test them.
+# ~/.claude/shipkit/plugin-root: a session below writes it only while it is absent (4.12.0;
+# until 4.11.0 every one rewrote it) and plugin-root.dev every time; save both now, put both
+# back on exit (harness-debts/REQ-6). Functions, so check 56 can test them; the .dev path is
+# derived from PR_FILE so a check that points PR_FILE at a scratch HOME covers both.
 PR_FILE="$HOME/.claude/shipkit/plugin-root"
-pr_save() { if [ -f "$PR_FILE" ]; then PR_SAVED=$(cat "$PR_FILE"); PR_HAD=1; else PR_SAVED=""; PR_HAD=0; fi; }
-pr_restore() { if [ "$PR_HAD" = 1 ]; then mkdir -p "${PR_FILE%/*}" && printf '%s\n' "$PR_SAVED" > "$PR_FILE"; else rm -f "$PR_FILE"; fi; }
+pr_save() {
+  if [ -f "$PR_FILE" ]; then PR_SAVED=$(cat "$PR_FILE"); PR_HAD=1; else PR_SAVED=""; PR_HAD=0; fi
+  if [ -f "$PR_FILE.dev" ]; then PRD_SAVED=$(cat "$PR_FILE.dev"); PRD_HAD=1; else PRD_SAVED=""; PRD_HAD=0; fi
+}
+pr_restore() {
+  if [ "$PR_HAD" = 1 ]; then mkdir -p "${PR_FILE%/*}" && printf '%s\n' "$PR_SAVED" > "$PR_FILE"; else rm -f "$PR_FILE"; fi
+  if [ "$PRD_HAD" = 1 ]; then mkdir -p "${PR_FILE%/*}" && printf '%s\n' "$PRD_SAVED" > "$PR_FILE.dev"; else rm -f "$PR_FILE.dev"; fi
+}
 pr_save
 trap 'pr_restore; [ -n "$SMOKE_KEEP" ] || rm -rf "$WORK"' EXIT
 COPY="$WORK/plugin"; PROJ="$WORK/proj"
@@ -2006,9 +2015,10 @@ if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the st
   pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
 else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
 
-# 56. plugin-root-restore: the session hook rewrites ~/.claude/shipkit/plugin-root on every
-# start, so by the end of this suite it names the scratch copy — restored by luck of ordering
-# or by hand until 4.7.0. The runner now saves it (pr_save) before the first session and puts
+# 56. plugin-root-restore: until 4.11.0 the session hook rewrote ~/.claude/shipkit/plugin-root
+# on every start, so by the end of this suite it named the scratch copy — restored by luck of
+# ordering or by hand until 4.7.0 (since 4.12.0 a scratch copy writes plugin-root.dev instead,
+# check 62; the runner still restores both). The runner now saves it (pr_save) before the first session and puts
 # it back (pr_restore) from its EXIT trap, on every exit path. Tested here in a subshell with
 # HOME pointed at a scratch directory: a sentinel overwritten is restored; an absent file
 # overwritten is absent again. The trap line and the header sentence are grepped from the
@@ -2226,6 +2236,39 @@ if grep -q 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" \
    && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'leave it\|left in place\|left as is\|left where it is'; then
   pass "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
 else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git before nesting the old backup"; fi
+
+# 62. plugin-root-installed: the session hook writes ~/.claude/shipkit/plugin-root only from a
+# root under the plugin cache (the installed plugin); any other root — a --plugin-dir checkout,
+# an eval sandbox, a smoke copy — writes plugin-root.dev, and plugin-root only while none exists.
+# So a dev session no longer leaves the owner's path naming a checkout or a removed scratch
+# directory, which is what the second-run plan's E15 wanted a SessionEnd hook to undo: nothing
+# overwritten, nothing to put back. Also: the version is printed on its own line, read from the
+# root's plugin.json. Run directly with HOME and CLAUDE_CONFIG_DIR at a scratch directory; no
+# claude needed.
+PI="$WORK/pihome"; PIC="$PI/.claude/plugins/cache/shipkit/shipkit/9.9.9"
+mkdir -p "$PI/.claude/shipkit" "${PIC%/*}"; cp -R "$COPY" "$PIC"
+pirun() { (cd "$PROJ" && HOME="$PI" CLAUDE_CONFIG_DIR="$PI/.claude" CLAUDE_PLUGIN_ROOT="$1" sh "$1/scripts/session-start.sh" </dev/null 2>/dev/null); }
+pi_root() { cat "$PI/.claude/shipkit/plugin-root" 2>/dev/null; }
+pi_dev()  { cat "$PI/.claude/shipkit/plugin-root.dev" 2>/dev/null; }
+pi_out=$(pirun "$COPY")
+if [ "$(pi_root)" = "$COPY" ] && [ "$(pi_dev)" = "$COPY" ]; then
+  pass "plugin-root-installed (a checkout root with no file yet writes plugin-root and plugin-root.dev)"
+else failc "plugin-root-installed" "first run from a checkout: plugin-root='$(pi_root)' dev='$(pi_dev)'"; fi
+pirun "$PIC" >/dev/null
+if [ "$(pi_root)" = "$PIC" ]; then pass "plugin-root-installed (a cache root writes plugin-root)"
+else failc "plugin-root-installed" "run from the cache: plugin-root='$(pi_root)'"; fi
+pirun "$COPY" >/dev/null
+if [ "$(pi_root)" = "$PIC" ] && [ "$(pi_dev)" = "$COPY" ]; then
+  pass "plugin-root-installed (a checkout root after a cache root leaves plugin-root alone and writes plugin-root.dev)"
+else failc "plugin-root-installed" "checkout after cache: plugin-root='$(pi_root)' dev='$(pi_dev)'"; fi
+pi_ver=$(sed -n 's/.*"version": *"\([^"]*\)".*/\1/p' "$COPY/.claude-plugin/plugin.json" | head -1)
+if [ -n "$pi_ver" ] && printf '%s\n' "$pi_out" | grep -qx "shipkit: version $pi_ver" \
+   && printf '%s\n' "$pi_out" | grep -qx "shipkit: plugin root is $COPY"; then
+  pass "plugin-root-installed (the version is its own line, from plugin.json; the root line is unchanged)"
+else failc "plugin-root-installed" "no 'shipkit: version $pi_ver' line, or the root line changed: $(printf '%s\n' "$pi_out" | head -2)"; fi
+if ! [ -f "$COPY/scripts/session-end.sh" ] && ! grep -q 'SessionEnd' "$COPY/hooks/hooks.json"; then
+  pass "plugin-root-installed (no SessionEnd hook: nothing overwritten, nothing to put back)"
+else failc "plugin-root-installed" "a SessionEnd hook or session-end.sh exists; the start hook's rule makes it redundant"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

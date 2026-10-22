@@ -8,10 +8,14 @@
 # Two jobs (the always-on rules are injected by sibling hook commands running
 # scripts/inject-rule.sh, one per rule, to stay under the per-command cap):
 #
-#   1. PLUGIN ROOT. Print `shipkit: plugin root is <path>` and persist the path to
-#      ~/.claude/shipkit/plugin-root. Plugin skills have no other way to learn where
-#      the plugin lives: ${CLAUDE_PLUGIN_ROOT} is only set for hooks. /shipkit:setup
-#      and /shipkit:map read it to find stacks/, rules/ and templates.
+#   1. PLUGIN ROOT. Print `shipkit: plugin root is <path>` and, on its own line, the
+#      plugin's version. Persist the path to ~/.claude/shipkit/plugin-root when the root is
+#      the installed plugin (under the plugin cache); any other root — a --plugin-dir
+#      checkout, an eval sandbox, a smoke copy — goes to plugin-root.dev, and to plugin-root
+#      only while no file exists (a user who only runs from a checkout has no other root).
+#      Plugin skills have no other way to learn where the plugin lives: ${CLAUDE_PLUGIN_ROOT}
+#      is only set for hooks. /shipkit:setup and /shipkit:map read the hook line first, the
+#      file second; a cron line and a subagent read the file.
 #
 #   2. FRESHNESS NUDGES. One line when PROJECT_MAP.md is >= $SHIPKIT_MAP_STALE_COMMITS
 #      commits behind HEAD (default 20) or a dependency manifest changed since it was
@@ -64,9 +68,33 @@ if [ -z "$ROOT" ]; then
 fi
 if [ -n "$ROOT" ] && [ -d "$ROOT/rules" ]; then
   echo "shipkit: plugin root is $ROOT"
+  # The version on its own line: a path cannot say whether a session runs the checkout, the
+  # cache, or a cache an older install left behind, and a line from an old hook (a drift nag
+  # on a shipped spec, say) explains itself only with the version beside it. Not a suffix on
+  # the root line: smoke check 3 asks the model for "just the path" and the setup skill pastes
+  # that path into commands.
+  ver=""
+  . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null && ver=$(plugin_version "$ROOT")
+  [ -n "$ver" ] && echo "shipkit: version $ver"
   [ "$COMPACTED" -eq 1 ] && echo "shipkit: context was just compacted — run /shipkit:handoff if work is in flight."
+  # ~/.claude/shipkit/plugin-root names the INSTALLED root: what a cron line (GUIDE, the
+  # digest) and a subagent (decision-check.sh through grandfather or eve) read with no hook
+  # line in their context. Only a root under the plugin cache writes it. Any other root — a
+  # --plugin-dir checkout, an eval sandbox, a smoke copy — writes plugin-root.dev, and
+  # plugin-root only while none exists (a user who only ever runs from a checkout has no
+  # other root). Until 4.11.0 every session wrote plugin-root, so a dev session left the
+  # owner's path naming a checkout or a removed scratch directory until the next cache
+  # session started (second-run plan E15); nothing overwritten means nothing to put back,
+  # which is why no SessionEnd hook exists.
   if mkdir -p "$HOME/.claude/shipkit" 2>/dev/null; then
-    printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root" 2>/dev/null || true
+    case "$ROOT" in
+      "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/"*)
+        printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root" 2>/dev/null || true ;;
+      *)
+        printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root.dev" 2>/dev/null || true
+        [ -f "$HOME/.claude/shipkit/plugin-root" ] \
+          || printf '%s\n' "$ROOT" > "$HOME/.claude/shipkit/plugin-root" 2>/dev/null || true ;;
+    esac
   fi
   # A newer version installed beside this one? Claude Code keeps each installed version at
   # ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a running session keeps the root it
