@@ -4,13 +4,14 @@ Cases that measure whether shipkit changes what Claude does. They run with `clau
 (Claude Code 2.1.269 or later) and make real model calls on your account.
 
 ```sh
-bash scripts/evals.sh                 # every case, three runs each
+bash scripts/evals.sh                 # every case: 3 runs, the 16 watch cases 5
 bash scripts/evals.sh --case hello    # one case
 bash scripts/evals.sh --group stacks  # one group: the cases named stacks-* (4.2.0)
 ```
 
-`scripts/evals.sh` exits non-zero if any case fails. A case passes when at least two of its three
-runs pass (`--threshold 0.66`). The model under test is pinned to `sonnet` so that a change of
+`scripts/evals.sh` exits non-zero if any case fails. A case passes at 2 of 3 runs, a watch case
+at 3 of 5 (`runs: 5` in its `case.yaml`, 4.12.0; `--threshold 0.6`; `--runs 3` puts every case
+back to three). The model under test is pinned to `sonnet` so that a change of
 default model is not mistaken for a change in shipkit; set `EVALS_MODEL` to use another. Results
 (`aggregate-result.json`, `report.html`) go to `$TMPDIR/shipkit-evals`, or to `EVALS_OUT`.
 
@@ -352,7 +353,7 @@ plan E1): `ui-ux`, `hotwire`, `liveview`, `mix-deps`, `notebooks`, `pyproject`, 
 line each 4.2.0 case walks into and the line each `trap2/` case walks into, both passed without
 the text on both days. Their fourteen cases are unchanged and still install the file: they are
 the **watch**. The rule: a cut line returns to its file if its case drops below 2 of 3 in a
-release run. Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
+release run (below 3 of 5 from 4.12.0: the sixteen watch cases run five times). Four files whose whole body is their two measured lines (`migrations`, `monorepo`,
 `testing`, `package-json`) and `rails` (at the threshold) keep theirs by record. `migrations` lost its two
 lines in 4.11.0 on `haiku`'s measurement (`eval-results-4.11.md` §5); its two cases stay as
 the watch. `trap2/notebooks`'
