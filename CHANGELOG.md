@@ -1,8 +1,64 @@
 # Changelog
 
-All notable changes to Shipkit are documented here. Newest first.
+All notable changes to Shipkit are documented here. Newest first. Every entry opens with
+**What changed for you**, in plain words; the ledger — which decision, which number, which
+file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
+
+## [Unreleased]
+
+**What changed for you.** The session hook now prints the plugin's version on its own line
+under the plugin root, so a session running an old cached copy says so at a glance. A
+`--plugin-dir` checkout, an eval sandbox or a smoke run no longer overwrites the installed
+plugin's path in `~/.claude/shipkit/plugin-root`; each writes `plugin-root.dev` instead. The
+sixteen watch cases run five times per release instead of three, at about $4 more a run, so
+one unlucky run no longer turns a release red by itself. `eve`'s prompt has a trim audit with
+the arms and the budget to measure it; the agent itself is unchanged. And every changelog
+entry now opens with a paragraph like this one.
+
+### Changed
+
+- **The hook prints the version** (`shipkit: version 4.11.0`, its own line under the root
+  line, read from the root's `plugin.json`). Smoke check 62 asserts the line. Named in the
+  2026-10-22 review: this repository's own cloud session printed drift nags on three shipped
+  specs, and only the version beside the root would have said they came from an old cache.
+- **`plugin-root` is written only from the installed root** — a root under
+  `${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/`. Any other root writes `plugin-root.dev`, and
+  `plugin-root` only while none exists, so a user who only runs from a checkout is as before.
+  This pays the second-run plan's S19-T1 (E15) without its `SessionEnd` hook or `.prev` file:
+  `SessionEnd` is not guaranteed to fire, a saved value can name a directory since removed
+  (seen at S17-T5), and a file nothing overwrites needs nothing put back. The smoke runner
+  saves and restores both files; check 62 runs the hook from a checkout root, a fake cache
+  root and the checkout again under a scratch `HOME`, no model call. Rule 17's write-back is
+  struck for anyone with an installed plugin; it stays only for a checkout-only user.
+- **The sixteen watch cases run five times** (`runs: 5` in each `case.yaml`; the tool
+  honours `case.runs`), and `scripts/evals.sh` passes `--threshold 0.6`: 2 of 3 still passes a
+  three-run case, 3 of 5 a five-run one. Why: the release runs since 4.9 ended exit 1 on one
+  case at 1 of 3 and shipped after a solo re-run at 2 of 3, so the exit code carried no
+  information; at a per-run pass rate of 0.8 a case reads 1 of 3 or worse 10% of the time,
+  2 of 5 or worse 6%, and 3 of 5 or worse 26% — which is what keeping 0.66 at five runs
+  would have demanded. The bar is 0.6 against 0.667, slightly lower at a smaller variance.
+  Cost: about 32 more `sonnet` runs a release, $3.50–4 on top of $16.80 — the review's
+  claim that this costs less than the re-run ritual was wrong on money and right on
+  attention. `--runs 3` passed through puts every case back to three. The evals directory
+  stands at 196,574 of 196,608 bytes; the next case raises the ceiling or trims the README.
+- **`agents/eve.md` has a trim audit** (`docs/design/trim-audit-eve.md`). The prompt is
+  17,010 bytes against `grandfather`'s 9,156 — about 4,300 tokens, paid on every call in
+  `eve`'s own context, none of it in the main session. The audit names about 5,500 bytes in
+  five sections that no case exercises or that repeat an earlier section, the one arm that
+  measures them all at once (five cases, three runs, about $2 against a $2 baseline), the
+  bisection if the arm drops, and the clause that keeps or returns each section. It proposes
+  and changes nothing; the runs wait for the thinning sprint. Item 4 of the review, done as
+  far as it goes without a paid run.
+- **This paragraph, backfilled**: 4.9.0, 4.10.0 and 4.11.0 open with a *What changed for
+  you* paragraph; the file's head says the convention. The ledger prose stays where it was.
 
 ## [4.11.0] — 2026-10-11
+
+**What changed for you.** If you ask `eve` why a project did something nobody wrote down, she
+now says "not recorded" and stops, instead of offering guesses. Two eval graders stopped
+failing correct answers: a reply that cites the file that handles Stripe rather than the
+Gemfile, and a Makefile that clears notebook outputs its own way. The migrations rule lost
+its two lines because three models follow them unaided. Nothing else you use changed.
 
 Sprint 18 of the second-run plan (`docs/plans/second-run-sprint-plan.md`), the plan's second:
 the three readings the portfolio measurement left and the two grader notes the 4.8.0 release
@@ -67,6 +123,12 @@ passed on the tree before this commit (174 at 4.10.0; check 58 changed its asser
 check added).
 
 ## [4.10.0] — 2026-10-10
+
+**What changed for you.** `/shipkit:setup` on a project that already has its own
+`## Elixir-Specific` heading or its own `migrations.md` now tells you so instead of writing a
+second one, and it leaves a git-tracked backup directory where it is. `brief.sh` warns when
+you hand a task over from a dirty tree. The ship gate pastes the reviewer's whole reply into
+the report, and the reviewer cites real file lines rather than diff positions.
 
 Sprint 17 of the second-run plan (`docs/plans/second-run-sprint-plan.md`), the plan's first:
 the debts the second real run left in setup, the brief and the gate, each fixed where it lives
@@ -133,6 +195,11 @@ hand, and a line for S19-T1's end hook: put a saved value back only if that root
 Smoke: 174 checks, all passed on the tree before this commit (161 at 4.9.0; checks 60 and 61 and the seven extensions add 13).
 
 ## [4.9.0] — 2026-10-10
+
+**What changed for you.** Nothing in the plugin's behaviour. This release added the
+measurements behind `eve`: a generated three-project portfolio fixture, numbers for what she
+loses without project maps (nothing for sweeps and where-questions; only a why needs a map),
+and a second end-to-end field run on a Phoenix project whose findings seed the next plan.
 
 Sprint 16 of the portfolio plan (`docs/plans/portfolio-sprint-plan.md`), the plan's last: the
 two things still without a number get theirs — what `eve` loses when fewer projects carry a
