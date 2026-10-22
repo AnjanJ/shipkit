@@ -82,7 +82,7 @@ steps on a real feature and shows the file each one produced.
 - **Five path-scoped rules**, installed by `/shipkit:setup` and loaded when you edit a matching
   file: tests, migrations, dependency files, monorepo manifests, UI files. Each holds only the
   traps the model gets wrong unprompted.
-- **The session hook**: where the plugin lives; one line if `PROJECT_MAP.md` or a spec has
+- **The session hook**: where the plugin lives and its version; one line if `PROJECT_MAP.md` or a spec has
   drifted from its code; a briefing of at most eight lines — open specs and their next task,
   spec-check gaps, the top goal, the last handoff, a digest more than a week old. After a
   compaction it says so. Silent when there is nothing to say.

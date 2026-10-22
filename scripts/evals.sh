@@ -1,7 +1,9 @@
 #!/bin/sh
 # Run every shipkit eval case (plugins/shipkit/evals/). Real model calls: run before a release,
 # not on every push. Extra arguments go to `claude plugin eval`, e.g. `--case hello`.
-# Exits non-zero if any case scores below 2 runs out of 3. See plugins/shipkit/evals/README.md.
+# Exits non-zero if any case scores below 2 of 3 — or below 3 of 5 for the sixteen watch cases,
+# whose case.yaml carries `runs: 5` (4.12.0; `--runs 3` passed through puts every case back to
+# three). See plugins/shipkit/evals/README.md.
 # `--group <name>` (first argument) runs only the cases named <name>-* — every case is named
 # after its folder (rules-trivial, scoped-dependencies, stacks-gemfile), so a group is a name
 # prefix; `--group grandfather` also runs grandfather-xl-*. No flag still runs every case (B7).
@@ -27,5 +29,5 @@
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
-  --model "${EVALS_MODEL:-sonnet}" --threshold 0.66 \
+  --model "${EVALS_MODEL:-sonnet}" --threshold 0.6 \
   --output-dir "${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}" "$@" --scaffold --allow-tools Bash Write Edit

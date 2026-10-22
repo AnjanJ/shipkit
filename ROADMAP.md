@@ -147,6 +147,11 @@ What the measurements and the three releases named for the plan after, with thei
   `docs/plans/portfolio-sprint-plan.md` §1 rule 17). *Seen again at S17-T5 (2026-10-10): an
   older session's hook, re-run on a compaction, wrote a cache path that had just been removed;
   S19-T1's end hook (E15) should put a saved value back only if that root still exists.*
+  *Closed 2026-10-22, unreleased, the other way: the start hook writes `plugin-root` only from
+  a root under the plugin cache; a checkout, sandbox or smoke copy writes `plugin-root.dev`
+  and `plugin-root` only while none exists. Nothing overwritten, nothing to put back, so no
+  `SessionEnd` hook and no `.prev` file (smoke check 62; `CHANGELOG.md` Unreleased). S19-T1
+  is paid; rule 17's write-back stays only for a checkout-only user, whose one root it is.*
 - **The exact refusal text of `.pre-commit-config.yaml` was never captured** — the sandbox's
   denial is documented from the permission-modes list and the trace's effect, not its message
   (`plugins/shipkit/evals/README.md`, "What a case cannot ask for (4.7.0)").
