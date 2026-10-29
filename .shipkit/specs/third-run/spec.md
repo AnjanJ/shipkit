@@ -40,25 +40,30 @@ after Sprint 16".
 
 ### A session puts `plugin-root` back (S19-T1)
 
-- **REQ-1.** When `session-start.sh` is about to write a plugin root to
-  `~/.claude/shipkit/plugin-root` and the file holds a different value and no
-  `plugin-root.prev` exists, it shall first write that value to `plugin-root.prev`; when the
-  file holds the same value, is absent, or `plugin-root.prev` already exists, it shall write
-  no `.prev` and change none; its printed lines shall be unchanged.
-- **REQ-2.** When a session ends, `session-end.sh` (registered under `SessionEnd` in
-  `hooks.json`) shall, if `plugin-root.prev` exists and the root it names has a `rules/`
-  directory, write that value to `plugin-root`; in every case where `.prev` exists it shall
-  remove `.prev`; where no `.prev` exists it shall change nothing; it shall print nothing on
-  stdout and shall exit 0 on every path.
-- **REQ-3.** The smoke suite shall hold a check that runs the two scripts in order from a
-  scratch root with a scratch `HOME` and asserts: a previous value whose root exists is back
-  and `.prev` is gone; a previous value whose root is gone leaves the session's root and
-  removes `.prev`; no previous file writes no `.prev`; a `.prev` already present is left by
-  start; and, where a headless `-p` session is found to run `SessionEnd`, one such session
-  from the scratch root leaves the file holding the value from before.
-- **REQ-4.** The evals README's note on the `plugin-root` window shall say which sessions now
-  restore the file themselves and which still need rule 17's write-back. [untested: prose,
-  verified by reading]
+> Amended 2026-10-30. The four requirements as approved on 2026-10-11 (a `plugin-root.prev`
+> saved by start, a `SessionEnd` hook that writes it back, smoke check 62 on the four branches,
+> a README note on which sessions restore) were paid the other way before this branch merged:
+> PR #21 (`fe02c68`, merged to `main` 2026-10-22) made the start hook write `plugin-root` only
+> from the installed root, so nothing is overwritten and nothing needs putting back. The branch
+> carried the hook pair at `a690f14`; it is dropped, and these requirements now state the rule
+> that shipped. The design record says why.
+
+- **REQ-1.** When `session-start.sh` runs from a root under
+  `${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/` (the installed plugin), it shall write that root
+  to `~/.claude/shipkit/plugin-root`; when it runs from any other root (a `--plugin-dir`
+  checkout, an eval sandbox, a smoke copy) it shall write that root to `plugin-root.dev` and
+  to `plugin-root` only while no `plugin-root` exists.
+- **REQ-2.** The plugin shall register no `SessionEnd` hook and ship no `session-end.sh`; the
+  start hook shall print the plugin's version on its own line (`shipkit: version <ver>`, from
+  the root's `plugin.json`) under the unchanged root line.
+- **REQ-3.** The smoke suite shall hold a check that runs the start hook directly under a
+  scratch `HOME` and asserts: a checkout root with no file yet writes both files; a cache root
+  writes `plugin-root`; a checkout root after a cache root leaves `plugin-root` alone and writes
+  `plugin-root.dev`; the version line is present; and no `SessionEnd` hook or `session-end.sh`
+  exists.
+- **REQ-4.** The release's CHANGELOG entry and the ROADMAP's "mid-run `plugin-root` window"
+  item shall say that no session overwrites the installed path any more, and that rule 17's
+  write-back stays only for a checkout-only user. [untested: prose, verified by reading]
 
 ### The refusal text, captured (S19-T2)
 

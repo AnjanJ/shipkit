@@ -14,7 +14,7 @@ task creates is removed after reading (rule 13).**
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . third-run --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh .` → no FIRED; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec is in the thread ("approved", 2026-10-11; E17's repository and request still owed, before T3); stamped at the branch-point commit, `Status: open`
-- [ ] **T1** A session puts `plugin-root` back (S19-T1) → REQ-1, REQ-2, REQ-3, REQ-4
+- [x] **T1** A session puts `plugin-root` back — paid by the installed-root rule, PR #21 `fe02c68` (S19-T1) → REQ-1, REQ-2, REQ-3, REQ-4
   - Files: plugins/shipkit/scripts/session-start.sh, plugins/shipkit/scripts/session-end.sh, plugins/shipkit/hooks/hooks.json, scripts/smoke.sh, plugins/shipkit/evals/README.md
   - Test: Check first (plan §3, fourth claim): one headless `-p` session on `haiku` from a scratch copy whose `hooks.json` carries a `SessionEnd` hook that prints to a file → the file exists or not (≈ $0.10); scripts/smoke.sh check 62 "plugin-root-back" (the four script branches of REQ-3 from a scratch `HOME`; plus one headless session from the scratch root when the check-first says `SessionEnd` fires for `-p`) — written first, red; the README's window note says which sessions restore
   - After: T0

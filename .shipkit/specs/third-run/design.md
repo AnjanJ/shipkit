@@ -14,6 +14,12 @@ at 2,979 bytes and the evals tree at 196,289.
 
 ## Decision: The session that opened the window closes it   (→ REQ-1, REQ-2, REQ-3, REQ-4)
 
+> **Superseded on 2026-10-30** by "`plugin-root` is written only from the installed root",
+> below. Its own clause did not fire — the T1 probe showed `SessionEnd` does fire for a
+> normally completing `-p` session (Claude Code 2.1.296, reason `other`) — but PR #21
+> (`fe02c68`) closed the same window on `main` on 2026-10-22 without the hook, and smoke
+> check 62 there asserts no `SessionEnd` hook exists. Kept as written for the record.
+
 **Context.** `session-start.sh` writes its root to `~/.claude/shipkit/plugin-root` on every
 start, because plugin skills have no other way to learn where the plugin lives. A session
 started with `--plugin-dir` — every eval sandbox's hook, every gate, every real run — writes a
@@ -52,6 +58,42 @@ line, as `run-debts` recorded it.
 does not run for `-p` sessions **and** an interactive session's end shows no restore either —
 then the hook closes nothing. We would add a `reason` matcher if a `clear` or `resume`
 restores a value an interactive session still needs.
+**Fired-if.** manual
+
+---
+
+## Decision: `plugin-root` is written only from the installed root   (→ REQ-1, REQ-2, REQ-3, REQ-4)
+
+**Context.** The record above was built on this branch (`a690f14`: `plugin-root.prev`,
+`session-end.sh`, check 62 on four branches and one headless session). Before the branch
+merged, the 2026-10-22 review session changed the start hook on `main` instead: a root under
+the plugin cache writes `plugin-root`; any other root writes `plugin-root.dev`, and
+`plugin-root` only while none exists (`CHANGELOG.md` Unreleased; `ROADMAP.md` "The mid-run
+`plugin-root` window"). The two designs cannot coexist: on top of the installed-root rule the
+only value start would ever save is an older cache version's path, and an end hook would put
+that back after a cache update.
+
+**Alternatives.**
+1. Take `main`'s rule as this sprint's T1, drop the hook pair, restate REQ-1 to REQ-4 as the
+   rule that shipped, and cite check 62 as it stands on `main`.
+2. Rebase the hook pair on top of the rule (an end hook restoring `.prev` only when it names
+   a root under the cache that still has `rules/`).
+3. Revert `fe02c68` and ship the hook pair as approved.
+
+**Case for (1).** Nothing is overwritten, so nothing needs putting back; one guard in start
+replaces a save, a restore, a second hook process at exit and a 1.5 s shared budget. The
+4.10.0 incident (a hook putting back a removed directory) cannot recur: a removed cache
+directory is never written, because the session running from it is the one that wrote it.
+
+**Case against (1).** A checkout-only user still has the window and still has rule 17 — the
+hook pair would have closed it for them too. The sprint's spec is amended after approval,
+which rule 3 of the plan allows only with the reason in the file; this paragraph is it.
+
+**Decision.** We chose (1). (2) adds a process at exit to protect a case the rule already
+prevents; (3) throws away a merged, documented change to re-land a design `main`'s own check
+forbids.
+**Falsifiability.** We would add an end hook (2) if a checkout-only user reports a session
+reading a scratch path — then `plugin-root.dev` is not enough for them.
 **Fired-if.** manual
 
 ---

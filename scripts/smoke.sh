@@ -2244,7 +2244,7 @@ else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git b
 # directory, which is what the second-run plan's E15 wanted a SessionEnd hook to undo: nothing
 # overwritten, nothing to put back. Also: the version is printed on its own line, read from the
 # root's plugin.json. Run directly with HOME and CLAUDE_CONFIG_DIR at a scratch directory; no
-# claude needed.
+# claude needed. Cites: third-run/REQ-1 third-run/REQ-2 third-run/REQ-3
 PI="$WORK/pihome"; PIC="$PI/.claude/plugins/cache/shipkit/shipkit/9.9.9"
 mkdir -p "$PI/.claude/shipkit" "${PIC%/*}"; cp -R "$COPY" "$PIC"
 pirun() { (cd "$PROJ" && HOME="$PI" CLAUDE_CONFIG_DIR="$PI/.claude" CLAUDE_PLUGIN_ROOT="$1" sh "$1/scripts/session-start.sh" </dev/null 2>/dev/null); }
