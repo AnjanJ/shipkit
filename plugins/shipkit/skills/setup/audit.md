@@ -58,5 +58,5 @@ the skill and agent listings and the installed overlays cost here).
 - Keep `CLAUDE.md` to project facts (purpose, stack, commands, key paths); let rules carry
   conventions
 - Let Claude Code's native project memory hold corrections; keep CLAUDE.md for facts and rules for conventions
-- Use `disable-model-invocation: true` on mechanical skills (release, deploy-check) so their
+- Use `disable-model-invocation: true` on mechanical skills (release, new-feature) so their
   descriptions are not offered to the model every turn

@@ -20,6 +20,8 @@ Version bump type: $ARGUMENTS (default: `patch`)
    - On the correct branch? (main/master)
    - All tests passing? Run `{{TEST_COMMAND}}` — must be green
    - Security audit clean? Run `bundle audit check`
+   - Static security scan clean? Run `bundle exec brakeman -q` (was `/deploy-check`'s, until 5.0.0)
+   - Assets compile? Run `RAILS_ENV=production bin/rails assets:precompile` on a throwaway copy, or confirm CI does
    - Changelog updated?
 
 2. **Bump version:**

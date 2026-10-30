@@ -89,6 +89,12 @@ intake beside this file (`intake.md`).
 - **REQ-19.** The Rails overlay's `deploy-check` and `release` skills shall each contain the
   line "If this feature has a spec, run `/shipkit:ship <slug>` first.", with nothing else in
   either skill removed or rewritten.
+  > *Amended 2026-10-30 (thinning plan W8, decision 0004, the owner's yes):* `deploy-check` is
+  > cut — its checks were the gate's steps 2 and 5, `gemfile.md`'s line and the project's deploy
+  > pipeline — and its two unique lines (`brakeman`, asset compilation) moved into `release`'s
+  > Phase 1. The requirement now reads on `release` alone: it carries the gate line, and nothing
+  > else in it was removed. Lint check 13 follows; `docs/design/trim-audit-overlays.md` has the
+  > side-by-side.
 
 ## Release steps (not requirements)
 

@@ -139,7 +139,8 @@ agent.
 
 **Stack overlays**, installed by `/shipkit:setup` from what it detects — one base (Rails, React,
 Python, Go, Elixir, Static) plus any add-ons (Hotwire, React in Rails, LiveView, Oban, ML). Each
-adds a few skills and rules that hold that stack's traps: `mount/3` runs twice, `perform/1` must
+adds a few rules that hold that stack's traps, and its skills only if you say yes (each one is
+listed in every session of the project): `mount/3` runs twice, `perform/1` must
 be idempotent, Turbo caches pages so a leaked listener fires twice, never evaluate on training
 data. The guide lists every overlay.
 

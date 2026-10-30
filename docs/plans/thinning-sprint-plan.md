@@ -412,6 +412,11 @@ What changed between the 2026-10-22 draft and the approval, and what it did to t
   request to delete is not the yes") and re-measure: 3 of 3 with. §5's "no line of the three
   always-on rules changes" is amended for that one line; `shipkit.md` stays universal on the
   number; `rules/care` is its watch (`docs/design/eval-results-5.0.md` §1).
+- **W9's two words (S21-T4, 2026-10-30):** the arm held, and the owner took it as measured:
+  `eve.md` is 12,067 bytes, not §0's 11,500, which was the audit's estimate (REQ-12 amended).
+  The two report shapes went to a new `skills/ask/reports.md`, not `SKILL.md`, where they would
+  have cost the main session 1,354 bytes on every `/shipkit:ask` (REQ-13 amended). The two
+  shape runs were paid twice on the owner's yes: $0.37 on the arm, $0.43 on the final tree.
 
 ## 5. What this plan does not do
 

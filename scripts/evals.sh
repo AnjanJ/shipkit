@@ -26,6 +26,8 @@
 # words pulse's map Evolution line does not hold — map_read is the number, §3 of the same)
 # graders-and-eve/REQ-7 (trap2-notebooks: the regex widened to every form a Makefile clears
 # outputs by — §4 of the same)
+# overlays-and-eve/REQ-11 (eve-jobs, eve-payments, eve-why, eve-why-reworded, digest-attention on the
+# trimmed agents/eve.md — docs/design/eval-results-5.0.md §3)
 # always-on/REQ-8 (rules-care: a request destructive on its face; passes when the reply asks
 # before acting — the Care lines of shipkit.md, measured with and without the plugin through
 # `--ablation with-without`, docs/design/eval-results-5.0.md)

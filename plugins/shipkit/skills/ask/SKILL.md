@@ -22,11 +22,13 @@ Question: `$ARGUMENTS`
   "across all my apps…") → delegate to the **`eve`** agent, which reads the project
   registry and answers across the portfolio.
 
-- **Portfolio reports** — three named report shapes eve knows how to produce:
+- **Portfolio reports** — three named report shapes, by flag or asked in words:
   - `--all matrix <library|framework|"everything major">` → dependency/version matrix across
     all repos (lockfile truth, one row per project). For upgrades and vulnerability sweeps.
+    Read `@reports.md` and hand `eve` its matrix section with the question.
   - `--all consolidate` → ranked report of patterns implemented in multiple repos that could
-    exist once, with per-copy evidence and drift notes.
+    exist once, with per-copy evidence and drift notes. Read `@reports.md` and hand `eve` its
+    consolidation section with the question.
   - `--all digest` → **which product needs attention this week, and why.** This one has a
     step before the agent: run `sh "<plugin root>/scripts/portfolio-digest.sh"` (the plugin
     root is in the `shipkit: plugin root is …` context line; if the request names a

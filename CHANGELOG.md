@@ -36,6 +36,39 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **`eve`'s prompt trimmed, 16,947 → 12,067 bytes** (thinning plan W9, S21-T4): the cheat-sheet
+  table, the example questions, the restated constraints and most of the MemPalace paragraph
+  are out, by the audit's one arm. Every `eve` case held 3 of 3 over 15 runs. The matrix and
+  consolidation shapes moved whole to `skills/ask/reports.md`, read on those two routes only.
+  No reply changes shape, and the trim is no measurable saving: input tokens −2.2%, dollars
+  +1.0%, inside the runs' spread (`docs/design/eval-results-5.0.md` §3).
+- **Two Rails overlay skills cut, nine kept behind the flag** (thinning plan W8, S21-T3): each
+  of the eleven overlay skills read beside the loop in `docs/design/trim-audit-overlays.md`.
+  `deploy-check` went — its checks were `/shipkit:ship`'s steps 2 and 5, `gemfile.md`'s
+  `bundle audit` line and the deploy pipeline; its two unique lines (`brakeman`, asset
+  compilation) are in `release`'s Phase 1. `safety-check` went — every line of its checklist is
+  a rule loaded on the matching edit or a lens `/code-review` reads with
+  `code-review-standards-rails`. The nine others (`release`, `new-feature` ×4, `component`,
+  `audit`, the two Rails knowledge bases) install with `--with-skills`. Decision 0004 amends
+  0003; `review-and-ship` REQ-19 amended in place; smoke check 69.
+- **The overlay appends trimmed by audit** (thinning plan W7, S21-T2): every line of the ten
+  `CLAUDE.md.append` files and the two unscoped overlay rules read against the 4.0 rule — a
+  value, a trap, or measured — in `docs/design/trim-audit-overlays.md`, the owner's yes per
+  group. Out: the generic "Key Paths" tables of `src/` or `app/` rows, the "Ruff or flake8"
+  style lines, conventions the formatter owns, the "if installed" tool lines, the `migrate …
+  or alembic` command pairs. Kept: every placeholder and every trap line. The python append's
+  Django block is now `stacks/python/.claude/rules/django.md`, path-scoped to Django files
+  instead of loading into every session of a FastAPI project. `rails.md` and `react.md` carry
+  `paths:` and load on a matching edit only. Appends 2,525/2,150/1,638/1,623/1,532/885 →
+  1,030/1,170/1,375/1,137/883/395 bytes. Smoke check 68.
+- **Overlay skills install on a flag** (thinning plan W6, S21-T1): `install-stack.sh
+  [--with-skills] <plugin-root> <stack> …` copies an overlay's skills into `.claude/skills/`
+  only with the flag (or `SHIPKIT_STACK_SKILLS=1`); by default it installs the rules and the
+  `CLAUDE.md` section and prints one line naming how many skills it skipped. `/shipkit:setup`
+  asks once, naming the count and that each skill is listed in every session of the project;
+  a non-interactive run installs none and says so. A Rails project no longer carries six
+  skills (17,529 bytes, six listings) it did not ask for. Smoke check 67; the suite's own
+  installs pass the flag where they assert on a skill.
 - **Four agents** (thinning plan W4, S20-T5): `tracer` is `grandfather`'s trace mode (a
   "Trace mode" section; `/shipkit:ask --walk` opens its hand-off with "Trace mode:");
   `archivist` is `/shipkit:map`'s own forked body (`skills/map/archivist.md`, `context: fork`
