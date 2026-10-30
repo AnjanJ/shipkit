@@ -138,6 +138,40 @@ Trims, if all yes: ≈ 480 bytes of 885.
 | `stacks/rails/.claude/rules/rails.md` | 246 | `find_each` not `all.each`; > 100 ms to a job; never `update_column(s)` | keep all three; **add `paths:`** `["app/**/*.rb", "lib/**/*.rb", "config/**/*.rb"]` | all three are (b) and the `trap2/rails` case measures the third (0 of 3 unaided on `haiku`, 3 of 3 with — `eval-results-4.11.md` §5). The lines are about Ruby code; a glob fits, and the rule stops loading on a `.erb` or `.yml` edit |
 | `stacks/react/.claude/rules/react.md` | 701 | components under `app/frontend/` or `app/javascript/`; auth and flash from the server; the asset build runs before tests; server-driven state | keep all four; **add `paths:`** `["app/frontend/**", "app/javascript/**", "**/*.tsx", "**/*.jsx"]` | the first line says the two roots itself, so the glob is the rule's own; all four are (b) for React inside a host app |
 
+## The eleven overlay skills against the loop (W8, S21-T3)
+
+Each overlay skill is read beside the core or workflows text that now covers the same ground.
+The loop these skills predate: `/shipkit:intake` and `/shipkit:spec` decide what to build and
+how; `/shipkit:ship` gates a feature (eight steps: spec-check, tests, tasks, the `reviewer`,
+migration rollback, decisions, clean tree, decisions fired); `shipkit.md`'s Care line and the
+path-scoped rules carry the traps; the built-in `/code-review` reads the `code-review-standards`
+knowledge base. A skill that says what those say is two voices on one question; behind the
+flag it still costs a listing to the user who asked for the overlay's skills.
+
+| Skill | Bytes | What it does | What now covers it | Verdict |
+|---|---:|---|---|---|
+| rails `release` | 2,701 | Phase 1 local checks (tests, lint, changelog, version), a mandatory approval gate, Phase 2 publish (gem / npm / deploy), after-publish steps; opens with "if this feature has a spec, run `/shipkit:ship <slug>` first" | Phase 1 is `/shipkit:ship`'s steps 2, 3, 7 and the approval gate is the gate's READY; **Phase 2 (publishing a gem, an npm package, a deploy) is in no core skill** | **keep behind the flag** — the publish half is unique; Phase 1's lines stay as the skill's own pre-flight since it runs without a spec too |
+| rails `deploy-check` | 2,548 | pending migrations, `brakeman`, `bundle-audit`, the test suite, seeds, asset compilation, environment variables; "run `/shipkit:ship` first" | migrations and tests are the gate's steps 5 and 2; `bundle audit` is `gemfile.md`'s line on every Gemfile edit; env vars and seeds are the project's deploy pipeline. **`brakeman` and asset compilation are the two lines nothing else says** | **cut** — two unique lines; they move into `release`'s Phase 1 (one line each) so a Rails user keeps them where the deploy happens |
+| rails `safety-check` | 3,442 | audits staged changes against a checklist: migration safety, SQL injection and strong params, data integrity, error handling, N+1 | migration safety, N+1, `update_column`, strong params and callbacks are `rails.md`, `migrations.md` and the Rails append's gotchas, loaded on the matching edit; SQL injection and mass assignment are the `code-review-standards-rails` lenses `/code-review` reads; "audit the staged diff" is `/code-review` itself | **cut** — every line of its checklist lives in a rule or the review lens; the skill is the review run by hand |
+| rails `code-review-standards-rails` (KB) | 3,239 | Rails lenses for `/code-review`: ActiveRecord performance and scalability, Sidekiq jobs, Hotwire consistency | `shipkit-workflows:code-review-standards` carries the eight general lenses; the Rails ones are here only | **keep behind the flag** — unique knowledge, `user-invocable: false`, description-only cost |
+| rails `ai-rails` (KB) | 2,367 | RubyLLM patterns: chat with persistence, embeddings, streaming, tool use, background processing, testing, security, cost | nothing in core | **keep behind the flag** — unique |
+| rails `new-feature` | 3,232 | a YAGNI + SRP gate, architecture detection (MVC / service objects / CQRS), scaffold a model, service, job, controller, command or query with its spec, dependency verification | the gate's "should we build this, and how small" is `/shipkit:intake` + `/shipkit:spec`'s Q1; **scaffolding the class and its spec file is in no core skill** | **keep behind the flag** — the scaffold is unique; the YAGNI/SRP gate is said twice (noted, not cut: the skill runs without a spec) |
+| elixir `new-feature` | 2,075 | scaffold a context, schema, LiveView or GenServer with tests; dependency verification | as above | **keep behind the flag** |
+| go `new-feature` | 3,035 | YAGNI gate, layout and framework detection, scaffold a handler, service, repository, CLI command or middleware with tests | as above | **keep behind the flag** |
+| python `new-feature` | 3,488 | YAGNI gate, framework detection, scaffold Django model / view / service / Celery task, FastAPI router / service, or a plain module, with tests | as above | **keep behind the flag** |
+| react `component` | 2,692 | detect TS, Storybook, CSS approach, test runner; scaffold component, test, story, CSS module, barrel | as above | **keep behind the flag** |
+| static `audit` | 2,674 | SEO, accessibility, performance and link checklists with a report | the a11y baseline is the `ui-ux` rule (contrast, target size, motion, errors not by colour, no layout shift); **SEO, performance and link checks are in no core text** | **keep behind the flag** — three of four categories unique; the a11y section may point at `ui-ux.md` rather than restate it (noted) |
+
+**If both cuts are yes:** `deploy-check` and `safety-check` go (5,990 bytes, two listings on a
+Rails project that installs the skills); `release` gains two Phase-1 lines (`brakeman`, assets
+compile); nine skills stay behind the flag. Decision 0004 records the flag and the cuts and
+amends 0003 (the skills stay in core; "installed by default" does not).
+
+**The owner's decisions (W8), 2026-10-30:** both cuts **yes**. `deploy-check` and `safety-check`
+are gone; `release`'s Phase 1 gained the `brakeman` and asset-compilation lines; nine skills stay
+behind `--with-skills` (four on Rails). Recorded as decision 0004, which amends 0003;
+`review-and-ship` REQ-19 (which named `deploy-check`) is amended in place. Smoke check 69.
+
 ## What this audit does not claim
 
 It does not claim a trimmed line is one the model never needed: no case installs an append,

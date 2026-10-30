@@ -36,6 +36,15 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **Two Rails overlay skills cut, nine kept behind the flag** (thinning plan W8, S21-T3): each
+  of the eleven overlay skills read beside the loop in `docs/design/trim-audit-overlays.md`.
+  `deploy-check` went — its checks were `/shipkit:ship`'s steps 2 and 5, `gemfile.md`'s
+  `bundle audit` line and the deploy pipeline; its two unique lines (`brakeman`, asset
+  compilation) are in `release`'s Phase 1. `safety-check` went — every line of its checklist is
+  a rule loaded on the matching edit or a lens `/code-review` reads with
+  `code-review-standards-rails`. The nine others (`release`, `new-feature` ×4, `component`,
+  `audit`, the two Rails knowledge bases) install with `--with-skills`. Decision 0004 amends
+  0003; `review-and-ship` REQ-19 amended in place; smoke check 69.
 - **The overlay appends trimmed by audit** (thinning plan W7, S21-T2): every line of the ten
   `CLAUDE.md.append` files and the two unscoped overlay rules read against the 4.0 rule — a
   value, a trap, or measured — in `docs/design/trim-audit-overlays.md`, the owner's yes per

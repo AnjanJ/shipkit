@@ -1,6 +1,6 @@
 # 0003 — The stack overlay skills stay in core
 
-> Status: **decided on 2026-10-07 — the overlay skills stay in core (shipkit 4.3.0, Sprint 10, S10-T2).**
+> Status: **decided on 2026-10-07 — the overlay skills stay in core (shipkit 4.3.0, Sprint 10, S10-T2). Amended by 0004 on 2026-10-30:** they stay in core but install on `--with-skills`, not by default; `deploy-check` and `safety-check` are cut (thinning plan W6, W8).
 > Spec: `.shipkit/specs/real-run/`; plan: `docs/plans/evidence-sprint-plan.md`, B9 and S10-T2.
 > Settles item 6 of `docs/design/two-plugin-split.md` §5, open since 3.0 (2026-09-14).
 

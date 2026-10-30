@@ -2400,7 +2400,7 @@ else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"
 # 67. skills-flag: an overlay's skills install only on --with-skills (thinning plan W6). A Rails
 # install without the flag writes the rules and the CLAUDE.md section, copies no skill, records
 # no skill in the manifest, and says how many it skipped; with the flag (before the positional
-# arguments, the contract unchanged) the six skills and their manifest rows as before;
+# arguments, the contract unchanged) the four skills and their manifest rows as before;
 # unsetup-remove.sh removes exactly the installed set in each case; the setup skill asks once,
 # names the count, and takes "no skills" when non-interactive. No claude needed.
 # Cites: overlays-and-eve/REQ-1 overlays-and-eve/REQ-2 overlays-and-eve/REQ-3 overlays-and-eve/REQ-4
@@ -2411,16 +2411,16 @@ sf_err=$(eval sh "$COPY/scripts/install-stack.sh" "$COPY" rails "$SF" $sf_args 2
 sf_skills=$(ls -d "$SF"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
 sf_man=$(grep -c "$(printf '\t')\.claude/skills/" "$SF/.claude/rules/shipkit/.installed" 2>/dev/null)
 if [ "$sf_rc" -eq 0 ] && [ "$sf_skills" -eq 0 ] && [ "${sf_man:-0}" -eq 0 ] && [ -f "$SF/.claude/rules/shipkit/rails/rails.md" ] \
-   && grep -q 'shipkit:stack:rails' "$SF/CLAUDE.md" && printf '%s\n' "$sf_err" | grep -q '6 skill.*--with-skills'; then
-  pass "skills-flag (without the flag: rules and the section, no skill copied or recorded, one line names the 6 skipped and the flag)"
+   && grep -q 'shipkit:stack:rails' "$SF/CLAUDE.md" && printf '%s\n' "$sf_err" | grep -q '4 skill.*--with-skills'; then
+  pass "skills-flag (without the flag: rules and the section, no skill copied or recorded, one line names the 4 skipped and the flag)"
 else failc "skills-flag" "without the flag: rc=$sf_rc skills=$sf_skills manifest-skill-rows=${sf_man:-0} stderr: $(printf '%s' "$sf_err" | tr '\n' '|' | cut -c1-200)"; fi
 SF2="$WORK/skills-flag-on"; mkdir -p "$SF2"; printf '# demo\n' > "$SF2/CLAUDE.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$SF2" >/dev/null 2>&1
 eval sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" rails "$SF2" $sf_args >/dev/null 2>&1; sf2_rc=$?
 sf2_skills=$(ls -d "$SF2"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
 sf2_man=$(grep -c "$(printf '\t')\.claude/skills/" "$SF2/.claude/rules/shipkit/.installed" 2>/dev/null)
-if [ "$sf2_rc" -eq 0 ] && [ "$sf2_skills" -eq 6 ] && [ "${sf2_man:-0}" -ge 6 ] && grep -q 'bundle exec rspec' "$SF2/.claude/skills/new-feature/SKILL.md"; then
-  pass "skills-flag (--with-skills before the positional arguments: the six skills installed and recorded, placeholders filled)"
+if [ "$sf2_rc" -eq 0 ] && [ "$sf2_skills" -eq 4 ] && [ "${sf2_man:-0}" -ge 4 ] && grep -q 'bundle exec rspec' "$SF2/.claude/skills/new-feature/SKILL.md"; then
+  pass "skills-flag (--with-skills before the positional arguments: the four skills installed and recorded, placeholders filled)"
 else failc "skills-flag" "with the flag: rc=$sf2_rc skills=$sf2_skills manifest-skill-rows=${sf2_man:-0}"; fi
 sh "$COPY/scripts/unsetup-remove.sh" "$SF" --yes >/dev/null 2>&1; sh "$COPY/scripts/unsetup-remove.sh" "$SF2" --yes >/dev/null 2>&1
 if [ ! -d "$SF/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/skills/new-feature" ] && [ -f "$SF/CLAUDE.md" ]; then
@@ -2456,6 +2456,30 @@ if sed -n '1,8p' "$COPY/stacks/rails/.claude/rules/rails.md" | grep -q '^paths:'
    && sed -n '1,8p' "$COPY/stacks/react/.claude/rules/react.md" | grep -q '^paths:' && grep -q 'app/frontend' "$COPY/stacks/react/.claude/rules/react.md"; then
   pass "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
 else failc "appends-trimmed" "rails.md or react.md lacks paths: (rails: $(sed -n '1,3p' "$COPY/stacks/rails/.claude/rules/rails.md" | tr '\n' '|'))"; fi
+
+# 69. skills-cut: two Rails overlay skills the W8 audit found said by the loop or the rules are
+# gone (deploy-check, safety-check — the owner's yes, 2026-10-30); release carries their two
+# unique lines (brakeman, asset compilation) in its Phase 1; --with-skills rails installs the
+# four that remain and the setup text names four. Decision 0004 is a five-part record that
+# decision-check lists; 0003 is marked amended, not deleted. No claude needed.
+# Cites: overlays-and-eve/REQ-9 overlays-and-eve/REQ-10
+sc_fail=""
+for d in deploy-check safety-check; do [ -e "$COPY/stacks/rails/.claude/skills/$d" ] && sc_fail="$sc_fail [$d still shipped]"; done
+grep -qi 'brakeman' "$COPY/stacks/rails/.claude/skills/release/SKILL.md" || sc_fail="$sc_fail [release lacks brakeman]"
+grep -qi 'assets:precompile\|asset compilation\|assets compile' "$COPY/stacks/rails/.claude/skills/release/SKILL.md" || sc_fail="$sc_fail [release lacks the asset line]"
+SC="$WORK/skills-cut"; mkdir -p "$SC"; printf '# demo\n' > "$SC/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$SC" >/dev/null 2>&1
+sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" rails "$SC" TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire >/dev/null 2>&1
+sc_n=$(ls -d "$SC"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+[ "$sc_n" -eq 4 ] || sc_fail="$sc_fail [with-skills rails installed $sc_n skills, expected 4]"
+grep -q 'ships 4 skills' "$COPY/skills/setup/SKILL.md" || sc_fail="$sc_fail [setup text does not say 4 skills]"
+if [ -z "$sc_fail" ]; then pass "skills-cut (deploy-check and safety-check gone; release carries brakeman and the asset line; --with-skills rails installs 4; setup says 4)"
+else failc "skills-cut" "$sc_fail"; fi
+if [ -f "$ROOT/.shipkit/decisions/0004-overlay-skills-flag.md" ] && grep -q '^\*\*Falsifiability\.\*\*' "$ROOT/.shipkit/decisions/0004-overlay-skills-flag.md" \
+   && grep -q '^\*\*Fired-if\.\*\*' "$ROOT/.shipkit/decisions/0004-overlay-skills-flag.md" \
+   && grep -qi 'amended by 0004\|amended on' "$ROOT/.shipkit/decisions/0003-overlay-skills-home.md"; then
+  pass "skills-cut (decision 0004 is a five-part record with its clauses; 0003 is marked amended, not deleted)"
+else failc "skills-cut" "0004 missing or without Falsifiability/Fired-if, or 0003 not marked amended"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

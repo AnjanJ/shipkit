@@ -250,9 +250,8 @@ placeholders that overlay uses (Phase 1 step 4).
 **The overlay's skills are optional (5.0.0).** By default the script installs the rules and
 the `CLAUDE.md` section only; a skill copied into `.claude/skills/` is listed in every session
 of this project. Where the overlay ships skills (the tables below), ask **once**, naming the
-count: "The `rails` overlay ships 6 skills (`/new-feature`, `/release`, `/safety-check`,
-`/deploy-check`, two knowledge bases); each is listed in every session here — install them
-too?" On yes, pass `--with-skills` before the plugin root. **Non-interactive** (a headless
+count: "The `rails` overlay ships 4 skills (`/new-feature`, `/release`, two knowledge bases);
+each is listed in every session here — install them too?" On yes, pass `--with-skills` before the plugin root. **Non-interactive** (a headless
 run, or the user said to take defaults): install no skills and say so in the summary.
 
 ```bash
@@ -294,7 +293,7 @@ to merge them. Edit neither section — the project's is theirs, shipkit's is re
 
 | Base | Skills | Rules | Knowledge bases (skills with `user-invocable: false`) |
 |-------|--------|-------|---------|
-| `rails` | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
+| `rails` | `/new-feature`, `/release` (its Phase 1 carries the `brakeman` and asset checks `/deploy-check` had until 5.0.0; `/safety-check`'s list lives in the rules and the review lens) | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
 | `react` (standalone) | `/component` | `package-json.md`, `react.md` | — |
 | `python` | `/new-feature` | `pyproject.md`, `django.md` (loads on Django files only) | — |
 | `go` | `/new-feature` | `go-mod.md` | — |

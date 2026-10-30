@@ -22,7 +22,7 @@ T2, T3 and T4 STOP for the owner's word before anything shipped moves (rule 6).*
   - Test: the audit's table read by the owner (**STOP**); after the cuts, scripts/smoke.sh check 58's kept list if a measured line moved, and a check that `rails.md`/`react.md` carry `paths:` or the audit says why not (cites `overlays-and-eve/REQ-7`); `scripts/context-cost.sh` on a scratch Rails and a scratch Python project before and after (the `overlay-appends` row)
   - After: T1
   - Done when: every row has a verdict and a reason; the cuts the owner approved are out and no other; the appends' bytes in `context-cost.md`; lint 0/0
-- [ ] **T3** The eleven overlay skills against the loop (S21-T3, W8) → REQ-8, REQ-9, REQ-10
+- [x] **T3** The eleven overlay skills against the loop (S21-T3, W8) → REQ-8, REQ-9, REQ-10
   - Files: docs/design/trim-audit-overlays.md, plugins/shipkit/stacks/*/.claude/skills/, .shipkit/decisions/0004-overlay-skills-flag.md, .shipkit/decisions/0003-overlay-skills-home.md, plugins/shipkit/scripts/install-stack.sh, scripts/smoke.sh, GUIDE.md
   - Test: the side-by-side read by the owner (**STOP**, a yes per cut); `sh plugins/shipkit/scripts/decision-check.sh .` lists 0004 and no FIRED (cites `overlays-and-eve/REQ-10`); scripts/smoke.sh: the checks that count overlay skills follow; a check that no cut skill's directory exists and `install-stack.sh --with-skills` installs only the kept set (cites `overlays-and-eve/REQ-9`)
   - After: T2
