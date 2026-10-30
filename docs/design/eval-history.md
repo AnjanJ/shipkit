@@ -43,7 +43,25 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
-## Release run 4.11.0
+## Release run 4.12.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-30, at `8e9af9c` (the release prep commit; `plugins/`
+byte-identical through the READY report `a7a99be` and the smoke fix `c20c3cc`): 59 cases,
+1,222 s, **$19.48, exit 0** — the first release run under the five-run watch (sixteen cases at
+`runs: 5`, threshold 0.6; PR #21). 58 cases at full score: every five-run watch case 5 of 5,
+`trap2/experiments` 3 of 3 (1 of 3 under `-j 4` in 4.11.0, 2 of 3 alone; the grader is still
+the one named narrower than its line — today's three runs logged the device in a form it
+reads), `grandfather-xl/drift`, `grandfather/drift` and `digest/attention` 3 of 3 (2 of 3 in
+earlier runs under `-j 4`), `intake/answered` 3 of 3 (2 of 3 in 4.11.0). One case below full:
+**`intake/limit` 2 of 3** — run 1 scored 0.00 on `four-questions-or-fewer` (judge votes FAIL
+FAIL FAIL: the reply asked more than four questions), runs 2 and 3 passed; 2 of 3 is its shape
+in 4.9.0, 4.10.0 and 4.11.0 and above the threshold, so it was not re-run and no grader
+changed. Cost $19.48 against the plan's "≈ $17.80 for 59 cases" at three runs and the PR #21
+estimate of "$3.50–4 on top": the five-run cases cost $0.35–0.63 each against $0.16–0.49 for
+the three-run ones. The smoke suite ran beside it (13:29–13:37): 179 checks, 178 passed; check
+35's "no hook names decision-check" sub-check matched PR #21's comment in `session-start.sh`
+and was corrected to read code lines only (`c20c3cc`), then passed alone.
+
 
 `bash scripts/evals.sh -j 4`, 2026-10-11, at `e554a1f` (`plugins/` byte-identical through the
 ship commit `baf5e82`): 59 cases, 1,069 s, $16.79, **exit 1** — `trap2/experiments` 1 of 3;

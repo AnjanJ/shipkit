@@ -4,18 +4,52 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [Unreleased]
+## [4.12.0] — 2026-10-30
 
 **What changed for you.** The session hook now prints the plugin's version on its own line
 under the plugin root, so a session running an old cached copy says so at a glance. A
 `--plugin-dir` checkout, an eval sandbox or a smoke run no longer overwrites the installed
-plugin's path in `~/.claude/shipkit/plugin-root`; each writes `plugin-root.dev` instead. The
-sixteen watch cases run five times per release instead of three, at about $4 more a run, so
-one unlucky run no longer turns a release red by itself. `eve`'s prompt has a trim audit with
-the arms and the budget to measure it; the agent itself is unchanged. And every changelog
-entry now opens with a paragraph like this one.
+plugin's path in `~/.claude/shipkit/plugin-root`; each writes `plugin-root.dev` instead — so
+if you installed shipkit from the marketplace you never again need to put `plugin-root` back
+after a dev session or a smoke run (the second-run plan's rule 17); only someone who runs
+shipkit from a checkout and has no installed copy still has a file a dev session can leave
+pointing at itself. The sixteen watch cases run five times per release instead of three, at
+about $4 more a run, so one unlucky run no longer turns a release red by itself. `eve`'s
+prompt has a trim audit with the arms and the budget to measure it; the agent itself is
+unchanged. The evals README now quotes the sandbox's refusal text for a protected file name,
+read from a trace, so a case author knows what the tool says. And shipkit's loop ran end to
+end a third time, on a Python/FastAPI project, with nothing fixed and twelve findings
+recorded for the plan after (`docs/design/field-notes-4.12.md`). Every changelog entry now
+opens with a paragraph like this one.
+
+### Added
+
+- **The refusal text, captured** (`plugins/shipkit/evals/README.md`, "What a case cannot ask
+  for"): a probe case on a scratch copy asked for `.pre-commit-config.yaml` at the workspace
+  root; the `Write` call's `tool_result` (`is_error: true`) reads "Permission to use Write has
+  been denied because Claude Code is running in don't ask mode." (Claude Code 2.1.296,
+  2026-10-11; the full text in `docs/design/eval-results-4.12.md`). Smoke check 57 keeps the
+  paragraph. Second-run plan S19-T2 (E16).
+- **The third real run** (`docs/design/field-notes-4.12.md`; S19-T3, E17): the loop on
+  `~/code/linkshort`, a FastAPI + pytest + uv project the owner asked to have built for the run
+  when no Python repository was on disk — the hook, setup, product, intake, spec, one task
+  through `brief.sh` and `brief-verify.sh`, the gate — headless on `sonnet` from a worktree on
+  `shipkit/real-run-3` (deleted after, on the owner's yes), $1.37 of the ≈ $5–8 budgeted,
+  nothing fixed. Twelve findings under the ROADMAP's "Still open after Sprint 19", each citing
+  its section. E4, E6 and E7 held; E5 held with its list one entry short; E1–E3 could not be
+  exercised on a project with no prior setup; E8's closed record needs reopening (below).
+- **The roadmap for the plan after** (`ROADMAP.md`, S19-T4): the Sprint 19 row; "Still open
+  after Sprint 19" from the run, Sprint 18's readings (`trap2/experiments` and `package-json`
+  graders narrower than their lines) and the 4.7.0, 4.9.0 and 4.10.0 "What using it for real
+  showed" sections; the evals ceiling noted full (196,589 of 196,608); the thinning plan named
+  as the DRAFT plan after, with W0 to be re-decided since Sprint 19 ran as written.
 
 ### Changed
+
+- **S19-T1 paid by the installed-root rule, not the hook pair.** The plan's `SessionEnd` hook
+  and `.prev` file were never built: PR #21 closed the window the other way (below), and the
+  spec's REQ-1 to REQ-4 were restated to that rule, the approved record marked superseded by a
+  new one, and smoke check 62 cites `third-run/REQ-1..3` (`.shipkit/specs/third-run/`).
 
 - **The hook prints the version** (`shipkit: version 4.11.0`, its own line under the root
   line, read from the root's `plugin.json`). Smoke check 62 asserts the line. Named in the
@@ -51,6 +85,43 @@ entry now opens with a paragraph like this one.
   far as it goes without a paid run.
 - **This paragraph, backfilled**: 4.9.0, 4.10.0 and 4.11.0 open with a *What changed for
   you* paragraph; the file's head says the convention. The ledger prose stays where it was.
+
+### What using it for real showed
+
+**A headless intake held its session open for twenty minutes.** The skill spawned
+`grandfather` for the code facts; the model scheduled a `ScheduleWakeup` of 1,200 s "in case
+the notification never arrives"; the agent finished in 23 s and the intake was on disk at 28 s;
+the `-p` session did not exit until the wakeup fired and re-ran the prompt, and the JSON
+`result` was that second turn's "already exists … left unchanged". 4.10.0 closed the leaked
+wait sentence by record as the harness's shape; the shape has a timer now, and the record's
+reopening condition ("an interactive session") was the wrong one (`field-notes-4.12.md` §4.1).
+**A model-written `Fired-if` fired on bytecode**: `grep -rl expires_at src` from `sh -c` is BSD
+grep listing `__pycache__/*.pyc` after the first `pytest`, four files where the clause meant
+two; `decision-check` ran it faithfully and the gate asked for a superseding record (§9.1).
+**The brief does not say "cite `<slug>/REQ-N`"**, and the agent did not; `spec-check` kept the
+task's two requirements `PENDING-TEST` after a correct build and the reviewer named the missing
+citation from the other side (§8.1, §9). **E5's list is one entry short**: the stack's project
+skill `.claude/skills/new-feature/SKILL.md`, which setup writes, was a "change beyond the spec"
+(§9.2); and the gate's `git status --porcelain` capture went to `/tmp/ship-pre-status.txt`,
+outside the `shipkit-ship-*` cleanup (§9.3). **The window is closed**: `plugin-root` held the
+cache path before and after every session; `plugin-root.dev` took the checkout's; rule 17's
+write-back was not needed once. **The project was built for the run**, the same day, by the
+same hand, and its friction was nil — `uv run pytest` worked first try where 4.3 and 4.9 each
+lost minutes to a pinned toolchain; the notes say so first. Smaller: the setup skill says
+"nine rules" and installs eight, and the model that followed it said so (§2.1); the python
+stack section carries its template's "or" lines and a Django block on a FastAPI project (§2.2);
+the product skill resolved the README's "no database" against the TODO's SQLite without a
+question (§3). On the sprint's own tree: a cloud session's PR (#21) had paid T1 before the
+branch was rebuilt on it, and the sprint's hook-pair commits were dropped for a spec amendment
+rather than merged against it. **Both headless gate runs looked for their scratch files under
+`/tmp` instead of `$TMPDIR`**, found the review (first run) and test and decision blocks
+(second run) empty, re-ran the step and rebuilt the report, and said so; the first run's
+`NOT READY` was step 3 alone — T-REL unticked, which the release task puts in the prep commit
+and this one left out. Smoke: 179 checks, 178 passed on the release prep tree (174 at 4.11.0;
+check 62 adds 5); the one failure was check 35's "no hook names decision-check" sub-check
+matching PR #21's comment in `session-start.sh`, corrected to read code lines only and passed
+alone. The release eval run: 59 cases, $19.48, exit 0, `intake/limit` 2 of 3 as in the three
+runs before (`docs/design/eval-history.md`, "Release run 4.12.0").
 
 ## [4.11.0] — 2026-10-11
 
