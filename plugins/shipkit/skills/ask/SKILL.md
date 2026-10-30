@@ -1,7 +1,7 @@
 ---
-description: "Ask the project elders — route a question to grandfather (this project) or eve (across all projects). Keeps main context thin: all research happens in a subagent, only the answer comes back."
+description: "Ask the elders: grandfather (this project) or eve (--all, every project). TRIGGER when: the user asks to walk through, trace or follow how one feature works end to end (--walk <feature>), how/why the system is built (--system), or any research question. DO NOT TRIGGER when: it changes code."
 user-invocable: true
-argument-hint: "<question>  |  --all <question>  |  --all digest"
+argument-hint: "<question> | --all <question> | --all digest | --walk <feature> [surface|deep] | --system [full|quick|section <name>]"
 ---
 
 # /shipkit:ask — Ask the Project Elders
@@ -39,6 +39,18 @@ Question: `$ARGUMENTS`
     each reason tied to a line in the digest and to a studio priority. If the script fails
     (no registry), relay its message and stop; do not have eve rank from nothing.
 
+- **`--walk <feature-or-file> [surface|deep]`** (the walkthrough; a skill of its own until
+  5.0.0) → read `@walk.md` and hand its whole text, with the words after `--walk` as the
+  Target, to the **`tracer`** agent as the prompt (the agent is read-only and non-interactive;
+  it returns the entry-point table and a `PROPOSED: docs/code-walkthrough/<feature>.md`).
+  Present the result; write the file only on the user's yes, checking first that it would not
+  overwrite one.
+- **`--system [full|quick|section <name>]`** (the system-design explainer; a skill of its own
+  until 5.0.0) → read `@system.md` and hand its whole text, with the words after `--system` as
+  the Scope, to a **`general-purpose`** agent as the prompt. It returns a `PROPOSED:
+  docs/SYSTEM_DESIGN.md`, a claims table and an opportunities table; present them and write
+  the file only on the user's yes.
+
 ## How to run it
 
 1. **Do not research in the main context.** That defeats the purpose. Immediately spawn the
@@ -75,3 +87,5 @@ Question: `$ARGUMENTS`
 - `/shipkit:ask --all matrix rails` → eve (version matrix: every repo's Rails version, from lockfiles)
 - `/shipkit:ask --all consolidate` → eve (what am I maintaining N times that should exist once?)
 - `/shipkit:ask --all digest` → portfolio-digest.sh, then eve (which product needs attention this week, and why?)
+- `/shipkit:ask --walk checkout` → tracer, with `walk.md` as its brief (one feature, end to end, `file:line`-cited)
+- `/shipkit:ask --system quick` → a general-purpose agent, with `system.md` as its brief (why it is built this way)

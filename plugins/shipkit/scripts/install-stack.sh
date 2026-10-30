@@ -120,7 +120,7 @@ if [ -d "$SRC/.claude/skills" ]; then
       dest="$SDEST/$(basename "$f")"
       # .claude/skills/ is shared with the user's own skills, and overlay skill names are
       # generic (`new-feature`, `component`). Copying blindly replaced a same-named skill the
-      # user wrote and then recorded it in the manifest as shipkit's, so /shipkit:unsetup
+      # user wrote and then recorded it in the manifest as shipkit's, so /shipkit:setup remove
       # would delete it. Overwrite only what the manifest proves is ours, or what is already
       # byte-identical to what we are about to write.
       new=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
@@ -173,7 +173,7 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
   # loaded into every session. Look for the section's first `## ` line among the CLAUDE.md
   # lines OUTSIDE every shipkit block (a heading inside one is shipkit's own, from an earlier
   # run); found → the section is still written under its marker (the manifest and the sha stay
-  # true) and one line says so, naming /shipkit:update-rules as the way to merge (run-debts
+  # true) and one line says so, naming /shipkit:setup rules as the way to merge (run-debts
   # REQ-1). The user's heading is never touched.
   HEADING=$(grep -m1 '^## ' "$SRC/CLAUDE.md.append")
   OWN_HEADING=0
@@ -253,7 +253,7 @@ if [ -f "$SRC/CLAUDE.md.append" ]; then
   fi
   rm -f "$SECTION" "$NEW"
   if [ "$OWN_HEADING" = "1" ]; then
-    echo "install-stack: $CM already has \"$HEADING\"; shipkit's section is below it under its marker — review with /shipkit:update-rules" >&2
+    echo "install-stack: $CM already has \"$HEADING\"; shipkit's section is below it under its marker — review with /shipkit:setup rules" >&2
   fi
 fi
 

@@ -1,14 +1,8 @@
----
-description: "Set up MemPalace episodic memory so grandfather/eve can recall past decisions: install, register at user scope, backfill from Claude transcripts. TRIGGER when: the user asks to set up or connect episodic memory or MemPalace. DO NOT TRIGGER when: it is already connected, or they want the map."
-user-invocable: true
-argument-hint: "[--wing <name>] [--reinstall]"
----
-
 <!-- Runs INLINE (no context: fork) on purpose: it confirms before heavy/irreversible steps
      (a ~300MB install, writing an index) and needs AskUserQuestion + real shell execution.
      Forked skills can neither ask the user nor should own a multi-step install. -->
 
-# /shipkit:connect-memory — Set Up Episodic Memory (MemPalace)
+# /shipkit:setup memory — Set Up Episodic Memory (MemPalace)
 
 Make `grandfather`/`eve` able to answer *"why did we decide X?"* and *"what did we settle last
 session?"* — by installing and wiring up **[MemPalace](https://github.com/mempalace/mempalace)**,
@@ -94,10 +88,10 @@ ls "$TDIR" >/dev/null 2>&1 || echo "no transcripts for this dir — nothing to b
 ```
 
 If the derived dir doesn't exist, this project has no Claude history here yet — say so, finish
-the install/register, and tell the user to re-run `/shipkit:connect-memory` later once there are
+the install/register, and tell the user to re-run `/shipkit:setup memory` later once there are
 conversations to mine.
 
-Pick the **wing** name: `--wing` from `$ARGUMENTS`, else the repo/directory basename.
+Pick the **wing** name: `--wing` from the words after `memory`, else the repo/directory basename.
 
 **Split first** (transcripts can be concatenated mega-files; `mine` wants per-session files):
 

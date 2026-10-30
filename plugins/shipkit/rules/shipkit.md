@@ -1,7 +1,7 @@
 # Shipkit
 
 - No CLAUDE.md and the user asks about setup: suggest `/shipkit:setup`.
-- `.claude/lessons.md` exists: offer `/shipkit:update-rules` to migrate it, never append.
+- `.claude/lessons.md` exists: offer `/shipkit:setup rules` to migrate it, never append.
 
 ## Care
 
@@ -21,4 +21,4 @@ Honor `Workflow style:` in CLAUDE.md: `strict-tdd` (failing test before any code
 
 ## Commits
 
-One logical change per commit, test and code together. Stage files by name, never `git add .` or `-A`. Never `--no-verify`. No `Co-Authored-By` trailer unless asked. Non-trivial work on the default branch: branch first. Substantive commit: use the format in `/shipkit:commit`.
+One logical change per commit, test and code together. Stage by name, never `git add .` or `-A`. Never `--no-verify`. No `Co-Authored-By` trailer unless asked. Non-trivial work on the default branch: branch first. Substantive commit: the format in `/shipkit-workflows:commit`.

@@ -1,29 +1,22 @@
----
-description: "Trace one feature end-to-end (trigger, every layer, datastore, response) and return a step-by-step code walkthrough. TRIGGER when: the user asks how one feature or flow works. DO NOT TRIGGER when: they want the whole architecture (/shipkit:explain-system) or a where-things-live index (/shipkit:map)."
-user-invocable: true
-argument-hint: "[<feature-name> [surface|deep]]"
-context: fork
-agent: tracer
----
-
-<!-- FIRE-AND-FORGET FORK: runs non-interactively as the read-only tracer
-     agent. It cannot ask the user anything mid-run and cannot write files. It traces
+<!-- Reference body for `/shipkit:ask --walk` (was the walkthrough skill until 5.0.0). The ask
+     skill hands this whole file, plus the argument, to the read-only tracing agent as its prompt.
+     The agent It cannot ask the user anything mid-run and cannot write files. It traces
      end-to-end and RETURNS the walkthrough; the main session presents it and writes
      docs/code-walkthrough/<feature>.md only after the user approves. -->
 
-# /walkthrough — Guided Code Walkthrough
+# /shipkit:ask --walk — Guided Code Walkthrough
 
 Trace one feature end-to-end — from trigger to database and back — and produce a
 step-by-step walkthrough, returned as a proposed `docs/code-walkthrough/<feature-name>.md`.
 
 **How this relates to the other explainers:**
 - `/shipkit:map` (archivist) indexes WHAT exists and where — the city map
-- `/explain-system` explains WHY decisions were made (trade-offs, ADRs) — the urban planning textbook
-- `/walkthrough` traces HOW one feature works step by step — the guided walking tour
+- `/shipkit:ask --system` explains WHY decisions were made (trade-offs, ADRs) — the urban planning textbook
+- `/shipkit:ask --walk` traces HOW one feature works step by step — the guided walking tour
 
 ## Arguments
 
-Target: $ARGUMENTS (required — feature name or file path, optionally followed by `surface` or `deep`)
+Target: the words after `--walk` (required — feature name or file path, optionally followed by `surface` or `deep`)
 
 - `<feature-name>` — name of the feature to trace (e.g., `checkout`, `login`, `webhook-processing`)
 - `<file-path>` — path to a specific file to use as entry point
@@ -58,7 +51,7 @@ Features often have multiple triggers: HTTP requests, background jobs, cron, web
 - If a file path was given, that IS the entry point.
 - Otherwise trace the **primary user-facing trigger** (usually the HTTP route).
 - Include the full entry-point table in your output with a note: "re-run
-  `/shipkit:walkthrough <feature> from <entry>` to trace a different trigger."
+  `/shipkit:ask --walk <feature> from <entry>` to trace a different trigger."
 - Depth comes from the arguments; default `deep`.
 
 ---
@@ -96,7 +89,7 @@ Compile internal trace (step, layer, file:line, method, data in/out, side effect
 
 ## Phase 3: Explain
 
-**Goal:** Transform the raw trace into a readable, guided walkthrough. See @reference.md for section formats (user journey, code trace, data transformations, side effects, error paths, key concepts).
+**Goal:** Transform the raw trace into a readable, guided walkthrough. See @walk-reference.md for section formats (user journey, code trace, data transformations, side effects, error paths, key concepts).
 
 ---
 
@@ -113,4 +106,4 @@ would overwrite an existing one.
 
 ---
 
-See @reference.md for full constraints.
+See @walk-reference.md for full constraints.

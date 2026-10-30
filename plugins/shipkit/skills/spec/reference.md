@@ -115,7 +115,7 @@ them before using `--run` in one you do not trust. Nothing runs them from a hook
   is the durable log the elders read: `PROJECT_MAP.md` records *what/where*, the log records
   *why*.
 - A record that is superseded is marked, not deleted, and points to the record that replaced it.
-- A substantive commit message already names rejected alternatives (see `/shipkit:commit`). Use
+- A substantive commit message already names rejected alternatives (see `/shipkit-workflows:commit`). Use
   a record, not just a commit line, when a future reader will need to revisit the decision.
 
 ---

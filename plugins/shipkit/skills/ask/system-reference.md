@@ -1,4 +1,4 @@
-# Explain System — Reference Material
+# ask --system — Reference Material
 
 ## ADR Format Template
 

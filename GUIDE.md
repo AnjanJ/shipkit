@@ -8,7 +8,7 @@ A complete guide to using every skill, agent, and feature in shipkit.
 
 1. [Getting Started](#getting-started)
 2. [How Shipkit Works](#how-shipkit-works) — automatic vs. invoked
-3. [Setup & Unsetup](#setup--unsetup)
+3. [Setup & Remove](#setup--remove)
 4. [The Project Elders](#the-project-elders)
 5. [Episodic Memory (MemPalace)](#episodic-memory-mempalace)
 6. [Skills Reference](#skills-reference)
@@ -87,11 +87,11 @@ exist. You can still invoke any by name to force it.
 |-------|---------------------|
 | `/shipkit:spec` | ask to build/design a non-trivial feature before coding |
 | `/shipkit:decide` | make a project-wide choice with real alternatives |
-| `/shipkit:commit` | ask to commit, or reach a natural commit point |
+| `/shipkit-workflows:commit` | ask to commit, or reach a natural commit point |
 | `/shipkit-workflows:debug` | hit a failing test or a bug to root-cause |
 | `/shipkit-workflows:tdd` | explicitly ask for strict red-green-refactor |
-| `/shipkit:explain-system` | ask *why* a system is designed the way it is |
-| `/shipkit:walkthrough` | ask how one feature works end-to-end |
+| `/shipkit:ask --system` | ask *why* a system is designed the way it is |
+| `/shipkit:ask --walk` | ask how one feature works end-to-end |
 | `/shipkit-workflows:legacy-audit` | ask to assess/modernize an inherited codebase |
 | `/shipkit-workflows:migration-plan` | ask to plan a major upgrade or framework migration |
 | `/shipkit-workflows:humanize` | ask to de-AI writing in docs/READMEs/PRs |
@@ -99,18 +99,18 @@ exist. You can still invoke any by name to force it.
 ### ⚪ You invoke — call it when you want it
 
 Research, setup, and one-shot tools you reach for on purpose — you decide when. (Most don't
-auto-fire; `/shipkit:connect-memory` will also start on its own if you *ask* to "set up episodic
+auto-fire; `/shipkit:setup memory` will also start on its own if you *ask* to "set up episodic
 memory", but you'd normally just call it.)
 
 | Skill | Use it to… |
 |-------|-----------|
 | `/shipkit:ask` | ask the elders a question (this project, or `--all` for the portfolio) |
 | `/shipkit:map` | build/refresh `PROJECT_MAP.md`; `--register` for cross-project answers |
-| `/shipkit:setup` / `/shipkit:unsetup` | configure shipkit for your stack, or revert |
-| `/shipkit:connect-memory` | set up MemPalace so the elders recall past decisions |
-| `/shipkit:context-audit` | check context-window health and find bloat |
+| `/shipkit:setup` / `/shipkit:setup remove` | configure shipkit for your stack, or revert |
+| `/shipkit:setup memory` | set up MemPalace so the elders recall past decisions |
+| `/shipkit:setup audit` | check context-window health and find bloat |
 | `/shipkit-workflows:qa` | run the 5-phase QA workflow |
-| `/shipkit:update-rules` | change CLAUDE.md rules (never edit them by hand) |
+| `/shipkit:setup rules` | change CLAUDE.md rules (never edit them by hand) |
 
 **Rule of thumb:** the *knowledge layer* (maps, elders, registry) is something you **ask**; the
 *discipline* (rules, commit hygiene, spec/decision capture, freshness) is something that
@@ -118,7 +118,7 @@ memory", but you'd normally just call it.)
 
 ---
 
-## Setup & Unsetup
+## Setup & Remove
 
 ### /shipkit:setup
 
@@ -175,9 +175,9 @@ Two artifacts, answering two different questions:
 **When to run it:**
 - First time using shipkit in a project
 - After cloning a project that doesn't have a CLAUDE.md
-- When switching stacks (run `/shipkit:unsetup` first)
+- When switching stacks (run `/shipkit:setup remove` first)
 
-### /shipkit:unsetup
+### /shipkit:setup remove — undo setup (was `/shipkit:unsetup`)
 
 Reverses what `/setup` did — removing **shipkit's files, and only shipkit's files**.
 
@@ -205,7 +205,7 @@ rather than a manifest) it says so and asks, rather than deleting `.claude/` who
 
 **Usage:**
 ```
-/shipkit:unsetup
+/shipkit:setup remove
 ```
 
 **When to run it:**
@@ -215,7 +215,7 @@ rather than a manifest) it says so and asks, rather than deleting `.claude/` who
 
 **Full removal:**
 ```
-/shipkit:unsetup                     # remove project configuration
+/shipkit:setup remove                     # remove project configuration
 /plugin uninstall shipkit@shipkit    # remove the plugin
 ```
 
@@ -304,7 +304,7 @@ the thin-context principle is preserved.
 
 ### Enabling it
 
-**The easy way — `/shipkit:connect-memory`.** One skill does the whole setup: detects what's
+**The easy way — `/shipkit:setup memory`.** One skill does the whole setup: detects what's
 already done, installs MemPalace if missing, registers it at user scope, **auto-derives your
 transcript directory** (so you don't hand-build the `~/.claude/projects/-Users-...` path),
 backfills this project's history (dry-run first, then for real), and reminds you to restart Claude
@@ -312,9 +312,9 @@ Code. Run it once per machine to install/register, and once per project to backf
 re-run — it skips whatever is already done.
 
 ```
-/shipkit:connect-memory                 # set it up for this project
-/shipkit:connect-memory --wing myapp    # override the wing name
-/shipkit:connect-memory --reinstall     # force re-install/register on a broken setup
+/shipkit:setup memory                 # set it up for this project
+/shipkit:setup memory --wing myapp    # override the wing name
+/shipkit:setup memory --reinstall     # force re-install/register on a broken setup
 ```
 
 **By hand** (what the command runs for you), if you'd rather:
@@ -383,16 +383,16 @@ Create or refresh the `PROJECT_MAP.md` that the elders read.
 Run it once per project to start, and `refresh` after a big change (new domain, refactor,
 framework upgrade). A stale map makes the elders flag drift — that is your cue to refresh.
 
-### /shipkit:connect-memory — Set Up Episodic Memory
+### /shipkit:setup memory — Set Up Episodic Memory (was `/shipkit:connect-memory`)
 
 Wire up [MemPalace](#episodic-memory-mempalace) so `grandfather`/`eve` can recall *why* past
 decisions were made — end to end, so you don't hand-run the install and hand-derive your
 transcript path.
 
-- `/shipkit:connect-memory` → detect state, install if missing, register at user scope, backfill
+- `/shipkit:setup memory` → detect state, install if missing, register at user scope, backfill
   this project's history (dry-run first), remind you to restart Claude Code.
-- `/shipkit:connect-memory --wing <name>` → override the wing name (default: directory basename).
-- `/shipkit:connect-memory --reinstall` → force re-install/register on a broken setup.
+- `/shipkit:setup memory --wing <name>` → override the wing name (default: directory basename).
+- `/shipkit:setup memory --reinstall` → force re-install/register on a broken setup.
 
 Once per machine to install/register; once per project to backfill. Optional — skip it and the
 elders fall back to git history for decision questions. Full concepts and troubleshooting live in
@@ -465,46 +465,46 @@ Covers 40 patterns across vocabulary, structure, tone, and formatting. Includes 
 
 ---
 
-### /shipkit:explain-system — System Design Docs
+### /shipkit:ask --system — System Design Docs (was `/shipkit:explain-system`)
 
 Explores your codebase and writes a verified system design document explaining WHY it's designed the way it is.
 
 ```
-/shipkit:explain-system                  # full 6-phase explanation
-/shipkit:explain-system quick            # phases 1-2 only
-/shipkit:explain-system section auth     # regenerate just one section
+/shipkit:ask --system                  # full 6-phase explanation
+/shipkit:ask --system quick            # phases 1-2 only
+/shipkit:ask --system section auth     # regenerate just one section
 ```
 
 ---
 
-### /shipkit:walkthrough — Feature Trace
+### /shipkit:ask --walk — Feature Trace (was `/shipkit:walkthrough`)
 
 Traces one feature from entry point through every layer.
 
 ```
-/shipkit:walkthrough user-registration           # trace by feature name
-/shipkit:walkthrough src/controllers/auth.ts     # trace from file
-/shipkit:walkthrough checkout surface            # happy path only
-/shipkit:walkthrough checkout deep               # include error paths
+/shipkit:ask --walk user-registration           # trace by feature name
+/shipkit:ask --walk src/controllers/auth.ts     # trace from file
+/shipkit:ask --walk checkout surface            # happy path only
+/shipkit:ask --walk checkout deep               # include error paths
 ```
 
 ---
 
-### /shipkit:update-rules — Update CLAUDE.md
+### /shipkit:setup rules — Update CLAUDE.md (was `/shipkit:update-rules`)
 
 Adds, updates, or removes rules in CLAUDE.md while maintaining structure.
 
 ```
-/shipkit:update-rules always use factory_bot, never fixtures
-/shipkit:update-rules remove the rule about JIRA references
-/shipkit:update-rules add: API responses must include request_id
+/shipkit:setup rules always use factory_bot, never fixtures
+/shipkit:setup rules remove the rule about JIRA references
+/shipkit:setup rules add: API responses must include request_id
 ```
 
 **Never manually edit CLAUDE.md** — use this skill to keep formatting consistent.
 
 ---
 
-### /shipkit:commit — Atomic Commit, Message Scaled to the Change
+### /shipkit-workflows:commit — Atomic Commit, Message Scaled to the Change (was `/shipkit:commit`)
 
 Builds one atomic commit whose message carries the reasoning a future reader (and the elders)
 will want. It inspects the working tree, splits or questions tangled changes rather than
@@ -521,8 +521,8 @@ follows it on *any* substantive commit it makes — not only when you invoke the
   what you observed). Plus **Risk/Rollback**, **Follow-ups**, and **Refs** where they apply.
 
 ```
-/shipkit:commit                     # inspect the tree and commit it well
-/shipkit:commit emphasize the perf tradeoff in the why
+/shipkit-workflows:commit                     # inspect the tree and commit it well
+/shipkit-workflows:commit emphasize the perf tradeoff in the why
 ```
 
 It never bundles unrelated changes, never fabricates a test plan, and never adds a co-author
@@ -530,12 +530,12 @@ trailer or touches published commits unless you ask.
 
 ---
 
-### /shipkit:context-audit — Context Window Health
+### /shipkit:setup audit — Context Window Health (was `/shipkit:context-audit`)
 
 Reports what's consuming your context window and suggests optimizations.
 
 ```
-/shipkit:context-audit
+/shipkit:setup audit
 ```
 
 Use this when Claude seems to be forgetting things or losing context.
@@ -804,10 +804,10 @@ Shipkit keeps three kinds of durable, *verified* knowledge and leaves the rest t
 |------|-------|------------------|
 | Structure — what exists and where | `PROJECT_MAP.md` | `archivist`, via `/shipkit:map` |
 | Intent and why — specs and decision records | `.shipkit/specs/`, `.shipkit/decisions/` | you, via `/shipkit:spec` and `/shipkit:decide` |
-| Conversation history (optional) | MemPalace | `/shipkit:connect-memory` |
+| Conversation history (optional) | MemPalace | `/shipkit:setup memory` |
 
 Corrections and preferences ("use factory_bot, not fixtures") belong in Claude Code's own
-per-project memory or, when they are real conventions, in a rule via `/shipkit:update-rules`.
+per-project memory or, when they are real conventions, in a rule via `/shipkit:setup rules`.
 Shipkit ≤ 2.8 kept a `.claude/lessons.md` for this; it is retired. If your project still has
 one, Claude reads it at session start and offers to migrate its entries into rules — then delete
 it. The elder agents deliberately carry no private memory of their own: the map, the registry
@@ -861,7 +861,7 @@ datastore and back, reads the tests for the edge cases, and returns a `file:line
 walkthrough. Sonnet, 40 turns, up to 40 files — the budget a real trace needs, which the
 explorer's bounded budget is not meant for.
 
-Used by `/shipkit:walkthrough`. Or reference directly: "use the tracer agent to trace the checkout flow."
+Used by `/shipkit:ask --walk`. Or reference directly: "use the tracer agent to trace the checkout flow."
 
 All three: read-only, report confidence levels, keep no private memory between runs.
 
@@ -1053,11 +1053,11 @@ for `eve`'s portfolio view, or when the commit log is too thin to carry the proj
 **3. Understand before you change.**
 ```
 /shipkit:ask how does authentication flow through this app?   # grandfather, cited answer
-/shipkit:walkthrough checkout                                  # trace one path step by step
-/shipkit:explain-system                                        # why is it built this way?
+/shipkit:ask --walk checkout                                  # trace one path step by step
+/shipkit:ask --system                                        # why is it built this way?
 ```
 **What you get:** grandfather traces the flow and returns a cited answer without dumping the code
-into your session; `/shipkit:walkthrough` traces one path step by step; `/shipkit:explain-system`
+into your session; `/shipkit:ask --walk` traces one path step by step; `/shipkit:ask --system`
 returns the *why* (decisions, trade-offs). **Why:** on legacy code, the reason something exists is
 usually the thing you're missing — and the thing most likely to bite you if you change it blind.
 
@@ -1077,7 +1077,7 @@ where spec-driven development pays off in brownfield without drowning you in cer
 upgrade — before you start, not halfway through.
 
 **From here:** as you learn non-obvious things, turn the real conventions into rules with
-`/shipkit:update-rules`; refresh the map after big changes; capture the decisions you make with
+`/shipkit:setup rules`; refresh the map after big changes; capture the decisions you make with
 `/shipkit:decide` so the next person (or you in six months) inherits the *why* you didn't have.
 
 ---
@@ -1342,7 +1342,7 @@ run the tests  →  /code-review (built-in)  →  /shipkit-workflows:humanize (f
 
 **Leaving shipkit:**
 ```
-/shipkit:unsetup  →  /plugin uninstall shipkit@shipkit
+/shipkit:setup remove  →  /plugin uninstall shipkit@shipkit
 ```
 (`/unsetup` restores your pre-shipkit `CLAUDE.md` and `.claude/`; it never touches `.shipkit/` —
 your specs and decisions are yours to keep.)
@@ -1351,7 +1351,7 @@ your specs and decisions are yours to keep.)
 
 ## Tips
 
-1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit-workflows:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:walkthrough`, `/shipkit:explain-system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
+1. **Interactive skills pause at checkpoints.** Inline skills like `/shipkit-workflows:qa` stop between phases for your input — don't skip these. Research skills (`/shipkit:ask --walk`, `/shipkit:ask --system`) instead run end-to-end in a forked context and return their findings; any file they propose is only written after you approve it.
 
 2. **Skills adapt to your stack.** You don't need to specify your test framework or language — skills detect it automatically.
 

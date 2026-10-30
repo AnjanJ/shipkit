@@ -1,28 +1,21 @@
----
-description: "Explore a codebase and return a verified system-design doc on WHY it is built this way (decisions, trade-offs). TRIGGER when: the user asks how or why the system is designed, or wants a SYSTEM_DESIGN doc. DO NOT TRIGGER when: they want a where-things-live index (/shipkit:map) or one fact."
-user-invocable: true
-argument-hint: "[full|quick|section <name>]"
-context: fork
-agent: general-purpose
----
-
-<!-- FIRE-AND-FORGET FORK: runs non-interactively — it cannot ask the user anything
-     mid-run. All phases run end-to-end; verification is self-enforced (unverifiable
+<!-- Reference body for `/shipkit:ask --system` (was the explain-system skill until 5.0.0). The
+     ask skill hands this whole file, plus the argument, to a general-purpose agent as its prompt;
+     the agent runs non-interactively and cannot ask the user anything mid-run. All phases run end-to-end; verification is self-enforced (unverifiable
      claims get cut, not user-arbitrated). It RETURNS the drafted document; the main
      session presents it and writes docs/SYSTEM_DESIGN.md only after user approval. -->
 
-# /explain-system — Verified System Design Explainer
+# /shipkit:ask --system — Verified System Design Explainer
 
 Explore a codebase, reason about WHY it's designed the way it is, verify every claim
 against source code, and return a system design document proposed for `docs/SYSTEM_DESIGN.md`.
 
 **How this differs from `/shipkit:map`:** the archivist's `PROJECT_MAP.md` indexes WHAT
-exists and where. `/explain-system` explains WHY the system is designed this way (decisions,
+exists and where. `/shipkit:ask --system` explains WHY the system is designed this way (decisions,
 trade-offs, constraints) — the textbook chapter, not the map.
 
 ## Arguments
 
-Scope: $ARGUMENTS (default: `full`)
+Scope: the words after `--system` (default: `full`)
 
 - `full` — All 6 phases end-to-end, returning the finished document
 - `quick` — Phases 1-2 only, produce a brief explainer (skip verification loop)
@@ -131,7 +124,7 @@ For each major choice, check: code evidence, commit history (`git log --grep`), 
 
 ### 3.3 Present Each Decision in ADR Format
 
-See @reference.md for ADR format template. Each decision needs: Context, Decision, Trade-offs, Consequences, Confidence, Revisit-when.
+See @system-reference.md for ADR format template. Each decision needs: Context, Decision, Trade-offs, Consequences, Confidence, Revisit-when.
 
 ### 3.4 Invariants, Security, and Protections
 
@@ -141,7 +134,7 @@ Identify: validation rules, authorization patterns, data integrity guarantees, a
 
 ## Phase 4: Verification Loop — THE KEY DIFFERENTIATOR
 
-Every factual claim is individually verified against source code. See @reference.md for detailed verification steps (compile claims table, re-verify, zero-UNCERTAIN gate).
+Every factual claim is individually verified against source code. See @system-reference.md for detailed verification steps (compile claims table, re-verify, zero-UNCERTAIN gate).
 
 **Gate: Zero UNCERTAIN claims in final doc.** Not optional. You cannot ask the user to
 arbitrate — a claim you cannot verify against source gets **cut or rewritten** as an explicit
@@ -152,13 +145,13 @@ user can audit the verification.
 
 ## Phase 5: Draft the Document
 
-**Goal:** Draft the full `docs/SYSTEM_DESIGN.md` content (100-200 lines). See @reference.md for document structure template and writing rules. **Do not write the file** — it goes into your final output (Phase 6).
+**Goal:** Draft the full `docs/SYSTEM_DESIGN.md` content (100-200 lines). See @system-reference.md for document structure template and writing rules. **Do not write the file** — it goes into your final output (Phase 6).
 
 ---
 
 ## Phase 6: Improvement Opportunities + Return the Deliverable
 
-**Goal:** Evidence-based improvement suggestions. Every suggestion must cite specific files. No generic advice. See @reference.md for trade-off analysis template and opportunities table format.
+**Goal:** Evidence-based improvement suggestions. Every suggestion must cite specific files. No generic advice. See @system-reference.md for trade-off analysis template and opportunities table format.
 
 Then return, in your final output:
 
@@ -170,4 +163,4 @@ The main session presents these and, on approval, writes the file.
 
 ---
 
-See @reference.md for full constraints.
+See @system-reference.md for full constraints.

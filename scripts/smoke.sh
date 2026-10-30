@@ -2172,7 +2172,7 @@ fi
 # .shipkit/specs/run-debts/; field-notes-4.9.md §2.1: office_bestie had its own
 # `## Elixir-Specific`, setup added a second). A CLAUDE.md that already has the stack's first
 # `## ` heading outside shipkit's markers gets the section under its marker as before, the
-# sha recorded, and ONE stderr line naming the heading and /shipkit:update-rules; one without
+# sha recorded, and ONE stderr line naming the heading and /shipkit:setup rules; one without
 # gets the heading once and no line; on a re-run the heading inside shipkit's own block is
 # shipkit's and is not counted. The setup skill relays the line, shows the diff and edits
 # neither section. No claude needed. Cites: run-debts/REQ-1 run-debts/REQ-2
@@ -2188,8 +2188,8 @@ if [ "$hs_rc" -eq 0 ] && [ "$hs_n" -eq 2 ] && [ "$hs_lines" -eq 1 ] \
    && grep -q '<!-- shipkit:stack:python -->' "$HS/CLAUDE.md" && grep -q '<!-- /shipkit:stack:python -->' "$HS/CLAUDE.md" \
    && [ -s "$HS/.claude/rules/shipkit/.section-python.sha" ] \
    && grep -q 'uv run pytest -x' "$HS/CLAUDE.md" \
-   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:update-rules'; then
-  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:update-rules)"
+   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:setup rules'; then
+  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:setup rules)"
 else failc "heading-seen" "exit $hs_rc, headings $hs_n, lines $hs_lines, stderr: $hs_err"; fi
 HS2="$WORK/heading-absent"; mkdir -p "$HS2"
 printf '# demo\n' > "$HS2/CLAUDE.md"
@@ -2203,10 +2203,10 @@ if [ "$hs2_n" -eq 1 ] && ! printf '%s\n%s\n' "$hs2_err" "$hs2_rerun" | grep -q '
   pass "heading-seen (heading absent → one heading, no line; a re-run sees the heading in its own block as shipkit's, no line)"
 else failc "heading-seen" "headings $hs2_n; first run: $hs2_err; re-run: $hs2_rerun"; fi
 if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
-   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'update-rules' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'setup rules' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
-  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:update-rules and edits neither section)"
+  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
 else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
 
 # 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
@@ -2341,6 +2341,32 @@ else failc "opt-out" "confined: $oo_conf of 3 rules injected"; fi
 mkdir -p "$OO/.shipkit"; oo_in=$(oo_hook | grep -c '^## Shipkit always-on rule:')
 if [ "$oo_in" -eq 3 ]; then pass "opt-out (an empty .shipkit/ opts the project in: three rules injected)"
 else failc "opt-out" "with .shipkit/: $oo_in of 3 rules injected"; fi
+
+# 65. skills-merged: ten core skills (thinning plan W3). walkthrough and explain-system are
+# modes of ask (--walk, --system) whose bodies are ask's reference files; unsetup,
+# update-rules, context-audit and connect-memory are setup subcommands (remove, rules, audit,
+# memory) whose bodies are setup's reference files; commit lives in shipkit-workflows. No stub
+# directory remains (rule 21); each dispatch line names a reference file that exists and opens
+# with the moved skill's heading; context-cost counts 10. No claude needed.
+# Cites: always-on/REQ-10 always-on/REQ-11 always-on/REQ-12 always-on/REQ-13 always-on/REQ-14
+sm_old=""; for d in walkthrough explain-system unsetup update-rules context-audit connect-memory commit; do [ -e "$COPY/skills/$d" ] && sm_old="$sm_old $d"; done
+if [ -z "$sm_old" ] && [ -f "$ROOT/plugins/shipkit-workflows/skills/commit/SKILL.md" ]; then
+  pass "skills-merged (no directory under skills/ for the seven old names; commit is in shipkit-workflows)"
+else failc "skills-merged" "old directories left:$sm_old; workflows commit: $([ -f "$ROOT/plugins/shipkit-workflows/skills/commit/SKILL.md" ] && echo yes || echo no)"; fi
+sm_ok=1; sm_why=""
+for pair in "ask:--walk:walk.md:# /shipkit:ask --walk" "ask:--system:system.md:# /shipkit:ask --system" "setup:remove:remove.md:# /shipkit:setup remove" "setup:rules:rules.md:# /shipkit:setup rules" "setup:audit:audit.md:# /shipkit:setup audit" "setup:memory:memory.md:# /shipkit:setup memory"; do
+  sk=${pair%%:*}; rest=${pair#*:}; arg=${rest%%:*}; rest=${rest#*:}; ref=${rest%%:*}; head1=${rest#*:}
+  grep -q -- "$arg" "$COPY/skills/$sk/SKILL.md" || { sm_ok=0; sm_why="$sm_why $sk-lacks-$arg"; }
+  grep -q -- "$ref" "$COPY/skills/$sk/SKILL.md" || { sm_ok=0; sm_why="$sm_why $sk-does-not-name-$ref"; }
+  [ -f "$COPY/skills/$sk/$ref" ] || { sm_ok=0; sm_why="$sm_why $ref-missing"; }
+  [ -f "$COPY/skills/$sk/$ref" ] && ! grep -q -- "^$head1" "$COPY/skills/$sk/$ref" && { sm_ok=0; sm_why="$sm_why $ref-heading"; }
+done
+if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
+else failc "skills-merged" "dispatch:$sm_why"; fi
+sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
+sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
+if [ "$sm_n" = "10" ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes)"
+else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes)"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

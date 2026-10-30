@@ -152,6 +152,31 @@ rename. An argument-dispatching skill is a longer description than a single-purp
 the ≤ 2,400 ceiling is tighter than it looks.
 
 **Decision.** We chose (1).
+
+**What the merge changed that the plan did not name (S20-T4, 2026-10-30).** `walkthrough`,
+`explain-system`, `update-rules` and `context-audit` ran as forked skills (`context: fork`,
+their own context); `ask` and `setup` run inline. As `ask --walk` and `ask --system` the bodies
+are handed whole to the `tracer` and a general-purpose agent through the Agent tool — `ask`'s
+own shape, nothing lost. As `setup rules` and `setup audit` the bodies run inline in the main
+context, heavier than before; both are short and run once, and `setup` cannot fork for two of
+its six arguments. The two `!`-command preambles (`head -100 CLAUDE.md`; the sizes-on-disk
+line) do not execute inside a reference file and became a first instruction. **The number:**
+ten descriptions total 2,905 bytes (17 were 3,969; −27%) against the plan's ≤ 2,400 — the
+eight skills W3 does not touch already total 2,535, so the ceiling cannot be met without
+trimming the loop's own descriptions (lint caps each at 300; `ask` and `setup` sit at 291 and
+292 after the probes). **The four auto-invoke probes** (`sonnet`, the `sample-app` fixture, a
+natural request each, the transcript read for a `Skill` call): `--system` fired first time
+("write me a system design document…" → `shipkit:ask --system`, then a general-purpose agent);
+`setup memory` fired first time ("set up episodic memory…" → `shipkit:setup memory`); `setup
+rules` did not fire until the description named "add, change or remove a CLAUDE.md rule" (the
+old `update-rules` description had no trigger line at all), then fired ("update the CLAUDE.md
+rules…" → `shipkit:setup rules never use print…`); `--walk` did not fire before or after its
+one rewording ("walk me through how an order gets stored, end to end…" → answered inline) —
+**and neither did the standalone `walkthrough` skill, 0 of 2, on the same prompt against the
+plugin as committed**: on a nine-file fixture with one function the model reads the file, which
+`ask`'s own "when not to use this" endorses. The probe measures the fixture, not the merge; the
+merge stands, and a fixture with routes, jobs and a datastore is the plan after's probe. The
+owner's word on the description ceiling (2026-10-30): **amended to ≤ 2,950**; the row reads 2,894.
 **Falsifiability.** We would reverse this for a given merge — restoring that skill as its own
 directory — if its auto-invoke probe fails to fire the merged skill after one rewording of the
 description, or if a release run's smoke check that invokes the merged form fails twice. (A

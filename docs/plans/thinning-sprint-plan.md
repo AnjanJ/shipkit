@@ -27,7 +27,7 @@ few bytes of the table, which stands as the baseline:
 | What loads | Bytes | When | After this plan (ceiling) |
 |---|---|---|---|
 | Session hook: root line, version line, the three always-on rules | 3,945 | every session, every project | ≤ 1,900 (root, version, `shipkit.md`) where the project has not opted in; ≤ 120 if W2 finds the Care lines followed unaided |
-| Skill descriptions, 17 core + 6 workflows | 3,952 + 1,592 | every session | ≤ 2,400 core (10 skills) + ≤ 1,900 workflows (7, `commit` joins) |
+| Skill descriptions, 17 core + 6 workflows | 3,952 + 1,592 | every session | ≤ 2,950 core (10 skills; the draft said 2,400 — the eight skills W3 leaves alone total 2,535 on their own, so the owner amended it on 2026-10-30 after the merge measured 2,894) + ≤ 1,900 workflows (7, `commit` joins) |
 | Agent descriptions, 7 | 1,713 | every session | ≤ 1,000 (4 agents) |
 | Rails overlay skills copied into the project by setup | 6 skills, 17,529 on disk, 6 listings | every session on that project | 0 by default; installed on a flag |
 | Rails overlay `CLAUDE.md.append` + the unscoped `rails.md` | 1,884 | every session on that project | audited line by line, owner's yes per cut |
@@ -400,6 +400,12 @@ What changed between the 2026-10-22 draft and the approval, and what it did to t
   removed agents** (`spec`, `map`, `walkthrough`, `explain-system`), and T4 runs before T5.
 - **T-REL is ticked in the release prep commit** (the release task's own text; 4.12.0's first
   gate failed on that alone).
+- **W3's ceiling (S20-T4, 2026-10-30):** the draft's ≤ 2,400 bytes for ten core descriptions
+  could not be met — the eight untouched skills total 2,535 and lint caps each description at
+  300; the merge measured 2,894 (17 → 10, −27%). Amended to **≤ 2,950** on the owner's word.
+  Three of the four merged triggers fire unasked; `--walk` did not, and neither did the
+  standalone `walkthrough` on the same fixture (0 of 2), so the merge stands
+  (`docs/design/eval-results-5.0.md` §2).
 - **W2's third outcome (S20-T3, 2026-10-30):** the Care line read 0 of 3 with the plugin and
   0 of 3 without — every run deleted and committed, then asked about the impossible push. The
   owner chose to reword the line now ("stop … and ask first; never do it and ask after; a

@@ -15,7 +15,7 @@ no `CLAUDE.md`, no `.claude/`, no `.shipkit/`; the plugin at `plugins/shipkit` (
 | Row | Bytes | What it counts | Ceiling after the plan |
 |---|---:|---|---|
 | `hook` | 3,951 | the session hook's output in that directory: the root line (≈ 60), the version line (23), and three injected rules with their four-line headers (2,014 + 1,018 + 829); `--eval-rule` prints nothing outside the eval tool | the plan's §0 says ≤ 1,900 where the project has not opted in; **after W1 (S20-T2) the row reads 2,269** — root 60, version 23, the opt-in line 172, `shipkit.md` with its header 2,014 — so the plan's ceiling never counted the header (≈ 230) or the line; the honest ceiling for W1 alone is ≤ 2,300, and ≤ 300 if W2 finds the Care lines followed unaided (root, version, the opt-in line) |
-| `skills-core` | 3,969 | the `description:` line of each of 17 `plugins/shipkit/skills/*/SKILL.md` | ≤ 2,400 (W3: 10 skills) |
+| `skills-core` | 3,969 | the `description:` line of each of 17 `plugins/shipkit/skills/*/SKILL.md` | **≤ 2,950** (W3: 10 skills; the plan's draft said 2,400 — the eight skills W3 does not touch total 2,535 on their own and lint caps a description at 300, so the owner amended the ceiling on 2026-10-30; after W3 the row reads 2,894) |
 | `skills-workflows` | 1,598 | the same for 6 `plugins/shipkit-workflows/skills/*/SKILL.md` | ≤ 1,900 (7 skills; `commit` joins) |
 | `agents` | 1,720 | the `description:` line of each of 7 agents (6 core, `test-analyzer`) | ≤ 1,000 (W4: 4 agents) |
 | `overlay-skills` | 0 | whole files of the skills setup installed under the project's `.claude/skills/`, read from the manifest `.claude/rules/shipkit/.installed` | 0 by default (W6: installed on a flag); a Rails project today carries 6 skills, 17,529 bytes |
@@ -54,3 +54,5 @@ this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 | 2026-10-22 | 4.11.0 + PR #21 | 3,945 | 3,952 | 1,592 | 1,713 | 2,979 | the plan's §0, measured by hand |
 | 2026-10-30 | 4.12.0 (`877a8e5`) | 3,951 | 3,969 | 1,598 | 1,720 | 2,979 | the script's first run; the baseline |
 | 2026-10-30 | S20-T2 (W1) | 2,269 | 3,969 | 1,598 | 1,720 | 2,979 | the two loop rules opt-in; one opt-in line (172 bytes) added; an opted-in project unchanged |
+| 2026-10-30 | S20-T3 (W2) | 2,290 | 3,969 | 1,598 | 1,720 | 3,000 | the Care line reworded (+105 bytes in `shipkit.md`, trims elsewhere; the three rules at the budget) |
+| 2026-10-30 | S20-T4 (W3) | 2,289 | 2,894 | 1,885 | 1,720 | 2,999 | ten core skills (17 → 10, −27%); `commit` in workflows (6 → 7); the ceiling amended 2,400 → 2,950 on the owner's word (the eight untouched skills total 2,535) |

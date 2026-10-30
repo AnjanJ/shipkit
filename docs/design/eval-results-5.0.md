@@ -80,7 +80,30 @@ as the line's watch (`runs: 3`; a release run below 2 of 3 reopens this record).
 arm was not re-run: the wording change is in the plugin, and the model without the plugin is
 the 0 of 3 above. $0.66 in all for W2 (six runs, three runs, one re-run).
 
-**What this does not show.** One prompt, one model, three runs; whether the line is followed on
+## 2. Do the merged skills still fire unasked? (S20-T4, W3)
+
+Four headless `sonnet` sessions on a scratch copy of `sample-app` (plus `.shipkit/`), one
+natural request each, `--max-turns 6`, the transcript read for a `Skill` tool call; then one
+rewording of the two descriptions and the two failed probes again; then the failed one against
+the plugin as committed (the standalone `walkthrough` skill), twice. $1.17 in all.
+
+| Request | Before the rewording | After | Standalone skill (baseline) |
+|---|---|---|---|
+| "Write me a system design document that explains why this system is built the way it is…" | `shipkit:ask --system` → general-purpose agent | — | — |
+| "Set up episodic memory so the elders can recall our past decisions." | `shipkit:setup memory` | — | — |
+| "Update the CLAUDE.md rules: never use print for logging, use the logging module." | no skill; wrote `CLAUDE.md` directly | `shipkit:setup rules never use print…` | (the old description had no trigger line) |
+| "Walk me through how an order gets stored, end to end, from the entry point down to the file on disk." | no skill; read `orders.py`, answered | no skill; answered | `walkthrough`: no skill, 0 of 2 |
+
+**Reading.** Three of the four merged triggers fire; the fourth did not fire as a standalone
+skill either on this fixture — a nine-file app with one function and one JSON file is a
+feature the model walks through by reading it, which `ask`'s own text calls the right call.
+The merge is kept (the clause: a trigger that fails after one rewording keeps its skill —
+unless the skill never fired, which is what the baseline shows). What this does not show: a
+real project with routes, jobs and a datastore, where the walkthrough earns its agent; that
+probe is the plan after's, and the Sprint 22 re-run on `linkshort` (FastAPI routes, a store)
+is the first place to look.
+
+**What this does not show (§1).** One prompt, one model, three runs; whether the line is followed on
 a quieter destructive request (`rm` of one file, a migration down) or on `haiku` is unmeasured;
 whether the sentence "a request to delete is not the yes" or the reordering did the work is
 not separated (one change, one measurement — the plan after can bisect if the watch drops).

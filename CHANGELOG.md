@@ -4,6 +4,62 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
+## [Unreleased] — Sprint 20 of the thinning plan (toward 5.0.0)
+
+**What changed for you.** Seven skill names are gone and nothing they did is: `/shipkit:walkthrough`
+is `/shipkit:ask --walk <feature>`, `/shipkit:explain-system` is `/shipkit:ask --system`;
+`/shipkit:unsetup`, `/shipkit:update-rules`, `/shipkit:context-audit` and
+`/shipkit:connect-memory` are `/shipkit:setup remove | rules | audit | memory`; `/shipkit:commit`
+is `/shipkit-workflows:commit`. The bodies moved whole, as reference files the merged skill
+reads on its argument; the skill list every session carries is ten names instead of seventeen.
+On a project that never ran shipkit, the session hook now injects only `shipkit.md` and one
+line saying how to opt in; the spec-driven and decision-record rules load where `.shipkit/` or
+installed rules exist. `shipkit.md`'s Care line now says *stop before anything destructive and
+ask first; never do it and ask after* — measured: the old wording was followed 0 of 3 times on a
+delete-and-force-push request, the new one 3 of 3. And `scripts/context-cost.sh <project>`
+prints what a session there pays for shipkit, byte by byte.
+
+### Migration (5.0.0 renames; no stub is kept)
+
+| Until 4.12.0 | From 5.0.0 |
+|---|---|
+| `/shipkit:walkthrough <feature> [surface\|deep]` | `/shipkit:ask --walk <feature> [surface\|deep]` |
+| `/shipkit:explain-system [full\|quick\|section <name>]` | `/shipkit:ask --system [full\|quick\|section <name>]` |
+| `/shipkit:unsetup` | `/shipkit:setup remove` |
+| `/shipkit:update-rules <rule>` | `/shipkit:setup rules <rule>` |
+| `/shipkit:context-audit` | `/shipkit:setup audit` |
+| `/shipkit:connect-memory [--wing <name>] [--reinstall]` | `/shipkit:setup memory [--wing <name>] [--reinstall]` |
+| `/shipkit:commit [emphasis]` | `/shipkit-workflows:commit [emphasis]` (the workflows plugin) |
+
+### Changed
+
+- **Ten core skills** (thinning plan W3, S20-T4): `walkthrough` and `explain-system` are
+  `ask`'s `--walk` and `--system`, their bodies `skills/ask/walk.md` and `system.md` handed to
+  the `tracer` and a general-purpose agent as the prompt; `unsetup`, `update-rules`,
+  `context-audit` and `connect-memory` are `setup`'s `remove`, `rules`, `audit`, `memory`,
+  their bodies `skills/setup/*.md` read on the first argument (the two that ran forked now run
+  inline inside `setup`; their `!`-command preambles became a first instruction); `commit`
+  moved to `shipkit-workflows` by the 3.0 sorting rule. Smoke check 65. Two words of
+  `shipkit.md` follow the renames (`/shipkit:setup rules`, `/shipkit-workflows:commit`), the
+  three rules at 2,999 bytes.
+- **The two loop rules are opt-in per project** (W1, S20-T2): `inject-rule.sh` injects
+  `spec-driven` and `decisions` only where `.shipkit/` or `.claude/rules/shipkit/` exists, or
+  inside the eval tool (`CLAUDE_CODE_EVAL_CONFINED=1`); `session-start.sh` prints one opt-in
+  line on a project with neither. Smoke check 64; checks 1 and 2 run on an opted-in project.
+  The hook on a bare project: 3,951 → 2,269 bytes (`docs/design/context-cost.md`).
+- **The Care line reworded on its number** (W2, S20-T3): `rules/care`, a request to delete two
+  directories, commit and force-push — the shipped line 0 of 3 with the plugin and 0 of 3
+  without (every run deleted and committed, then asked about the impossible push); reworded
+  to stop-then-ask, 3 of 3 with. The case stays as the line's watch
+  (`docs/design/eval-results-5.0.md` §1). The evals ceiling is 204,800 bytes (W10).
+
+### Added
+
+- **`scripts/context-cost.sh <project-dir>`** (S20-T1): eight rows, no model call — the
+  hook's real output bytes in that project, skill and agent description bytes per plugin, the
+  overlay skills and `CLAUDE.md` stack sections setup installed there, the always-on rules.
+  Baseline and ceilings in `docs/design/context-cost.md`; smoke check 63.
+
 ## [4.12.0] — 2026-10-30
 
 **What changed for you.** The session hook now prints the plugin's version on its own line

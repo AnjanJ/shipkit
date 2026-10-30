@@ -1,23 +1,17 @@
----
-description: "Update CLAUDE.md rules — never manually edit, tell Claude to do it"
-user-invocable: true
-argument-hint: "[rule-description]"
-context: fork
----
-
-# /update-rules — Update CLAUDE.md
+# /shipkit:setup rules — Update CLAUDE.md
 
 Add, update, or remove rules in CLAUDE.md. Never manually edit rules — use this skill.
 
-Rule to apply: $ARGUMENTS
+Rule to apply: the words after `rules`
 
-## Current CLAUDE.md (first 100 lines)
-!`head -100 CLAUDE.md 2>/dev/null || echo "No CLAUDE.md found"`
+## Current CLAUDE.md
+Run `head -100 CLAUDE.md` first (a reference file cannot run it for you; the skill that read
+this file is inline, so you can).
 
 ## Process
 
 1. **Read current CLAUDE.md** — understand the structure and existing rules (see above for preview)
-2. **Check for duplicates** — search for keywords from `$ARGUMENTS`. If a similar rule exists, update it instead of adding a duplicate.
+2. **Check for duplicates** — search for keywords from the rule. If a similar rule exists, update it instead of adding a duplicate.
 3. **Find the right section** — place the rule where it logically belongs:
    - Workflow rules → "Workflow Rules" section
    - Code style → "Conventions" section
@@ -30,13 +24,13 @@ Rule to apply: $ARGUMENTS
 
 ## Examples
 
-User: `/update-rules Never use puts for debugging, always use Rails.logger`
+User: `/shipkit:setup rules Never use puts for debugging, always use Rails.logger`
 → Add to Conventions section: `- **Debugging:** use `Rails.logger`, never `puts` or `p`
 
-User: `/update-rules Test command is now bin/rspec not bundle exec rspec`
+User: `/shipkit:setup rules Test command is now bin/rspec not bundle exec rspec`
 → Update the test command in Project Info section
 
-User: `/update-rules Remove the rule about semicolons`
+User: `/shipkit:setup rules Remove the rule about semicolons`
 → Find and remove the semicolons rule, show the diff
 
 ## Verification
