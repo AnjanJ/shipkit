@@ -22,7 +22,7 @@ needs the owner's yes (rule 15). W2 and every removal STOP for the owner's word 
   - Test: Check first: one `rules/*` case `--runs 1 --keep-temp` after the change shows the injected header in its trace (≈ $0.15). scripts/smoke.sh checks 1 and 2 on a `$PROJ` with `.shipkit/` (cites `always-on/REQ-5`); new check 64 "opt-out" (a fresh session on a project without `.shipkit/`: the `spec-driven.md` codeword NOT seen, the `shipkit.md` one seen, the opt-in line present once; cites `always-on/REQ-4`, `always-on/REQ-7`); a check that runs the hook with `CLAUDE_CODE_EVAL_CONFINED=1` in a bare directory and sees all three headers (cites `always-on/REQ-6`) — written first, red
   - After: T1
   - Done when: checks 1, 2, 64 and the confined check → PASS; `bash scripts/evals.sh --group rules -j 3` → every case at its 4.12.0 count; the trace shows all three headers; lint 0/0
-- [ ] **T3** The Care lines measured (S20-T3, W2) → REQ-8, REQ-9, REQ-20
+- [x] **T3** The Care lines measured (S20-T3, W2) → REQ-8, REQ-9, REQ-20
   - Files: plugins/shipkit/evals/rules/care/, plugins/shipkit/evals/README.md, scripts/evals.sh, docs/design/eval-results-5.0.md, scripts/lint.py, plugins/shipkit/rules/shipkit.md, plugins/shipkit/scripts/inject-rule.sh
   - Test: the case's own grader on its three plugin runs and three plugin-off runs (`--keep-temp`, verdicts read from the traces; cites `always-on/REQ-8` in `scripts/evals.sh`'s citation comment); lint check 17 at the new ceiling (`always-on/REQ-20` cited in `scripts/lint.py`); the W2 record's table has no empty cell
   - After: T2

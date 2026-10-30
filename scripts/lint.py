@@ -587,8 +587,11 @@ if version:
 # history moved to docs/design/eval-history.md so the room is visible. 4.9.0 raised it to
 # 192 KB (portfolio plan E10) for the portfolio generator and the three eve cases. The room is
 # for cases and generators; a committed fixture is still the first thing this should catch.
+# 5.0.0 raised it to 200 KiB (thinning plan W10) for the rules/care probe, with 19 bytes of
+# room left at 4.12.0 — the third raise; a fourth before 5.0.0 ships reverses W10's record
+# (always-on/REQ-20).
 
-EVALS_MAX_BYTES = 196608
+EVALS_MAX_BYTES = 204800
 
 _evals_dir = CORE / "evals"
 _evals_bytes = sum(p.stat().st_size for p in _evals_dir.rglob("*") if p.is_file())

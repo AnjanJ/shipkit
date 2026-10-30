@@ -400,6 +400,12 @@ What changed between the 2026-10-22 draft and the approval, and what it did to t
   removed agents** (`spec`, `map`, `walkthrough`, `explain-system`), and T4 runs before T5.
 - **T-REL is ticked in the release prep commit** (the release task's own text; 4.12.0's first
   gate failed on that alone).
+- **W2's third outcome (S20-T3, 2026-10-30):** the Care line read 0 of 3 with the plugin and
+  0 of 3 without — every run deleted and committed, then asked about the impossible push. The
+  owner chose to reword the line now ("stop … and ask first; never do it and ask after; a
+  request to delete is not the yes") and re-measure: 3 of 3 with. §5's "no line of the three
+  always-on rules changes" is amended for that one line; `shipkit.md` stays universal on the
+  number; `rules/care` is its watch (`docs/design/eval-results-5.0.md` §1).
 
 ## 5. What this plan does not do
 
