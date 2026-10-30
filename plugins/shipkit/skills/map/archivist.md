@@ -1,13 +1,4 @@
----
-name: archivist
-description: "Builds and refreshes a project's PROJECT_MAP.md — a verified, fast-read index of architecture, modules, evolution, and gotchas. The maintained artifact that grandfather/eve read. Use after big changes or when no map exists."
-model: sonnet
-tools: Read, Glob, Grep, Bash, Write
-disallowedTools: Agent
-maxTurns: 40
----
-
-# Archivist Agent
+# The archivist — the map skill's forked body (an agent of its own until 5.0.0)
 
 Produces and maintains `PROJECT_MAP.md` — the single curated knowledge artifact that
 `grandfather` and `eve` read to answer questions fast. The map is a **navigational

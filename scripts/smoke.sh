@@ -2368,6 +2368,34 @@ sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/
 if [ "$sm_n" = "10" ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes)"
 else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes)"; fi
 
+# 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
+# grandfather's trace mode; the archivist's body is the map skill's forked body
+# (skills/map/archivist.md, map runs with context: fork); codebase-explorer is dropped for
+# Claude Code's built-in Explore agent (the check-first showed Explore callable from a session
+# with the plugin, headless). No skill names a removed agent; context-cost counts 4 agents
+# under 1,000 bytes. No claude needed.
+# Cites: always-on/REQ-16 always-on/REQ-17 always-on/REQ-18 always-on/REQ-19
+af_left=""; for a in tracer archivist codebase-explorer; do [ -e "$COPY/agents/$a.md" ] && af_left="$af_left $a"; done
+if [ -z "$af_left" ]; then pass "agents-four (no tracer.md, archivist.md or codebase-explorer.md under agents/)"
+else failc "agents-four" "agent files left:$af_left"; fi
+if grep -q '^## Trace mode' "$COPY/agents/grandfather.md" && grep -q 'grandfather' "$COPY/skills/ask/SKILL.md"; then
+  pass "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
+else failc "agents-four" "grandfather.md lacks '## Trace mode' or ask does not name grandfather for --walk"; fi
+if grep -q '^context: fork' "$COPY/skills/map/SKILL.md" && grep -q 'archivist.md' "$COPY/skills/map/SKILL.md" \
+   && [ -f "$COPY/skills/map/archivist.md" ] && grep -q '^# The archivist' "$COPY/skills/map/archivist.md"; then
+  pass "agents-four (map runs forked and carries the archivist's body as archivist.md)"
+else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map/SKILL.md") names-archivist.md=$(grep -c 'archivist.md' "$COPY/skills/map/SKILL.md") file=$([ -f "$COPY/skills/map/archivist.md" ] && echo yes || echo no)"; fi
+af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
+if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
+else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
+# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's three;
+# test-analyzer's description is added from the checkout for the ≤ 1,000 ceiling (plan §0)
+af_row=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk -F'\t' '$1 == "agents" { print $2 " " $3 }')
+af_b=${af_row%% *}; af_n=$(printf '%s' "$af_row" | awk '{print $2}')
+af_wf=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$ROOT/plugins/shipkit-workflows/agents/test-analyzer.md" | wc -c | tr -d ' ')
+if [ "$af_n" = "3" ] && [ $((af_b + af_wf)) -le 1000 ]; then pass "agents-four (three core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,000)"
+else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

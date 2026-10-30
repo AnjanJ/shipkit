@@ -235,7 +235,7 @@ elder subagent does the reading in *its own* context and hands back only the ans
 | Piece | Role |
 |-------|------|
 | `PROJECT_MAP.md` | A verified, ~150-line index of one project: architecture, where-things-live, data model, evolution, gotchas. Stamped with the git SHA it was built at. |
-| `archivist` agent | Builds and refreshes `PROJECT_MAP.md`. Run via `/shipkit:map`. |
+| `/shipkit:map` (forked) | Builds and refreshes `PROJECT_MAP.md` in its own context — the `archivist` agent until 5.0.0. |
 | `grandfather` agent | Answers questions about **one** project. Reads the map, verifies the specific claim against live source, returns a tight cited answer. Run via `/shipkit:ask`. |
 | `eve` agent | Answers questions **across all** registered projects (the 360° view). Run via `/shipkit:ask --all`. |
 | Registry | `~/.claude/shipkit/project-registry.md` — the list of projects eve reads. Populated by `/shipkit:map --register`. |
@@ -733,7 +733,7 @@ sh "<plugin root>/scripts/brief-verify.sh" . refunds T3 <sha>   # afterwards: wh
   verified records over `git log` or MemPalace recall.
 - `eve` greps `.shipkit/decisions/` across the portfolio (*"where did we decide against
   microservices, and are those reasons still true?"*).
-- `archivist` links active specs and decisions from `PROJECT_MAP.md`, so the map is the front door.
+- `/shipkit:map` links active specs and decisions from `PROJECT_MAP.md`, so the map is the front door.
 
 ### Freshness
 
@@ -802,7 +802,7 @@ Shipkit keeps three kinds of durable, *verified* knowledge and leaves the rest t
 
 | Kind | Where | Who maintains it |
 |------|-------|------------------|
-| Structure — what exists and where | `PROJECT_MAP.md` | `archivist`, via `/shipkit:map` |
+| Structure — what exists and where | `PROJECT_MAP.md` | `/shipkit:map` (forked) |
 | Intent and why — specs and decision records | `.shipkit/specs/`, `.shipkit/decisions/` | you, via `/shipkit:spec` and `/shipkit:decide` |
 | Conversation history (optional) | MemPalace | `/shipkit:setup memory` |
 
@@ -834,13 +834,12 @@ Cross-project elder (named for the common ancestor of the whole portfolio). Answ
 
 Used by `/shipkit:ask --all`.
 
-### archivist
+### The archivist is `/shipkit:map` now
 
-Builds and refreshes the `PROJECT_MAP.md` that grandfather and eve read. Detects the stack, maps
-structure and data model, reconstructs evolution from git, collects gotchas, and verifies every cited
-path exists before writing. Writes only that one file.
-
-Used by `/shipkit:map`.
+Until 5.0.0 an `archivist` agent built and refreshed `PROJECT_MAP.md`. The same body now runs as
+`/shipkit:map`'s own forked context (`skills/map/archivist.md`): detects the stack, maps structure
+and data model, reconstructs evolution from git, collects gotchas, verifies every cited path before
+writing. The map is optional (decision 0001), so its builder no longer costs every session a listing.
 
 ### test-analyzer
 
@@ -848,22 +847,20 @@ Diagnoses test failures. Checks for state leakage, timing issues, environment di
 
 Reference it directly when tests fail: "use the test-analyzer agent to diagnose this flaky test."
 
-### codebase-explorer
+### codebase-explorer is the built-in `Explore` agent now
 
-Read-only exploration agent. Traces call chains, maps directories, analyzes schemas, finds patterns, identifies hotspots.
+Until 5.0.0 shipkit shipped a read-only `codebase-explorer`. Claude Code's built-in `Explore` agent
+does the same work, and a session with the plugin can hand it work headless (checked 2026-10-30);
+`/shipkit:spec`, `/shipkit:ask --system` and `/shipkit-workflows:qa` name it instead.
 
-Used by `/shipkit-workflows:qa` and plan-mode research for heavy reading. Or reference directly: "use the codebase-explorer agent to map the services directory."
+### tracer is `grandfather`'s trace mode now
 
-### tracer
+Until 5.0.0 a `tracer` agent followed one call chain from trigger through every layer to the
+datastore and back. `grandfather` carries that as its trace mode: `/shipkit:ask --walk <feature>`
+hands it the walkthrough brief, it returns the `file:line`-cited walkthrough, the caller writes it.
+Or ask directly: "use the grandfather agent in trace mode to trace the checkout flow."
 
-Deep, single-feature traces: follows one call chain from trigger through every layer to the
-datastore and back, reads the tests for the edge cases, and returns a `file:line`-cited
-walkthrough. Sonnet, 40 turns, up to 40 files — the budget a real trace needs, which the
-explorer's bounded budget is not meant for.
-
-Used by `/shipkit:ask --walk`. Or reference directly: "use the tracer agent to trace the checkout flow."
-
-All three: read-only, report confidence levels, keep no private memory between runs.
+All of them: read-only, report confidence levels, keep no private memory between runs.
 
 ---
 

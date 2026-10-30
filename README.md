@@ -111,7 +111,7 @@ session stays thin:
 /shipkit:map --register                           # optional: a PROJECT_MAP.md index, and a row in eve's registry
 ```
 
-**Everything else in `shipkit`** (10 skills, 6 agents):
+**Everything else in `shipkit`** (10 skills, 3 agents):
 
 | Skill | What it does |
 |-------|--------------|
@@ -123,12 +123,13 @@ session stays thin:
 
 | Agent | What it does |
 |-------|--------------|
-| `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one |
+| `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one; in trace mode, one feature end to end (`/shipkit:ask --walk`) |
 | `eve` | Every registered project: sweeps, matrices, consolidation, the weekly digest |
-| `archivist` | Builds and refreshes `PROJECT_MAP.md` — optional since 4.1.0: on a 224-file test it changed neither answers nor tool calls (decision 0001) |
 | `reviewer` | Checks a branch against its spec with fresh eyes — behind `/shipkit:ship` |
-| `tracer` | A deep trace of one feature — behind `/shipkit:ask --walk` |
-| `codebase-explorer` | Read-only exploration for the other skills |
+
+Until 5.0.0 three more agents were listed every session: `archivist` is now `/shipkit:map`'s own
+forked body, `tracer` is `grandfather`'s trace mode (behind `/shipkit:ask --walk`), and
+`codebase-explorer` gave way to Claude Code's built-in `Explore` agent.
 
 **`shipkit-workflows`** (7 skills, 1 agent): `/shipkit-workflows:commit` (an atomic commit whose message scales to the change; in `shipkit` until 5.0.0), `/shipkit-workflows:qa` (a five-phase QA pass),
 `/shipkit-workflows:tdd` (strict red-green-refactor), `/shipkit-workflows:debug` (root cause

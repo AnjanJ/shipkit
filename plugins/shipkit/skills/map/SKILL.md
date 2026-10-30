@@ -2,13 +2,19 @@
 description: "Build or refresh this project's PROJECT_MAP.md — an optional verified index the elders read when it exists; worth it for eve's portfolio view or a thin commit history. Run after big changes. Use --register to add the project to your cross-project registry."
 user-invocable: true
 argument-hint: "[refresh | section <name> | --register]"
+context: fork
 ---
+
+<!-- Runs FORKED (its own context): this skill IS the archivist since 5.0.0 — the heavy
+     file-reading happens here, not in the caller's context. It cannot ask the user anything
+     mid-run; it writes PROJECT_MAP.md (and the registry on --register) and returns a summary. -->
 
 # /shipkit:map — Build & Refresh the Project Map
 
 `PROJECT_MAP.md` is the artifact that makes `grandfather` and `eve` fast *and* accurate.
-This skill runs the **`archivist`** agent to create or refresh it. The heavy file-reading
-happens in the agent's context, not yours.
+This skill creates or refreshes it, running forked so the heavy file-reading never reaches
+the caller's context. The procedure, constraints and output template are in `@archivist.md`
+(the `archivist` agent's body until 5.0.0); read it first and follow it for the mode below.
 
 ## Arguments
 
@@ -21,23 +27,24 @@ Mode: `$ARGUMENTS` (default: build if no map exists, else refresh)
 
 ## How to run it
 
-1. **Delegate to the `archivist` agent** via the Agent tool. Tell it the mode and the working
-   directory. Do not map the project yourself in the main context. The archivist carries its
-   own output template; nothing else needs to be passed.
-2. The agent writes `PROJECT_MAP.md` (repo root, or `docs/` if that is the convention) and
-   returns a 5-line summary: what it wrote, line count, HEAD sha, any unverified sections.
-3. Relay that summary. Do not echo the whole map.
+1. **Read `@archivist.md`** and do what it says for the mode: detect the stack and entry
+   points, map the structure, reconstruct the evolution from git, collect gotchas, verify every
+   cited path before writing. You are forked: do the reading here.
+2. Write `PROJECT_MAP.md` (repo root, or `docs/` if that is the convention).
+3. Return a 5-line summary: what you wrote, line count, HEAD sha, any unverified sections —
+   and, on a first build, one line offering `/shipkit:map --register` (you cannot ask mid-run).
+   Do not echo the whole map.
 
 ## The registry (for eve / cross-project)
 
 The registry lives at `~/.claude/shipkit/project-registry.md`. It is what `eve` reads to
 get the portfolio view. Each line: project name, path, map location, one-line description.
 
-On `--register` (and offer it on first `build` of any project):
+On `--register` (offered in the summary on a first `build`; this runs in the same fork):
 1. Read `~/.claude/shipkit/project-registry.md` if it exists; create it if not (template below).
 2. Add or update this project's row. Use the project's path, the map's HEAD short SHA in
    `Mapped At`, and pull `Stack`, `Deploys To`, and the one-line `Summary` from the freshly
-   written map (the archivist already verified them). For `Active Specs`, list the feature slugs
+   written map (verified while writing it). For `Active Specs`, list the feature slugs
    under `.shipkit/specs/*/` whose spec is open — no `> Status:` line, or `Status: open` — (or
    `—` if none); this lets `eve` answer "which projects have an open spec?" from the registry
    alone. For `Product` and `Top Goal`, read `.shipkit/product.md`: the text under "One line",

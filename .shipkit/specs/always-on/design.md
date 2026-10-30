@@ -212,6 +212,29 @@ with a one-line description. A merged elder's prompt grows, and `grandfather.md`
 bytes today in its own context.
 
 **Decision.** We chose (1), each removal behind its check.
+
+**The checks and the result (S20-T5, 2026-10-30).** *Explore from a plugin session, headless:*
+one `sonnet -p` session on the `sample-app` fixture with the plugin asked to hand a question
+to `subagent_type: Explore` — the Agent call ran, the agent answered correctly
+(`app/orders.py`, `save_orders`, line 22), $0.15; the claim holds. *A forked skill branching
+on its argument:* a scratch plugin with a `context: fork` skill whose body says "alpha →
+ALPHA-OK, else BETA-OK", invoked `/scratch:fork-test alpha` and `beta` on `haiku` → `ALPHA-OK`
+and `BETA-OK`; the claim holds. So all three removals went through: `tracer.md` → a "Trace
+mode" section in `grandfather.md`, `ask --walk` opening its hand-off with "Trace mode:";
+`archivist.md` → `skills/map/archivist.md`, `map` with `context: fork` (the registry step runs
+in the same fork; the "offer --register" question, which a fork cannot ask, became a line in
+the returned summary); `codebase-explorer.md` removed and `spec`, `ask --system`'s reference
+and `shipkit-workflows:qa` name the built-in `Explore`. Four agents (three core,
+`test-analyzer`), descriptions 1,720 → 991 bytes after two trims (`eve` lost a third example
+and "keeps the main session thin"; `grandfather`'s closing sentence shortened to make room for
+"in trace mode, one feature end to end"). Smoke check 66. **The `grandfather` group** (9 cases, `-j 4`, $2.69): eight at 3 of 3;
+`grandfather/drift` 2 of 3, and 2 of 3 again alone with the traces kept ($0.28) — the miss
+answered "a JSON file" from source and never opened `PROJECT_MAP.md`, so it could not say the
+map was wrong, which the grader requires; the two passes read the map and named the drift.
+That is the elder's step-0 triage ("cheapest read that answers"), text this task did not
+touch, and the shape `eval-history.md` records for this case under `-j 4` in 4.9.0, 4.10.0
+and 4.11.0 (3 of 3 in the 4.12.0 release run). Threshold held; no grader changed; the 5.0.0
+release run is the measure the reversal condition names.
 **Falsifiability.** We would reverse a removal — restoring that agent — if the `grandfather`
 group drops below its 4.12.0 count in a release run after the merge, or if the walkthrough
 smoke checks fail on the trace mode twice. (A count of agent files would fire on today's tree

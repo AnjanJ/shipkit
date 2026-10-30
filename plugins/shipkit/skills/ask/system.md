@@ -9,7 +9,7 @@
 Explore a codebase, reason about WHY it's designed the way it is, verify every claim
 against source code, and return a system design document proposed for `docs/SYSTEM_DESIGN.md`.
 
-**How this differs from `/shipkit:map`:** the archivist's `PROJECT_MAP.md` indexes WHAT
+**How this differs from `/shipkit:map`:** `/shipkit:map`'s `PROJECT_MAP.md` indexes WHAT
 exists and where. `/shipkit:ask --system` explains WHY the system is designed this way (decisions,
 trade-offs, constraints) — the textbook chapter, not the map.
 

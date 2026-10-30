@@ -41,8 +41,9 @@ Question: `$ARGUMENTS`
 
 - **`--walk <feature-or-file> [surface|deep]`** (the walkthrough; a skill of its own until
   5.0.0) → read `@walk.md` and hand its whole text, with the words after `--walk` as the
-  Target, to the **`tracer`** agent as the prompt (the agent is read-only and non-interactive;
-  it returns the entry-point table and a `PROPOSED: docs/code-walkthrough/<feature>.md`).
+  Target, to the **`grandfather`** agent as the prompt, opening with "Trace mode:" (the
+  elder's trace mode, `tracer` until 5.0.0; read-only and non-interactive; it returns the
+  entry-point table and a `PROPOSED: docs/code-walkthrough/<feature>.md`).
   Present the result; write the file only on the user's yes, checking first that it would not
   overwrite one.
 - **`--system [full|quick|section <name>]`** (the system-design explainer; a skill of its own
@@ -87,5 +88,5 @@ Question: `$ARGUMENTS`
 - `/shipkit:ask --all matrix rails` → eve (version matrix: every repo's Rails version, from lockfiles)
 - `/shipkit:ask --all consolidate` → eve (what am I maintaining N times that should exist once?)
 - `/shipkit:ask --all digest` → portfolio-digest.sh, then eve (which product needs attention this week, and why?)
-- `/shipkit:ask --walk checkout` → tracer, with `walk.md` as its brief (one feature, end to end, `file:line`-cited)
+- `/shipkit:ask --walk checkout` → grandfather in trace mode, with `walk.md` as its brief (one feature, end to end, `file:line`-cited)
 - `/shipkit:ask --system quick` → a general-purpose agent, with `system.md` as its brief (why it is built this way)

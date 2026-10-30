@@ -1,6 +1,6 @@
 <!-- Reference body for `/shipkit:ask --walk` (was the walkthrough skill until 5.0.0). The ask
-     skill hands this whole file, plus the argument, to the read-only tracing agent as its prompt.
-     The agent It cannot ask the user anything mid-run and cannot write files. It traces
+     skill hands this whole file, plus the argument, to `grandfather` in trace mode as its
+     prompt (the `tracer` agent until 5.0.0). The agent It cannot ask the user anything mid-run and cannot write files. It traces
      end-to-end and RETURNS the walkthrough; the main session presents it and writes
      docs/code-walkthrough/<feature>.md only after the user approves. -->
 
@@ -10,7 +10,7 @@ Trace one feature end-to-end — from trigger to database and back — and produ
 step-by-step walkthrough, returned as a proposed `docs/code-walkthrough/<feature-name>.md`.
 
 **How this relates to the other explainers:**
-- `/shipkit:map` (archivist) indexes WHAT exists and where — the city map
+- `/shipkit:map` indexes WHAT exists and where — the city map
 - `/shipkit:ask --system` explains WHY decisions were made (trade-offs, ADRs) — the urban planning textbook
 - `/shipkit:ask --walk` traces HOW one feature works step by step — the guided walking tour
 

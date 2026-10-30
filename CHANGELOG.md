@@ -30,9 +30,20 @@ prints what a session there pays for shipkit, byte by byte.
 | `/shipkit:context-audit` | `/shipkit:setup audit` |
 | `/shipkit:connect-memory [--wing <name>] [--reinstall]` | `/shipkit:setup memory [--wing <name>] [--reinstall]` |
 | `/shipkit:commit [emphasis]` | `/shipkit-workflows:commit [emphasis]` (the workflows plugin) |
+| "use the `tracer` agent …" | "use the `grandfather` agent in trace mode …", or `/shipkit:ask --walk <feature>` |
+| "use the `archivist` agent …" | `/shipkit:map` (it runs forked and is the archivist) |
+| "use the `codebase-explorer` agent …" | the built-in `Explore` agent |
 
 ### Changed
 
+- **Four agents** (thinning plan W4, S20-T5): `tracer` is `grandfather`'s trace mode (a
+  "Trace mode" section; `/shipkit:ask --walk` opens its hand-off with "Trace mode:");
+  `archivist` is `/shipkit:map`'s own forked body (`skills/map/archivist.md`, `context: fork`
+  — the map is optional by decision 0001, so its builder no longer costs every session a
+  listing; the registry step runs in the same fork); `codebase-explorer` gave way to Claude
+  Code's built-in `Explore` agent, which a session with the plugin can hand work to headless
+  (checked). `reviewer`, `eve`, `grandfather` and `test-analyzer` stay; descriptions 1,720 →
+  991 bytes. Smoke check 66; the `grandfather` eval group is the watch.
 - **Ten core skills** (thinning plan W3, S20-T4): `walkthrough` and `explain-system` are
   `ask`'s `--walk` and `--system`, their bodies `skills/ask/walk.md` and `system.md` handed to
   the `tracer` and a general-purpose agent as the prompt; `unsetup`, `update-rules`,
