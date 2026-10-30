@@ -12,7 +12,7 @@ needs the owner's yes (rule 15). W2 and every removal STOP for the owner's word 
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . always-on --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh .` → no FIRED; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec in the thread; the plan's approval line and amendments in the same commit; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** The context cost as a script (S20-T1) → REQ-1, REQ-2, REQ-3
+- [x] **T1** The context cost as a script (S20-T1) → REQ-1, REQ-2, REQ-3
   - Files: scripts/context-cost.sh, docs/design/context-cost.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 63 "context-cost" (the script on `$PROJ` before and after a setup prints every row; the hook row equals `wc -c` of the hook's own output) — written first, red; cites `always-on/REQ-1`, `always-on/REQ-2`
   - After: T0

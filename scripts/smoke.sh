@@ -2274,6 +2274,41 @@ if ! [ -f "$COPY/scripts/session-end.sh" ] && ! grep -q 'SessionEnd' "$COPY/hook
   pass "plugin-root-installed (no SessionEnd hook: nothing overwritten, nothing to put back)"
 else failc "plugin-root-installed" "a SessionEnd hook or session-end.sh exists; the start hook's rule makes it redundant"; fi
 
+# 63. context-cost: scripts/context-cost.sh prints what a session pays for shipkit in a given
+# project — the hook's output bytes there (the real hook, run with CLAUDE_PLUGIN_ROOT under a
+# scratch HOME), skill and agent description bytes per plugin, the overlay skills and CLAUDE.md
+# stack sections setup installed in that project, the always-on rules' bytes — with no model
+# call. Run on a bare project and again after install-rules.sh + install-stack.sh python; the
+# hook row must equal wc -c of the hook's own output. Cites: always-on/REQ-1 always-on/REQ-2
+CC="$ROOT/scripts/context-cost.sh"; CCP="$WORK/ccproj"; mkdir -p "$CCP"
+(cd "$CCP" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+cc_row() { printf '%s\n' "$1" | awk -v k="$2" '$1 == k { print $2; exit }'; }
+if [ ! -f "$CC" ]; then
+  failc "context-cost" "scripts/context-cost.sh does not exist (check written first, by design)"
+else
+  cc_before=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$CC" "$CCP" 2>/dev/null); rc=$?
+  cc_hook=$(cd "$CCP" && HOME="$WORK/cchome" CLAUDE_CONFIG_DIR="$WORK/cchome/.claude" CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'mkdir -p "$HOME/.claude"; sh "$CLAUDE_PLUGIN_ROOT/scripts/session-start.sh"; for r in shipkit spec-driven decisions --eval-rule; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' 2>/dev/null | wc -c | tr -d ' ')
+  if [ "$rc" -eq 0 ] && [ "$(cc_row "$cc_before" hook)" = "$cc_hook" ] && [ "$cc_hook" -gt 100 ]; then
+    pass "context-cost (the hook row equals wc -c of the hook's own output on a bare project: $cc_hook bytes)"
+  else failc "context-cost" "bare project: rc=$rc hook row='$(cc_row "$cc_before" hook)' measured=$cc_hook"; fi
+  for k in skills-core skills-workflows agents overlay-skills overlay-appends rules-always-on; do
+    v=$(cc_row "$cc_before" "$k")
+    case "$v" in ''|*[!0-9]*) failc "context-cost" "row '$k' missing or not a number: '$v'"; cc_rows=bad ;; esac
+  done
+  [ "${cc_rows:-ok}" = ok ] && pass "context-cost (every row present and numeric on a bare project)"
+  if [ "$(cc_row "$cc_before" overlay-skills)" = 0 ] && [ "$(cc_row "$cc_before" overlay-appends)" = 0 ] \
+     && [ "$(cc_row "$cc_before" skills-core)" -gt 1000 ] && [ "$(cc_row "$cc_before" rules-always-on)" -gt 1000 ]; then
+    pass "context-cost (a bare project has no overlay skills or appends; the plugin's own rows are non-zero)"
+  else failc "context-cost" "bare project rows: $(printf '%s\n' "$cc_before" | tr '\n' ';')"; fi
+  (cd "$CCP" && sh "$COPY/scripts/install-rules.sh" "$COPY" . >/dev/null 2>&1 \
+     && sh "$COPY/scripts/install-stack.sh" "$COPY" python . TEST_COMMAND=pytest PYTHON_FRAMEWORK=FastAPI API_STYLE=REST ASYNC_MODE=no TEST_FRAMEWORK=pytest ORM=none >/dev/null 2>&1) || true
+  cc_after=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$CC" "$CCP" 2>/dev/null)
+  if [ "$(cc_row "$cc_after" overlay-appends)" -gt 0 ] && [ "$(cc_row "$cc_after" overlay-skills)" -gt 0 ] \
+     && [ "$(cc_row "$cc_after" hook)" -lt "$(cc_row "$cc_before" hook)" ]; then
+    pass "context-cost (after setup: the python append and its skill are counted; the hook row drops because the installed rules are not injected)"
+  else failc "context-cost" "after setup: $(printf '%s\n' "$cc_after" | tr '\n' ';')"; fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
