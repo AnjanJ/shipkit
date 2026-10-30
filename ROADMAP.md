@@ -15,9 +15,13 @@ shipped it in seven sprints.
 **Status (as of 2026-10-11, v4.11.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 to 18 of the
 second-run plan (`docs/plans/second-run-sprint-plan.md`, approved 2026-10-10; Sprint 17 shipped
-as 4.10.0, Sprint 18 as 4.11.0, Sprint 19 open) are done; see "The second-run plan" below. Everything in
-this document is shipped except the items under "Still open after Sprint 16" that Sprints 18
-and 19 still owe (each item carries a note when a sprint paid it).
+as 4.10.0, Sprint 18 as 4.11.0, Sprint 19 run as written and releasing as 4.12.0) are done; see
+"The second-run plan" below. Everything in this document is shipped except the items under
+"Still open after Sprint 19", which seed the plan after (each item carries a note when a sprint
+pays it). The plan after is `docs/plans/thinning-sprint-plan.md` (Status DRAFT, written
+2026-10-22): its W0 said "fold Sprint 19 in"; Sprint 19 ran as written instead, so W0 is to be
+re-decided as "ran as written" before that plan is approved, and its W5 may name
+`~/code/linkshort` as the Python repository or ask for another.
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -31,7 +35,7 @@ and 19 still owe (each item carries a note when a sprint paid it).
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The second-run plan — Sprints 17–18 SHIPPED 2026-10-10 to 2026-10-11 as 4.10.0, 4.11.0; Sprint 19 open
+## The second-run plan — Sprints 17–18 SHIPPED 2026-10-10 to 2026-10-11 as 4.10.0, 4.11.0; Sprint 19 run as written, releasing as 4.12.0
 
 Full plan: [`docs/plans/second-run-sprint-plan.md`](docs/plans/second-run-sprint-plan.md). Pay
 the second run's debts (17), act on the graders and on `eve` (18), close the harness window and
@@ -41,7 +45,7 @@ run the loop a third time on the third stack (19).
 |--------|---------|--------------------|
 | 17 | 4.10.0 | An installer that sees a heading the project already has; setup that names a same-named rule and leaves a tracked backup alone; a brief that warns on a dirty tree; setup's two directories always allowed; a reviewer told where a line number comes from and a gate that pastes its reply from a file (smoke checks 60, 61; 25, 26, 27, 29, 53 extended); the wait sentence closed by record; the `4.6.0` and `4.7.0` cache directories gone |
 | 18 | 4.11.0 | `payments` graded on what the question asked; `eve` measured on her guesses and given one sentence that stays by its number; the reworded `why` probe (the map reached 3 of 3 without a shared word); `notebooks` widened on its trace; `react` closed by record; the five kept rule files on `haiku` — `migrations` cut by the clause, four kept on a number (`docs/design/eval-results-4.11.md`) |
-| 19 | 4.12.0 | — |
+| 19 | 4.12.0 | The installed-root rule in place of the plan's hook pair (PR #21: the hook prints its version on its own line; `plugin-root` written only from the installed root, any other root writes `plugin-root.dev`; smoke check 62; rule 17's write-back struck for anyone with an installed plugin); the sandbox's refusal text read from a trace into `evals/README.md`; shipkit's loop end to end on a Python/FastAPI project built for the run (`~/code/linkshort`, `docs/design/field-notes-4.12.md`), $1.37, nothing fixed, twelve findings, E4/E6/E7 held and E8 back in a new body; this roadmap for the plan after |
 
 **Still open after Sprint 19** (the third real run's findings, `docs/design/field-notes-4.12.md`,
 by section — a Python/FastAPI project built for the run, `~/code/linkshort`; nothing here was
@@ -83,6 +87,52 @@ fixed in Sprint 19, by the plan's E17; every item seeds the plan after):
 - *The run's branch `shipkit/real-run-3` and its worktree: deleted 2026-10-30 on the owner's yes
   (F3), the log read first ("was b608543"); `~/code/linkshort` kept at `main` (`a5f1eb8`), the
   owner's.*
+
+What Sprint 18's measurements and the three releases before it named for the plan after, with
+their evidence (nothing here was changed in Sprint 19):
+
+- **`trap2/experiments`' grader is narrower than its line** — the 4.11.0 release run read it
+  1 of 3 under `-j 4` and 2 of 3 alone; the miss logged the device with `log.info(` and the
+  second lookahead wants `logging|logger|print|log\(` on the line; the correction
+  (`log(\.\w+)?\(`) is named, not made (`docs/design/eval-history.md`, "Release run 4.11.0").
+- **`package-json`'s trap-2 grader is narrower than its line** — on `haiku` with the rule, all
+  three `ci-install.sh` files detect the manager from the lockfile at run time, which the
+  negative lookahead forbids; 0 of 3 on a line followed six times; the cell is unread until the
+  grader accepts a run-time detector (`docs/design/eval-results-4.11.md` §5).
+- **The strict `why` number lives in a document, not the suite** — `eve`'s sentence (E10) is
+  kept by a 2 of 3 under the strict wording that the shipped grader does not apply; a
+  regression would show only in a by-hand re-run (`eval-results-4.11.md` §2).
+- **A map whose Evolution line shares no word with the question** — `why-reworded` reached the
+  map 3 of 3 through the elder's own grep words; the fixture that would miss it is a question
+  for a plan after, and `map_shell` must be read beside `map_read` (`eval-results-4.11.md` §3).
+- **Four kept rule files are kept on a number, not by record** — `monorepo` and `testing` each
+  lost one unaided trap-1 run on `haiku`, `rails` 0 of 3 unaided on trap 2; `migrations` was
+  cut and its two cases watch (`eval-results-4.11.md` §5, "Reading").
+- **A smoke check's range runs to the end of the file when its closing header does not exist**
+  — `scripts/smoke.sh` has no `# 12.` or `# 13.`; a runner built to a missing header ran the
+  rest of the suite, and a killed runner's `EXIT` trap did not fire, so `plugin-root` and the
+  scratch directory were put back by hand (`CHANGELOG.md` 4.10.0, "What using it for real
+  showed"). The 4.12 run avoided it by extracting lines 1–58 plus one check's block with
+  `ROOT` pinned.
+- **The project's test command assumes the pinned toolchain is on `PATH`** — Ruby in 4.3, Elixir
+  in 4.9, each found by hand (`mise exec --`) and handed to every headless step (`CHANGELOG.md`
+  4.9.0, "What using it for real showed"; `field-notes-4.9.md` §7). Setup reads the test
+  framework and package manager and not the version pin (`.tool-versions`, `.python-version`);
+  the 4.12 project had `uv` in the command and no such gap.
+- **Smoke check 2 (`rules-skip`, `haiku`) fails on variance** and passes alone with its
+  dependency — the known shape in the 4.9.0 release's full run (`CHANGELOG.md` 4.9.0).
+- **The gate dry run wrote a separate `-rerun` report by its own choice** rather than overwrite
+  the committed one, and gave step 2's evidence as one line where the template asks for twenty
+  (`CHANGELOG.md` 4.7.0, "What using it for real showed"); the 4.12 gate pasted step 2 whole
+  (`field-notes-4.12.md` §9), the `-rerun` choice is unmeasured since.
+- **The evals byte ceiling is full** — `plugins/shipkit/evals` stands at 196,589 of 196,608
+  bytes after Sprint 19's one README line (19 bytes of room); the next case raises the ceiling
+  (second-run plan, exit checklist line 6) or trims `evals/README.md` first.
+- **Paid since 4.9.0, outside a sprint:** every `--plugin-dir` session rewriting `plugin-root`
+  (`CHANGELOG.md` 4.7.0) and an older session's hook writing a removed directory back
+  (`CHANGELOG.md` 4.10.0) — PR #21's installed-root rule (`CHANGELOG.md` 4.12.0): a dev root
+  writes `plugin-root.dev`, and a cache directory is deleted only when no running session uses
+  it (F5's rule).
 
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 

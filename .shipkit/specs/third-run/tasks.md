@@ -29,7 +29,7 @@ task creates is removed after reading (rule 13).**
   - Test: none beyond lint — prose, written while running from the commands and their output; the run itself: a worktree of the owner's repository at its default branch on `shipkit/real-run-3` under this session's scratchpad, `claude --plugin-dir "<this checkout>/plugins/shipkit" --model sonnet` headless at this sprint's branch, the 4.9 steps in order (the hook, setup, product, intake on the owner's request, spec, one task through `brief.sh` from a clean tree and `brief-verify.sh`, the gate), `git status --short` before the first step, the Done-when of every step run by the runner; **nothing found is fixed**; F3 after the notes on the owner's yes, the branch's log read first
   - After: T2
   - Done when: the notes hold every step with its six parts and one line per E1 to E7; the ROADMAP's open list has one item per finding citing a section; the branch's fate is recorded; lint 0/0
-- [ ] **T4** The roadmap for the plan after (S19-T4) → REQ-8
+- [x] **T4** The roadmap for the plan after (S19-T4) → REQ-8
   - Files: ROADMAP.md
   - Test: none beyond lint (check 16 holds the status line) — prose, read: Sprints 17 to 19 in a shipped table as the portfolio plan's; "Still open after Sprint 19" from the third run's findings, Sprint 18's readings that named something, and the three releases' "What using it for real showed"; every item cites a file and section
   - After: T3
