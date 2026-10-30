@@ -17,7 +17,7 @@ T2, T3 and T4 STOP for the owner's word before anything shipped moves (rule 6).*
   - Test: Check first: `install-stack.sh --with-skills <root> rails <dir> KEY=…` parses with the positional contract intact (else `SHIPKIT_STACK_SKILLS=1`). scripts/smoke.sh check 67 "skills-flag" (a Rails install without the flag leaves `.claude/skills/` untouched and the manifest lists no skill — cites `overlays-and-eve/REQ-1`; with the flag, the six skills and manifest rows as today — `overlays-and-eve/REQ-2`; `unsetup-remove.sh` removes exactly the installed set in each case — `overlays-and-eve/REQ-4`; the setup skill's text asks once and names the count — `overlays-and-eve/REQ-3`) — written first, red
   - After: T0
   - Done when: check 67 → PASS; the field-notes form of setup on a scratch Rails project shows the question once; lint 0/0
-- [ ] **T2** The overlay appends and the two unscoped rules, audited (S21-T2, W7) → REQ-5, REQ-6, REQ-7
+- [x] **T2** The overlay appends and the two unscoped rules, audited (S21-T2, W7) → REQ-5, REQ-6, REQ-7
   - Files: docs/design/trim-audit-overlays.md, plugins/shipkit/stacks/*/CLAUDE.md.append, plugins/shipkit/stacks/rails/.claude/rules/rails.md, plugins/shipkit/stacks/react/.claude/rules/react.md, scripts/smoke.sh
   - Test: the audit's table read by the owner (**STOP**); after the cuts, scripts/smoke.sh check 58's kept list if a measured line moved, and a check that `rails.md`/`react.md` carry `paths:` or the audit says why not (cites `overlays-and-eve/REQ-7`); `scripts/context-cost.sh` on a scratch Rails and a scratch Python project before and after (the `overlay-appends` row)
   - After: T1

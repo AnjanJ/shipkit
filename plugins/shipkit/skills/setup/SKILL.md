@@ -296,7 +296,7 @@ to merge them. Edit neither section — the project's is theirs, shipkit's is re
 |-------|--------|-------|---------|
 | `rails` | `/new-feature`, `/release`, `/safety-check`, `/deploy-check` | `gemfile.md`, `rails.md` | `code-review-standards-rails`, `ai-rails` |
 | `react` (standalone) | `/component` | `package-json.md`, `react.md` | — |
-| `python` | `/new-feature` | `pyproject.md` | — |
+| `python` | `/new-feature` | `pyproject.md`, `django.md` (loads on Django files only) | — |
 | `go` | `/new-feature` | `go-mod.md` | — |
 | `elixir` | `/new-feature` | `mix-deps.md` | — |
 | `static` | `/audit` | — | — |

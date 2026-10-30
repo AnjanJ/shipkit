@@ -2431,6 +2431,32 @@ if grep -q -- '--with-skills' "$COPY/skills/setup/SKILL.md" && grep -qi 'listed 
   pass "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
 else failc "skills-flag" "skills/setup/SKILL.md does not describe the --with-skills question"; fi
 
+# 68. appends-trimmed: the overlay CLAUDE.md appends carry only the lines the W7 audit kept
+# (docs/design/trim-audit-overlays.md, the owner's yes per group, 2026-10-30): no generic "or"
+# Key Paths table, no "Ruff or flake8" style line, no Django block in the python append (its
+# five lines live in stacks/python/.claude/rules/django.md, path-scoped); rails.md and react.md
+# carry paths: so they load only on a matching edit. Each append at or under its post-trim
+# size. No claude needed. Cites: overlays-and-eve/REQ-6 overlays-and-eve/REQ-7
+at_fail=""
+at_gone() { grep -qF -- "$2" "$COPY/stacks/$1/CLAUDE.md.append" && at_fail="$at_fail [$1 still has: $2]"; :; }
+at_gone python 'Django Gotchas'; at_gone python 'Ruff (`ruff check .`) or flake8'; at_gone python '`src/` or `app/`'; at_gone python 'alembic upgrade head'
+at_gone rails 'Prefer scopes over class methods'; at_gone rails 'db:seed'; at_gone react '`src/screens/`'; at_gone react 'Prettier'
+at_gone elixir 'mix test.watch'; at_gone elixir 'Pipe operator'; at_gone go 'goose up'; at_gone go 'No getters'; at_gone static '`css/` or `styles/`'
+for pair in python:1100 rails:1420 react:900 elixir:1220 go:1270 static:420; do
+  st=${pair%%:*}; cap=${pair#*:}; b=$(wc -c < "$COPY/stacks/$st/CLAUDE.md.append" | tr -d ' ')
+  [ "$b" -le "$cap" ] || at_fail="$at_fail [$st append $b bytes, cap $cap]"
+done
+if [ -z "$at_fail" ]; then pass "appends-trimmed (the six big appends carry only the kept lines, each at or under its post-trim size)"
+else failc "appends-trimmed" "$at_fail"; fi
+if [ -f "$COPY/stacks/python/.claude/rules/django.md" ] && sed -n '1,8p' "$COPY/stacks/python/.claude/rules/django.md" | grep -q '^paths:' \
+   && grep -q 'select_related' "$COPY/stacks/python/.claude/rules/django.md" && grep -q 'post_save' "$COPY/stacks/python/.claude/rules/django.md"; then
+  pass "appends-trimmed (the five Django lines live in a path-scoped stacks/python/.claude/rules/django.md)"
+else failc "appends-trimmed" "stacks/python/.claude/rules/django.md missing, unscoped, or without the Django lines"; fi
+if sed -n '1,8p' "$COPY/stacks/rails/.claude/rules/rails.md" | grep -q '^paths:' && grep -q 'app/\*\*/\*.rb' "$COPY/stacks/rails/.claude/rules/rails.md" \
+   && sed -n '1,8p' "$COPY/stacks/react/.claude/rules/react.md" | grep -q '^paths:' && grep -q 'app/frontend' "$COPY/stacks/react/.claude/rules/react.md"; then
+  pass "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
+else failc "appends-trimmed" "rails.md or react.md lacks paths: (rails: $(sed -n '1,3p' "$COPY/stacks/rails/.claude/rules/rails.md" | tr '\n' '|'))"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

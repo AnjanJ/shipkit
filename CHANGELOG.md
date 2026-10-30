@@ -36,6 +36,16 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **The overlay appends trimmed by audit** (thinning plan W7, S21-T2): every line of the ten
+  `CLAUDE.md.append` files and the two unscoped overlay rules read against the 4.0 rule — a
+  value, a trap, or measured — in `docs/design/trim-audit-overlays.md`, the owner's yes per
+  group. Out: the generic "Key Paths" tables of `src/` or `app/` rows, the "Ruff or flake8"
+  style lines, conventions the formatter owns, the "if installed" tool lines, the `migrate …
+  or alembic` command pairs. Kept: every placeholder and every trap line. The python append's
+  Django block is now `stacks/python/.claude/rules/django.md`, path-scoped to Django files
+  instead of loading into every session of a FastAPI project. `rails.md` and `react.md` carry
+  `paths:` and load on a matching edit only. Appends 2,525/2,150/1,638/1,623/1,532/885 →
+  1,030/1,170/1,375/1,137/883/395 bytes. Smoke check 68.
 - **Overlay skills install on a flag** (thinning plan W6, S21-T1): `install-stack.sh
   [--with-skills] <plugin-root> <stack> …` copies an overlay's skills into `.claude/skills/`
   only with the flag (or `SHIPKIT_STACK_SKILLS=1`); by default it installs the rules and the

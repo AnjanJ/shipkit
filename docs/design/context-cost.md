@@ -18,8 +18,8 @@ no `CLAUDE.md`, no `.claude/`, no `.shipkit/`; the plugin at `plugins/shipkit` (
 | `skills-core` | 3,969 | the `description:` line of each of 17 `plugins/shipkit/skills/*/SKILL.md` | **≤ 2,950** (W3: 10 skills; the plan's draft said 2,400 — the eight skills W3 does not touch total 2,535 on their own and lint caps a description at 300, so the owner amended the ceiling on 2026-10-30; after W3 the row reads 2,894) |
 | `skills-workflows` | 1,598 | the same for 6 `plugins/shipkit-workflows/skills/*/SKILL.md` | ≤ 1,900 (7 skills; `commit` joins) |
 | `agents` | 1,720 | the `description:` line of each of 7 agents (6 core, `test-analyzer`) | ≤ 1,000 (W4: 4 agents) — after W4 the row reads 991 (3 core + `test-analyzer`) |
-| `overlay-skills` | 0 | whole files of the skills setup installed under the project's `.claude/skills/`, read from the manifest `.claude/rules/shipkit/.installed` | 0 by default (W6: installed on a flag); a Rails project today carries 6 skills, 17,529 bytes |
-| `overlay-appends` | 0 | the stack sections between `<!-- shipkit:stack:X -->` markers in the project's `CLAUDE.md` | audited line by line (W7); 1.6–2.3 KB per stack today |
+| `overlay-skills` | 0 | whole files of the skills setup installed under the project's `.claude/skills/`, read from the manifest `.claude/rules/shipkit/.installed` | 0 by default (W6: installed on a flag) — **after S21-T1 a Rails install without `--with-skills` reads 0** (6 skills, 17,529 bytes, with it) |
+| `overlay-appends` | 0 | the stack sections between `<!-- shipkit:stack:X -->` markers in the project's `CLAUDE.md` | audited line by line (W7) — **after S21-T2** a Rails project's section is 1,388 bytes (was 1,651), a FastAPI project's 1,012 (was 2,507; its Django lines now load only on Django files) |
 | `rules-always-on` | 2,979 | `rules/shipkit.md` + `spec-driven.md` + `decisions.md` as shipped | ≤ 3,000, lint-held; the text does not change in this plan (two skill names move with W3) |
 
 On this repository itself (set up, `.shipkit/` present, the rules installed as files) the
@@ -57,3 +57,4 @@ this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 | 2026-10-30 | S20-T3 (W2) | 2,290 | 3,969 | 1,598 | 1,720 | 3,000 | the Care line reworded (+105 bytes in `shipkit.md`, trims elsewhere; the three rules at the budget) |
 | 2026-10-30 | S20-T4 (W3) | 2,289 | 2,894 | 1,885 | 1,720 | 2,999 | ten core skills (17 → 10, −27%); `commit` in workflows (6 → 7); the ceiling amended 2,400 → 2,950 on the owner's word (the eight untouched skills total 2,535) |
 | 2026-10-30 | S20-T5 (W4) | 2,289 | 2,894 | 1,885 | 991 | 2,999 | four agents (7 → 4, −42%): tracer into grandfather, archivist into `map` (forked), codebase-explorer → the built-in Explore |
+| 2026-10-30 | S21-T1, T2 (W6, W7) | 2,289 | 2,894 | 1,885 | 991 | 2,999 | on a scratch set-up project (`install-rules.sh` + `install-stack.sh`): Rails `overlay-skills` 17,529 → 0 by default, `overlay-appends` 1,651 → 1,388; Python `overlay-appends` 2,507 → 1,012 (+ `django.md`, path-scoped) |
