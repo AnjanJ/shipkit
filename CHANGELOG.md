@@ -113,7 +113,15 @@ stack section carries its template's "or" lines and a Django block on a FastAPI 
 the product skill resolved the README's "no database" against the TODO's SQLite without a
 question (§3). On the sprint's own tree: a cloud session's PR (#21) had paid T1 before the
 branch was rebuilt on it, and the sprint's hook-pair commits were dropped for a spec amendment
-rather than merged against it.
+rather than merged against it. **Both headless gate runs looked for their scratch files under
+`/tmp` instead of `$TMPDIR`**, found the review (first run) and test and decision blocks
+(second run) empty, re-ran the step and rebuilt the report, and said so; the first run's
+`NOT READY` was step 3 alone — T-REL unticked, which the release task puts in the prep commit
+and this one left out. Smoke: 179 checks, 178 passed on the release prep tree (174 at 4.11.0;
+check 62 adds 5); the one failure was check 35's "no hook names decision-check" sub-check
+matching PR #21's comment in `session-start.sh`, corrected to read code lines only and passed
+alone. The release eval run: 59 cases, $19.48, exit 0, `intake/limit` 2 of 3 as in the three
+runs before (`docs/design/eval-history.md`, "Release run 4.12.0").
 
 ## [4.11.0] — 2026-10-11
 
