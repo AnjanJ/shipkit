@@ -43,6 +43,44 @@ run the loop a third time on the third stack (19).
 | 18 | 4.11.0 | `payments` graded on what the question asked; `eve` measured on her guesses and given one sentence that stays by its number; the reworded `why` probe (the map reached 3 of 3 without a shared word); `notebooks` widened on its trace; `react` closed by record; the five kept rule files on `haiku` — `migrations` cut by the clause, four kept on a number (`docs/design/eval-results-4.11.md`) |
 | 19 | 4.12.0 | — |
 
+**Still open after Sprint 19** (the third real run's findings, `docs/design/field-notes-4.12.md`,
+by section — a Python/FastAPI project built for the run, `~/code/linkshort`; nothing here was
+fixed in Sprint 19, by the plan's E17; every item seeds the plan after):
+
+- **The headless intake held its session open for 20 minutes** — the skill spawned
+  `grandfather`, the model scheduled a 1,200 s `ScheduleWakeup` as a fallback for a
+  notification that arrived in 20 s, and a `-p` session does not exit until the wakeup fires;
+  the JSON `result` was the wakeup's non-answer, not the intake's reply (§4.1). E8's record
+  (`.shipkit/specs/run-debts/design.md`) said "reopened if an interactive session shows it";
+  a headless one showed something costlier.
+- **`brief.sh` does not carry the `<slug>/REQ-N` citation convention** that `spec-check`
+  reads; the agent's tests cited nothing and REQ-2/REQ-3 stayed `PENDING-TEST` after the build,
+  then `MISSING-TEST` at the gate (§8.1; the reviewer saw it from the other side, §9).
+- **A model-written `Fired-if` fired on bytecode** — `grep -rl expires_at src` from `sh -c`
+  counts `__pycache__/*.pyc` after the first `pytest`; the spec skill says nothing about
+  grepping a source tree and `decision-check.sh` runs the command over untracked files (§9.1).
+- **E5's always-allowed list misses the stack's project skill** — `.claude/skills/new-feature/
+  SKILL.md`, written by setup, was a "change beyond the spec" to the reviewer (§9.2).
+- **The gate's pre-step status capture went to `/tmp/ship-pre-status.txt`**, outside the
+  `shipkit-ship-*` cleanup pattern; the skill says "keep its output" and not where (§9.3).
+- **`skills/setup/SKILL.md:224` says "all nine rules"; the plugin ships eight** — read aloud by
+  the model that followed it (§2.1).
+- **The `python` stack section keeps the template's alternatives** — "Ruff or flake8", "`mypy`
+  or `pyright`", `src/` or `app/`, a Django block on a FastAPI project (§2.2).
+- **Setup's two timestamps use two clocks** — `.shipkit-baseline/.captured` in UTC, the backup
+  directory's name in local time (§2.3).
+- **`/shipkit:product` resolved a README-vs-TODO contradiction silently** ("no database" against
+  "SQLite planned") instead of asking (§3).
+- **`tasks.md`'s `Test:` line is singular** — a task for two or four requirements names one test
+  (§6.1).
+- **The stamp is still written by hand in a headless flow** — the third run to say so (§7.1;
+  4.3 §7.4, 4.9 §7.2).
+- **E1, E2 and E3 were not exercised** — the project had no `CLAUDE.md`, no `.claude/rules/`
+  and no earlier backup; smoke checks 60 and 61 remain their only measure ("Did E1 to E7 hold").
+- The project's own, not shipkit's: T1 carried an API requirement on a service-only file list,
+  caught by the agent's NOT VERIFIED line (§7.2, §8.3); Starlette's `httpx` deprecation warning
+  on every test run; the README's "no database" against TODO's SQLite (§3).
+
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 
 Full plan: [`docs/plans/portfolio-sprint-plan.md`](docs/plans/portfolio-sprint-plan.md). Pay the
