@@ -34,7 +34,7 @@ task creates is removed after reading (rule 13).**
   - Test: none beyond lint (check 16 holds the status line) — prose, read: Sprints 17 to 19 in a shipped table as the portfolio plan's; "Still open after Sprint 19" from the third run's findings, Sprint 18's readings that named something, and the three releases' "What using it for real showed"; every item cites a file and section
   - After: T3
   - Done when: lint 0/0; every open item names a file and section
-- [ ] **T-REL** Release 4.12.0 (S19-T-REL)
+- [x] **T-REL** Release 4.12.0 (S19-T-REL)
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/third-run/spec.md
   - Test: the sprint exit checklist (lint, smoke, evals at 59 cases, spec-check, the two byte lines); the gate headless; the CHANGELOG says which sessions no longer need rule 17's write-back
   - After: T4
