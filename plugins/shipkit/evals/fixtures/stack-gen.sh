@@ -273,6 +273,16 @@ w src/ledger/orders.py <<'X'
 def total(lines: list[tuple[str, int, int]]) -> int:
     return sum(cents * qty for _sku, cents, qty in lines)
 X
+w src/ledger/models.py <<'X'
+"""What an order is stored as."""
+from dataclasses import dataclass
+
+
+@dataclass
+class Order:
+    id: int
+    total_cents: int
+X
 w tests/test_orders.py <<'X'
 from ledger.orders import total
 
