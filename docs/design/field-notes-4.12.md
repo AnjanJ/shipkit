@@ -500,5 +500,9 @@ either way on this project; one (E8) came back in a new body.
 
 **The branch.** `shipkit/real-run-3` holds two commits (`ba2b59a` the setup, product, intake
 and spec files; `b608543` T1 with `tasks.md` ticked) and one untracked report
-(`.shipkit/releases/2026-10-30-link-expiry.md`); never for merge. Its fate, and the demo
-repository's, are recorded below once the owner has said (F3).
+(`.shipkit/releases/2026-10-30-link-expiry.md`); never for merge. **Deleted 2026-10-30 on the
+owner's yes (F3)**, the log read first (rule 13): `git worktree remove --force` on the scratchpad
+worktree, `git branch -D shipkit/real-run-3` ("was b608543"). The stray
+`/tmp/ship-pre-status.txt` (§9.3) removed on the same yes. **The demo repository
+`~/code/linkshort` is kept**, on the owner's word, at `main` (`a5f1eb8`) with a clean tree — the
+owner's to reuse; the run's setup, product file, spec and T1 went with the branch.

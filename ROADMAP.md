@@ -80,6 +80,9 @@ fixed in Sprint 19, by the plan's E17; every item seeds the plan after):
 - The project's own, not shipkit's: T1 carried an API requirement on a service-only file list,
   caught by the agent's NOT VERIFIED line (§7.2, §8.3); Starlette's `httpx` deprecation warning
   on every test run; the README's "no database" against TODO's SQLite (§3).
+- *The run's branch `shipkit/real-run-3` and its worktree: deleted 2026-10-30 on the owner's yes
+  (F3), the log read first ("was b608543"); `~/code/linkshort` kept at `main` (`a5f1eb8`), the
+  owner's.*
 
 ## The portfolio plan — ✅ Sprints 14–16 SHIPPED 2026-10-09 to 2026-10-10 as 4.7.0, 4.8.0, 4.9.0
 

@@ -24,7 +24,7 @@ task creates is removed after reading (rule 13).**
   - Test: a probe case on a scratch copy of the plugin (never committed) whose prompt asks for `.pre-commit-config.yaml` at the workspace root, `--runs 1 --keep-temp` with `Write` allowed; the `Write` call and its `tool_result` read from the trace; the text quoted in the README's paragraph with the Claude Code version, or the paragraph says what the trace held instead; smoke check 57 (keeps the paragraph) → PASS; the sandbox and the copy removed
   - After: T1
   - Done when: the README quotes the text or says the trace held none; check 57 → PASS; lint 0/0
-- [ ] **T3** The third real run (S19-T3) → REQ-6, REQ-7
+- [x] **T3** The third real run (S19-T3) → REQ-6, REQ-7
   - Files: docs/design/field-notes-4.12.md, ROADMAP.md
   - Test: none beyond lint — prose, written while running from the commands and their output; the run itself: a worktree of the owner's repository at its default branch on `shipkit/real-run-3` under this session's scratchpad, `claude --plugin-dir "<this checkout>/plugins/shipkit" --model sonnet` headless at this sprint's branch, the 4.9 steps in order (the hook, setup, product, intake on the owner's request, spec, one task through `brief.sh` from a clean tree and `brief-verify.sh`, the gate), `git status --short` before the first step, the Done-when of every step run by the runner; **nothing found is fixed**; F3 after the notes on the owner's yes, the branch's log read first
   - After: T2
