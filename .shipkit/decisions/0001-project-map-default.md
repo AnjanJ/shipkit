@@ -143,4 +143,6 @@ under a strict wording (a labelled guess is a reason offered): 1 of 3 before one
 offer no motives of your own"), 2 of 3 after it, and the three-map arm still 3 of 3 with the map
 read in every run (`docs/design/eval-results-4.11.md` §2). The sentence stays. The map's place
 is unchanged: with it the why is answered from its Evolution section; without it `eve` now
-says "not recorded" and stops. **Still closed; the map is optional.**
+says "not recorded" and stops. **Still closed; the map is optional.** The 5.0 trim of
+`eve.md` (S21-T4) left this as it was: no map read on a sweep, the map read on every `why`, and
+the sentence above kept (`docs/design/eval-results-5.0.md` §3).

@@ -109,3 +109,64 @@ whether the sentence "a request to delete is not the yes" or the reordering did 
 not separated (one change, one measurement — the plan after can bisect if the watch drops).
 The thinning plan's §5 said no line of the three rules changes; this one did, on the owner's
 word after the table, and the plan's amendments say so.
+
+## 3. `eve`'s prompt by the audit's clause (S21-T4, W9)
+
+The audit's one arm (`docs/design/trim-audit-eve.md`): all five candidates out at once, against
+the committed file, five cases, three runs each, on `sonnet`. Spec:
+`.shipkit/specs/overlays-and-eve/` (REQ-11, REQ-12, REQ-13). The arm's cost was $3.75.
+
+**Did it hold?** Yes, every case, so by the clause all five candidates stay out.
+
+| Case | Passed, base | Passed, arm | `map_read`, base | `map_read`, arm | Map by shell, base | Map by shell, arm |
+|---|---|---|---|---|---|---|
+| `eve/jobs` | 3 of 3 | 3 of 3 | 0 | 0 | 0 | 1 |
+| `eve/payments` | 3 of 3 | 3 of 3 | 1 | 0 | 0 | 0 |
+| `eve/why` | 3 of 3 | 3 of 3 | 3 | 3 | 0 | 0 |
+| `eve/why-reworded` | 3 of 3 | 3 of 3 | 1 | 1 | 2 | 2 |
+| `digest/attention` | 3 of 3 | 3 of 3 | 0 | 0 | 0 | 0 |
+
+**Was it cheaper?** Not measurably. Means per run:
+
+| Case | Tools, base → arm | Input tokens, base → arm | Dollars, base → arm |
+|---|---|---|---|
+| `eve/jobs` | 4.3 → 5.3 | 102,468 → 126,303 | 0.134 → 0.131 |
+| `eve/payments` | 4.3 → 3.0 | 148,654 → 104,662 | 0.130 → 0.127 |
+| `eve/why` | 7.0 → 6.3 | 143,408 → 119,304 | 0.124 → 0.120 |
+| `eve/why-reworded` | 5.7 → 5.7 | 129,314 → 131,499 | 0.126 → 0.131 |
+| `digest/attention` | 4.0 → 4.0 | 98,523 → 126,759 | 0.108 → 0.120 |
+| **All 15 runs (totals)** | 76 → 73 | 1,867,104 → 1,825,579 (−2.2%) | $1.87 → $1.89 (+1.0%) |
+
+**Reading.** The clause asks for no worse, and that is what the table shows. It does not show
+cheaper: a baseline run's main-session input clusters at about 46,000, 71,000 or 95,000 tokens,
+steps the size of one more turn's context, and that spread dwarfs 4,880 bytes of a subagent's prompt.
+A real saving per call is likely, but 15 runs cannot resolve it. REQ-12's 11,500 was the audit's
+estimate; the file is 12,067 bytes, 510 of them comments the model never receives, and the
+owner took it as measured over a $2 re-run for 567 bytes (REQ-12 amended).
+
+**Where the shapes went.** The arm put them in `skills/ask/SKILL.md`, 1,354 more bytes. That
+body loads into the main session on every `/shipkit:ask` and stays there, grandfather questions
+included, so the move would have traded `eve`'s throwaway context for the one the elders exist
+to keep thin. None of the five cases is a grandfather question, so no number above could show
+it. The owner moved them to `skills/ask/reports.md`, read on those two routes only, the way
+`--walk` reads `walk.md`; `SKILL.md` grew 161 bytes (REQ-13 amended). The probes' session logs
+show `@walk.md` stays literal in the main session with its body unloaded, so the reference is
+paid only when followed.
+
+**The two shapes (REQ-13).** Two runs each, through `/shipkit:ask --all` on the generated
+portfolio fixture, reading the prompt handed to `eve` as well as the reply. `eve.md` is
+byte-identical across both rows of each pair.
+
+| Run | Shapes in | Cost | Shape in the prompt to `eve` | The reply |
+|---|---|---|---|---|
+| `matrix rails` | `SKILL.md` (the arm) | $0.17 | yes | One row per project: installed, declared, evidence, flag |
+| `consolidate` | `SKILL.md` (the arm) | $0.20 | yes | Five ranked candidates; the top two complete, the three "leave alone" rows without per-copy paths |
+| `matrix rails` | `reports.md` (shipped) | $0.17 | yes, `reports.md` read first | The same shape |
+| `consolidate` | `reports.md` (shipped) | $0.26 | yes, `reports.md` read first | Five ranked candidates, each with copies, drift and a verdict |
+
+**What this does not show (§3).** Three runs a case, so a change of one count in three is noise.
+Nothing here measures a grandfather question's cost, so the 1,354 bytes are a size, not a
+measured dollar figure. `reports.md` was probed once per route, after the 15-run arm: the
+merge's `--group eve` and `--group digest` runs cover `SKILL.md`'s final text on the five cases,
+and no case watches the two report routes. A request for a matrix in words, without the flag,
+was not run.

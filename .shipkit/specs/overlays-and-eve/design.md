@@ -2,7 +2,7 @@
 
 ## Approach
 
-Four records, one per plan decision (W6, W7, W8, W9), and a sprint that is one flag, two
+Four records, one per plan decision (W6, W7, W8, W9), two more from W9's STOP, and a sprint that is one flag, two
 audits with the owner's yes per row, one amended decision record, and one measured trim.
 Nothing in the loop's skills or the hook changes. Every cut has a number or the owner's word
 (rule 20): the flag is checked by smoke; the audits are read by the owner before a line
@@ -140,6 +140,55 @@ drops below 2 of 3 in a release run after the trim, or a matrix or consolidation
 through `ask` comes back without its shape.
 **Fired-if.** manual
 
+## Decision: `eve.md` ships at the measured size, not the audit's estimate   (→ REQ-12)
+
+**Context.** The audit's 11,500 was 17,010 less about 5,500 bytes of candidates. The measured
+arm took 16,947 to 12,067: the table and the two shapes each left a sentence behind them, and
+the estimate had not counted those. Every case held, so only the number missed.
+
+**Alternatives.**
+1. Ship the arm as measured and amend REQ-12 to 12,067.
+2. Cut about 570 more bytes of glue (the staleness bullet, the two-line step 1, the report
+   lead) and re-run the 15-run arm, about $2.
+
+**Case for (1).** Every number in the table then describes the file that ships. The 567 bytes
+are about 155 tokens a call, and the whole 4,880-byte trim moved the 15 runs' totals by less
+than their run-to-run spread (input tokens −2.2%, dollars +1.0%). 510 of the bytes are comments
+the model never receives.
+
+**Case against (1).** A ceiling moved to fit its result is a ceiling that did nothing, and the
+glue is still there to cut.
+
+**Decision.** We chose (1), on the owner's word at W9's STOP.
+**Falsifiability.** We would reopen the size if a release run's five `eve` cases average more
+than $0.15 a run (0.126 on the arm) or any of them hits `maxTurns`.
+**Fired-if.** manual
+
+## Decision: The matrix and consolidation shapes live in `skills/ask/reports.md`   (→ REQ-13)
+
+**Context.** The audit moved the two shapes from `eve.md` to the `ask` skill's text, which the
+arm did in `SKILL.md`. That body loads into the main session on every `/shipkit:ask` and stays
+there, so a grandfather question pays 1,354 more bytes for nothing, where `eve`'s prompt ended
+with the subagent. The five cases cannot show it: none of them is a grandfather question.
+
+**Alternatives.**
+1. A reference file, `skills/ask/reports.md`, read on those two routes only.
+2. `SKILL.md` as measured.
+3. Back in `eve.md`, as the audit's clause allows on a lost shape.
+
+**Case for (1).** `--walk` and `--system` already work this way, and the probes' session logs
+show `@walk.md` stays literal, its body unloaded, so the file costs nothing off its route.
+`ask` grows 161 bytes, not 1,354, and the text moves whole, not compressed.
+
+**Case against (1).** It adds a step the main session can skip: if it does not read the file,
+`eve` gets no shape and no case catches it. Only the two probes and check 70's text check watch
+that route, and the file was measured after the 15-run arm, not in it.
+
+**Decision.** We chose (1), on the owner's word at W9's STOP. `eve.md` is unchanged by this.
+**Falsifiability.** We would move the shapes back to `agents/eve.md` if a `--all matrix` or
+`--all consolidate` request comes back without its shape because `reports.md` was not read.
+**Fired-if.** manual
+
 ---
 
 ## Data / interface changes
@@ -153,6 +202,6 @@ through `ask` comes back without its shape.
   fits.
 - `stacks/<overlay>/.claude/skills/<skill>/` directories removed on the owner's yes.
 - `.shipkit/decisions/0004-overlay-skills-flag.md` (new); 0003's status line amended.
-- `agents/eve.md` ≤ 11,500 bytes if the arm holds; `skills/ask/SKILL.md` carries the matrix
-  and consolidation shapes.
+- `agents/eve.md` ≤ 12,067 bytes (amended from 11,500 at W9's STOP); `skills/ask/reports.md`
+  (new) carries the matrix and consolidation shapes, read on those two routes only.
 - No migration.

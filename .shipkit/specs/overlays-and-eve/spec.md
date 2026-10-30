@@ -81,12 +81,18 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), §0, W6–W9
   `eve/why-reworded`, `digest/attention`) shall hold their 4.12.0 counts on the trimmed
   `agents/eve.md`, with `map_read` 0 for `jobs` and `payments` and 3 of 3 for `why`, or the
   candidate whose return restores a dropped count shall be back in the file.
-- **REQ-12.** `agents/eve.md` shall be at most 11,500 bytes where the arm holds; where it
-  does not, the record shall carry the bisection and the file's size. [untested: the size is
-  read by `wc -c`; the clause is the audit's]
+- **REQ-12.** `agents/eve.md` shall be at most 12,067 bytes where the arm holds; where it
+  does not, the record shall carry the bisection and the file's size.
+  > *Amended 2026-10-30 (W9's STOP, the owner's word):* the ceiling was 11,500, the audit's
+  > estimate. The arm as measured is 12,067 bytes, 510 of them frontmatter comments the model
+  > never receives, and every case held on that exact file (`docs/design/eval-results-5.0.md`
+  > §3). Smoke check 70 now reads the size, so the requirement carries no waiver.
 - **REQ-13.** When `/shipkit:ask --all matrix <x>` or `/shipkit:ask --all consolidate` is
   invoked, the request handed to `eve` shall carry the report's shape from the `ask` skill's
-  text, and the reply shall have that shape.
+  `reports.md`, and the reply shall have that shape.
+  > *Amended 2026-10-30 (W9's STOP, the owner's word):* this said the `ask` skill's text,
+  > meaning `SKILL.md`. There the shapes would load 1,354 bytes into the main session on every
+  > `/shipkit:ask`, grandfather questions too; `reports.md` is read on these two routes only.
 
 ## Out of scope
 

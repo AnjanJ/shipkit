@@ -36,6 +36,12 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **`eve`'s prompt trimmed, 16,947 → 12,067 bytes** (thinning plan W9, S21-T4): the cheat-sheet
+  table, the example questions, the restated constraints and most of the MemPalace paragraph
+  are out, by the audit's one arm. Every `eve` case held 3 of 3 over 15 runs. The matrix and
+  consolidation shapes moved whole to `skills/ask/reports.md`, read on those two routes only.
+  No reply changes shape, and the trim is no measurable saving: input tokens −2.2%, dollars
+  +1.0%, inside the runs' spread (`docs/design/eval-results-5.0.md` §3).
 - **Two Rails overlay skills cut, nine kept behind the flag** (thinning plan W8, S21-T3): each
   of the eleven overlay skills read beside the loop in `docs/design/trim-audit-overlays.md`.
   `deploy-check` went — its checks were `/shipkit:ship`'s steps 2 and 5, `gemfile.md`'s

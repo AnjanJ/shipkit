@@ -26,8 +26,9 @@ On this repository itself (set up, `.shipkit/` present, the rules installed as f
 `hook` row is 339 bytes: the root and version lines plus the briefing's spec and rules lines,
 no rule injected. That is what an opted-in project pays, and W1 does not change it.
 
-Not in the table, by the plan's §0: `agents/eve.md` is 17,010 bytes in `eve`'s own context
-per call (W9, `docs/design/trim-audit-eve.md`); `agents/grandfather.md` 9,156; the briefing
+Not in the table, by the plan's §0: `agents/eve.md` is 12,067 bytes in `eve`'s own context
+per call, 510 of them comments the model never receives (W9, `docs/design/trim-audit-eve.md`;
+16,947 before the trim); `agents/grandfather.md` 9,156; the briefing
 is ≤ 800 bytes and only with `.shipkit/`; the path-scoped rules load on a matching edit only.
 
 ## How each row is measured

@@ -95,4 +95,17 @@ of evals under a ceiling with 34 bytes left) is a separate decision.
 
 ## The owner's decisions
 
-_(none yet — the runs wait for the thinning sprint)_
+2026-10-30, after the table (`docs/design/eval-results-5.0.md` §3; S21-T4, W9):
+
+- **All five candidates stay out.** Every case held 3 of 3 on the arm, `map_read` 0 for `jobs`
+  and `payments` and 3 of 3 for `why`; no bisection was needed. The file went from 16,947
+  bytes (its size at the branch) to 12,067.
+- **12,067 bytes, not 11,500.** The estimate above did not count the sentences the table and
+  the shapes left behind. The owner took the arm as measured over a $2 re-run for 567 bytes.
+- **The two shapes in `skills/ask/reports.md`, not `SKILL.md`.** "The `ask` skill's prompt
+  text" above would have put 1,354 bytes in the main session on every `/shipkit:ask`, the
+  cost this audit says the elders' design avoids. `reports.md` is read on those two routes
+  only, and takes the text whole.
+- **The "no worse, cheaper" ceiling was half met.** No worse, by the clause. Cheaper did not
+  show: 15 runs each, input tokens −2.2%, dollars +1.0%, both inside the runs' spread.
+- The `## The registry` staleness bullet stays: it was not one of the five, and nothing measured it.

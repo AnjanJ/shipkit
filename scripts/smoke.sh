@@ -2481,6 +2481,29 @@ if [ -f "$ROOT/.shipkit/decisions/0004-overlay-skills-flag.md" ] && grep -q '^\*
   pass "skills-cut (decision 0004 is a five-part record with its clauses; 0003 is marked amended, not deleted)"
 else failc "skills-cut" "0004 missing or without Falsifiability/Fired-if, or 0003 not marked amended"; fi
 
+# 70. report-shapes: eve's prompt by the W9 audit (the owner's yes, 2026-10-30). The matrix and
+# consolidation shapes left agents/eve.md for skills/ask/reports.md, which ask reads only on those
+# two routes: in ask's SKILL.md they would load into the main session on every /shipkit:ask, the
+# grandfather questions too. eve.md stays within the measured size and keeps what the audit put out
+# of scope (step 0, step 4's sentence, the digest shape). No claude needed.
+# Cites: overlays-and-eve/REQ-12 overlays-and-eve/REQ-13
+rs_fail=""; rs_e="$COPY/agents/eve.md"; rs_s="$COPY/skills/ask/SKILL.md"; rs_r="$COPY/skills/ask/reports.md"
+[ -f "$rs_r" ] || rs_fail="$rs_fail [reports.md missing]"
+for rs_t in 'version installed | declared constraint' 'consolidation cost'; do
+  grep -qF "$rs_t" "$rs_r" 2>/dev/null || rs_fail="$rs_fail [reports.md lacks: $rs_t]"
+  grep -qF "$rs_t" "$rs_e" && rs_fail="$rs_fail [eve.md still carries: $rs_t]"
+  grep -qF "$rs_t" "$rs_s" && rs_fail="$rs_fail [SKILL.md carries: $rs_t]"
+done
+for rs_q in matrix consolidate; do
+  grep -A3 -- "^  - \`--all $rs_q" "$rs_s" | grep -qF 'reports.md' || rs_fail="$rs_fail [ask's $rs_q route does not read reports.md]"
+done
+for rs_t in 'Good questions for you' 'cheat-sheet'; do grep -qF "$rs_t" "$rs_e" && rs_fail="$rs_fail [eve.md still carries: $rs_t]"; done
+for rs_t in '### 0. Triage' 'offer no motives of your own' '### Attention digest'; do grep -qF "$rs_t" "$rs_e" || rs_fail="$rs_fail [eve.md lost: $rs_t]"; done
+rs_b=$(wc -c < "$rs_e" | tr -d ' ')
+[ "$rs_b" -le 12067 ] || rs_fail="$rs_fail [eve.md is $rs_b bytes, ceiling 12067]"
+if [ -z "$rs_fail" ]; then pass "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
+else failc "report-shapes" "$rs_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
