@@ -1310,10 +1310,14 @@ else
   if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^FIRED\|^HOLDS\|^MANUAL\|^ERROR'; then
     pass "decision-check (no .shipkit/ → exit 0, nothing found)"
   else failc "decision-check" "no records: rc=$rc out: $out"; fi
-  # e. no hook calls it
-  if ! grep -rq 'decision-check' "$COPY/hooks" && ! grep -q 'decision-check' "$COPY/scripts/session-start.sh"; then
-    pass "decision-check (no hook and not the session hook names decision-check)"
-  else failc "decision-check" "a hook names decision-check: $(grep -rn 'decision-check' "$COPY/hooks" "$COPY/scripts/session-start.sh")"; fi
+  # e. no hook calls it — code lines only; a comment that names the script is not a call
+  # (4.12.0: session-start.sh's installed-root comment names decision-check.sh as a reader of
+  # plugin-root, and this check read the mention as an invocation). The filter is a function
+  # because bash 3.2 reads a '#' inside "$(...)" as a comment.
+  code_lines() { grep -v '^[[:space:]]*#' "$1"; }
+  if ! grep -rq 'decision-check' "$COPY/hooks" && ! code_lines "$COPY/scripts/session-start.sh" | grep -q 'decision-check'; then
+    pass "decision-check (no hook and no code line of the session hook names decision-check)"
+  else failc "decision-check" "a hook calls decision-check: $(grep -rn 'decision-check' "$COPY/hooks"; code_lines "$COPY/scripts/session-start.sh" | grep -n 'decision-check')"; fi
 fi
 
 # 36. portfolio-digest: one page across every registered project, written under
