@@ -139,8 +139,10 @@ Configures shipkit for your specific project. Run it once when you start using s
    the plugin's `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
    makes the path-scoped rules work. The install is stamped with the plugin version; the session
    hook tells you when a plugin upgrade has made the copies stale, and re-running setup refreshes them
-7. Installs stack-specific skills and rules via the plugin's `scripts/install-stack.sh`
-   (into `.claude/skills/` and `.claude/rules/shipkit/<stack>/`), filling every
+7. Installs stack-specific rules via the plugin's `scripts/install-stack.sh` (into
+   `.claude/rules/shipkit/<stack>/`) — and the overlay's skills into `.claude/skills/` only if
+   you say yes when asked (`--with-skills`; since 5.0.0 they are off by default, because each
+   one is listed in every session of the project), filling every
    `{{placeholder}}` from detection — the script refuses to leave one unfilled
 8. Optionally creates `.claude/settings.json` with safe defaults
 

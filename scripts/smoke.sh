@@ -164,7 +164,7 @@ case "$out" in *ZEBRA-11000*) echo "INFO  hook-cap: 11K of hook output now reach
 # 7. install-scripts: deterministic installs produce the expected tree with no placeholders
 IP="$WORK/install-proj"; mkdir -p "$IP"; printf '# demo\n' > "$IP/CLAUDE.md"
 if sh "$COPY/scripts/install-rules.sh" "$COPY" "$IP" >/dev/null \
-   && sh "$COPY/scripts/install-stack.sh" "$COPY" rails "$IP" TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire >/dev/null; then
+   && sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" rails "$IP" TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire >/dev/null; then
   nrules=$(ls "$IP"/.claude/rules/shipkit/*.md | wc -l | tr -d ' ')
   left=$(grep -rl '{{[A-Z_]*}}' "$IP/CLAUDE.md" "$IP/.claude" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$nrules" -eq "$(ls "$CORE"/rules/*.md | wc -l | tr -d ' ')" ] && [ -f "$IP/.claude/rules/shipkit/.installed" ] \
@@ -248,10 +248,10 @@ printf '# demo\n\nPROSE-BEFORE\n' > "$PY/CLAUDE.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$PY" >/dev/null
 pyargs="API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest"
 # shellcheck disable=SC2086
-sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$PY" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
 printf '\nPROSE-AFTER\n' >> "$PY/CLAUDE.md"
 # shellcheck disable=SC2086
-sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="uv run pytest" $pyargs >/dev/null 2>&1
+sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$PY" TEST_COMMAND="uv run pytest" $pyargs >/dev/null 2>&1
 # NOTE: `x=$(grep -c … || echo 0)` yields "0\n0" when grep matches nothing — grep -c already
 # prints 0 before the fallback fires — and the arithmetic test then fails on a two-line value.
 # Count with a plain grep -c and normalise a missing file to 0 separately.
@@ -321,11 +321,11 @@ UP="$WORK/user-skill"; mkdir -p "$UP/.claude/skills/new-feature"
 printf 'MY-OWN-SKILL\n' > "$UP/.claude/skills/new-feature/SKILL.md"
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$UP" >/dev/null
 # shellcheck disable=SC2086
-sh "$COPY/scripts/install-stack.sh" "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
 mine=$(count 'MY-OWN-SKILL' "$UP/.claude/skills/new-feature/SKILL.md")
 owned=$(count 'skills/new-feature/SKILL.md' "$UP/.claude/rules/shipkit/.installed")
 # shellcheck disable=SC2086
-SHIPKIT_OVERWRITE_SKILLS=1 sh "$COPY/scripts/install-stack.sh" "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
+SHIPKIT_OVERWRITE_SKILLS=1 sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$UP" TEST_COMMAND=pytest $pyargs >/dev/null 2>&1
 forced=$(count 'MY-OWN-SKILL' "$UP/.claude/skills/new-feature/SKILL.md")
 if [ "$mine" -eq 1 ] && [ "$owned" -eq 0 ] && [ "$forced" -eq 0 ] && [ "$sk" -gt 0 ]; then
   pass "skill-collision (user's same-named skill kept and unowned; replaced only on request)"
@@ -339,12 +339,12 @@ else failc "skill-collision" "kept=$mine owned=$owned after-force=$forced own-re
 awk 'index($0,"<!-- /shipkit:stack:python -->"){print "USER-EDIT-INSIDE"} {print}' \
   "$PY/CLAUDE.md" > "$PY/CLAUDE.md.new" && mv "$PY/CLAUDE.md.new" "$PY/CLAUDE.md"
 # shellcheck disable=SC2086
-err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs 2>&1 >/dev/null)
+err=$(sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs 2>&1 >/dev/null)
 kept=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
 early=$(count 'poetry run pytest' "$PY/CLAUDE.md")
 case "$err" in *"-USER-EDIT-INSIDE"*SHIPKIT_REFRESH_CLAUDE_MD*) diffed=1;; *) diffed=0;; esac
 # shellcheck disable=SC2086
-SHIPKIT_REFRESH_CLAUDE_MD=1 sh "$COPY/scripts/install-stack.sh" "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs >/dev/null 2>&1
+SHIPKIT_REFRESH_CLAUDE_MD=1 sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$PY" TEST_COMMAND="poetry run pytest" $pyargs >/dev/null 2>&1
 gone=$(count 'USER-EDIT-INSIDE' "$PY/CLAUDE.md")
 late=$(count 'poetry run pytest' "$PY/CLAUDE.md")
 a=$(count 'PROSE-AFTER' "$PY/CLAUDE.md")
@@ -381,7 +381,7 @@ mkproj() {  # mkproj <dir>
   _p="$1"; mkdir -p "$_p"; printf '# demo\n' > "$_p/CLAUDE.md"
   sh "$COPY/scripts/install-rules.sh" "$COPY" "$_p" >/dev/null 2>&1
   # shellcheck disable=SC2086
-  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$_p" TEST_COMMAND=pytest \
+  sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python "$_p" TEST_COMMAND=pytest \
     API_STYLE=REST ASYNC_MODE=no ORM=SQLAlchemy PYTHON_FRAMEWORK=FastAPI \
     TEST_FRAMEWORK=pytest >/dev/null 2>&1
   mkdir -p "$_p/.claude/agents" "$_p/.shipkit/decisions"
@@ -2305,7 +2305,7 @@ else
     pass "context-cost (a bare project has no overlay skills or appends; the plugin's own rows are non-zero)"
   else failc "context-cost" "bare project rows: $(printf '%s\n' "$cc_before" | tr '\n' ';')"; fi
   (cd "$CCP" && sh "$COPY/scripts/install-rules.sh" "$COPY" . >/dev/null 2>&1 \
-     && sh "$COPY/scripts/install-stack.sh" "$COPY" python . TEST_COMMAND=pytest PYTHON_FRAMEWORK=FastAPI API_STYLE=REST ASYNC_MODE=no TEST_FRAMEWORK=pytest ORM=none >/dev/null 2>&1) || true
+     && sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" python . TEST_COMMAND=pytest PYTHON_FRAMEWORK=FastAPI API_STYLE=REST ASYNC_MODE=no TEST_FRAMEWORK=pytest ORM=none >/dev/null 2>&1) || true
   cc_after=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$CC" "$CCP" 2>/dev/null)
   if [ "$(cc_row "$cc_after" overlay-appends)" -gt 0 ] && [ "$(cc_row "$cc_after" overlay-skills)" -gt 0 ] \
      && [ "$(cc_row "$cc_after" hook)" -lt "$(cc_row "$cc_before" hook)" ]; then
@@ -2396,6 +2396,40 @@ af_b=${af_row%% *}; af_n=$(printf '%s' "$af_row" | awk '{print $2}')
 af_wf=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$ROOT/plugins/shipkit-workflows/agents/test-analyzer.md" | wc -c | tr -d ' ')
 if [ "$af_n" = "3" ] && [ $((af_b + af_wf)) -le 1000 ]; then pass "agents-four (three core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,000)"
 else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"; fi
+
+# 67. skills-flag: an overlay's skills install only on --with-skills (thinning plan W6). A Rails
+# install without the flag writes the rules and the CLAUDE.md section, copies no skill, records
+# no skill in the manifest, and says how many it skipped; with the flag (before the positional
+# arguments, the contract unchanged) the six skills and their manifest rows as before;
+# unsetup-remove.sh removes exactly the installed set in each case; the setup skill asks once,
+# names the count, and takes "no skills" when non-interactive. No claude needed.
+# Cites: overlays-and-eve/REQ-1 overlays-and-eve/REQ-2 overlays-and-eve/REQ-3 overlays-and-eve/REQ-4
+sf_args='TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire'
+SF="$WORK/skills-flag-off"; mkdir -p "$SF"; printf '# demo\n' > "$SF/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$SF" >/dev/null 2>&1
+sf_err=$(eval sh "$COPY/scripts/install-stack.sh" "$COPY" rails "$SF" $sf_args 2>&1 >/dev/null); sf_rc=$?
+sf_skills=$(ls -d "$SF"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+sf_man=$(grep -c "$(printf '\t')\.claude/skills/" "$SF/.claude/rules/shipkit/.installed" 2>/dev/null)
+if [ "$sf_rc" -eq 0 ] && [ "$sf_skills" -eq 0 ] && [ "${sf_man:-0}" -eq 0 ] && [ -f "$SF/.claude/rules/shipkit/rails/rails.md" ] \
+   && grep -q 'shipkit:stack:rails' "$SF/CLAUDE.md" && printf '%s\n' "$sf_err" | grep -q '6 skill.*--with-skills'; then
+  pass "skills-flag (without the flag: rules and the section, no skill copied or recorded, one line names the 6 skipped and the flag)"
+else failc "skills-flag" "without the flag: rc=$sf_rc skills=$sf_skills manifest-skill-rows=${sf_man:-0} stderr: $(printf '%s' "$sf_err" | tr '\n' '|' | cut -c1-200)"; fi
+SF2="$WORK/skills-flag-on"; mkdir -p "$SF2"; printf '# demo\n' > "$SF2/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$SF2" >/dev/null 2>&1
+eval sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" rails "$SF2" $sf_args >/dev/null 2>&1; sf2_rc=$?
+sf2_skills=$(ls -d "$SF2"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+sf2_man=$(grep -c "$(printf '\t')\.claude/skills/" "$SF2/.claude/rules/shipkit/.installed" 2>/dev/null)
+if [ "$sf2_rc" -eq 0 ] && [ "$sf2_skills" -eq 6 ] && [ "${sf2_man:-0}" -ge 6 ] && grep -q 'bundle exec rspec' "$SF2/.claude/skills/new-feature/SKILL.md"; then
+  pass "skills-flag (--with-skills before the positional arguments: the six skills installed and recorded, placeholders filled)"
+else failc "skills-flag" "with the flag: rc=$sf2_rc skills=$sf2_skills manifest-skill-rows=${sf2_man:-0}"; fi
+sh "$COPY/scripts/unsetup-remove.sh" "$SF" --yes >/dev/null 2>&1; sh "$COPY/scripts/unsetup-remove.sh" "$SF2" --yes >/dev/null 2>&1
+if [ ! -d "$SF/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/skills/new-feature" ] && [ -f "$SF/CLAUDE.md" ]; then
+  pass "skills-flag (unsetup removes exactly what each install recorded: rules in both, the skills only where installed)"
+else failc "skills-flag (unsetup)" "off: rules=$([ -d "$SF/.claude/rules/shipkit" ] && echo left || echo gone); on: rules=$([ -d "$SF2/.claude/rules/shipkit" ] && echo left || echo gone) skills=$([ -d "$SF2/.claude/skills/new-feature" ] && echo left || echo gone)"; fi
+if grep -q -- '--with-skills' "$COPY/skills/setup/SKILL.md" && grep -qi 'listed in every session' "$COPY/skills/setup/SKILL.md" \
+   && grep -qi 'non-interactive' "$COPY/skills/setup/SKILL.md"; then
+  pass "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
+else failc "skills-flag" "skills/setup/SKILL.md does not describe the --with-skills question"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

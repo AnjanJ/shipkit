@@ -36,6 +36,14 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **Overlay skills install on a flag** (thinning plan W6, S21-T1): `install-stack.sh
+  [--with-skills] <plugin-root> <stack> …` copies an overlay's skills into `.claude/skills/`
+  only with the flag (or `SHIPKIT_STACK_SKILLS=1`); by default it installs the rules and the
+  `CLAUDE.md` section and prints one line naming how many skills it skipped. `/shipkit:setup`
+  asks once, naming the count and that each skill is listed in every session of the project;
+  a non-interactive run installs none and says so. A Rails project no longer carries six
+  skills (17,529 bytes, six listings) it did not ask for. Smoke check 67; the suite's own
+  installs pass the flag where they assert on a skill.
 - **Four agents** (thinning plan W4, S20-T5): `tracer` is `grandfather`'s trace mode (a
   "Trace mode" section; `/shipkit:ask --walk` opens its hand-off with "Trace mode:");
   `archivist` is `/shipkit:map`'s own forked body (`skills/map/archivist.md`, `context: fork`

@@ -20,8 +20,15 @@
 # that was not covered by a KEY=value argument. Prints a manifest of installed paths on success.
 # Portable: POSIX sh, no `sed -i` (differs between GNU and BSD).
 
-usage() { echo "usage: install-stack.sh <plugin-root> <stack> [project-dir] KEY=value ..." >&2; exit 64; }
+usage() { echo "usage: install-stack.sh [--with-skills] <plugin-root> <stack> [project-dir] KEY=value ..." >&2; exit 64; }
 die()   { echo "install-stack: $*" >&2; exit 1; }
+
+# --with-skills (before the positional arguments) or SHIPKIT_STACK_SKILLS=1 installs the
+# overlay's skills too. Since 5.0.0 the default installs rules and the CLAUDE.md section only:
+# a skill copied into .claude/skills/ is listed in every session of the project, and a Rails
+# project got six it never asked for (thinning plan W6; .shipkit/specs/overlays-and-eve/).
+WITH_SKILLS="${SHIPKIT_STACK_SKILLS:-0}"
+case "$1" in --with-skills) WITH_SKILLS=1; shift ;; esac
 
 ROOT="$1"; STACK="$2"; shift 2 2>/dev/null || usage
 [ -n "$ROOT" ] && [ -n "$STACK" ] || usage
@@ -108,8 +115,12 @@ if [ -d "$SRC/.claude/rules" ]; then
   done
 fi
 
-# --- skills (workflow skills and on-demand knowledge bases alike) -------------------------
-if [ -d "$SRC/.claude/skills" ]; then
+# --- skills (workflow skills and on-demand knowledge bases alike) — only on --with-skills -----
+if [ -d "$SRC/.claude/skills" ] && [ "$WITH_SKILLS" != "1" ]; then
+  nsk=$(ls -d "$SRC"/.claude/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
+  [ "$nsk" -gt 0 ] && echo "install-stack: the '$STACK' overlay ships $nsk skill(s), not installed — each is listed in every session of this project; pass --with-skills to install them" >&2
+fi
+if [ -d "$SRC/.claude/skills" ] && [ "$WITH_SKILLS" = "1" ]; then
   for d in "$SRC"/.claude/skills/*/; do
     [ -d "$d" ] || continue
     name=$(basename "$d")

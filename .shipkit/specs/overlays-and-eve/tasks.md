@@ -12,7 +12,7 @@ T2, T3 and T4 STOP for the owner's word before anything shipped moves (rule 6).*
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . overlays-and-eve --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh .` → no FIRED; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec in the thread; stamped at the branch-point commit, `Status: open`
-- [ ] **T1** Overlay skills behind a flag (S21-T1, W6) → REQ-1, REQ-2, REQ-3, REQ-4
+- [x] **T1** Overlay skills behind a flag (S21-T1, W6) → REQ-1, REQ-2, REQ-3, REQ-4
   - Files: plugins/shipkit/scripts/install-stack.sh, plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/scripts/unsetup-remove.sh, scripts/smoke.sh, GUIDE.md
   - Test: Check first: `install-stack.sh --with-skills <root> rails <dir> KEY=…` parses with the positional contract intact (else `SHIPKIT_STACK_SKILLS=1`). scripts/smoke.sh check 67 "skills-flag" (a Rails install without the flag leaves `.claude/skills/` untouched and the manifest lists no skill — cites `overlays-and-eve/REQ-1`; with the flag, the six skills and manifest rows as today — `overlays-and-eve/REQ-2`; `unsetup-remove.sh` removes exactly the installed set in each case — `overlays-and-eve/REQ-4`; the setup skill's text asks once and names the count — `overlays-and-eve/REQ-3`) — written first, red
   - After: T0

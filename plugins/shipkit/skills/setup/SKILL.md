@@ -245,10 +245,18 @@ load on the same paths, and whether to merge or remove theirs is the user's call
 ## Phase 5: Install Stack-Specific Content
 
 Run the install script **once per overlay**, base first, then each add-on. Pass only the
-placeholders that overlay uses (Phase 1 step 4):
+placeholders that overlay uses (Phase 1 step 4).
+
+**The overlay's skills are optional (5.0.0).** By default the script installs the rules and
+the `CLAUDE.md` section only; a skill copied into `.claude/skills/` is listed in every session
+of this project. Where the overlay ships skills (the tables below), ask **once**, naming the
+count: "The `rails` overlay ships 6 skills (`/new-feature`, `/release`, `/safety-check`,
+`/deploy-check`, two knowledge bases); each is listed in every session here — install them
+too?" On yes, pass `--with-skills` before the plugin root. **Non-interactive** (a headless
+run, or the user said to take defaults): install no skills and say so in the summary.
 
 ```bash
-# base
+# base — add --with-skills before "<root>" only when the user said yes to the skills
 "<root>/scripts/install-stack.sh" "<root>" rails \
   TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL \
   RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire
@@ -260,7 +268,7 @@ placeholders that overlay uses (Phase 1 step 4):
 ```
 
 Each run copies `<root>/stacks/<overlay>/.claude/rules/*` → `.claude/rules/shipkit/<overlay>/`,
-`.claude/skills/*` → `.claude/skills/`, appends that overlay's `CLAUDE.md.append` to `CLAUDE.md`
+`.claude/skills/*` → `.claude/skills/` (only with `--with-skills`), appends that overlay's `CLAUDE.md.append` to `CLAUDE.md`
 once (guarded by its own marker, so re-runs and sibling overlays never collide), substitutes the
 placeholders, and **fails with exit 2 listing any placeholder you did not pass** — pass a
 `TODO: …` value rather than omitting one. If one overlay fails, fix it and re-run that overlay;
