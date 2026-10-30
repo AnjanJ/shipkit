@@ -164,6 +164,24 @@ byte-identical across both rows of each pair.
 | `matrix rails` | `reports.md` (shipped) | $0.17 | yes, `reports.md` read first | The same shape |
 | `consolidate` | `reports.md` (shipped) | $0.26 | yes, `reports.md` read first | Five ranked candidates, each with copies, drift and a verdict |
 
+**At the merge (S21-T-MERGE).** The shipped tree, `reports.md` in place, from the kept traces:
+
+| Case | Passed | `map_read` | Map by shell |
+|---|---|---|---|
+| `eve/jobs` | 3 of 3 | 0 | 0 |
+| `eve/payments` | 3 of 3 | 0 | 0 |
+| `eve/why` | 3 of 3 | 2 | 0 |
+| `eve/why-reworded` | 3 of 3 | 2 | 1 |
+| `digest/attention` | 3 of 3 | 0 | 0 |
+
+Every count held, at $1.80 for the 15 runs; three runs a case cannot say that is lower than the
+arm's $1.89. `eve/why`'s `map_read` is 2 of 3 against REQ-11's 3 of 3, and that third run still
+answered from the map: its reply names the Evolution section of `pulse`'s `PROJECT_MAP.md` as the
+only record of the `VACUUM FULL` lockout, and the reason exists nowhere else in the fixture.
+`map_read` counts a Read or Grep whose path ends in `PROJECT_MAP.md`, so a repo-wide Grep landing
+on the map does not register, the route decision 0001 records. That is the likely path, not a
+shown one: the run's sandbox was removed before this was read. No candidate returned.
+
 **What this does not show (§3).** Three runs a case, so a change of one count in three is noise.
 Nothing here measures a grandfather question's cost, so the 1,354 bytes are a size, not a
 measured dollar figure. `reports.md` was probed once per route, after the 15-run arm: the

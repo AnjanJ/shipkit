@@ -32,7 +32,7 @@ T2, T3 and T4 STOP for the owner's word before anything shipped moves (rule 6).*
   - Test: baseline 15 runs and the arm 15 runs (`--keep-temp`; `map_read` and tool calls from the traces, cites `overlays-and-eve/REQ-11` in `scripts/evals.sh`'s citation comment); **STOP: the owner sees the table**; bisection only on a drop; two shape runs through `/shipkit:ask --all matrix rails` and `--all consolidate` on the portfolio fixture, the replies read for the shape (cites `overlays-and-eve/REQ-13`); scripts/smoke.sh check 70 "report-shapes" (`reports.md` carries both shapes, `ask` reads it on those two routes, `eve.md` ≤ 12,067 — cites `overlays-and-eve/REQ-12`, `overlays-and-eve/REQ-13`), written first, red
   - After: T3
   - Done when: the table has no empty cell; every candidate kept out holds its 4.12.0 count by the audit's clause, or is back with the record saying why; `eve.md` ≤ 12,067 bytes (REQ-12 as amended at the STOP); the sandboxes removed; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S21-T-MERGE, rule 22)
+- [x] **T-MERGE** Merge, untagged (S21-T-MERGE, rule 22)
   - Files: docs/design/context-cost.md
   - Test: the exit checklist: lint; the full smoke suite; `--group eve`, `--group digest`, `--group stacks`; spec-check 0 gaps; the two byte lines; the §0 table re-measured into context-cost.md (a scratch Rails project's `overlay-skills` and `overlay-appends` rows before and after)
   - After: T4
