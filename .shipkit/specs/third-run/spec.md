@@ -1,7 +1,7 @@
 # Spec: The window and a third project (Sprint 19, release 4.12.0)
 
 > Spec accepted at commit `b24cef2` on sprint-19/third-run (2026-10-11).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/, plugins/shipkit/hooks/, plugins/shipkit/evals/README.md, scripts/, docs/design/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json
 
 ## Purpose
