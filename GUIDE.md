@@ -75,7 +75,7 @@ loaded (the session hook injects the rules); the path-scoped rules need
 | **`spec-driven` rule** | You start **non-trivial** feature work | Puts the three questions (what/how/done) + EARS + TDD-first in effect — see [Spec-Driven Development](#spec-driven-development) |
 | **`decisions` rule** | You make a real choice (≥2 alternatives) | Prompts a five-part decision record with a falsifiability clause |
 | **Commit discipline** | Any commit | Atomic commits, message scaled to the change, no `git add .`, no `--no-verify` |
-| **Session hook** | Session start | Tells Claude the plugin root and version, injects the always-on rules unless installed as files, and prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
+| **Session hook** | Session start | Tells Claude the plugin root and version; injects `shipkit.md` everywhere and the two loop rules where the project has opted in (`.shipkit/` or installed rules), else one line naming the opt-in; prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
 
 ### 🔵 Auto-invoked — Claude picks the right skill
 
@@ -920,9 +920,12 @@ that bites, and the rest was default behaviour.
 ### Always-on rules
 
 These are not path-scoped — they apply to the work itself, not to a file type. The session
-hook injects them (together with `shipkit.md`, the workflow + commit-discipline rule) at the
-start of every session; once `/shipkit:setup` has installed them as files the hook stops
-injecting and they load from `.claude/rules/shipkit/` like any project rule.
+hook injects `shipkit.md` (the workflow + commit-discipline rule) at the start of every
+session, and these two where the project has opted in: `.shipkit/` exists (a product file or
+a spec) or `.claude/rules/shipkit/` does. A project with neither gets one hook line saying
+how to opt in (`/shipkit:product` or `/shipkit:setup`). Once `/shipkit:setup` has installed
+the rules as files the hook stops injecting and they load from `.claude/rules/shipkit/` like
+any project rule.
 
 | Rule | Applies To | What It Enforces |
 |------|-----------|-----------------|

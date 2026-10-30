@@ -14,7 +14,7 @@ no `CLAUDE.md`, no `.claude/`, no `.shipkit/`; the plugin at `plugins/shipkit` (
 
 | Row | Bytes | What it counts | Ceiling after the plan |
 |---|---:|---|---|
-| `hook` | 3,951 | the session hook's output in that directory: the root line (≈ 60), the version line (23), and three injected rules with their four-line headers (2,014 + 1,018 + 829); `--eval-rule` prints nothing outside the eval tool | ≤ 1,900 where the project has not opted in (W1: root, version, `shipkit.md` with its header, the opt-in line); ≤ 120 if W2 finds the Care lines followed unaided |
+| `hook` | 3,951 | the session hook's output in that directory: the root line (≈ 60), the version line (23), and three injected rules with their four-line headers (2,014 + 1,018 + 829); `--eval-rule` prints nothing outside the eval tool | the plan's §0 says ≤ 1,900 where the project has not opted in; **after W1 (S20-T2) the row reads 2,269** — root 60, version 23, the opt-in line 172, `shipkit.md` with its header 2,014 — so the plan's ceiling never counted the header (≈ 230) or the line; the honest ceiling for W1 alone is ≤ 2,300, and ≤ 300 if W2 finds the Care lines followed unaided (root, version, the opt-in line) |
 | `skills-core` | 3,969 | the `description:` line of each of 17 `plugins/shipkit/skills/*/SKILL.md` | ≤ 2,400 (W3: 10 skills) |
 | `skills-workflows` | 1,598 | the same for 6 `plugins/shipkit-workflows/skills/*/SKILL.md` | ≤ 1,900 (7 skills; `commit` joins) |
 | `agents` | 1,720 | the `description:` line of each of 7 agents (6 core, `test-analyzer`) | ≤ 1,000 (W4: 4 agents) |
@@ -53,3 +53,4 @@ this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 |---|---|---:|---:|---:|---:|---:|---|
 | 2026-10-22 | 4.11.0 + PR #21 | 3,945 | 3,952 | 1,592 | 1,713 | 2,979 | the plan's §0, measured by hand |
 | 2026-10-30 | 4.12.0 (`877a8e5`) | 3,951 | 3,969 | 1,598 | 1,720 | 2,979 | the script's first run; the baseline |
+| 2026-10-30 | S20-T2 (W1) | 2,269 | 3,969 | 1,598 | 1,720 | 2,979 | the two loop rules opt-in; one opt-in line (172 bytes) added; an opted-in project unchanged |

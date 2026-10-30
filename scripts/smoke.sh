@@ -56,9 +56,12 @@ ask() {  # ask <plugin-dir> <prompt>  → last line of the model's reply, run in
 }
 CW_Q='Reply with ONLY every codeword of the form ZEBRA-<digits> that appears anywhere in your context, comma-separated, or exactly NONE.'
 
-# 1. rules-inject: a codeword appended to a rule is visible in a fresh session
+# 1. rules-inject: a codeword appended to a rule is visible in a fresh session.
+# $PROJ has opted in (an empty .shipkit/): since 5.0.0 the hook injects spec-driven and
+# decisions only where a project has .shipkit/ or installed rules (W1; check 64 is the
+# other state). Cites: always-on/REQ-5
 printf '\n\nSmoke codeword: ZEBRA-1001.\n' >> "$COPY/rules/decisions.md"
-rm -rf "$PROJ/.claude"
+rm -rf "$PROJ/.claude"; mkdir -p "$PROJ/.shipkit"
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh session via the hook)";;
   *) failc "rules-inject" "codeword not seen: $out";; esac
@@ -2308,6 +2311,36 @@ else
     pass "context-cost (after setup: the python append and its skill are counted; the hook row drops because the installed rules are not injected)"
   else failc "context-cost" "after setup: $(printf '%s\n' "$cc_after" | tr '\n' ';')"; fi
 fi
+
+# 64. opt-out: on a project with neither .shipkit/ nor .claude/rules/shipkit/, the hook injects
+# shipkit.md and NOT spec-driven.md or decisions.md, and prints exactly one opt-in line naming
+# /shipkit:product and /shipkit:setup; under CLAUDE_CODE_EVAL_CONFINED=1 all three are injected
+# whatever the directory holds, so the rules eval cases keep measuring the rules. Two codewords
+# (one per rule file) through a haiku session for the injection; the hook run directly for the
+# line count and the confined branch. Cites: always-on/REQ-4 always-on/REQ-6 always-on/REQ-7
+OO="$WORK/optout"; mkdir -p "$OO"
+(cd "$OO" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+printf '\n\nSmoke codeword: ZEBRA-3003.\n' >> "$COPY/rules/shipkit.md"
+printf '\n\nSmoke codeword: ZEBRA-4004.\n' >> "$COPY/rules/spec-driven.md"
+oo_hook() { (cd "$OO" && HOME="$WORK/oohome" CLAUDE_CONFIG_DIR="$WORK/oohome/.claude" CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'mkdir -p "$HOME/.claude"; sh "$CLAUDE_PLUGIN_ROOT/scripts/session-start.sh"; for r in shipkit spec-driven decisions --eval-rule; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null); }
+oo_out=$(oo_hook)
+oo_optin=$(printf '%s\n' "$oo_out" | grep -c '^shipkit: run /shipkit:product or /shipkit:setup')
+oo_rules=$(printf '%s\n' "$oo_out" | grep '^## Shipkit always-on rule:' | sed 's/.*: //' | tr '\n' ' ')
+if [ "$oo_optin" -eq 1 ] && [ "$oo_rules" = "shipkit " ]; then
+  pass "opt-out (the hook on a bare project: one opt-in line, shipkit.md injected, the two loop rules not)"
+else failc "opt-out" "bare project: opt-in lines=$oo_optin injected='$oo_rules'"; fi
+out=$(cd "$OO" && claude --plugin-dir "$COPY" --model haiku -p "$CW_Q Do not use tools." 2>/dev/null | tail -20)
+case "$out" in
+  *ZEBRA-4004*) failc "opt-out" "spec-driven.md reached a session on a project that never opted in: $out";;
+  *ZEBRA-3003*) pass "opt-out (a fresh session on a bare project sees shipkit.md's codeword and not spec-driven.md's)";;
+  *) failc "opt-out" "shipkit.md's codeword did not reach the session: $out";;
+esac
+oo_conf=$(cd "$OO" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'for r in shipkit spec-driven decisions; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null | grep -c '^## Shipkit always-on rule:')
+if [ "$oo_conf" -eq 3 ]; then pass "opt-out (under CLAUDE_CODE_EVAL_CONFINED=1 all three rules are injected in a bare directory)"
+else failc "opt-out" "confined: $oo_conf of 3 rules injected"; fi
+mkdir -p "$OO/.shipkit"; oo_in=$(oo_hook | grep -c '^## Shipkit always-on rule:')
+if [ "$oo_in" -eq 3 ]; then pass "opt-out (an empty .shipkit/ opts the project in: three rules injected)"
+else failc "opt-out" "with .shipkit/: $oo_in of 3 rules injected"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

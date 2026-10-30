@@ -17,7 +17,7 @@ needs the owner's yes (rule 15). W2 and every removal STOP for the owner's word 
   - Test: scripts/smoke.sh check 63 "context-cost" (the script on `$PROJ` before and after a setup prints every row; the hook row equals `wc -c` of the hook's own output) — written first, red; cites `always-on/REQ-1`, `always-on/REQ-2`
   - After: T0
   - Done when: check 63 → PASS; the baseline row in the document matches the script on this repository; lint 0/0
-- [ ] **T2** `spec-driven` and `decisions` opt-in per project (S20-T2, W1) → REQ-4, REQ-5, REQ-6, REQ-7
+- [x] **T2** `spec-driven` and `decisions` opt-in per project (S20-T2, W1) → REQ-4, REQ-5, REQ-6, REQ-7
   - Files: plugins/shipkit/scripts/inject-rule.sh, plugins/shipkit/scripts/session-start.sh, plugins/shipkit/hooks/hooks.json, scripts/smoke.sh, README.md, GUIDE.md, plugins/shipkit/evals/README.md
   - Test: Check first: one `rules/*` case `--runs 1 --keep-temp` after the change shows the injected header in its trace (≈ $0.15). scripts/smoke.sh checks 1 and 2 on a `$PROJ` with `.shipkit/` (cites `always-on/REQ-5`); new check 64 "opt-out" (a fresh session on a project without `.shipkit/`: the `spec-driven.md` codeword NOT seen, the `shipkit.md` one seen, the opt-in line present once; cites `always-on/REQ-4`, `always-on/REQ-7`); a check that runs the hook with `CLAUDE_CODE_EVAL_CONFINED=1` in a bare directory and sees all three headers (cites `always-on/REQ-6`) — written first, red
   - After: T1

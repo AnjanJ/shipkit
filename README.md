@@ -30,8 +30,10 @@ memory.
 /plugin install shipkit-workflows@shipkit      # optional: opinionated engineering workflows
 ```
 
-Restart Claude Code after installing. Everything below is then available, and the session hook
-injects the three always-on rules at the start of every session.
+Restart Claude Code after installing. Everything below is then available. The session hook
+injects `shipkit.md` (the care and commit rule) at the start of every session; the two loop
+rules, `spec-driven.md` and `decisions.md`, only where a project has opted in — it has
+`.shipkit/` or installed rules — and on any other project the hook prints one line saying how.
 
 Then, once per project, `/shipkit:setup`: it installs the rules as files under
 `.claude/rules/shipkit/` (the path-scoped ones only load this way), detects your stack, writes
@@ -78,7 +80,11 @@ steps on a real feature and shows the file each one produced.
 - **Three always-on rules**, 3,000 bytes in all, injected by the session hook (or loaded from
   `.claude/rules/shipkit/` after setup): the default workflow and commit discipline
   (`shipkit.md`), spec-driven development on non-trivial work (`spec-driven.md`), decision
-  records with a falsifiability clause (`decisions.md`).
+  records with a falsifiability clause (`decisions.md`). `shipkit.md` reaches every session;
+  the other two reach a project once it has opted in — `/shipkit:product`, `/shipkit:spec` or
+  `/shipkit:setup` has run there (`.shipkit/` or `.claude/rules/shipkit/` exists). A project
+  with neither gets one hook line naming the opt-in instead of 1,850 bytes of rules it is not
+  using (`docs/design/context-cost.md`).
 - **Five path-scoped rules**, installed by `/shipkit:setup` and loaded when you edit a matching
   file: tests, migrations, dependency files, monorepo manifests, UI files. Each holds only the
   traps the model gets wrong unprompted.

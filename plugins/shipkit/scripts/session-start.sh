@@ -77,6 +77,14 @@ if [ -n "$ROOT" ] && [ -d "$ROOT/rules" ]; then
   . "$ROOT/scripts/lib-rules-sha.sh" 2>/dev/null && ver=$(plugin_version "$ROOT")
   [ -n "$ver" ] && echo "shipkit: version $ver"
   [ "$COMPACTED" -eq 1 ] && echo "shipkit: context was just compacted — run /shipkit:handoff if work is in flight."
+  # A project that never opted in (no .shipkit/, no installed rules) gets shipkit.md from the
+  # hook and nothing of the loop's two rules (inject-rule.sh, 5.0.0); this one line says how
+  # to turn them on. Once per session: not again after a compaction re-runs the hook, and
+  # never inside the eval tool, whose sandboxes have no .shipkit/ by design.
+  if [ ! -d .shipkit ] && [ ! -d .claude/rules/shipkit ] && [ "$COMPACTED" -eq 0 ] \
+     && [ "${CLAUDE_CODE_EVAL_CONFINED:-}" != "1" ]; then
+    echo "shipkit: run /shipkit:product or /shipkit:setup to turn on spec-driven work here (the spec-driven and decision-record rules load only where a project has opted in)."
+  fi
   # ~/.claude/shipkit/plugin-root names the INSTALLED root: what a cron line (GUIDE, the
   # digest) and a subagent (decision-check.sh through grandfather or eve) read with no hook
   # line in their context. Only a root under the plugin cache writes it. Any other root — a
