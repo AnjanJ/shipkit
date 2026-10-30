@@ -18,7 +18,7 @@
 #   - act on a pre-3.1 legacy stamp: it records what was SHIPPED, not what landed, so it
 #     cannot prove ownership. Exits non-zero and removes nothing.
 #
-# See .shipkit/specs/unsetup-safety/ (REQ-1..REQ-5, DR-1). The caller (/shipkit:unsetup) is
+# See .shipkit/specs/unsetup-safety/ (REQ-1..REQ-5, DR-1). The caller (/shipkit:setup remove) is
 # responsible for the recovery snapshot and the user confirmation before passing --yes.
 
 PROJ=""; APPLY=0; FORCE=0

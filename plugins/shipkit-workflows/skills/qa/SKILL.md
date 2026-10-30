@@ -20,7 +20,7 @@ Thorough QA on recent changes or one file. Scope: `$ARGUMENTS` (default: the fil
 Detect the test framework from the manifests (`Gemfile` → RSpec or Minitest, `mix.exs` →
 ExUnit, `package.json` → Jest or Vitest, `playwright.config` → Playwright). Read each changed
 file and its existing tests; if more than about five files changed, delegate the reading to
-`shipkit:codebase-explorer` (or the built-in `Explore` agent) and work from its summary. Rate
+the built-in `Explore` agent and work from its summary. Rate
 each file CRITICAL (auth, payments, data models, shared utilities, API endpoints), HIGH
 (business logic, services, controllers), MEDIUM (views, serializers, helpers, config) or LOW
 (docs, formatting), and show the table: file · type · risk · existing tests.

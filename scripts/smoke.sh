@@ -56,9 +56,12 @@ ask() {  # ask <plugin-dir> <prompt>  → last line of the model's reply, run in
 }
 CW_Q='Reply with ONLY every codeword of the form ZEBRA-<digits> that appears anywhere in your context, comma-separated, or exactly NONE.'
 
-# 1. rules-inject: a codeword appended to a rule is visible in a fresh session
+# 1. rules-inject: a codeword appended to a rule is visible in a fresh session.
+# $PROJ has opted in (an empty .shipkit/): since 5.0.0 the hook injects spec-driven and
+# decisions only where a project has .shipkit/ or installed rules (W1; check 64 is the
+# other state). Cites: always-on/REQ-5
 printf '\n\nSmoke codeword: ZEBRA-1001.\n' >> "$COPY/rules/decisions.md"
-rm -rf "$PROJ/.claude"
+rm -rf "$PROJ/.claude"; mkdir -p "$PROJ/.shipkit"
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh session via the hook)";;
   *) failc "rules-inject" "codeword not seen: $out";; esac
@@ -1562,7 +1565,8 @@ else failc "no-map-silent" "$(printf '%s' "$nms_lines" | head -6 | tr '\n' '|')"
 # a 60 KB file under evals/ and one "build the map first" line in the README must fail the lint
 # with exactly those two errors (the gate's reviewer asked for a repeatable red, not a
 # one-time one). No claude needed. Cites: map-on-trial/REQ-7 map-on-trial/REQ-15
-# second-traps/REQ-1 portfolio-run/REQ-1 (the limit is 196,608 since 4.9.0; 163,840 from 4.6.0)
+# second-traps/REQ-1 portfolio-run/REQ-1 always-on/REQ-20 (the limit is 204,800 since 5.0.0, W10;
+# 196,608 from 4.9.0; 163,840 from 4.6.0)
 LN="$WORK/lint-neg"; mkdir -p "$LN"
 # only the repo-root .git and .claude (agent worktrees) are skipped; the overlays' .claude/ must copy
 if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$LN/"
@@ -1572,7 +1576,7 @@ head -c 61440 /dev/zero | tr '\0' 'x' > "$LN/plugins/shipkit/evals/fixtures/over
 printf '\nStart by building the map: run /shipkit:map first.\n' >> "$LN/README.md"
 ln_out=$(python3 "$LN/scripts/lint.py" 2>&1)
 if printf '%s\n' "$ln_clean" | grep -q '^lint: 0 error(s)' \
-   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 196,608' \
+   && printf '%s\n' "$ln_out" | grep -q 'evals: [0-9,]* bytes; the limit is 204,800' \
    && printf '%s\n' "$ln_out" | grep -q 'README.md: line [0-9]*: presents the map as required or the first step' \
    && printf '%s\n' "$ln_out" | grep -q '^lint: 2 error(s)'; then
   pass "lint-negative (a 60 KB eval file and a 'build the map first' line → exactly those two lint errors; the clean copy → 0)"
@@ -2169,7 +2173,7 @@ fi
 # .shipkit/specs/run-debts/; field-notes-4.9.md §2.1: office_bestie had its own
 # `## Elixir-Specific`, setup added a second). A CLAUDE.md that already has the stack's first
 # `## ` heading outside shipkit's markers gets the section under its marker as before, the
-# sha recorded, and ONE stderr line naming the heading and /shipkit:update-rules; one without
+# sha recorded, and ONE stderr line naming the heading and /shipkit:setup rules; one without
 # gets the heading once and no line; on a re-run the heading inside shipkit's own block is
 # shipkit's and is not counted. The setup skill relays the line, shows the diff and edits
 # neither section. No claude needed. Cites: run-debts/REQ-1 run-debts/REQ-2
@@ -2185,8 +2189,8 @@ if [ "$hs_rc" -eq 0 ] && [ "$hs_n" -eq 2 ] && [ "$hs_lines" -eq 1 ] \
    && grep -q '<!-- shipkit:stack:python -->' "$HS/CLAUDE.md" && grep -q '<!-- /shipkit:stack:python -->' "$HS/CLAUDE.md" \
    && [ -s "$HS/.claude/rules/shipkit/.section-python.sha" ] \
    && grep -q 'uv run pytest -x' "$HS/CLAUDE.md" \
-   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:update-rules'; then
-  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:update-rules)"
+   && printf '%s\n' "$hs_err" | grep 'already has' | grep -q '/shipkit:setup rules'; then
+  pass "heading-seen (heading present → both sections, the project's untouched, marker and sha intact, one stderr line naming the heading and /shipkit:setup rules)"
 else failc "heading-seen" "exit $hs_rc, headings $hs_n, lines $hs_lines, stderr: $hs_err"; fi
 HS2="$WORK/heading-absent"; mkdir -p "$HS2"
 printf '# demo\n' > "$HS2/CLAUDE.md"
@@ -2200,10 +2204,10 @@ if [ "$hs2_n" -eq 1 ] && ! printf '%s\n%s\n' "$hs2_err" "$hs2_rerun" | grep -q '
   pass "heading-seen (heading absent → one heading, no line; a re-run sees the heading in its own block as shipkit's, no line)"
 else failc "heading-seen" "headings $hs2_n; first run: $hs2_err; re-run: $hs2_rerun"; fi
 if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
-   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'update-rules' \
+   && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'setup rules' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
-  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:update-rules and edits neither section)"
+  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
 else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
 
 # 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
@@ -2273,6 +2277,125 @@ else failc "plugin-root-installed" "no 'shipkit: version $pi_ver' line, or the r
 if ! [ -f "$COPY/scripts/session-end.sh" ] && ! grep -q 'SessionEnd' "$COPY/hooks/hooks.json"; then
   pass "plugin-root-installed (no SessionEnd hook: nothing overwritten, nothing to put back)"
 else failc "plugin-root-installed" "a SessionEnd hook or session-end.sh exists; the start hook's rule makes it redundant"; fi
+
+# 63. context-cost: scripts/context-cost.sh prints what a session pays for shipkit in a given
+# project — the hook's output bytes there (the real hook, run with CLAUDE_PLUGIN_ROOT under a
+# scratch HOME), skill and agent description bytes per plugin, the overlay skills and CLAUDE.md
+# stack sections setup installed in that project, the always-on rules' bytes — with no model
+# call. Run on a bare project and again after install-rules.sh + install-stack.sh python; the
+# hook row must equal wc -c of the hook's own output. Cites: always-on/REQ-1 always-on/REQ-2
+CC="$ROOT/scripts/context-cost.sh"; CCP="$WORK/ccproj"; mkdir -p "$CCP"
+(cd "$CCP" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+cc_row() { printf '%s\n' "$1" | awk -v k="$2" '$1 == k { print $2; exit }'; }
+if [ ! -f "$CC" ]; then
+  failc "context-cost" "scripts/context-cost.sh does not exist (check written first, by design)"
+else
+  cc_before=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$CC" "$CCP" 2>/dev/null); rc=$?
+  cc_hook=$(cd "$CCP" && HOME="$WORK/cchome" CLAUDE_CONFIG_DIR="$WORK/cchome/.claude" CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'mkdir -p "$HOME/.claude"; sh "$CLAUDE_PLUGIN_ROOT/scripts/session-start.sh"; for r in shipkit spec-driven decisions --eval-rule; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' 2>/dev/null | wc -c | tr -d ' ')
+  if [ "$rc" -eq 0 ] && [ "$(cc_row "$cc_before" hook)" = "$cc_hook" ] && [ "$cc_hook" -gt 100 ]; then
+    pass "context-cost (the hook row equals wc -c of the hook's own output on a bare project: $cc_hook bytes)"
+  else failc "context-cost" "bare project: rc=$rc hook row='$(cc_row "$cc_before" hook)' measured=$cc_hook"; fi
+  for k in skills-core skills-workflows agents overlay-skills overlay-appends rules-always-on; do
+    v=$(cc_row "$cc_before" "$k")
+    case "$v" in ''|*[!0-9]*) failc "context-cost" "row '$k' missing or not a number: '$v'"; cc_rows=bad ;; esac
+  done
+  [ "${cc_rows:-ok}" = ok ] && pass "context-cost (every row present and numeric on a bare project)"
+  if [ "$(cc_row "$cc_before" overlay-skills)" = 0 ] && [ "$(cc_row "$cc_before" overlay-appends)" = 0 ] \
+     && [ "$(cc_row "$cc_before" skills-core)" -gt 1000 ] && [ "$(cc_row "$cc_before" rules-always-on)" -gt 1000 ]; then
+    pass "context-cost (a bare project has no overlay skills or appends; the plugin's own rows are non-zero)"
+  else failc "context-cost" "bare project rows: $(printf '%s\n' "$cc_before" | tr '\n' ';')"; fi
+  (cd "$CCP" && sh "$COPY/scripts/install-rules.sh" "$COPY" . >/dev/null 2>&1 \
+     && sh "$COPY/scripts/install-stack.sh" "$COPY" python . TEST_COMMAND=pytest PYTHON_FRAMEWORK=FastAPI API_STYLE=REST ASYNC_MODE=no TEST_FRAMEWORK=pytest ORM=none >/dev/null 2>&1) || true
+  cc_after=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$CC" "$CCP" 2>/dev/null)
+  if [ "$(cc_row "$cc_after" overlay-appends)" -gt 0 ] && [ "$(cc_row "$cc_after" overlay-skills)" -gt 0 ] \
+     && [ "$(cc_row "$cc_after" hook)" -lt "$(cc_row "$cc_before" hook)" ]; then
+    pass "context-cost (after setup: the python append and its skill are counted; the hook row drops because the installed rules are not injected)"
+  else failc "context-cost" "after setup: $(printf '%s\n' "$cc_after" | tr '\n' ';')"; fi
+fi
+
+# 64. opt-out: on a project with neither .shipkit/ nor .claude/rules/shipkit/, the hook injects
+# shipkit.md and NOT spec-driven.md or decisions.md, and prints exactly one opt-in line naming
+# /shipkit:product and /shipkit:setup; under CLAUDE_CODE_EVAL_CONFINED=1 all three are injected
+# whatever the directory holds, so the rules eval cases keep measuring the rules. Two codewords
+# (one per rule file) through a haiku session for the injection; the hook run directly for the
+# line count and the confined branch. Cites: always-on/REQ-4 always-on/REQ-6 always-on/REQ-7
+OO="$WORK/optout"; mkdir -p "$OO"
+(cd "$OO" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+printf '\n\nSmoke codeword: ZEBRA-3003.\n' >> "$COPY/rules/shipkit.md"
+printf '\n\nSmoke codeword: ZEBRA-4004.\n' >> "$COPY/rules/spec-driven.md"
+oo_hook() { (cd "$OO" && HOME="$WORK/oohome" CLAUDE_CONFIG_DIR="$WORK/oohome/.claude" CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'mkdir -p "$HOME/.claude"; sh "$CLAUDE_PLUGIN_ROOT/scripts/session-start.sh"; for r in shipkit spec-driven decisions --eval-rule; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null); }
+oo_out=$(oo_hook)
+oo_optin=$(printf '%s\n' "$oo_out" | grep -c '^shipkit: run /shipkit:product or /shipkit:setup')
+oo_rules=$(printf '%s\n' "$oo_out" | grep '^## Shipkit always-on rule:' | sed 's/.*: //' | tr '\n' ' ')
+if [ "$oo_optin" -eq 1 ] && [ "$oo_rules" = "shipkit " ]; then
+  pass "opt-out (the hook on a bare project: one opt-in line, shipkit.md injected, the two loop rules not)"
+else failc "opt-out" "bare project: opt-in lines=$oo_optin injected='$oo_rules'"; fi
+out=$(cd "$OO" && claude --plugin-dir "$COPY" --model haiku -p "$CW_Q Do not use tools." 2>/dev/null | tail -20)
+case "$out" in
+  *ZEBRA-4004*) failc "opt-out" "spec-driven.md reached a session on a project that never opted in: $out";;
+  *ZEBRA-3003*) pass "opt-out (a fresh session on a bare project sees shipkit.md's codeword and not spec-driven.md's)";;
+  *) failc "opt-out" "shipkit.md's codeword did not reach the session: $out";;
+esac
+oo_conf=$(cd "$OO" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'for r in shipkit spec-driven decisions; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null | grep -c '^## Shipkit always-on rule:')
+if [ "$oo_conf" -eq 3 ]; then pass "opt-out (under CLAUDE_CODE_EVAL_CONFINED=1 all three rules are injected in a bare directory)"
+else failc "opt-out" "confined: $oo_conf of 3 rules injected"; fi
+mkdir -p "$OO/.shipkit"; oo_in=$(oo_hook | grep -c '^## Shipkit always-on rule:')
+if [ "$oo_in" -eq 3 ]; then pass "opt-out (an empty .shipkit/ opts the project in: three rules injected)"
+else failc "opt-out" "with .shipkit/: $oo_in of 3 rules injected"; fi
+
+# 65. skills-merged: ten core skills (thinning plan W3). walkthrough and explain-system are
+# modes of ask (--walk, --system) whose bodies are ask's reference files; unsetup,
+# update-rules, context-audit and connect-memory are setup subcommands (remove, rules, audit,
+# memory) whose bodies are setup's reference files; commit lives in shipkit-workflows. No stub
+# directory remains (rule 21); each dispatch line names a reference file that exists and opens
+# with the moved skill's heading; context-cost counts 10. No claude needed.
+# Cites: always-on/REQ-10 always-on/REQ-11 always-on/REQ-12 always-on/REQ-13 always-on/REQ-14
+sm_old=""; for d in walkthrough explain-system unsetup update-rules context-audit connect-memory commit; do [ -e "$COPY/skills/$d" ] && sm_old="$sm_old $d"; done
+if [ -z "$sm_old" ] && [ -f "$ROOT/plugins/shipkit-workflows/skills/commit/SKILL.md" ]; then
+  pass "skills-merged (no directory under skills/ for the seven old names; commit is in shipkit-workflows)"
+else failc "skills-merged" "old directories left:$sm_old; workflows commit: $([ -f "$ROOT/plugins/shipkit-workflows/skills/commit/SKILL.md" ] && echo yes || echo no)"; fi
+sm_ok=1; sm_why=""
+for pair in "ask:--walk:walk.md:# /shipkit:ask --walk" "ask:--system:system.md:# /shipkit:ask --system" "setup:remove:remove.md:# /shipkit:setup remove" "setup:rules:rules.md:# /shipkit:setup rules" "setup:audit:audit.md:# /shipkit:setup audit" "setup:memory:memory.md:# /shipkit:setup memory"; do
+  sk=${pair%%:*}; rest=${pair#*:}; arg=${rest%%:*}; rest=${rest#*:}; ref=${rest%%:*}; head1=${rest#*:}
+  grep -q -- "$arg" "$COPY/skills/$sk/SKILL.md" || { sm_ok=0; sm_why="$sm_why $sk-lacks-$arg"; }
+  grep -q -- "$ref" "$COPY/skills/$sk/SKILL.md" || { sm_ok=0; sm_why="$sm_why $sk-does-not-name-$ref"; }
+  [ -f "$COPY/skills/$sk/$ref" ] || { sm_ok=0; sm_why="$sm_why $ref-missing"; }
+  [ -f "$COPY/skills/$sk/$ref" ] && ! grep -q -- "^$head1" "$COPY/skills/$sk/$ref" && { sm_ok=0; sm_why="$sm_why $ref-heading"; }
+done
+if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
+else failc "skills-merged" "dispatch:$sm_why"; fi
+sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
+sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
+if [ "$sm_n" = "10" ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes)"
+else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes)"; fi
+
+# 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
+# grandfather's trace mode; the archivist's body is the map skill's forked body
+# (skills/map/archivist.md, map runs with context: fork); codebase-explorer is dropped for
+# Claude Code's built-in Explore agent (the check-first showed Explore callable from a session
+# with the plugin, headless). No skill names a removed agent; context-cost counts 4 agents
+# under 1,000 bytes. No claude needed.
+# Cites: always-on/REQ-16 always-on/REQ-17 always-on/REQ-18 always-on/REQ-19
+af_left=""; for a in tracer archivist codebase-explorer; do [ -e "$COPY/agents/$a.md" ] && af_left="$af_left $a"; done
+if [ -z "$af_left" ]; then pass "agents-four (no tracer.md, archivist.md or codebase-explorer.md under agents/)"
+else failc "agents-four" "agent files left:$af_left"; fi
+if grep -q '^## Trace mode' "$COPY/agents/grandfather.md" && grep -q 'grandfather' "$COPY/skills/ask/SKILL.md"; then
+  pass "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
+else failc "agents-four" "grandfather.md lacks '## Trace mode' or ask does not name grandfather for --walk"; fi
+if grep -q '^context: fork' "$COPY/skills/map/SKILL.md" && grep -q 'archivist.md' "$COPY/skills/map/SKILL.md" \
+   && [ -f "$COPY/skills/map/archivist.md" ] && grep -q '^# The archivist' "$COPY/skills/map/archivist.md"; then
+  pass "agents-four (map runs forked and carries the archivist's body as archivist.md)"
+else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map/SKILL.md") names-archivist.md=$(grep -c 'archivist.md' "$COPY/skills/map/SKILL.md") file=$([ -f "$COPY/skills/map/archivist.md" ] && echo yes || echo no)"; fi
+af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
+if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
+else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
+# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's three;
+# test-analyzer's description is added from the checkout for the ≤ 1,000 ceiling (plan §0)
+af_row=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk -F'\t' '$1 == "agents" { print $2 " " $3 }')
+af_b=${af_row%% *}; af_n=$(printf '%s' "$af_row" | awk '{print $2}')
+af_wf=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$ROOT/plugins/shipkit-workflows/agents/test-analyzer.md" | wc -c | tr -d ' ')
+if [ "$af_n" = "3" ] && [ $((af_b + af_wf)) -le 1000 ]; then pass "agents-four (three core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,000)"
+else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

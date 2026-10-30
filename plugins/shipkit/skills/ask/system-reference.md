@@ -1,4 +1,4 @@
-# Explain System — Reference Material
+# ask --system — Reference Material
 
 ## ADR Format Template
 
@@ -79,7 +79,7 @@ Table with: category, opportunity, evidence (file:line), impact, risk, effort. F
 
 - **Read-only, always** — you never write files; the document is returned as a proposal
 - **No mid-run interaction** — non-interactive fork; verification is self-enforced (unverifiable claims are cut or made explicit open questions, never user-arbitrated) and the caller handles review + file writing
-- **Use codebase-explorer for heavy reading** — keep your own context for reasoning
+- **Hand heavy reading to the built-in `Explore` agent** — keep your own context for reasoning
 - **Zero UNCERTAIN claims in final doc** — Phase 4 gate, not optional
 - **From first principles** — teach, don't assume reader knowledge of the codebase
 - **WHY not WHAT** — every section explains reasoning behind the design

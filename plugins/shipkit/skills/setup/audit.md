@@ -1,10 +1,4 @@
----
-description: "Audit context usage — what shipkit and your project actually load into every session, and where the bloat is"
-user-invocable: true
-context: fork
----
-
-# /context-audit — Context Window Audit
+# /shipkit:setup audit — Context Window Audit
 
 Report what this project loads into Claude's context at session start and on every file edit,
 and where it can be trimmed. **For real token numbers, the user should run Claude Code's
@@ -12,7 +6,9 @@ built-in `/context`** — this skill explains *what* is loading and *why*; it do
 percentages.
 
 ## Sizes on disk
-!`f=$(wc -l CLAUDE.md .claude/CLAUDE.md 2>/dev/null; find .claude/rules -name '*.md' 2>/dev/null | xargs wc -l 2>/dev/null); [ -n "$f" ] && echo "$f" || echo "no CLAUDE.md or .claude/rules found"`
+Run first: `wc -l CLAUDE.md .claude/CLAUDE.md; find .claude/rules -name '*.md' | xargs wc -l` — and
+`scripts/context-cost.sh .` from a shipkit checkout if one is at hand (it prints what the hook,
+the skill and agent listings and the installed overlays cost here).
 
 ## What actually loads (Claude Code facts — reason from these, not from guesses)
 
@@ -43,7 +39,7 @@ percentages.
    - `CLAUDE.md` over 200 lines → prune; move stable detail into path-scoped rules or an
      on-demand skill
    - Any always-on rule over 100 lines → split, or give it `paths:` so it becomes path-scoped
-   - `.claude/lessons.md` present → legacy; migrate entries via `/shipkit:update-rules`, then delete it
+   - `.claude/lessons.md` present → legacy; migrate entries via `/shipkit:setup rules`, then delete it
    - Content duplicated between `CLAUDE.md` and a rule → keep one copy
    - Stale content (references to deleted files, old commands) → remove
    - Always-on rules that only matter for some files → add `paths:` frontmatter

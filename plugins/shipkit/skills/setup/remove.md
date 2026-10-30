@@ -1,14 +1,8 @@
----
-description: "Remove shipkit setup — restore your project to its pre-shipkit state"
-user-invocable: true
-argument-hint: ""
----
-
 <!-- Runs INLINE (no context: fork) on purpose: this skill DELETES CLAUDE.md and
      .claude/ behind a mandatory yes/no confirmation, and forked skills cannot ask
      the user anything. A destructive confirmation must reach the user. -->
 
-# /unsetup — Remove Shipkit Setup
+# /shipkit:setup remove — Remove Shipkit Setup
 
 Reverses what `/setup` did. Restores your project's CLAUDE.md and `.claude/` directory to their pre-shipkit state from the backup snapshot.
 
@@ -23,7 +17,7 @@ Step 3 runs a script shipped with the plugin, so find its directory first — sa
    start of this session. Use that path.
 2. Else read `~/.claude/shipkit/plugin-root` (the hook also writes it there).
 3. Else stop and tell the user: "The shipkit session hook has not run yet — restart Claude Code
-   (or start a new session) and run `/shipkit:unsetup` again." Do not guess a path.
+   (or start a new session) and run `/shipkit:setup remove` again." Do not guess a path.
 
 Call it `<root>` below, and sanity-check it: `<root>/scripts/unsetup-remove.sh` must exist. If
 it does not, the installed plugin predates this version — fall back to the snapshot path in
@@ -37,7 +31,7 @@ Copy the **current** `CLAUDE.md` and `.claude/` to `.shipkit-recovery-<YYYYMMDD-
 
 Why first: everything below removes or overwrites files, and `.claude/` is commonly
 git-ignored — so git is not a safety net here. Without this, configuration added since
-`/setup`, or a wrong-snapshot restore, is gone with no route back. `/unsetup` is precisely the
+`/setup`, or a wrong-snapshot restore, is gone with no route back. `setup remove` is precisely the
 moment a user discovers they wanted something they just deleted.
 
 Tell them it exists, and that deleting it is safe once they are happy:

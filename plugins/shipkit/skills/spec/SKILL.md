@@ -6,7 +6,7 @@ argument-hint: "<feature-slug> [requirements|design|tasks]"
 
 <!-- Runs INLINE (no context: fork) on purpose: it interviews the user through the three
      questions and needs AskUserQuestion for the Q1→Q2→Q3 approval gates, which forked
-     skills cannot use. It delegates heavy codebase research to `codebase-explorer` so the
+     skills cannot use. It delegates heavy codebase research to the built-in `Explore` agent so the
      interview stays cheap; native Plan Mode is the review gate before tasks. -->
 
 # /shipkit:spec — Spec a Non-Trivial Feature
@@ -38,7 +38,7 @@ If `.shipkit/specs/<feature-slug>/` already exists, read it and refine rather th
 
 ## The interview — three questions, three gates
 
-Delegate any heavy "how does the current code work?" reading to the **`codebase-explorer`**
+Delegate any heavy "how does the current code work?" reading to the built-in **`Explore`** agent
 agent so the main context stays thin. Ask the user only what the code cannot tell you.
 
 ### Q1 — What are we building? → `spec.md`
@@ -64,7 +64,7 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
 
 ### Q2 — How should it work? → `design.md`
 
-1. Have `codebase-explorer` surface the relevant existing code, boundaries, and constraints.
+1. Have the `Explore` agent surface the relevant existing code, boundaries, and constraints.
 2. Write the approach as **decision records** — every real choice (with ≥2 alternatives) gets the
    five parts: Context, Alternatives, Case-for, Case-against, Decision + a **concrete
    falsifiability clause**. See @reference.md and `rules/decisions.md`. A vague clause is a bug.

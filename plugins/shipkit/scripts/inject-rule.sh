@@ -10,7 +10,9 @@
 # spec-driven, decisions), each comfortably under the cap. The lint enforces the size.
 #
 # Skipped when the project has the rules installed as files under .claude/rules/shipkit/
-# (what /shipkit:setup does) — those load from disk and must not be injected twice.
+# (what /shipkit:setup does) — those load from disk and must not be injected twice. Since
+# 5.0.0 spec-driven and decisions are also skipped where the project has neither .shipkit/
+# nor .claude/rules/shipkit/ (it never opted in); shipkit.md is injected everywhere.
 # Silent on every failure; always exits 0.
 
 NAME="$1"
@@ -43,6 +45,17 @@ fi
 # fallback must key on the specific file it is standing in for. See
 # .shipkit/specs/install-lifecycle/design.md DR-3.
 [ -f ".claude/rules/shipkit/$NAME.md" ] && exit 0
+
+# The two loop rules go only where a project opted in (5.0.0, thinning plan W1): .shipkit/
+# exists (a product file, a spec, or setup has been run) or .claude/rules/shipkit/ exists (an
+# install, even an incomplete one — the fallback above still stands in for a missing file).
+# shipkit.md is universal. Under the eval tool's CLAUDE_CODE_EVAL_CONFINED=1 all three are
+# injected whatever the sandbox holds, so the rules cases measure the rules, not the opt-out.
+# A project with neither gets one line from session-start.sh naming the opt-in.
+case "$NAME" in
+  spec-driven|decisions)
+    [ -d .shipkit ] || [ -d .claude/rules/shipkit ] || [ "${CLAUDE_CODE_EVAL_CONFINED:-}" = "1" ] || exit 0 ;;
+esac
 
 ROOT="${CLAUDE_PLUGIN_ROOT:-}"
 if [ -z "$ROOT" ]; then

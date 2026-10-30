@@ -30,13 +30,15 @@ memory.
 /plugin install shipkit-workflows@shipkit      # optional: opinionated engineering workflows
 ```
 
-Restart Claude Code after installing. Everything below is then available, and the session hook
-injects the three always-on rules at the start of every session.
+Restart Claude Code after installing. Everything below is then available. The session hook
+injects `shipkit.md` (the care and commit rule) at the start of every session; the two loop
+rules, `spec-driven.md` and `decisions.md`, only where a project has opted in — it has
+`.shipkit/` or installed rules — and on any other project the hook prints one line saying how.
 
 Then, once per project, `/shipkit:setup`: it installs the rules as files under
 `.claude/rules/shipkit/` (the path-scoped ones only load this way), detects your stack, writes
 a `CLAUDE.md` of project facts, and installs the stack overlay. Optional, recommended, and
-reversible with `/shipkit:unsetup`.
+reversible with `/shipkit:setup remove`.
 
 To run from a checkout instead, point at the two plugin roots:
 `claude --plugin-dir ~/code/shipkit/plugins/shipkit --plugin-dir ~/code/shipkit/plugins/shipkit-workflows`.
@@ -78,7 +80,11 @@ steps on a real feature and shows the file each one produced.
 - **Three always-on rules**, 3,000 bytes in all, injected by the session hook (or loaded from
   `.claude/rules/shipkit/` after setup): the default workflow and commit discipline
   (`shipkit.md`), spec-driven development on non-trivial work (`spec-driven.md`), decision
-  records with a falsifiability clause (`decisions.md`).
+  records with a falsifiability clause (`decisions.md`). `shipkit.md` reaches every session;
+  the other two reach a project once it has opted in — `/shipkit:product`, `/shipkit:spec` or
+  `/shipkit:setup` has run there (`.shipkit/` or `.claude/rules/shipkit/` exists). A project
+  with neither gets one hook line naming the opt-in instead of 1,850 bytes of rules it is not
+  using (`docs/design/context-cost.md`).
 - **Five path-scoped rules**, installed by `/shipkit:setup` and loaded when you edit a matching
   file: tests, migrations, dependency files, monorepo manifests, UI files. Each holds only the
   traps the model gets wrong unprompted.
@@ -105,30 +111,27 @@ session stays thin:
 /shipkit:map --register                           # optional: a PROJECT_MAP.md index, and a row in eve's registry
 ```
 
-**Everything else in `shipkit`** (17 skills, 6 agents):
+**Everything else in `shipkit`** (10 skills, 3 agents):
 
 | Skill | What it does |
 |-------|--------------|
-| `/shipkit:setup` / `/shipkit:unsetup` | Install the rules, the stack overlay and a `CLAUDE.md`; remove only what shipkit installed |
+| `/shipkit:setup` | Install the rules, the stack overlay and a `CLAUDE.md`. Subcommands (skills of their own until 5.0.0): `remove` takes it out again, only what shipkit installed; `rules <rule>` changes `CLAUDE.md` rules, never by hand; `audit` shows what loads into every session; `memory` sets up optional episodic memory ([MemPalace](https://github.com/mempalace/mempalace)) for the elders |
 | `/shipkit:product`, `/shipkit:intake`, `/shipkit:spec`, `/shipkit:ship`, `/shipkit:escape` | The loop, above |
 | `/shipkit:decide` | A project-wide decision as a five-part record, with an optional `Fired-if` command |
 | `/shipkit:handoff` | A note for the next session: in flight, done, the one next step, open questions, traps |
-| `/shipkit:commit` | An atomic commit whose message scales to the change |
-| `/shipkit:explain-system` | A verified system-design document: why it is built this way |
-| `/shipkit:walkthrough` | One feature traced end to end, `file:line`-cited |
-| `/shipkit:connect-memory` | Optional episodic memory ([MemPalace](https://github.com/mempalace/mempalace)) for the elders' decision recall |
-| `/shipkit:update-rules`, `/shipkit:context-audit` | Change `CLAUDE.md` rules; see what loads into every session |
+| `/shipkit:ask --walk <feature>`, `/shipkit:ask --system` | One feature traced end to end, `file:line`-cited; a verified system-design document on why it is built this way (skills of their own until 5.0.0) |
 
 | Agent | What it does |
 |-------|--------------|
-| `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one |
+| `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one; in trace mode, one feature end to end (`/shipkit:ask --walk`) |
 | `eve` | Every registered project: sweeps, matrices, consolidation, the weekly digest |
-| `archivist` | Builds and refreshes `PROJECT_MAP.md` — optional since 4.1.0: on a 224-file test it changed neither answers nor tool calls (decision 0001) |
 | `reviewer` | Checks a branch against its spec with fresh eyes — behind `/shipkit:ship` |
-| `tracer` | A deep trace of one feature — behind `/shipkit:walkthrough` |
-| `codebase-explorer` | Read-only exploration for the other skills |
 
-**`shipkit-workflows`** (6 skills, 1 agent): `/shipkit-workflows:qa` (a five-phase QA pass),
+Until 5.0.0 three more agents were listed every session: `archivist` is now `/shipkit:map`'s own
+forked body, `tracer` is `grandfather`'s trace mode (behind `/shipkit:ask --walk`), and
+`codebase-explorer` gave way to Claude Code's built-in `Explore` agent.
+
+**`shipkit-workflows`** (7 skills, 1 agent): `/shipkit-workflows:commit` (an atomic commit whose message scales to the change; in `shipkit` until 5.0.0), `/shipkit-workflows:qa` (a five-phase QA pass),
 `/shipkit-workflows:tdd` (strict red-green-refactor), `/shipkit-workflows:debug` (root cause
 before any fix), `/shipkit-workflows:legacy-audit`, `/shipkit-workflows:migration-plan`,
 `/shipkit-workflows:humanize` (remove AI writing patterns from prose), and the `test-analyzer`
@@ -148,7 +151,7 @@ Never ran `/shipkit:setup`: uninstall the plugin; nothing was written to your pr
 /plugin uninstall shipkit@shipkit
 ```
 
-Ran `/shipkit:setup`: `/shipkit:unsetup` first. It takes a recovery snapshot, then removes only
+Ran `/shipkit:setup`: `/shipkit:setup remove` first. It takes a recovery snapshot, then removes only
 the files shipkit installed, using the manifest that records them; a file you edited since is
 reported and kept unless you say otherwise. Then uninstall the plugin.
 

@@ -115,7 +115,7 @@ them before using `--run` in one you do not trust. Nothing runs them from a hook
   is the durable log the elders read: `PROJECT_MAP.md` records *what/where*, the log records
   *why*.
 - A record that is superseded is marked, not deleted, and points to the record that replaced it.
-- A substantive commit message already names rejected alternatives (see `/shipkit:commit`). Use
+- A substantive commit message already names rejected alternatives (see `/shipkit-workflows:commit`). Use
   a record, not just a commit line, when a future reader will need to revisit the decision.
 
 ---
@@ -247,7 +247,7 @@ It prints one line per gap — `MISSING-TASK`, `MISSING-TEST`, `MISSING-FIELD`, 
     plugin installed, `/shipkit-workflows:tdd` walks this with enforcement. Specs as written
     here.
   - `test-first` — non-trivial work is planned first (plan mode: clarify requirements, design
-    the approach, break into atomic tasks; heavy codebase research goes to `codebase-explorer`),
+    the approach, break into atomic tasks; heavy codebase research goes to the built-in `Explore` agent),
     then done task by task, test before implementation where practical, one atomic commit per
     task. Skipping tests is reasonable for config, docs, generated code and throwaway
     prototypes — say so. Specs as written here.
@@ -259,7 +259,7 @@ It prints one line per gap — `MISSING-TASK`, `MISSING-TEST`, `MISSING-FIELD`, 
 
 ## Reminders
 
-- Delegate heavy codebase reading to `codebase-explorer` — keep the interview cheap.
+- Delegate heavy codebase reading to the built-in `Explore` agent — keep the interview cheap.
 - Don't let the *how* leak into `spec.md`, or requirements get restated in `design.md`.
 - Approval gates: requirements (Q1) before design; design (Q2, via native Plan Mode) before tasks.
 - Project-wide decisions also go standalone in `.shipkit/decisions/NNNN-<slug>.md`.

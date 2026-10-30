@@ -35,7 +35,7 @@ LLM-written context files hurt; a short file of things only this project can tel
 Shipkit's rules apply — see `.claude/rules/shipkit/` (workflow, commit discipline, spec-driven
 development, decision records, and path-scoped rules for tests, migrations, dependencies,
 monorepos and UI). Review diffs with the built-in `/code-review`. Change this file with
-`/shipkit:update-rules`, not by hand.
+`/shipkit:setup rules`, not by hand.
 {team conventions if provided: branch prefix, PR description preference}
 
 {stack-specific section — appended by install-stack.sh in Phase 5}
@@ -43,7 +43,7 @@ monorepos and UI). Review diffs with the built-in `/code-review`. Change this fi
 
 Target: **≤ 40 lines** before the stack section. If you find yourself adding a rule ("always
 do X"), it belongs in `.claude/rules/` — either a shipkit rule already says it, or the user
-should add a project rule via `/shipkit:update-rules`.
+should add a project rule via `/shipkit:setup rules`.
 
 ## Phase 6: Settings Defaults
 

@@ -1,7 +1,7 @@
 ---
-description: "Configure shipkit for your project"
+description: "Configure shipkit for your project; remove undoes it; audit shows what loads each session. TRIGGER when: the user asks to add, change or remove a CLAUDE.md rule (rules <rule> — never edit rules by hand), or to set up episodic memory or MemPalace (memory). DO NOT TRIGGER when: already set up."
 user-invocable: true
-argument-hint: "[<base> <add-on>… e.g. rails hotwire react]"
+argument-hint: "[<base> <add-on>… e.g. rails hotwire react] | remove | rules <rule> | audit | memory [--wing <name>] [--reinstall]"
 ---
 
 <!-- Runs INLINE (no context: fork) on purpose: this skill interviews the user
@@ -9,6 +9,20 @@ argument-hint: "[<base> <add-on>… e.g. rails hotwire react]"
      cannot use AskUserQuestion. It runs once per project; the context cost is fine. -->
 
 # /setup — Configure Shipkit for Your Project
+
+## Subcommands (each was a skill of its own until 5.0.0)
+
+If the first word of `$ARGUMENTS` is one of these, read the named file and follow it instead
+of the phases below; the rest of the arguments are its arguments.
+
+| First word | Read | Does |
+|---|---|---|
+| `remove` | `@remove.md` | undo setup: a recovery snapshot, then only what shipkit installed is removed |
+| `rules` | `@rules.md` | add, update or remove a CLAUDE.md rule — never edit rules by hand |
+| `audit` | `@audit.md` | what this project loads into every session, and where the bloat is |
+| `memory` | `@memory.md` | set up MemPalace so the elders recall past decisions |
+
+Otherwise, the arguments name overlays (`rails hotwire react`) or are empty, and setup runs.
 
 Tailor shipkit to your specific project. Detects your stack, test framework, package manager,
 installs shipkit's rules as files, and installs stack-specific skills, rules, and knowledge bases.
@@ -265,7 +279,7 @@ replace the section, and only on an explicit yes re-run that overlay with
 
 If the script reports that `CLAUDE.md` "already has" the overlay's heading, the project wrote
 its own section with that name before shipkit came: relay the line, show the diff of the two
-sections (the project's against shipkit's block), and name `/shipkit:update-rules` as the way
+sections (the project's against shipkit's block), and name `/shipkit:setup rules` as the way
 to merge them. Edit neither section — the project's is theirs, shipkit's is refreshed in place.
 
 **Bases:**
@@ -313,7 +327,7 @@ Suggest next steps:
    when the commit history is too thin to explain how the project evolved. Measured on a
    224-file project, a map changed neither the answers nor the number of tool calls
    (decision 0001; `docs/design/eval-results-4.1.md` in the shipkit repository).
-2. Use `/update-rules` to add project-specific rules
-3. Use `/context-audit` to check context usage
-4. **Want the elders to recall past decisions** ("why did we pick X?")? Run `/shipkit:connect-memory` to set up optional episodic memory (MemPalace). Skip it and the elders fall back to git history — nothing breaks.
-5. Run `/unsetup` anytime to restore your previous configuration
+2. Use `/shipkit:setup rules <rule>` to add project-specific rules
+3. Use `/shipkit:setup audit` to check context usage
+4. **Want the elders to recall past decisions** ("why did we pick X?")? Run `/shipkit:setup memory` to set up optional episodic memory (MemPalace). Skip it and the elders fall back to git history — nothing breaks.
+5. Run `/shipkit:setup remove` anytime to restore your previous configuration
