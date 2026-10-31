@@ -2366,8 +2366,8 @@ if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --sys
 else failc "skills-merged" "dispatch:$sm_why"; fi
 sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
 sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
-if [ "$sm_n" = "10" ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes)"
-else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes)"; fi
+if [ "$sm_n" = "10" ] && [ "${sm_b:-99999}" -le 2950 ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes, ceiling 2950)"
+else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes, ceiling 2950)"; fi
 
 # 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
 # grandfather's trace mode; the archivist's body is the map skill's forked body
@@ -2503,6 +2503,111 @@ rs_b=$(wc -c < "$rs_e" | tr -d ' ')
 [ "$rs_b" -le 12067 ] || rs_fail="$rs_fail [eve.md is $rs_b bytes, ceiling 12067]"
 if [ -z "$rs_fail" ]; then pass "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
 else failc "report-shapes" "$rs_fail"; fi
+
+# 71. brief-cites: the brief says how a test cites its requirement, with the spec's own slug. The
+# 4.12 run's agent wrote tests that cited nothing, and REQ-2 and REQ-3 stayed PENDING-TEST after
+# the build (field-notes-4.12.md §8.1). No claude needed.
+# Cites: run-again/REQ-1
+BC="$WORK/brief-cites"; mkdir -p "$BC/.shipkit/specs/refunds" "$BC/app"
+(cd "$BC" && git init -q && printf 'x = 1\n' > app/refunds.py)
+cat > "$BC/.shipkit/specs/refunds/spec.md" <<'SPEC'
+# Spec: Refunds
+
+> Spec accepted at commit `abc1234` on main.
+> Status: open
+> Paths: app/
+
+## Purpose
+A charged order can be refunded through the gateway.
+
+## Requirements (EARS)
+- **REQ-1.** When a refund is requested, the system shall call the gateway.
+
+## Out of scope
+Partial refunds.
+SPEC
+cat > "$BC/.shipkit/specs/refunds/tasks.md" <<'TASKS'
+# Tasks: Refunds
+
+- [ ] **T1** The refund call → REQ-1
+  - Files: app/refunds.py
+  - Test: tests/test_refunds.py fails first
+  - After: none
+  - Done when: `pytest` exits 0
+TASKS
+(cd "$BC" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+bc_prove=$(sh "$COPY/scripts/brief.sh" "$BC" refunds T1 2>/dev/null | awk '/^## Prove it with/ { on = 1; next } /^## / { on = 0 } on')
+if printf '%s\n' "$bc_prove" | grep -qF 'refunds/REQ-N'; then pass "brief-cites (Prove it with says each test cites refunds/REQ-N, the spec's own slug)"
+else failc "brief-cites" "Prove it with: $bc_prove"; fi
+
+# 72. stack-skill-allowed: a skill setup installed is not the agent's change, by the manifest and
+# not by the directory: .claude/skills/ is also where a project keeps its own skills, and those
+# are still reported (field-notes-4.12.md §9.2; run-again's design). No manifest, nothing changes.
+# Cites: run-again/REQ-2
+BS="$WORK/stack-skill"; mkdir -p "$BS"; (cd "$BC" && tar cf - .) | (cd "$BS" && tar xf -)
+bs_base=$(git -C "$BS" rev-parse HEAD)
+mkdir -p "$BS/.claude/rules/shipkit" "$BS/.claude/skills/new-feature" "$BS/.claude/skills/own"
+printf 'x = 2\n' > "$BS/app/refunds.py"
+printf -- '---\nname: new-feature\n---\n' > "$BS/.claude/skills/new-feature/SKILL.md"
+printf '#shipkit-manifest v1\nversion=9.9.9\nstacks=python\nabc\t.claude/skills/new-feature/SKILL.md\n' > "$BS/.claude/rules/shipkit/.installed"
+bs_out=$(sh "$COPY/scripts/brief-verify.sh" "$BS" refunds T1 "$bs_base" 2>&1); bs_rc=$?
+if [ "$bs_rc" -eq 0 ] && ! printf '%s\n' "$bs_out" | grep -q '^OUTSIDE'; then pass "stack-skill-allowed (a skill the manifest lists → not OUTSIDE, exit 0)"
+else failc "stack-skill-allowed" "listed skill: exit $bs_rc: $bs_out"; fi
+printf -- '---\nname: own\n---\n' > "$BS/.claude/skills/own/SKILL.md"
+bs_out=$(sh "$COPY/scripts/brief-verify.sh" "$BS" refunds T1 "$bs_base" 2>&1); bs_rc=$?
+if [ "$bs_rc" -eq 1 ] && [ "$(printf '%s\n' "$bs_out" | grep -c '^OUTSIDE')" -eq 1 ] && printf '%s\n' "$bs_out" | grep -qx 'OUTSIDE .claude/skills/own/SKILL.md'; then
+  pass "stack-skill-allowed (the project's own skill, not in the manifest → OUTSIDE, exit 1)"
+else failc "stack-skill-allowed" "own skill: exit $bs_rc: $bs_out"; fi
+rm -f "$BS/.claude/rules/shipkit/.installed" "$BS/.claude/skills/own/SKILL.md"
+bs_out=$(sh "$COPY/scripts/brief-verify.sh" "$BS" refunds T1 "$bs_base" 2>&1); bs_rc=$?
+if [ "$bs_rc" -eq 1 ] && printf '%s\n' "$bs_out" | grep -qx 'OUTSIDE .claude/skills/new-feature/SKILL.md'; then
+  pass "stack-skill-allowed (no manifest → the skill is OUTSIDE, as before)"
+else failc "stack-skill-allowed" "no manifest: exit $bs_rc: $bs_out"; fi
+
+# 73. reviewer-skills: the reviewer's step 4 reads a stack skill as brief-verify does, by the
+# manifest, and still lists a skill the manifest does not name. The agent's text, no claude needed.
+# Cites: run-again/REQ-3
+rv_step=$(awk '/^4\. \*\*Changes beyond the spec\.\*\*/ { on = 1 } /^5\. / { on = 0 } on' "$COPY/agents/reviewer.md")
+rv_fail=""
+printf '%s\n' "$rv_step" | grep -qF '.claude/rules/shipkit/.installed' || rv_fail="$rv_fail [step 4 does not name the manifest]"
+printf '%s\n' "$rv_step" | grep -qF '.claude/skills/' || rv_fail="$rv_fail [step 4 does not name .claude/skills/]"
+printf '%s\n' "$rv_step" | grep -qiF "project's own" || rv_fail="$rv_fail [step 4 does not say the project's own skill is listed]"
+if [ -z "$rv_fail" ]; then pass "reviewer-skills (step 4 reads a stack skill by the manifest; a project's own skill is still listed)"
+else failc "reviewer-skills" "$rv_fail"; fi
+
+# 74. ship-capture: the gate's pre-step capture has a named home inside its own cleanup. The 4.12
+# gate kept it at /tmp/ship-pre-status.txt and left it there (field-notes-4.12.md §9.3). The
+# skill's text, no claude needed; check 29 runs the gate and sees no scratch file left.
+# Cites: run-again/REQ-4
+sc_ship="$COPY/skills/ship/SKILL.md"; sc_fail=""
+grep -qF 'git status --porcelain > "${TMPDIR:-/tmp}/shipkit-ship-status.out"' "$sc_ship" || sc_fail="$sc_fail [the pre-step does not write shipkit-ship-status.out]"
+grep -E '^\| 7 \|' "$sc_ship" | grep -qF 'shipkit-ship-status.out' || sc_fail="$sc_fail [step 7 does not read it]"
+grep -qF 'rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out' "$sc_ship" || sc_fail="$sc_fail [the cleanup no longer covers *.out]"
+grep -qF 'and keep its output' "$sc_ship" && sc_fail="$sc_fail [the old unnamed capture is still there]"
+if [ -z "$sc_fail" ]; then pass "ship-capture (the pre-step writes shipkit-ship-status.out, step 7 reads it, the cleanup's pattern covers it)"
+else failc "ship-capture" "$sc_fail"; fi
+
+# 75. setup-rule-count: setup's word for how many rules it copies matches the files it copies, so
+# the next rule added or cut fails here rather than in a user's reply (field-notes-4.12.md §2.1).
+# Cites: run-again/REQ-5
+sr_n=$(ls "$COPY"/rules/*.md | wc -l | tr -d ' ')
+case "$sr_n" in 6) sr_w=six ;; 7) sr_w=seven ;; 8) sr_w=eight ;; 9) sr_w=nine ;; 10) sr_w=ten ;; *) sr_w="$sr_n" ;; esac
+if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then pass "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
+else failc "setup-rule-count" "$sr_n files under rules/, setup says: $(grep -oE 'copies all [a-z0-9]+ rules' "$COPY/skills/setup/SKILL.md")"; fi
+
+# 76. ship-retry: a reply with no verdict line is not a review. The reviewer's last call can be
+# SubagentHandback {"message": "placeholder"}, which ends it with the review unsent (3 of 74 gate
+# sessions; field-notes-5.0.md §9.1), so the gate starts it once more, and a second miss is still
+# FAIL: never a READY on no review. The skill's text, no claude needed; the path itself was forced
+# once with a reviewer that only replies placeholder (run-again's design).
+# Cites: run-again/REQ-15
+sy_step=$(awk '/^- \*\*Step 4 — the reviewer/ { on = 1 } /^- \*\*Step 5 — / { on = 0 } on' "$COPY/skills/ship/SKILL.md")
+sy_fail=""
+printf '%s\n' "$sy_step" | grep -qF 'no `VERDICT:` line' || sy_fail="$sy_fail [step 4 does not name a reply with no verdict line]"
+printf '%s\n' "$sy_step" | grep -qF 'start the reviewer once more' || sy_fail="$sy_fail [step 4 does not start it once more]"
+printf '%s\n' "$sy_step" | grep -qF 'a second reply with no verdict line' || sy_fail="$sy_fail [step 4 does not say a second miss is FAIL]"
+if [ -z "$sy_fail" ]; then pass "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
+else failc "ship-retry" "$sy_fail"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

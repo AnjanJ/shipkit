@@ -17,7 +17,10 @@
 # another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). So is everything
 # under .claude/rules/shipkit/ and .shipkit-baseline/: only the installer writes there
 # (run-debts/REQ-6). CLAUDE.md and .gitignore are still reported even when setup changed them:
-# they hold the project's own content, and a line about them is worth reading. Ignored files
+# they hold the project's own content, and a line about them is worth reading. A skill under
+# .claude/skills/ is allowed only if the manifest lists it: setup put those there, but the
+# directory is also where a project keeps its own skills, and those are reported
+# (run-again/REQ-2). Ignored files
 # (.gitignore) are not seen, by design: this check sees what git sees, and a build artifact an
 # agent leaves in an ignored path shows in the task's Done-when output, which you run yourself
 # (gate-blind-spots/REQ-10, closed by record C6).
@@ -50,9 +53,15 @@ fi
 TASKS_FILE=".shipkit/specs/$SLUG/tasks.md"
 CHANGED=$( { git -C "$PROJ" diff --name-only "$BASE" --; git -C "$PROJ" ls-files --others --exclude-standard; } | sort -u)
 
+# The skills setup installed, by exact path, from the manifest (see the header).
+SKILLS=""
+if [ -f "$HERE/lib-manifest.sh" ] && . "$HERE/lib-manifest.sh" 2>/dev/null; then
+  SKILLS=$(manifest_paths "$PROJ" 2>/dev/null | grep '^\.claude/skills/')
+fi
+
 # The list goes in through the environment: BSD awk (macOS) rejects a newline in a -v value.
-OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" awk -v tasks="$TASKS_FILE" -v own=".shipkit/specs/$SLUG/" '
-  BEGIN { n = split(ENVIRON["BV_ALLOWED"], a, "\n") }
+OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" BV_SKILLS="$SKILLS" awk -v tasks="$TASKS_FILE" -v own=".shipkit/specs/$SLUG/" '
+  BEGIN { n = split(ENVIRON["BV_ALLOWED"], a, "\n"); m = split(ENVIRON["BV_SKILLS"], s, "\n") }
   $0 == "" { next }
   {
     ok = ($0 == tasks)
@@ -60,6 +69,7 @@ OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" awk -v tasks="$TASKS_FILE
     if (!ok && index($0, ".shipkit/") == 1) ok = (index($0, ".shipkit/specs/") != 1 || index($0, own) == 1)
     # the two directories setup owns: written only by the installer (see the header)
     if (!ok && (index($0, ".claude/rules/shipkit/") == 1 || index($0, ".shipkit-baseline/") == 1)) ok = 1
+    for (i = 1; i <= m && !ok; i++) if ($0 == s[i]) ok = 1
     for (i = 1; i <= n && !ok; i++) {
       if ($0 == a[i]) ok = 1
       else if (a[i] ~ /\/$/ && index($0, a[i]) == 1) ok = 1

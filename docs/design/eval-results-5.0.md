@@ -188,3 +188,35 @@ measured dollar figure. `reports.md` was probed once per route, after the 15-run
 merge's `--group eve` and `--group digest` runs cover `SKILL.md`'s final text on the five cases,
 and no case watches the two report routes. A request for a matrix in words, without the flag,
 was not run.
+
+## 4. The headless wait (S22-T1, W14)
+
+A headless `/shipkit:intake` on `linkshort` scheduled a 1,200-second `ScheduleWakeup` for a
+notification that came in 20 s, and the session held open for 20 min 50 s against 65 s of API time
+(`field-notes-4.12.md` §4.1). Three runs at once on the `evals/intake/limit` fixture, with that run's
+flags and its "questions marked unanswered" instruction, at the branch's plugin, on `sonnet`,
+Claude Code 2.1.314. The request asks for refunds through the path that charges today, so the
+skill has a reason to ask `grandfather`; the prompt does not tell it to. Wall clock from `date`,
+`duration_api_ms` from the result, the rest from each session's transcript. Spec:
+`.shipkit/specs/run-again/` (REQ-6, REQ-7). The cost was $0.71.
+
+| Run | Wall clock | `duration_api_ms` | Called `Agent` | `ScheduleWakeup` | How it waited | Cost |
+|---|---|---:|---|---|---|---:|
+| 1 | 50 s | 49,842 | yes | none | looked up `SendMessage` | $0.23 |
+| 2 | 54 s | 73,374 | yes | none | `sleep 45` in Bash | $0.26 |
+| 3 | 66 s | 65,461 | yes | none | `sleep 45` in Bash | $0.22 |
+
+All three handed work to an agent, so all three count, and each wrote its `intake.md`.
+`ScheduleWakeup` was on offer: a headless session's `init` row on this version lists it.
+
+**Reading.** No run scheduled a wakeup, so the clause cannot keep the sentence: it needs at least
+one run without it to do so. The design ends W14 there, the owner confirmed at the table, and the
+second arm was not paid. No sentence ships. The record "The leaked wait sentence is closed by
+record" in `run-debts/design.md` is reopened with the headless condition written in. `API time`
+above can exceed the wall clock because it adds the subagent's time to the main session's.
+
+**What this does not show (§4).** Three runs cannot rule out a rare wakeup: one in four would be
+missed about four times in ten. These ran on `sample-app`, not `linkshort`, so the fourth sample
+is the run again's intake, the same request on the same project as 4.12's. The models did wait,
+by other means: two slept 45 s in Bash, which costs a turn and not twenty minutes. Whether a
+sentence would change that was not measured.

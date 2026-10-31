@@ -12,16 +12,13 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-30, v4.12.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 to 18 of the
-second-run plan (`docs/plans/second-run-sprint-plan.md`, approved 2026-10-10; Sprint 17 shipped
-as 4.10.0, Sprint 18 as 4.11.0, Sprint 19 run as written and releasing as 4.12.0) are done; see
-"The second-run plan" below. Everything in this document is shipped except the items under
-"Still open after Sprint 19", which seed the plan after (each item carries a note when a sprint
-pays it). The plan after is `docs/plans/thinning-sprint-plan.md` (Status DRAFT, written
-2026-10-22): its W0 said "fold Sprint 19 in"; Sprint 19 ran as written instead, so W0 is to be
-re-decided as "ran as written" before that plan is approved, and its W5 may name
-`~/code/linkshort` as the Python repository or ask for another.
+**Status (as of 2026-10-31, v5.0.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 to 19 of the
+second-run plan are done, and so are Sprints 20 to 22 of the thinning plan
+(`docs/plans/thinning-sprint-plan.md`, approved 2026-10-30), one release, 5.0.0; see "The thinning
+plan" below. Everything in this document is shipped except the items
+under "Still open after Sprint 22", which seed the plan after (each item carries a note when a
+sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -35,7 +32,83 @@ re-decided as "ran as written" before that plan is approved, and its W5 may name
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The second-run plan — Sprints 17–18 SHIPPED 2026-10-10 to 2026-10-11 as 4.10.0, 4.11.0; Sprint 19 run as written, releasing as 4.12.0
+## The thinning plan — ✅ Sprints 20–22 SHIPPED 2026-10-30 to 2026-10-31 as 5.0.0
+
+Full plan: [`docs/plans/thinning-sprint-plan.md`](docs/plans/thinning-sprint-plan.md). What a session
+on another product pays, and what it buys: what every session pays (20), what a set-up project
+pays and what `eve` pays per call (21), then the same loop on the same project, and one release
+(22). Numbers: `docs/design/context-cost.md`, `docs/design/eval-results-5.0.md`.
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 20 | 5.0.0 (merged untagged, `0615060`) | The context cost as a script; `spec-driven` and `decisions` load only where a project opted in; the Care line reworded and measured, 0 of 3 → 3 of 3; seventeen skills to ten, seven agents to four; the hook on a bare project 3,951 → 2,289 bytes |
+| 21 | 5.0.0 (merged untagged, `e0a38a9`) | Overlay skills behind `--with-skills`, Rails 17,529 bytes → 0 by default; every append line audited; two Rails skills cut, decision 0004; `eve.md` 16,947 → 12,067 bytes with all five cases held, the matrix and consolidation shapes in `ask`'s `reports.md` |
+| 22 | 5.0.0 | The 4.12 run's four debts paid; the headless wait measured in four runs, no wakeup, no sentence; the same nine steps on `linkshort`, seven sections better, two the same, none worse, $1.29 and 262 s against $1.37 and 25 minutes; this roadmap |
+
+**Still open after Sprint 22** (the run again's findings, `docs/design/field-notes-5.0.md`, by
+section — the same project, the same request, on the thinned plugin; nothing here was fixed in
+Sprint 22, by the plan's W5):
+
+- **A decision binds by the requirement it cites, not the code it governs** — `brief.sh` selects
+  decisions by requirement, so T1's brief said "None recorded", and the agent built the alternative
+  the design rejected (`AwareDatetime`), reporting it under DEVIATIONS (§8.1).
+- **The reviewer reads a decision's choice, not the alternatives it turned down** — it cited
+  `AwareDatetime` under REQ-3 and called the decision "unimplemented, not contradicted" (§9.2).
+- **`python/django.md` loads on a FastAPI project** — setup installs it whatever the framework, and
+  `**/models.py` matches `src/linkshort/models.py`: 583 bytes of Django into a FastAPI agent. Sprint
+  21's W7 caused this (§2.1, §8.2).
+- **`intake.md` stamped 2026-10-05 on 2026-10-31** — the skill asks for a date and names no source
+  (§4.1).
+- **A reviewer can end itself before it reports** — its last call is `SubagentHandback {"message":
+  "placeholder"}`: the tool answers "Report delivered", the agent ends and the review is never sent.
+  3 of 74 gate sessions in the logs, all in the last ten, two in the last four on Claude Code
+  2.1.316; why the model writes that word is not known. It fails closed, a false NOT READY (§9.1).
+  *The symptom is paid in 5.0.0: the gate starts such a reviewer once more (run-again/REQ-15). The
+  cause is open.*
+- **The stack section's alternatives survive as comments** — `<!-- Django / FastAPI / Flask / None
+  -->`, and "async ORM" on a project the section calls sync (§2.2).
+- **A model waits on an agent with `sleep 45`** — a turn, and nothing worse (§4.2).
+- **Seen again from 4.12:** setup's two clocks (§2.3), the singular `Test:` line (§6.1), the
+  hand-written stamp (§7.1).
+
+- **`trap2/rails`' grader forbids a word in a comment** — no code in six runs calls `update_column`,
+  all six write `save!(validate: false)`, and the four that say why in a comment fail; 3 of 3 in
+  4.12.0, 2 of 6 in 5.0.0. `trap2/go-mod`'s wants the literal `go build`. Both are narrower than their
+  line, as `trap2/experiments` and `trap2/package-json` are (`docs/design/eval-history.md`, "Release
+  run 5.0.0").
+
+What Sprint 21 and the plan's tables left watching:
+
+- **The `agents` smoke check fails now and then on `haiku`** — asked for names starting
+  `shipkit:`, the model lists the skills too; 1 of 2 full runs at Sprint 21's merge, 3 of 3 alone
+  (`scripts/smoke.sh` check 4).
+- **`map_read` misses a repo-wide Grep** — it counts a Read or Grep whose path ends in
+  `PROJECT_MAP.md`, so `eve/why` read 2 of 3 on a run whose reply cites the map
+  (`scripts/trace-tools.sh`; `eval-results-5.0.md` §3, "At the merge").
+- **The `eve` trim is not measurably cheaper** — 15 runs each, input tokens −2.2%, dollars +1.0%,
+  inside the runs' spread; "no worse" held, "cheaper" did not show (`eval-results-5.0.md` §3).
+- **`reports.md` has no case** — two probes per route; nothing watches a `--all matrix` or `--all
+  consolidate` request in a release run, and a matrix asked for in words was not run
+  (`eval-results-5.0.md` §3, "What this does not show").
+- **The Care line is measured on one prompt and one model** — a quieter destructive request, or
+  `haiku`, is unmeasured (`eval-results-5.0.md` §1).
+- **The `walkthrough` trigger is unread on a real project** — `eval-results-5.0.md` §2 called the run
+  again the first place to look, but the nine steps hold no walkthrough, so the merge rests on a
+  nine-file fixture where neither form fired (`field-notes-5.0.md`).
+- **A rare wakeup is not ruled out** — four headless intakes, none; one in four would be missed
+  about a third of the time (`eval-results-5.0.md` §4, `field-notes-5.0.md` §4).
+- **The stack-skill lines are proved by smoke alone** — a default setup installs no skill, so no
+  real run has seen them (`field-notes-5.0.md`, "Did W13's four lines hold?";
+  `.shipkit/specs/run-again/design.md`).
+
+What "Still open after Sprint 19" still holds, each below it in place: the `Fired-if` on bytecode,
+not seen on this run because the spec's commands read one named file (`field-notes-5.0.md` §6);
+the product skill's contradiction, named this time by one roll of the model with no text changed
+(§3); the two graders; the strict `why` number; the map with no shared word; four rule files kept
+on a number; the smoke header range; the pinned toolchain; `rules-skip` on `haiku`; the `-rerun`
+report; E1, E2 and E3, again not exercised, the project having no `CLAUDE.md` or `.claude/rules/`.
+
+## The second-run plan — ✅ Sprints 17–19 SHIPPED 2026-10-10 to 2026-10-30 as 4.10.0, 4.11.0, 4.12.0
 
 Full plan: [`docs/plans/second-run-sprint-plan.md`](docs/plans/second-run-sprint-plan.md). Pay
 the second run's debts (17), act on the graders and on `eve` (18), close the harness window and
@@ -56,21 +129,26 @@ fixed in Sprint 19, by the plan's E17; every item seeds the plan after):
   notification that arrived in 20 s, and a `-p` session does not exit until the wakeup fires;
   the JSON `result` was the wakeup's non-answer, not the intake's reply (§4.1). E8's record
   (`.shipkit/specs/run-debts/design.md`) said "reopened if an interactive session shows it";
-  a headless one showed something costlier.
+  a headless one showed something costlier. *Measured in Sprint 22 (W14): no wakeup in four runs,
+  no sentence added, the record reopened with the headless condition (`eval-results-5.0.md` §4).*
 - **`brief.sh` does not carry the `<slug>/REQ-N` citation convention** that `spec-check`
   reads; the agent's tests cited nothing and REQ-2/REQ-3 stayed `PENDING-TEST` after the build,
-  then `MISSING-TEST` at the gate (§8.1; the reviewer saw it from the other side, §9).
+  then `MISSING-TEST` at the gate (§8.1; the reviewer saw it from the other side, §9). *Paid in
+  5.0.0 (W13): the agent's tests cite (`field-notes-5.0.md` §8).*
 - **A model-written `Fired-if` fired on bytecode** — `grep -rl expires_at src` from `sh -c`
   counts `__pycache__/*.pyc` after the first `pytest`; the spec skill says nothing about
   grepping a source tree and `decision-check.sh` runs the command over untracked files (§9.1).
 - **E5's always-allowed list misses the stack's project skill** — `.claude/skills/new-feature/
-  SKILL.md`, written by setup, was a "change beyond the spec" to the reviewer (§9.2).
+  SKILL.md`, written by setup, was a "change beyond the spec" to the reviewer (§9.2). *Paid in
+  5.0.0 (W13), by the manifest, not the directory.*
 - **The gate's pre-step status capture went to `/tmp/ship-pre-status.txt`**, outside the
-  `shipkit-ship-*` cleanup pattern; the skill says "keep its output" and not where (§9.3).
+  `shipkit-ship-*` cleanup pattern; the skill says "keep its output" and not where (§9.3). *Paid
+  in 5.0.0 (W13): `shipkit-ship-status.out`.*
 - **`skills/setup/SKILL.md:224` says "all nine rules"; the plugin ships eight** — read aloud by
-  the model that followed it (§2.1).
+  the model that followed it (§2.1). *Paid in 5.0.0 (W13).*
 - **The `python` stack section keeps the template's alternatives** — "Ruff or flake8", "`mypy`
-  or `pyright`", `src/` or `app/`, a Django block on a FastAPI project (§2.2).
+  or `pyright`", `src/` or `app/`, a Django block on a FastAPI project (§2.2). *Mostly paid in
+  5.0.0 (W7); what is left, and what the move caused, is under Sprint 22's list.*
 - **Setup's two timestamps use two clocks** — `.shipkit-baseline/.captured` in UTC, the backup
   directory's name in local time (§2.3).
 - **`/shipkit:product` resolved a README-vs-TODO contradiction silently** ("no database" against
@@ -127,7 +205,8 @@ their evidence (nothing here was changed in Sprint 19):
   (`field-notes-4.12.md` §9), the `-rerun` choice is unmeasured since.
 - **The evals byte ceiling is full** — `plugins/shipkit/evals` stands at 196,589 of 196,608
   bytes after Sprint 19's one README line (19 bytes of room); the next case raises the ceiling
-  (second-run plan, exit checklist line 6) or trims `evals/README.md` first.
+  (second-run plan, exit checklist line 6) or trims `evals/README.md` first. *Paid in 5.0.0
+  (W10): the ceiling is 204,800.*
 - **Paid since 4.9.0, outside a sprint:** every `--plugin-dir` session rewriting `plugin-root`
   (`CHANGELOG.md` 4.7.0) and an older session's hook writing a removed directory back
   (`CHANGELOG.md` 4.10.0) — PR #21's installed-root rule (`CHANGELOG.md` 4.12.0): a dev root

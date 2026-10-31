@@ -164,6 +164,7 @@ echo
 echo "## Prove it with"
 echo "- Test: $(task test)"
 echo "- Done when: $(task done)"
+echo "- Each test cites the requirement it proves as \`$SLUG/REQ-N\`; \`spec-check\` reads exactly that."
 echo
 echo "## Already done"
 AFTER=$(task after)

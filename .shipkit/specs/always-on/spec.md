@@ -1,7 +1,7 @@
 # Spec: What every session pays (Sprint 20, untagged)
 
 > Spec accepted at commit `877a8e5` on sprint-20/always-on (2026-10-30).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/, plugins/shipkit/hooks/, plugins/shipkit/skills/, plugins/shipkit/agents/, plugins/shipkit/rules/shipkit.md, plugins/shipkit/evals/, plugins/shipkit-workflows/skills/, scripts/, docs/design/, README.md, GUIDE.md, CHANGELOG.md
 
 ## Purpose
@@ -83,9 +83,13 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), §0, W1–W4
 - **REQ-13.** `/shipkit-workflows:commit` shall be the commit skill, and `plugins/shipkit/`
   shall carry no skill directory for any of the seven old names (`walkthrough`,
   `explain-system`, `unsetup`, `update-rules`, `context-audit`, `connect-memory`, `commit`).
-- **REQ-14.** The ten core skills' descriptions shall total at most 2,400 bytes, and each
+- **REQ-14.** The ten core skills' descriptions shall total at most 2,950 bytes, and each
   merged description shall carry the merged-in skill's `TRIGGER when:` lines.
-- **REQ-15.** The CHANGELOG's Unreleased entry shall carry a migration table mapping each of
+  > *Amended 2026-10-31 (the 5.0.0 gate):* the ceiling was 2,400. The owner amended it to 2,950 at
+  > S20-T4 on 2026-10-30 (`design.md`, the plan's amendments): the eight untouched skills total
+  > 2,535 and lint caps a description at 300. The amendment reached the design and not this line,
+  > and no test held the number; the gate's reviewer found both. Smoke check 65 now reads it.
+- **REQ-15.** The CHANGELOG's 5.0.0 entry shall carry a migration table mapping each of
   the seven old skill names to its new form, and `shipkit.md`'s two references
   (`/shipkit:update-rules`, `/shipkit:commit`) shall name the new forms with the three rules
   still at most 3,000 bytes. [untested: prose, verified by reading and by lint's byte check]
