@@ -63,6 +63,8 @@ Sprint 22, by the plan's W5):
   "placeholder"}`: the tool answers "Report delivered", the agent ends and the review is never sent.
   3 of 74 gate sessions in the logs, all in the last ten, two in the last four on Claude Code
   2.1.316; why the model writes that word is not known. It fails closed, a false NOT READY (§9.1).
+  *The symptom is paid in 5.0.0: the gate starts such a reviewer once more (run-again/REQ-15). The
+  cause is open.*
 - **The stack section's alternatives survive as comments** — `<!-- Django / FastAPI / Flask / None
   -->`, and "async ORM" on a project the section calls sync (§2.2).
 - **A model waits on an agent with `sleep 45`** — a turn, and nothing worse (§4.2).

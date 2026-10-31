@@ -2,8 +2,8 @@
 
 ## Approach
 
-Eight records: W5, W11, W12, W13 and W14 from the plan, and three the tree added since it was
-written. The order is the plan's: pay the debts, so the run measures them; settle the wait; run
+Nine records: W5, W11, W12, W13 and W14 from the plan, three the tree added since it was written,
+and one the release smoke added. The order is the plan's: pay the debts, so the run measures them; settle the wait; run
 the loop; write the roadmap; release. T1 changes four sentences and, if the clause says so, one
 more. T2 changes nothing it finds. T-REL is the one release of three sprints (rule 22).
 
@@ -198,6 +198,37 @@ extra gates answer READY first time with no reviewer finding.
 
 ---
 
+## Decision: The gate starts a silent reviewer once more   (→ REQ-15)
+
+**Context.** Three times in 74 logged gate sessions, all in the last ten, the reviewer's last call
+was `SubagentHandback {"message": "placeholder"}`. The tool answered "Report delivered to your
+caller", the agent ended, and the review was never sent, so the gate answered NOT READY on a
+complete feature. Why the model writes that word is not known; it is one ordinary turn, with no
+error. Smoke's `ship-gate` failed twice in a row on the release tree, and re-running until it
+passes would have hidden that.
+
+**Alternatives.**
+1. One sentence in `ship`'s step 4: a reply with no `VERDICT:` line is not a review, so start the
+   reviewer once more; a second miss is `FAIL`.
+2. A sentence in `reviewer.md` telling it never to hand back a stub.
+3. Release as it is, on the owner's word, smoke not fully green.
+
+**Case for (1).** It works whatever the cause, which we do not know. It stays fail-closed: no reply
+can produce READY that did not say `VERDICT: PASS`. It costs a second reviewer only on a miss.
+
+**Case against (1).** It treats the symptom and leaves the model's habit unexplained, and at about
+one miss in three the retry still leaves a smoke run failing roughly one time in ten. A sentence
+added on the last day is measured less than anything else in this release. (2) aims at the cause,
+but it cannot be measured at this rate, and rule 20 wants a number.
+
+**Decision.** We chose (1), on the owner's word at T-REL. The path was forced once with a reviewer
+that only replies `placeholder`, to see it start twice and still answer NOT READY.
+**Falsifiability.** We would add (2), or drop the agent's hand-back for a file it writes itself, if a
+gate in the release run or after it answers NOT READY with two replies that have no verdict line.
+**Fired-if.** manual
+
+---
+
 ## Decision: Each deletion is its own yes   (→ REQ-11)
 
 **Context.** W12 names F3, the merged branch `claude/wizardly-fermi-u6f5w2`, and F4, the owner's
@@ -226,7 +257,8 @@ choice, and it changes on the owner's word.
 - `brief-verify.sh`: a manifest-listed file is allowed; the header says why; `lib-manifest.sh`
   is sourced, and with no manifest nothing changes.
 - `agents/reviewer.md` step 4: one clause.
-- `skills/ship/SKILL.md`: the pre-step names `shipkit-ship-status.out`; step 7 reads it.
+- `skills/ship/SKILL.md`: the pre-step names `shipkit-ship-status.out`; step 7 reads it; step 4
+  starts a reviewer with no verdict line once more.
 - `skills/setup/SKILL.md`: "eight".
 - `skills/intake/SKILL.md`, `skills/ship/SKILL.md`: one sentence, only if the clause keeps it.
 - No migration beyond 5.0.0's table.

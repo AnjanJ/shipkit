@@ -68,8 +68,9 @@ Notes on the steps:
   whole and unchanged, to `"${TMPDIR:-/tmp}/shipkit-ship-review.out"`, and paste the report's
   review block from that file, as step 2 pastes test output from its file. A reply pasted
   from a file arrives whole; one copied from memory arrives as a summary (the 4.7.0 and 4.9.0
-  gates both did that, where the template asks for every line). `VERDICT: FAIL`, or no
-  verdict line, is `FAIL`.
+  gates both did that, where the template asks for every line). A reply with no `VERDICT:` line
+  is not a review: start the reviewer once more with the same two facts, and use that reply.
+  `VERDICT: FAIL`, or a second reply with no verdict line, is `FAIL`.
 - **Step 5 — migrations.** A migration is a changed file under `db/migrate/`, `migrations/`,
   `priv/repo/migrations/`, `alembic/`, `prisma/migrations/`, or a changed `*.sql`. "Written
   down" means a `down`/reverse in the migration itself, or a rollback note in the spec or the

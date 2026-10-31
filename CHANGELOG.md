@@ -54,6 +54,10 @@ same project as 4.12 read better in seven places and worse in none, for $1.29 ag
 
 ### Changed
 
+- **The gate starts a silent reviewer once more** (S22-T-REL): a reply with no `VERDICT:` line is
+  not a review, so `/shipkit:ship` starts the reviewer a second time, and a second miss is still
+  `FAIL`, never a READY. Smoke check 76; the path was forced with a reviewer that only replies
+  `placeholder`.
 - **Four one-line debts from the 4.12 run** (thinning plan W13, S22-T1): the brief says each test
   cites `<slug>/REQ-N`, the convention `spec-check` reads. `brief-verify` and the reviewer no
   longer report a skill setup installed, by the manifest and not by the directory, so a
@@ -146,8 +150,9 @@ contradicted" (§8.1, §9.2). Not fixed here; first on the ROADMAP's "Still open
 
 **A reviewer can end itself before it reports.** Smoke's `ship-gate` failed because the reviewer's
 last call was `SubagentHandback {"message": "placeholder"}`, which ended the agent with its review
-unsent; the session logs show it, 3 of 74 gate sessions, all in the last ten. The gate failed closed,
-a false NOT READY (§9.1). Smoke holds 212 checks.
+unsent; the session logs show it, 3 of 74 gate sessions, all in the last ten. It failed closed, a
+false NOT READY on a complete feature (§9.1). The gate now starts such a reviewer once more; why the
+model writes that word is still not known. Smoke holds 213 checks.
 
 ### Added
 

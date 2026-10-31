@@ -4,7 +4,7 @@ One commit per task, test and code together, except T1, which is two: W13's, the
 steps for each task are in `docs/plans/thinning-sprint-plan.md` under the same task number
 (S22-T0 to S22-T3, S22-T-REL). **Measurement runs are in the plan's budget line (§4, Sprint 22 ≈
 $25–31): W14 six runs (≈ $1.50), the run again (≈ $2–8), the three gates (≈ $1.50), the release
-run at 60 cases (≈ $21). Anything else needs the owner's yes (rule 15). T1 STOPs for the owner
+run at 60 cases (≈ $21), and REQ-15's runs (≈ $2) on the owner's yes. Anything else needs the owner's yes (rule 15). T1 STOPs for the owner
 to see W14's table before the sentence stays (rule 6). T2 fixes nothing it finds. Every deletion
 is its own yes. Every sandbox, scratch copy and worktree a task creates is removed after
 reading (rule 13), and traces are read through the eval output directory before that.**
@@ -29,8 +29,8 @@ reading (rule 13), and traces are read through the eval output directory before 
   - Test: lint check 16 holds the status line; the rest read: every "Still open after Sprint 22" item cites a file and a section
   - After: T2
   - Done when: the "Thinning plan" section has its three rows and 5.0.0; the list holds the run's findings, what "Still open after Sprint 19" still holds and Sprint 21's three open watches; lint 0/0
-- [x] **T-REL** Release 5.0.0 (S22-T-REL, W11, W12) → REQ-13, REQ-14
-  - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, docs/design/context-cost.md, .shipkit/releases/, .shipkit/specs/always-on/tasks.md, .shipkit/specs/always-on/spec.md, .shipkit/specs/overlays-and-eve/spec.md, .shipkit/specs/run-again/spec.md
-  - Test: the sprint exit checklist (lint, smoke in full, `bash scripts/evals.sh -j 4` at 60 cases, spec-check, the two byte lines, the §0 table); always-on's T-MERGE and this T-REL ticked in the release prep commit; `/shipkit:ship` headless on `always-on`, `overlays-and-eve` and `run-again`; the CHANGELOG entry read for "What changed for you", the Migration table, §0 before and after and the check count
+- [x] **T-REL** Release 5.0.0 (S22-T-REL, W11, W12) → REQ-13, REQ-14, REQ-15
+  - Files: plugins/shipkit/skills/ship/SKILL.md, scripts/smoke.sh, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, docs/design/context-cost.md, .shipkit/releases/, .shipkit/specs/always-on/tasks.md, .shipkit/specs/always-on/spec.md, .shipkit/specs/overlays-and-eve/spec.md, .shipkit/specs/run-again/spec.md
+  - Test: the sprint exit checklist (lint, smoke in full, `bash scripts/evals.sh -j 4` at 60 cases, spec-check, the two byte lines, the §0 table); always-on's T-MERGE and this T-REL ticked in the release prep commit; `/shipkit:ship` headless on `always-on`, `overlays-and-eve` and `run-again`; smoke check 76 "ship-retry" written first, red (cites `run-again/REQ-15`), the path forced once with a reviewer that only replies `placeholder`, and check 29 alone twice more; the CHANGELOG entry read for "What changed for you", the Migration table, §0 before and after and the check count
   - After: T3
   - Done when: all three gates say READY; the reports are committed with `Status: shipped`; the release run is in `eval-history.md`; the pull request is merged after a green check; tag `v5.0.0` pushed; F3, F4 and this sprint's branch each asked as its own yes

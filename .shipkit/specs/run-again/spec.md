@@ -68,7 +68,8 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), W5, W11–W1
   verified by reading]
 - **REQ-10.** The notes shall say for each of REQ-1 to REQ-5 whether it held on the run, or that
   the run could not show it. [untested: prose, verified by reading]
-- **REQ-11.** Nothing the run finds shall be changed in this sprint; the ROADMAP's open list
+- **REQ-11.** Nothing the run finds shall be changed in this sprint, REQ-15 alone excepted on the
+  owner's word; the ROADMAP's open list
   shall hold one item per finding, each citing the notes' section, and the fate of branch
   `shipkit/real-run-4` and its worktree shall be recorded. [untested: prose, verified by
   reading]
@@ -92,6 +93,13 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), W5, W11–W1
   > *Amended 2026-10-31 (T-REL, before this spec's gate):* this also named `run-again`, which no
   > gate can hold true of itself: its report and its `Status` come after it. That state stays
   > under the release steps below, as `third-run` kept it.
+- **REQ-15.** When the `reviewer` agent's reply to `/shipkit:ship` has no `VERDICT:` line, the gate
+  shall start the reviewer once more with the same slug and base ref and use that reply; where
+  the second reply has none either, step 4 shall be `FAIL`.
+  > *Added 2026-10-31 (T-REL, the owner's word):* the release smoke failed `ship-gate` twice in a row
+  > on a reviewer whose last call was `SubagentHandback {"message": "placeholder"}`. This spec had
+  > listed that watch as out of scope; the exit checklist cannot pass with it, and a false NOT READY
+  > lands on a user's complete feature. The design has the record.
 
 ## Release steps (not requirements)
 
@@ -106,6 +114,6 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), W5, W11–W1
 ## Out of scope
 
 Fixing anything the run finds; a fifth debt; the two graders 4.11.0 found narrower than their
-line; the `agents` and `ship-gate` smoke checks' open watches and `map_read`'s Grep gap, which
-go on the ROADMAP; a stub for any renamed skill (rule 21); a new eval case; any deletion this
+line; why the model writes `placeholder`, the `agents` smoke check's open watch and `map_read`'s
+Grep gap, which go on the ROADMAP; a stub for any renamed skill (rule 21); a new eval case; any deletion this
 spec does not name, and nothing it names without its own yes.

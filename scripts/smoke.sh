@@ -2595,6 +2595,20 @@ case "$sr_n" in 6) sr_w=six ;; 7) sr_w=seven ;; 8) sr_w=eight ;; 9) sr_w=nine ;;
 if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then pass "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
 else failc "setup-rule-count" "$sr_n files under rules/, setup says: $(grep -oE 'copies all [a-z0-9]+ rules' "$COPY/skills/setup/SKILL.md")"; fi
 
+# 76. ship-retry: a reply with no verdict line is not a review. The reviewer's last call can be
+# SubagentHandback {"message": "placeholder"}, which ends it with the review unsent (3 of 74 gate
+# sessions; field-notes-5.0.md §9.1), so the gate starts it once more, and a second miss is still
+# FAIL: never a READY on no review. The skill's text, no claude needed; the path itself was forced
+# once with a reviewer that only replies placeholder (run-again's design).
+# Cites: run-again/REQ-15
+sy_step=$(awk '/^- \*\*Step 4 — the reviewer/ { on = 1 } /^- \*\*Step 5 — / { on = 0 } on' "$COPY/skills/ship/SKILL.md")
+sy_fail=""
+printf '%s\n' "$sy_step" | grep -qF 'no `VERDICT:` line' || sy_fail="$sy_fail [step 4 does not name a reply with no verdict line]"
+printf '%s\n' "$sy_step" | grep -qF 'start the reviewer once more' || sy_fail="$sy_fail [step 4 does not start it once more]"
+printf '%s\n' "$sy_step" | grep -qF 'a second reply with no verdict line' || sy_fail="$sy_fail [step 4 does not say a second miss is FAIL]"
+if [ -z "$sy_fail" ]; then pass "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
+else failc "ship-retry" "$sy_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
