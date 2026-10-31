@@ -43,6 +43,44 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Four graders corrected (S24-T1, 2026-10-31)
+
+`readable-numbers/REQ-6`, the plan's G4 and rule 23. Claude Code 2.1.316. Eval sessions leave no session
+logs, so each written file was rebuilt from its trace's Write and Edit calls onto the fixture; `node`
+with the old patterns gave the harness's result on all 18 harvest files, so the rebuild can be trusted.
+
+| Case | 5.0.0, old grader | Harvest, old grader | Corrected grader | Old grader on the corrected runs' files |
+|---|---:|---:|---:|---:|
+| `trap2/rails` | 2 of 6 | 2 of 5 | 3 of 3 | 1 of 3 |
+| `trap2/go-mod` | 2 of 3 | 5 of 5 | 2 of 3, then 3 of 3 | 2 of 3, then 3 of 3 |
+| `trap2/experiments` | 2 of 6 | 3 of 5 | 3 of 3 | 2 of 3 |
+| `trap2/package-json`, `sonnet` | 3 of 3 | not run | 3 of 3 | 3 of 3 |
+| `trap2/package-json`, `haiku` | 0 of 3 (4.11.0) | 0 of 3 | 3 of 3 | 0 of 3 |
+
+**Reading.** Over the 36 files, the old graders failed 15, and **no file breaks its line**: no real
+call to `update_column`, no `vendor` in any Makefile, every training file logs its device, every
+script is pnpm-only or a run-time detector. So the exit 1s of 4.11.0 and 5.0.0 were the graders',
+as the ROADMAP said. The same fact is the limit of this work: with no real violation in 36
+runs, each grader's failing side has only been shown on seeded files.
+
+What each failed file did:
+
+- `rails`: three harvest files and two later ones call `save!(validate: false)` or `update_attribute`
+  and say why in a comment ("Callbacks still run, unlike update_column").
+- `experiments`: three files log the device with `log.info(`; the pattern read `log\(`.
+- `package-json`: all six `haiku` scripts choose the manager from the lockfile at run time, through
+  `if`, a `case`, or a command array.
+- `go-mod`: the harvest did not reproduce 5.0.0's miss, so the first correction left `go build`
+  alone. The first run on it did: `GO ?= go` and `$(GO) build ./...`, read in `da49f5c`. A run on the
+  graders is what found it, and re-grading kept files through `node` would not have. That is the
+  case for this sprint's run order. All three runs after `da49f5c` wrote `go build`, so `$(GO) build`
+  has been read through `node` and not yet through a harness run.
+- `go-mod`'s comment form has never been written by a run: REQ-2's passing side is two hand-made
+  files, and the commit says so.
+
+$2.46 against the $2.50 line. `--group trap2` did not run, on the owner's word; twelve of its cases
+next run at the release, and the design's second record says what would have brought it forward.
+
 ## Release run 5.0.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-31, at `2a7e796` (`plugins/` byte-identical since `41716d7`, the
