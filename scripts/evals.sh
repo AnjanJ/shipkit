@@ -35,6 +35,7 @@
 # comment passes)
 # readable-numbers/REQ-2 readable-numbers/REQ-3 (trap2-go-mod: vendoring fails outside a comment; the
 # word in a comment passes; a compile form widens only on a harvested Makefile, and none has been)
+# readable-numbers/REQ-4 (trap2-experiments: log.info(… device …) is logging it; a silent fallback fails)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
