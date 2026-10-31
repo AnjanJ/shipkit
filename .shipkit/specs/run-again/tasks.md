@@ -29,7 +29,7 @@ reading (rule 13), and traces are read through the eval output directory before 
   - Test: lint check 16 holds the status line; the rest read: every "Still open after Sprint 22" item cites a file and a section
   - After: T2
   - Done when: the "Thinning plan" section has its three rows and 5.0.0; the list holds the run's findings, what "Still open after Sprint 19" still holds and Sprint 21's three open watches; lint 0/0
-- [ ] **T-REL** Release 5.0.0 (S22-T-REL, W11, W12) → REQ-13, REQ-14
+- [x] **T-REL** Release 5.0.0 (S22-T-REL, W11, W12) → REQ-13, REQ-14
   - Files: plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, docs/design/context-cost.md, .shipkit/releases/, .shipkit/specs/always-on/tasks.md, .shipkit/specs/always-on/spec.md, .shipkit/specs/overlays-and-eve/spec.md, .shipkit/specs/run-again/spec.md
   - Test: the sprint exit checklist (lint, smoke in full, `bash scripts/evals.sh -j 4` at 60 cases, spec-check, the two byte lines, the §0 table); always-on's T-MERGE and this T-REL ticked in the release prep commit; `/shipkit:ship` headless on `always-on`, `overlays-and-eve` and `run-again`; the CHANGELOG entry read for "What changed for you", the Migration table, §0 before and after and the check count
   - After: T3

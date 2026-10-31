@@ -4,22 +4,37 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [Unreleased] — Sprint 20 of the thinning plan (toward 5.0.0)
+## [5.0.0] — 2026-10-31
 
-**What changed for you.** Seven skill names are gone and nothing they did is: `/shipkit:walkthrough`
-is `/shipkit:ask --walk <feature>`, `/shipkit:explain-system` is `/shipkit:ask --system`;
-`/shipkit:unsetup`, `/shipkit:update-rules`, `/shipkit:context-audit` and
-`/shipkit:connect-memory` are `/shipkit:setup remove | rules | audit | memory`; `/shipkit:commit`
-is `/shipkit-workflows:commit`. The bodies moved whole, as reference files the merged skill
-reads on its argument; the skill list every session carries is ten names instead of seventeen.
-On a project that never ran shipkit, the session hook now injects only `shipkit.md` and one
-line saying how to opt in; the spec-driven and decision-record rules load where `.shipkit/` or
-installed rules exist. `shipkit.md`'s Care line now says *stop before anything destructive and
-ask first; never do it and ask after* — measured: the old wording was followed 0 of 3 times on a
-delete-and-force-push request, the new one 3 of 3. And `scripts/context-cost.sh <project>`
-prints what a session there pays for shipkit, byte by byte.
+**What changed for you.** Shipkit costs a session less, and seven skill names changed to get there.
+The skill list every session carries is ten names instead of seventeen and four agents instead of
+seven, and nothing they did is gone: the bodies moved whole, as reference files the merged skill
+reads on its argument, and the table below maps every old name. On a project that never ran
+shipkit, the session hook now injects only `shipkit.md` and one line saying how to opt in; the
+spec-driven and decision-record rules load where `.shipkit/` or installed rules exist. `/shipkit:setup`
+no longer copies a stack's skills into your project unless you say yes, and a stack's section in
+`CLAUDE.md` is what was kept after a line-by-line audit. `eve`'s prompt is 29% smaller, with every
+case she is measured on holding. `shipkit.md`'s Care line now says *stop before anything destructive
+and ask first; never do it and ask after* — measured: the old wording was followed 0 of 3 times on a
+delete-and-force-push request, the new one 3 of 3. The brief tells an agent how to cite a
+requirement, and `/shipkit:ship` keeps its scratch file where it cleans up. `scripts/context-cost.sh
+<project>` prints what a session there pays for shipkit, byte by byte. The same nine steps on the
+same project as 4.12 read better in seven places and worse in none, for $1.29 against $1.37.
 
-### Migration (5.0.0 renames; no stub is kept)
+**The §0 table, before and after** (`docs/design/context-cost.md`):
+
+| What loads | 4.12.0 | 5.0.0 | Ceiling |
+|---|---:|---:|---|
+| Session hook, a project that has not opted in | 3,951 | 2,289 | ≤ 2,300 (the plan's 1,900 never counted the header or the opt-in line) |
+| Skill descriptions, core | 3,969 (17) | 2,894 (10) | ≤ 2,950 |
+| Skill descriptions, workflows | 1,598 (6) | 1,885 (7) | ≤ 1,900 |
+| Agent descriptions | 1,720 (7) | 991 (4) | ≤ 1,000 |
+| Rails overlay skills copied in by setup | 17,529 (6) | 0 by default | 0 by default |
+| Rails stack section in `CLAUDE.md` | 1,651 | 1,388 | audited |
+| Python stack section in `CLAUDE.md` | 2,507 | about 1,000 | audited |
+| `agents/eve.md`, per call to `eve` | 16,947 | 12,067 | ≤ 12,067 (the plan's 11,500 was an estimate) |
+
+### Migration (no stub is kept)
 
 | Until 4.12.0 | From 5.0.0 |
 |---|---|
@@ -33,6 +48,9 @@ prints what a session there pays for shipkit, byte by byte.
 | "use the `tracer` agent …" | "use the `grandfather` agent in trace mode …", or `/shipkit:ask --walk <feature>` |
 | "use the `archivist` agent …" | `/shipkit:map` (it runs forked and is the archivist) |
 | "use the `codebase-explorer` agent …" | the built-in `Explore` agent |
+| A stack's skills installed by setup (`/new-feature`, `/release`, …) | Say yes when setup asks, or `install-stack.sh --with-skills`; skills already in a project stay there |
+| `/deploy-check`, `/safety-check` (Rails overlay) | Cut: the gate, `gemfile.md` and `/release` carry their checks (decision 0004) |
+| `spec-driven` and `decisions` loading on every project | Run `/shipkit:product` or `/shipkit:setup` on a project to opt in |
 
 ### Changed
 
@@ -103,8 +121,37 @@ prints what a session there pays for shipkit, byte by byte.
   to stop-then-ask, 3 of 3 with. The case stays as the line's watch
   (`docs/design/eval-results-5.0.md` §1). The evals ceiling is 204,800 bytes (W10).
 
+### What using it for real showed
+
+**The cuts did not cost a step.** The same nine steps on `linkshort`, the same request: every step
+produced its file, every check the runner re-ran agreed, and the session logs hold no call to a
+removed skill or agent. $1.29 and 262 s of session time against $1.37 and about 25 minutes
+(`docs/design/field-notes-5.0.md`).
+
+**The twenty-minute intake did not come back.** Four headless intakes, no `ScheduleWakeup`, 50–66 s;
+no sentence was added, because the clause needs a wakeup to measure against, and the 4.10.0 record is
+reopened with the headless condition (`docs/design/eval-results-5.0.md` §4). The models wait with
+`sleep 45` instead. A rare wakeup is not ruled out.
+
+**The `eve` trim held and saved nothing you can see.** 15 runs each: input tokens −2.2%, dollars
++1.0%, inside the spread (`docs/design/eval-results-5.0.md` §3).
+
+**One finding the run was built to find: a decision binds by the requirement it cites, not the code
+it governs.** T1's brief said "None recorded", so the agent built the alternative the design had
+rejected, and said so under DEVIATIONS; the reviewer then called that decision "unimplemented, not
+contradicted" (§8.1, §9.2). Not fixed here; first on the ROADMAP's "Still open after Sprint 22".
+
+**One the thinning caused:** `python/django.md`, path-scoped by W7, loads on a FastAPI project's
+`models.py` (§8.2).
+
+**Smoke failed once for a reason that is now likely, not shown.** `ship-gate` got a reviewer reply of
+`placeholder` and answered NOT READY. A subagent can report through `SubagentHandback`, and the
+gate pastes that text (§9.1). It failed closed, and it passed on the next runs.
+
 ### Added
 
+- **`skills/ask/reports.md`** (S21-T4): the matrix and consolidation shapes, read on those two
+  routes only.
 - **`scripts/context-cost.sh <project-dir>`** (S20-T1): eight rows, no model call — the
   hook's real output bytes in that project, skill and agent description bytes per plugin, the
   overlay skills and `CLAUDE.md` stack sections setup installed there, the always-on rules.

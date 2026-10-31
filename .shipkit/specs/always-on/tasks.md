@@ -37,7 +37,7 @@ needs the owner's yes (rule 15). W2 and every removal STOP for the owner's word 
   - Test: Check first: the `Explore` claim and the fork-with-argument claim (one probe each). scripts/smoke.sh: the walkthrough checks on `grandfather`'s trace mode (cites `always-on/REQ-16`); a check that `plugins/shipkit/agents/` holds no `archivist.md` or `tracer.md` and `skills/map/SKILL.md` has `context: fork` (cites `always-on/REQ-17`); the `codebase-explorer` check by the branch taken (cites `always-on/REQ-18`); `scripts/context-cost.sh` agents ≤ 1,000 (cites `always-on/REQ-19`) — written first, red
   - After: T4
   - Done when: `bash scripts/evals.sh --group grandfather -j 4` → every case at its 4.12.0 count; the smoke suite PASS; context-cost shows agents ≤ 1,000 bytes; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S20-T-MERGE, rule 22)
+- [x] **T-MERGE** Merge, untagged (S20-T-MERGE, rule 22)
   - Files: docs/design/context-cost.md
   - Test: the exit checklist: lint; the full smoke suite; `--group rules`, `--group grandfather`, `--group hello`; spec-check 0 gaps; the two byte lines; the §0 table re-measured into context-cost.md
   - After: T5
