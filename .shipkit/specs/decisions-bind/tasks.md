@@ -3,7 +3,7 @@
 One commit per task, test and code together, except T3, which is two: the shared fixture, then the
 reviewer. The steps for each task are in `docs/plans/binding-sprint-plan.md` under the same task
 number (S23-T0 to S23-T3, S23-T-MERGE). **Measurement runs are in the plan's budget line (§4, Sprint
-23 ≈ $5–6): `brief/binds` 10 runs × 2 arms (raised from 3 on the owner's yes at T1's STOP, about $1.30 more), four `reviewer` cases × 3, the forced gate twice, the two
+23 ≈ $5–6): `brief/binds` 10 runs × 2 arms (raised from 3 on the owner's yes at T1's STOP, about $1.30 more) and 10 more at T2's STOP (the owner's yes, about $1), four `reviewer` cases × 3, the forced gate twice, the two
 `--group` runs at merge. Anything else needs the owner's yes (rule 15). T1 STOPs for the owner to see
 the baseline (rule 6). Every sandbox and scratch copy is removed after reading (rule 13), and traces
 are read through the eval output directory before that.**
@@ -18,11 +18,11 @@ are read through the eval output directory before that.**
   - Test: `bash scripts/evals.sh --group brief -j 4` on today's `brief.sh`, ten runs; each run read from its written file for `AwareDatetime`; the fixture's design copies `linkshort`'s `69578a5` shape (three decisions, the third citing REQ-3 and REQ-4, T1 on REQ-1 and REQ-2 sharing two files with T2); `case.yaml` cites `decisions-bind/REQ-4`
   - After: T0
   - Done when: the table has no empty cell; **STOP: the owner sees the number**; the owner's go in the thread; the sandboxes removed; lint 0/0
-- [ ] **T2** Every live decision reaches every task (S23-T2, G1) → REQ-1, REQ-2, REQ-3, REQ-5
-  - Files: plugins/shipkit/scripts/brief.sh, scripts/smoke.sh, docs/design/eval-results-5.1.md, CHANGELOG.md
-  - Test: scripts/smoke.sh, written first, red: the `brief` check's left-out assertion flips ("one README section" now listed on T3's brief, citing `decisions-bind/REQ-1`), "Old ledger idea" still left out (`decisions-bind/REQ-2`), a spec with no live decision says none is recorded for this feature (`decisions-bind/REQ-3`); then `bash scripts/evals.sh --group brief -j 4 --runs 10`
+- [ ] **T2** Every live decision reaches every task (S23-T2, G1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-14
+  - Files: plugins/shipkit/scripts/brief.sh, plugins/shipkit/evals/brief/, scripts/smoke.sh, docs/design/eval-results-5.1.md, CHANGELOG.md
+  - Test: scripts/smoke.sh, written first, red: the `brief` check's left-out assertion flips ("one README section" now listed on T3's brief, citing `decisions-bind/REQ-1`), "Old ledger idea" still left out (`decisions-bind/REQ-2`), a spec with no live decision says none is recorded for this feature (`decisions-bind/REQ-3`), the sentence above a listed decision and not above "None recorded" (`decisions-bind/REQ-14`); `brief/binds`' second grader, both sides through `node` (rule 23); then `bash scripts/evals.sh --group brief -j 4 --runs 10`, on REQ-1 alone and again with REQ-14
   - After: T1
-  - Done when: the `brief` check PASS; the case's second rows in the table; lint 0/0
+  - Done when: the `brief` check PASS; both sets of rows in the table; no rejected alternative and later tasks' work in at most 1 of 10 runs; lint 0/0
 - [ ] **T3** A contradicted decision fails the review (S23-T3, G2, G3, G9) → REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-12, REQ-13
   - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/evals/lib/, plugins/shipkit/evals/reviewer/, scripts/smoke.sh, .shipkit/specs/review-and-ship/spec.md, CHANGELOG.md
   - Test: first commit: the two fixtures on the shared script, `bash scripts/evals.sh --group reviewer -j 4` still 3 of 3 each, smoke check 77 "reviewer-fixture" (cites `decisions-bind/REQ-13`). Second commit, each written first, red: `reviewer/rejected-alternative` (every requirement met, the code uses what a live record turned down: `VERDICT: FAIL`, the decision named `contradicted`; cites `decisions-bind/REQ-6`, `REQ-7`, `REQ-8`), `reviewer/decision-unbuilt` (a live decision a later task will build, and a superseded record the code does not follow: `VERDICT: PASS`, the first `not built`, the second not listed; cites `decisions-bind/REQ-7`, `REQ-9`, `REQ-10`); smoke check 77 extended: the reviewer's text names both states and no longer says the gate weighs anything (`decisions-bind/REQ-12`); then `--group reviewer`, every case 3 of 3

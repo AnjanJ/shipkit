@@ -2,7 +2,7 @@
 
 ## Approach
 
-Five records: G1, G2, G3 and G9 from the plan, and one the check-first added. The order is the
+Six records: G1, G2, G3 and G9 from the plan, one the check-first added, and one T2's numbers added. The order is the
 plan's: measure the brief as it is, change it, measure again; then the reviewer, with its cases
 written first. `skills/ship/SKILL.md` does not change: step 4 already turns `VERDICT: FAIL` into
 `FAIL`, so the whole gate change is one sentence in `agents/reviewer.md`.
@@ -35,13 +35,43 @@ adds noise to every brief, and a title alone may not stop an agent the way the r
 alternative's name would.
 
 **Decision.** We chose (1), G1's default. The heading stays (`product-intake-brief/REQ-18`).
-`brief-verify.sh` still bounds what an agent may change. If the baseline in `brief/binds` is 0 of 3,
+~~`brief-verify.sh` still bounds what an agent may change.~~ It does not: T1 and T2 share files, so
+later tasks' work stays inside T1's `Files` (T2's measurement; next record). If the baseline in `brief/binds` is 0 of 3,
 the change still ships on §8.1's one run, at 477 bytes at most, and the record says the number
 shows nothing.
 **Falsifiability.** We would print each decision's rejected alternatives if `brief/binds` builds one
 in any of ten runs on the new brief (set before those runs; the baseline built one in 3 of 10), and
 move to (2) if a brief's decision list passes 1,000 bytes on a
 real spec.
+**Fired-if.** manual
+
+---
+
+## Decision: The brief says a decision is not extra work   (→ REQ-14, REQ-4)
+
+**Context.** The record above named this: "an agent may read it as its own work". Measured with
+REQ-1 alone, ten runs of `brief/binds`: no rejected alternative, and all ten opened the design, but
+9 of 10 built later tasks' work inside T1 (injected `now` 9, `InvalidExpiry` 5). The one that did
+not said why: "adding them now would be unused code. They belong to later tasks." The score could
+not see this, and `brief-verify.sh` could not either. Work built early has no test that failed
+first, which is what T2's `Test` line exists for.
+
+**Alternatives.**
+1. One sentence above the list: a decision limits how the task is done and is not extra work.
+2. Two lists, split by the old citation test: this task's decisions, and the rest as not your work.
+3. Back out REQ-1, and leave decisions to the reviewer and the gate.
+4. Keep REQ-1 alone, and accept the work built early.
+
+**Case for (1).** The cause is one heading read literally, and the fix is one sentence in the place
+the agent reads it. It adds no code path and needs no selection.
+
+**Case against (1).** It adds words to every brief with a decision, and a sentence may lose to a
+heading that says "bind": the heading cannot change (`product-intake-brief/REQ-18`). (2) gives the
+agent a list it can act on and not a rule it has to apply, at the price of about 12 lines of `awk`.
+
+**Decision.** We chose (1), the owner's word at T2's STOP. `brief/binds` gains a second grader.
+**Falsifiability.** We would move to (2) if, on ten runs of the new brief, later tasks' work appears
+in more than 1 run, or a rejected alternative in any (set before those runs).
 **Fired-if.** manual
 
 ---
@@ -156,7 +186,7 @@ before anything else changes.
 ## Data / interface changes
 
 - `brief.sh`: `decisions()` stops selecting; `$REQS` no longer reaches it; the "None recorded" line
-  says "for this feature".
+  says "for this feature"; one sentence above a listed decision.
 - `agents/reviewer.md`: step 5, the reply template's "Decisions not followed" line, the verdict
   sentence.
 - `evals/lib/`: the shared `reviewer` fixture script. `evals/reviewer/`, `evals/brief/`: new cases.

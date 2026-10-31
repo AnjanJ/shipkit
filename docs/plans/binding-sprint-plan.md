@@ -306,7 +306,7 @@ one the code contradicts.
 | Risk | What we do |
 |---|---|
 | The reviewer over-reads and fails a sound feature on a decision it misunderstands | `reviewer/decision-unbuilt` and `all-met` must hold 3 of 3; otherwise G3 falls back to its other option |
-| A longer list of decisions pulls an agent into a later task's work | `brief-verify.sh` still bounds the files; the run in S25-T2 reads for it; the title list is what is added, not the records |
+| A longer list of decisions pulls an agent into a later task's work | **It did: 9 of 10 runs at S23-T2.** `brief-verify.sh` did not bound it, as this row first said: T1 and T2 share files. REQ-14's sentence and a second grader answer it, on the owner's word; the run in S25-T2 reads for it |
 | A grader corrected to pass hides a real failure | Rule 23: nothing runs until the seeded violation fails |
 | One more clause in the reviewer raises the `placeholder` rate, already 3 of the last 10 | The retry stands; the release counts it; a gate with two replies and no verdict fires that decision's record |
 | The ceiling: about 1 KB of margin rests on an estimate | Measured at S23-T3. If it does not fit, `eve/consolidate` is the first case dropped, by the owner's word; no raise |

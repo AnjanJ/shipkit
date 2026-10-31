@@ -40,10 +40,19 @@ Source: `docs/plans/binding-sprint-plan.md` (approved 2026-10-31), G1, G2, G3, G
 - **REQ-4.** The eval suite shall hold a case `brief/binds` in which an agent, given a task's brief
   and a design whose live decision cites only a later task's requirements, changes code that
   decision governs; the case shall pass only when the code does not use the alternative the
-  decision rejected.
+  decision rejected and does not build the later tasks' work.
+  > *Amended 2026-10-31 (T2, the owner's word):* the first form could not see 9 of 10 runs building
+  > later tasks' work inside T1.
 - **REQ-5.** `docs/design/eval-results-5.1.md` shall hold one row per run of `brief/binds`, on
   `brief.sh` before and after REQ-1, each saying whether the rejected alternative was built.
   [untested: a record, verified by reading]
+
+- **REQ-14.** Where the section lists a decision, it shall say above the list that a decision limits
+  how the task is done and is not extra work: the task builds only what its requirements ask, and
+  contradicts none of them.
+  > *Added 2026-10-31 (T2, the owner's word):* REQ-1 alone took the rejected alternative from 3 of 10
+  > runs to 0 of 10, and 9 of 10 runs then built later tasks' work inside T1, one saying it did so
+  > "to follow the binding decisions". The design has the record.
 
 ### The reviewer (G2, G3, S23-T3)
 
