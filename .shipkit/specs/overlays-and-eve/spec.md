@@ -1,7 +1,7 @@
 # Spec: What a set-up project pays (Sprint 21, untagged)
 
 > Spec accepted at commit `0615060` on sprint-21/overlays-and-eve (2026-10-30).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/install-stack.sh, plugins/shipkit/scripts/unsetup-remove.sh, plugins/shipkit/skills/setup/, plugins/shipkit/stacks/, plugins/shipkit/agents/eve.md, plugins/shipkit/skills/ask/, .shipkit/decisions/, docs/design/, scripts/smoke.sh, GUIDE.md, README.md, CHANGELOG.md
 
 ## Purpose

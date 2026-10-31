@@ -86,9 +86,12 @@ Source: `docs/plans/thinning-sprint-plan.md` (approved 2026-10-30), W5, W11–W1
 - **REQ-13.** The CHANGELOG's 5.0.0 entry shall open with "What changed for you" and shall
   carry the Migration table, the plan's §0 table before and after, and the smoke check count.
   [untested: prose, verified by reading]
-- **REQ-14.** When 5.0.0 is released, `always-on`, `overlays-and-eve` and `run-again` shall each
-  have every task ticked, a READY report under `.shipkit/releases/`, and `Status: shipped`.
-  [untested: the gate's own steps hold it]
+- **REQ-14.** When 5.0.0 is released, `always-on` and `overlays-and-eve` shall each have every task
+  ticked, a READY report under `.shipkit/releases/`, and `Status: shipped`. [untested: the gate's
+  own steps hold it]
+  > *Amended 2026-10-31 (T-REL, before this spec's gate):* this also named `run-again`, which no
+  > gate can hold true of itself: its report and its `Status` come after it. That state stays
+  > under the release steps below, as `third-run` kept it.
 
 ## Release steps (not requirements)
 
