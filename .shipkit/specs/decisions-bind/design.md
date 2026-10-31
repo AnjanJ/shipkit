@@ -38,8 +38,9 @@ alternative's name would.
 `brief-verify.sh` still bounds what an agent may change. If the baseline in `brief/binds` is 0 of 3,
 the change still ships on §8.1's one run, at 477 bytes at most, and the record says the number
 shows nothing.
-**Falsifiability.** We would print each decision's rejected alternatives if `brief/binds` reads
-below 3 of 3 on the new brief, and move to (2) if a brief's decision list passes 1,000 bytes on a
+**Falsifiability.** We would print each decision's rejected alternatives if `brief/binds` builds one
+in any of ten runs on the new brief (set before those runs; the baseline built one in 3 of 10), and
+move to (2) if a brief's decision list passes 1,000 bytes on a
 real spec.
 **Fired-if.** manual
 
