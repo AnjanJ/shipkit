@@ -152,7 +152,7 @@ Budget, by rule 15:
 | Sprint | Runs | About |
 |---|---|---|
 | 23 | Brief case 3 runs × 2 arms ≈ $0.80; four `reviewer` cases × 3 ≈ $2; the forced gate twice ≈ $0.60; `--group` at merge ≈ $2 | $5–6 |
-| 24 | *Amended at S24-T0, the owner's word:* `trap2`'s four changed cases, a harvest and once more ≈ $2.50, for `--group trap2` once ≈ $5; two `reports` cases × 3 ≈ $1.20; Care 30 runs, five a cell, ≈ $1; `--group eve`, `--group rules` ≈ $3 | $10, about $7.70 as amended |
+| 24 | *Amended at S24-T0, the owner's word:* `trap2`'s four changed cases, a harvest and once more ≈ $2.50, for `--group trap2` once ≈ $5; two `reports` cases × 3 ≈ $1.20; Care 30 runs, five a cell, ≈ $1, and a sharper prompt, 20 runs, ≈ $0.70 (the owner's word, S24-T4's clause); `--group eve`, `--group rules` ≈ $3 | $10, about $8.40 as amended |
 | 25 | The run ≈ $2–8 (a larger project than `linkshort`'s $1.29); three gates ≈ $1.50; the release run at about 65 cases ≈ $21–23 | $25–33 |
 | Total | | $40–49, one release |
 
