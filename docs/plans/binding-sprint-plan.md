@@ -257,7 +257,8 @@ one the code contradicts.
 
 ### S25-T1 — Four debts, each with a check (G8)
 - **Files:** `plugins/shipkit/scripts/install-stack.sh`, `plugins/shipkit/skills/setup/SKILL.md`,
-  the six stamp lines' files, `plugins/shipkit/skills/spec/SKILL.md`, `scripts/smoke.sh`.
+  the six stamp lines' files, `plugins/shipkit/skills/spec/reference.md` (*amended at S25-T0: the
+  line is taught there; `spec/SKILL.md` only runs the check*), `scripts/smoke.sh`.
 - **Steps:** smoke checks 79 to 82, each written first, red: `django.md` on `PYTHON_FRAMEWORK=Django`
   and not on `FastAPI`; no literal date on a stamp line in any skill; a filled section with no
   `<!--` alternative and a sync project with no async line, `.section-<stack>.sha` taken after
@@ -266,14 +267,18 @@ one the code contradicts.
 
 ### S25-T2 — The run (G10)
 - **Files:** `docs/design/field-notes-5.1.md` (new), `ROADMAP.md`.
-- **Steps:** the Check first. A worktree of `~/code/office_bestie` at `179f99d` under the
-  scratchpad, on throwaway `shipkit/real-run-5`, never pushed. `--plugin-dir`, `sonnet`, headless,
-  the nine steps of `field-notes-5.0.md`, a real item the owner names from the project's backlog.
-  Setup says yes to `--with-skills`, so a real run sees the stack-skill lines at last. One
-  `/shipkit:ask --walk <feature>`, unasked in any run so far. `mise exec --` by hand, noted. No file
-  under `plugins/` edited while a step runs. Nothing found is fixed.
+- **Steps:** the Check first. A worktree of `~/code/office_bestie` at `179f99d` at
+  `/private/tmp/shipkit-real-run-5`, on throwaway `shipkit/real-run-5`, never pushed (*amended at
+  S25-T0, the owner's word: the session's scratchpad went away*). `MIX_TEST_PARTITION=_shipkit5` for
+  every step, so the run's tests use a database of their own (*amended at S25-T0: `mix.exs:84`
+  migrates before `test`, and the default name is the one the owner's checkout tests against*).
+  `--plugin-dir`, `sonnet`, headless, the nine steps of `field-notes-5.0.md`, `TODO.md:204`, the
+  team's day, the owner's word. Setup says yes to `--with-skills`, so a real run sees the stack-skill
+  lines at last. One `/shipkit:ask --walk <feature>`, unasked in any run so far. `mise exec --` by
+  hand, noted. No file under `plugins/` edited while a step runs. Nothing found is fixed.
 - **Done when:** every step has its six parts; G1, G2, G3, E1, E2, E3 each read as held or not
-  shown; the worktree and branch removed on the owner's yes, the log read first; lint 0/0.
+  shown; the worktree, the branch and the run's database removed on the owner's yes, the log read
+  first; lint 0/0.
 
 ### S25-T3 — The roadmap for the plan after
 - **Files:** `ROADMAP.md`.
@@ -319,7 +324,8 @@ one the code contradicts.
 | The ceiling: about 1 KB of margin rests on an estimate | **Measured at S23-T-MERGE: the estimate was low.** Sprint 23's three cases cost 8,892 bytes against about 4.4 KB planned: 203,906 of 204,800 after the shared fixture's 3,823, so 894 bytes are left and Sprint 24's three cases need about 4.5 KB. S24-T0 asks the owner which goes; `eve/consolidate` is the first case dropped; no raise without the owner's word. **The owner's word, 2026-10-31: the full sprint; five README sections, 4,777 bytes, move to `docs/design/eval-history.md`; no raise.** The closest existing cases put the need at about 6 to 7 KB, not 4.5 |
 | A project set up on 5.0.0 keeps `django.md` | Nothing deletes it. The CHANGELOG names the file; its cost is 583 bytes on a matching read |
 | `office_bestie` will not build in a worktree | The Check first, before any paid step |
-| The run writes into the owner's product repository | A worktree under the scratchpad, never pushed, its removal the owner's yes |
+| The run writes into the owner's product repository | A worktree at `/private/tmp/shipkit-real-run-5`, never pushed, its removal the owner's yes. A reboot can clear it, so each step's log goes into the field notes as it ends |
+| The run's tests migrate the owner's test database | `MIX_TEST_PARTITION=_shipkit5` for every step; the database that makes goes on the owner's yes |
 | The fixture's text is lost to a `git gc` in `linkshort` | S23-T1 copies it first; §3 records the shape either way |
 
 ## 7. Approval
