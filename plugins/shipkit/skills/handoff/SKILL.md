@@ -26,12 +26,13 @@ From the user (optional): $ARGUMENTS
    Ask the user one question **only** if, after that, you cannot say what the next step is.
    Do not ask about anything else.
 
-2. **Write `.shipkit/state.md`**, replacing any earlier one, in exactly this shape:
+2. **Write `.shipkit/state.md`**, replacing any earlier one, in exactly this shape, dated from
+   `date +%F`:
 
    ```markdown
    # Handoff
 
-   > Written 2026-10-06 at commit `a1b2c3d` on feature/refunds.
+   > Written <YYYY-MM-DD> at commit `a1b2c3d` on feature/refunds.
 
    ## In flight
    - <what is half done, and in which files — or "Nothing">

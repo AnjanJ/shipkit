@@ -2705,6 +2705,28 @@ grep -q 'django.md. on a Django project' "$COPY/skills/setup/SKILL.md" || dj_fai
 if [ -z "$dj_fail" ]; then pass "django-only (django.md and its manifest row on Django, django and Django 5.2; neither on FastAPI, Flask, None or a TODO; pyproject.md on all; setup says so)"
 else failc "django-only" "$dj_fail"; fi
 
+# 80. stamp-dates: six stamp lines in five skills held a literal date with no source named, and a
+# real intake was stamped 2026-10-05 on 2026-10-31 (field-notes-5.0.md §4.1). Each now holds
+# <YYYY-MM-DD> and its file names `date +%F`. This reads the templates: what a model does with them
+# is read on a real run (fourth-project T2). No claude needed.
+# Cites: fourth-project/REQ-4 fourth-project/REQ-5
+sd_fail=""
+sd_hits=$(grep -rlE '^[[:space:]]*> .*20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$COPY/skills" | sed "s#^$COPY/##" | tr '\n' ' ')
+[ -z "$sd_hits" ] || sd_fail="$sd_fail [a literal date on a stamp line: $sd_hits]"
+while IFS='|' read -r sd_file sd_line; do
+  grep -qF "$sd_line" "$COPY/skills/$sd_file" || sd_fail="$sd_fail [$sd_file: no '$sd_line']"
+  grep -qF 'date +%F' "$COPY/skills/$sd_file" || sd_fail="$sd_fail [$sd_file: no date +%F]"
+done <<'SDEOF'
+escape/SKILL.md|> Recorded on <YYYY-MM-DD>.
+handoff/SKILL.md|> Written <YYYY-MM-DD> at commit
+product/SKILL.md|> Studio reviewed on <YYYY-MM-DD>.
+product/reference.md|> Product reviewed on <YYYY-MM-DD>.
+intake/SKILL.md|> Intake taken on <YYYY-MM-DD>.
+ship/reference.md|> Checked on <YYYY-MM-DD> at commit
+SDEOF
+if [ -z "$sd_fail" ]; then pass "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
+else failc "stamp-dates" "$sd_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

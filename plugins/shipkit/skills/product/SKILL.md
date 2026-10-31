@@ -44,8 +44,8 @@ of the procedure below.
 
 5. **Write `.shipkit/product.md`** in the shape in @reference.md: the seven headings, in that
    order, every one present even if its body is "Not decided yet." Keep it to **60 lines or
-   fewer** — it is read at the start of other work, so it must stay short. Set the review line
-   to today's date.
+   fewer** — it is read at the start of other work, so it must stay short. Date the review line
+   from `date +%F`.
 
 6. **Report** in three or four lines: where the file is, the goals as written, and any gap
    left open (`metric: none set`, or the open-questions block). Do not paste the file back.
@@ -64,12 +64,12 @@ also has to say which of them comes first. `--studio` writes that, outside any o
 3. Each priority names the product it belongs to, using the project name from the registry
    where there is one. A priority that belongs to no product ("hire a designer") is allowed:
    write `(studio)` as its product.
-4. Write the file in this shape, with today's date, and nothing else:
+4. Write the file in this shape, dated from `date +%F`, and nothing else:
 
    ```markdown
    # Studio priorities
 
-   > Studio reviewed on 2026-10-05.
+   > Studio reviewed on <YYYY-MM-DD>.
 
    1. **<product>** — <the priority, one line>
    2. **<product>** — <the priority, one line>

@@ -51,12 +51,12 @@ true, the earlier one in the table is the cause and the other is a consequence.
 
 ## 4. Record it
 
-Write `.shipkit/escapes/NNNN-<slug>.md`, numbered in sequence from `0001`:
+Write `.shipkit/escapes/NNNN-<slug>.md`, numbered in sequence from `0001`, dated from `date +%F`:
 
 ```markdown
 # Escape 0001: <short title>
 
-> Recorded on 2026-10-06.
+> Recorded on <YYYY-MM-DD>.
 
 ## What happened
 <what users saw, what should have happened, how it was noticed>
