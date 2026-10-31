@@ -44,7 +44,7 @@ of it: the harvest stays until T2 has read it.**
   - Test: `grep -rn care-quiet plugins/ scripts/` finds nothing; `spec-check` reads REQ-12 as waived, not as a gap
   - After: T5
   - Done when: the case is gone and both readings stay in `eval-results-5.1.md`; the evals directory at most 204,800 bytes; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S24-T-MERGE) → REQ-14
+- [x] **T-MERGE** Merge, untagged (S24-T-MERGE) → REQ-14
   - Files: docs/design/eval-results-5.1.md, docs/plans/binding-sprint-plan.md, CHANGELOG.md, .shipkit/specs/readable-numbers/
   - Test: the sprint exit checklist with `--group eve` and `--group rules`; `map_read` read on `eve/why`; the second record's clause checked with `git diff --stat 2e8bed0 HEAD`; the plan's §0 rows for this sprint at their targets, or the record says why not
   - After: T6

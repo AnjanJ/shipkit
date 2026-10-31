@@ -260,3 +260,31 @@ The traces separate the arms only on stopping first, which the grader does not r
 0, although the same arm stopped 4 of 5 times on the clean tree, so the effect does not hold across
 prompts on that model. Counted over both prompts, 11 of 20 against 1 of 20, p = 0.001, but that sum was
 chosen after reading and sets no bar. $0.67 by the traces, 20 runs. No rule text changed.
+
+## 7. Sprint 24 at merge (S24-T-MERGE)
+
+`bash scripts/evals.sh --group eve -j 4 --keep-temp` and `--group rules`, 2026-10-31, at `61d0f03`, with
+the `model: sonnet` pin on `agents/reviewer.md` uncommitted in the tree; neither group starts the
+reviewer. `eve` 6 cases and `rules` 4 cases, each 3 of 3, both exit 0, $2.44 and $1.03. `eve/consolidate`
+passes on the grader tightened after T3, the first harness reading of it. Smoke: 218 passed, none failed.
+
+**`map_read`.** `eve/why` reads 1 in 3 of 3, each by a direct read. Over the 18 runs of the group it
+reads 1 in 10; the count before S24-T2 would have read 6. The other 4 came by a Grep's result alone
+(`eve/jobs` run 3, `eve/payments` runs 2 and 3, `eve/why-reworded` run 1), all in content mode, so the
+map's lines reached the model. Each reply uses what those lines hold, and one quotes the map as its
+only source for a cause, so the record's clause does not fire.
+
+**`reports.md`** read in 6 of 6 `eve/matrix` and `eve/consolidate` runs, as at T3.
+
+**The second record's clause.** `git diff --stat 2e8bed0 HEAD` touches none of the paths it names, so
+`--group trap2` was not brought forward.
+
+| §0 row | Target | At merge |
+|---|---|---|
+| Graders narrower than their line | 0 | 0 (`docs/design/eval-history.md`) |
+| `reports.md` cases | 2 | 2 |
+| Care line measured on | 2 prompts, 2 models | 3 prompts, 2 models; a measurement, not a watch, after S24-T6 |
+| Evals directory | at most 204,800 | 202,547 |
+| Three always-on rules | unchanged | 2,999 |
+
+Runs: $2.46, $0.93, $0.72, $0.67, $3.47: $8.25 plus the smoke suite, against $10.
