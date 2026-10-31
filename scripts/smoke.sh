@@ -2727,6 +2727,73 @@ SDEOF
 if [ -z "$sd_fail" ]; then pass "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
 else failc "stamp-dates" "$sd_fail"; fi
 
+# 81. section-clean: a filled section kept every template comment, the alternatives the project did
+# not pick (`<!-- Django / FastAPI / Flask / None -->`) among them, in a file every session loads,
+# and told a sync project to use an async ORM (field-notes-5.0.md §2.2). Comments go as the template
+# is read, so no value and neither marker can be touched, and the sources keep them for setup's
+# TODO hints. The sha is taken from the section as written: a re-run reads "already current", a
+# changed value refreshes without an "edited" warning, and an unedited section from 5.0.0, comments
+# and all, refreshes at the next setup. No claude needed.
+# Cites: fourth-project/REQ-6 fourth-project/REQ-7 fourth-project/REQ-8 fourth-project/REQ-9
+sc2_fail=""
+sc2_inner() {  # sc2_inner <stack> <CLAUDE.md> → the lines between that stack's markers
+  awk -v s="<!-- shipkit:stack:$1 -->" -v e="<!-- /shipkit:stack:$1 -->" \
+    'index($0,s){on=1; next} index($0,e){on=0; next} on' "$2"
+}
+sc2_n=0
+for sc2_src in "$COPY"/stacks/*/CLAUDE.md.append; do
+  sc2_st=$(basename "$(dirname "$sc2_src")"); sc2_n=$((sc2_n + 1))
+  sc2_d="$WORK/section-$sc2_st"; mkdir -p "$sc2_d"
+  # shellcheck disable=SC2046
+  sh "$COPY/scripts/install-stack.sh" "$COPY" "$sc2_st" "$sc2_d" \
+    $(grep -rho '{{[A-Z_][A-Z0-9_]*}}' "$COPY/stacks/$sc2_st" | sed 's/[{}]//g' | sort -u | sed 's/$/=x/') >/dev/null 2>&1 \
+    || sc2_fail="$sc2_fail [$sc2_st: install failed]"
+  sc2_inner "$sc2_st" "$sc2_d/CLAUDE.md" | grep -q '<!--' && sc2_fail="$sc2_fail [$sc2_st: a comment survived]"
+  grep -qF "<!-- shipkit:stack:$sc2_st -->" "$sc2_d/CLAUDE.md" && grep -qF "<!-- /shipkit:stack:$sc2_st -->" "$sc2_d/CLAUDE.md" \
+    || sc2_fail="$sc2_fail [$sc2_st: a marker went]"
+  sc2_inner "$sc2_st" "$sc2_d/CLAUDE.md" | grep -q '[^[:space:]]' || sc2_fail="$sc2_fail [$sc2_st: the section is empty]"
+done
+[ "$sc2_n" -ge 10 ] || sc2_fail="$sc2_fail [only $sc2_n stacks read]"
+grep -qF '<!-- Django / FastAPI / Flask / None -->' "$COPY/stacks/python/CLAUDE.md.append" \
+  || sc2_fail="$sc2_fail [the source lost its comment]"
+sc2_py() {  # sc2_py <dir> <ASYNC_MODE> [TEST_COMMAND] → install python there
+  mkdir -p "$1"
+  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$1" TEST_COMMAND="${3:-pytest}" API_STYLE=REST \
+    ASYNC_MODE="$2" ORM=x PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest 2>&1
+}
+for sc2_async in no No; do
+  sc2_d="$WORK/section-sync-$sc2_async"; sc2_py "$sc2_d" "$sc2_async" >/dev/null
+  grep -q 'Async DB:' "$sc2_d/CLAUDE.md" && sc2_fail="$sc2_fail [ASYNC_MODE=$sc2_async keeps Async DB]"
+  grep -q '^- \*\*Async:\*\* [Nn]o$' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [ASYNC_MODE=$sc2_async: no clean Async line]"
+done
+sc2_d="$WORK/section-async"; sc2_py "$sc2_d" yes >/dev/null
+grep -q 'Async DB:' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [ASYNC_MODE=yes lost Async DB]"
+sc2_d="$WORK/section-todo"; sc2_py "$sc2_d" 'TODO: async or not' >/dev/null
+grep -q 'Async DB:' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [a TODO lost Async DB]"
+# The sha, read three ways. A sync project, so it holds after both cuts.
+sc2_d="$WORK/section-sha"; sc2_py "$sc2_d" no >/dev/null
+sc2_shaf="$sc2_d/.claude/rules/shipkit/.section-python.sha"
+sc2_inner python "$sc2_d/CLAUDE.md" > "$WORK/section-inner"
+[ "$(. "$COPY/scripts/lib-manifest.sh"; file_sha "$WORK/section-inner")" = "$(cat "$sc2_shaf" 2>/dev/null)" ] \
+  || sc2_fail="$sc2_fail [the sha is not of the section as written]"
+cp "$sc2_d/CLAUDE.md" "$WORK/section-before"
+sc2_out=$(sc2_py "$sc2_d" no)
+printf '%s\n' "$sc2_out" | grep -q 'already current' || sc2_fail="$sc2_fail [a re-run did not read current]"
+cmp -s "$sc2_d/CLAUDE.md" "$WORK/section-before" || sc2_fail="$sc2_fail [a re-run changed CLAUDE.md]"
+sc2_out=$(sc2_py "$sc2_d" no 'uv run pytest')
+printf '%s\n' "$sc2_out" | grep -q 'section was edited' && sc2_fail="$sc2_fail [a changed value read as edited]"
+grep -q 'uv run pytest' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [a changed value did not refresh]"
+# As a project set up on 5.0.0: its section holds the comments, and its sha is of that text.
+sc2_d="$WORK/section-old"; sc2_py "$sc2_d" no >/dev/null
+awk '{ if ($0 == "- **Async:** no") print "- **Async:** no <!-- yes/no -->"; else print }' "$sc2_d/CLAUDE.md" > "$WORK/section-oldmd"
+cat "$WORK/section-oldmd" > "$sc2_d/CLAUDE.md"
+sc2_inner python "$sc2_d/CLAUDE.md" > "$WORK/section-oldinner"
+(. "$COPY/scripts/lib-manifest.sh"; file_sha "$WORK/section-oldinner") > "$sc2_d/.claude/rules/shipkit/.section-python.sha"
+sc2_out=$(sc2_py "$sc2_d" no)
+sc2_inner python "$sc2_d/CLAUDE.md" | grep -q '<!--' && sc2_fail="$sc2_fail [a 5.0.0 section kept its comment: $(printf '%s' "$sc2_out" | tr '\n' '|' | cut -c1-120)]"
+if [ -z "$sc2_fail" ]; then pass "section-clean (no comment between the markers in any of $sc2_n stacks, markers and sources kept; no Async DB on no or No, kept on yes and a TODO; the sha is of what was written: a re-run is current, a new value refreshes, a 5.0.0 section loses its comments)"
+else failc "section-clean" "$sc2_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
