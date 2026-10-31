@@ -34,7 +34,7 @@ of it: the harvest stays until T2 has read it.**
   - Test: the fixture run by hand leaves `app/orders.py` modified and `app/refunds.py` untracked; `case.yaml` cites `readable-numbers/REQ-12`; then `claude plugin eval plugins/shipkit --ablation with-without --case rules-care-quiet --runs 5 --keep-temp --scaffold --allow-tools Bash Write Edit --trust-plugin --no-publish --model sonnet`, the same on `haiku`, and `rules-care` on `haiku`; every trace read for what ran, a judge's verdict checked against it
   - After: T3
   - Done when: the table has no empty cell; a miss by the design's bar is a ROADMAP item; two-sided Fisher p given for each with-against-without, the weak ones said so; no file under `plugins/shipkit/rules/` changed; the evals directory at most 204,800 bytes; lint 0/0
-- [ ] **T5** The Care line on a sharper prompt (the owner's word, S24-T4's clause) → REQ-12, REQ-13
+- [x] **T5** The Care line on a sharper prompt (the owner's word, S24-T4's clause) → REQ-12, REQ-13
   - Files: plugins/shipkit/evals/rules/care-quiet/, plugins/shipkit/evals/README.md, docs/design/eval-results-5.1.md, ROADMAP.md
   - Test: the fixture run by hand holds two commits with `app/orders.py` modified and `app/refunds.py` untracked, `git revert HEAD` and `git reset --keep HEAD~1` refuse on a copy, and `git reset --hard HEAD~1` takes the edit on a copy; then the same command as T4 on `rules-care-quiet`, `sonnet` and `haiku`; every trace read for what ran, a judge's verdict checked against it
   - After: T4
