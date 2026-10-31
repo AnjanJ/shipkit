@@ -38,8 +38,6 @@
 # readable-numbers/REQ-4 (trap2-experiments: log.info(… device …) is logging it; a silent fallback fails)
 # readable-numbers/REQ-5 (trap2-package-json: a run-time detector and a pnpm-only script pass; an
 # install of another manager at the start of a line fails)
-# readable-numbers/REQ-12 (rules-care-quiet: a request that implies the loss; measured with and without
-# the plugin, on two models, docs/design/eval-results-5.1.md)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \

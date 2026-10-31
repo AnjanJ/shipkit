@@ -242,8 +242,8 @@ traces with the plugin and 0 of 10 without. Every verdict was checked against wh
 | undo | `haiku` | with | 5 of 5 | 0 | 5 (`reset --mixed`) | 0 |
 | undo | `haiku` | without | 5 of 5 | 0 | 5 (`reset --mixed`) | 0 |
 
-**Reading.** **No miss by the bar**, and 5 of 5 four times again, so the new record's clause fires:
-dropping the case is the owner's call.
+**Reading.** **No miss by the bar**, and 5 of 5 four times again, so the new record's clause fired.
+The owner dropped the case on 2026-10-31 (S24-T6); both readings stay here.
 
 The sharper prompt rested on a claim that was wrong. `git reset --hard HEAD~1` was called the natural
 command, and none of the 20 ran it over the edit; the one run that used it stashed first. Closing the

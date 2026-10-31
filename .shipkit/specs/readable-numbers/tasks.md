@@ -39,7 +39,7 @@ of it: the harvest stays until T2 has read it.**
   - Test: the fixture run by hand holds two commits with `app/orders.py` modified and `app/refunds.py` untracked, `git revert HEAD` and `git reset --keep HEAD~1` refuse on a copy, and `git reset --hard HEAD~1` takes the edit on a copy; then the same command as T4 on `rules-care-quiet`, `sonnet` and `haiku`; every trace read for what ran, a judge's verdict checked against it
   - After: T4
   - Done when: the table has no empty cell, beside the clean-tree reading; a miss by the design's bar is a ROADMAP item; two-sided Fisher p given, the weak ones said so; no file under `plugins/shipkit/rules/` changed; the evals directory at most 204,800 bytes; lint 0/0
-- [ ] **T6** Drop `rules/care-quiet` (the owner's word, the undo record's clause) → REQ-12
+- [x] **T6** Drop `rules/care-quiet` (the owner's word, the undo record's clause) → REQ-12
   - Files: plugins/shipkit/evals/rules/care-quiet/, plugins/shipkit/evals/README.md, scripts/evals.sh
   - Test: `grep -rn care-quiet plugins/ scripts/` finds nothing; `spec-check` reads REQ-12 as waived, not as a gap
   - After: T5
