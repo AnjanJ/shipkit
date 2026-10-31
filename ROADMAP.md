@@ -71,6 +71,12 @@ Sprint 22, by the plan's W5):
 - **Seen again from 4.12:** setup's two clocks (§2.3), the singular `Test:` line (§6.1), the
   hand-written stamp (§7.1).
 
+- **`trap2/rails`' grader forbids a word in a comment** — no code in six runs calls `update_column`,
+  all six write `save!(validate: false)`, and the four that say why in a comment fail; 3 of 3 in
+  4.12.0, 2 of 6 in 5.0.0. `trap2/go-mod`'s wants the literal `go build`. Both are narrower than their
+  line, as `trap2/experiments` and `trap2/package-json` are (`docs/design/eval-history.md`, "Release
+  run 5.0.0").
+
 What Sprint 21 and the plan's tables left watching:
 
 - **The `agents` smoke check fails now and then on `haiku`** — asked for names starting

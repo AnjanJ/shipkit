@@ -152,7 +152,12 @@ contradicted" (§8.1, §9.2). Not fixed here; first on the ROADMAP's "Still open
 last call was `SubagentHandback {"message": "placeholder"}`, which ended the agent with its review
 unsent; the session logs show it, 3 of 74 gate sessions, all in the last ten. It failed closed, a
 false NOT READY on a complete feature (§9.1). The gate now starts such a reviewer once more; why the
-model writes that word is still not known. Smoke holds 213 checks.
+model writes that word is still not known. Smoke holds 213 checks, all passed.
+
+**The release run exited 1, on two graders, not on two rules.** 60 cases, $19.51, 54 at full score.
+`trap2/rails` read 1 of 3 twice, on six runs that all followed the line; four named `update_column` in
+a comment explaining why not, and the grader forbids the word. `trap2/experiments` is the grader
+4.11.0 named. Neither was changed, by the plan (`docs/design/eval-history.md`, "Release run 5.0.0").
 
 ### Added
 

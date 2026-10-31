@@ -43,6 +43,39 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 5.0.0
+
+`bash scripts/evals.sh -j 4`, 2026-10-31, at `2a7e796` (`plugins/` byte-identical since `41716d7`, the
+tree the full smoke and the `run-again` gate read), Claude Code 2.1.316: 60 cases, 212 runs, 1,097 s,
+**$19.51, exit 1**. The first run of the thinned plugin, and the one release of three sprints (rule
+22). 54 cases at full score, every `eve` case among them: `eve/why` `map_read` 3 of 3,
+`eve/why-reworded` 3 of 3, `eve/jobs` 0, `eve/payments` 1 of 3 as on the baseline, `digest/attention`
+3 of 3 (`eval-results-5.0.md` §3). Two below the threshold, both re-run alone as exit line 3 says, both
+1 of 3 again:
+
+- **`trap2/rails` 1 of 3, then 1 of 3: the rule held and the grader did not.** Over the six runs no
+  code calls `update_column`; all six write `save!(validate: false)`. The grader forbids the word
+  anywhere in the file, and four runs named it in a comment saying why they avoided it ("Callbacks
+  still run, unlike update_column"). 3 of 3 in 4.12.0, so a number that fell, on a rule followed
+  6 of 6. Narrower than its line, like the two below.
+- **`trap2/experiments` 1 of 3, then 1 of 3: the grader named in 4.11.0.** All six runs log the
+  device; four do it with `log.info(`, which `log\(` does not read. The correction is on the ROADMAP.
+
+Four more below full and above the threshold: `intake/limit` 2 of 3, its shape since 4.9.0.
+`intake/trivial` 2 of 3: one run did the rename without saying the request was trivial, votes FAIL
+PASS FAIL. `trap2/go-mod` 2 of 3: no run vendors; the miss's Makefile has no literal `go build`.
+`trap2/react` 3 of 5, a watch on a line cut in `4db1d77`, so an unaided rate.
+
+W7's `paths:` on `rails.md` and `react.md` is not the cause, and was the first suspect: `with-rule.sh`
+delivers a rule through the hook, always on, so these cases do not measure path-scoped loading.
+The plan changes no grader (§5), so none changed, and exit 1 stands as 4.11.0's did. Cost $19.51
+against the plan's "about $21", plus $0.56 for the two re-runs.
+
+The smoke suite ran on `41716d7`: 213 checks, **all passed**, and check 29 alone passed twice more,
+after `ship-gate` failed on the two runs before it and the gate gained its retry
+(`field-notes-5.0.md` §9.1). No retry fired in those three runs, so that green shows the sentence broke
+nothing; the path itself was forced with a reviewer that only replies `placeholder`.
+
 ## Release run 4.12.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-30, at `8e9af9c` (the release prep commit; `plugins/`
