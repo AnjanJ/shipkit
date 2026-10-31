@@ -1,7 +1,7 @@
 # Spec: The run again, and 5.0.0 (Sprint 22)
 
 > Spec accepted at commit `e0a38a9` on sprint-22/run-again (2026-10-31).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/brief.sh, plugins/shipkit/scripts/brief-verify.sh, plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/, plugins/shipkit/skills/setup/, plugins/shipkit/skills/intake/, scripts/smoke.sh, docs/design/, ROADMAP.md, CHANGELOG.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, .shipkit/specs/always-on/, .shipkit/specs/overlays-and-eve/, .shipkit/specs/run-debts/design.md
 
 ## Purpose
