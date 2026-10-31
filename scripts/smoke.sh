@@ -2794,6 +2794,16 @@ sc2_inner python "$sc2_d/CLAUDE.md" | grep -q '<!--' && sc2_fail="$sc2_fail [a 5
 if [ -z "$sc2_fail" ]; then pass "section-clean (no comment between the markers in any of $sc2_n stacks, markers and sources kept; no Async DB on no or No, kept on yes and a TODO; the sha is of what was written: a re-run is current, a new value refreshes, a 5.0.0 section loses its comments)"
 else failc "section-clean" "$sc2_fail"; fi
 
+# 82. fired-if-tracked: a model-written `grep -rl expires_at src` fired on __pycache__/*.pyc after
+# the first pytest, because decision-check.sh runs over untracked files too. The line is taught in
+# spec/reference.md, and decide/SKILL.md sends its reader there, so one sentence serves both. Read
+# from that section only: a `git grep` elsewhere in the file would not be where the writer looks.
+# No claude needed. Cites: fourth-project/REQ-10
+fi_sec=$(awk '/^### The `Fired-if` line/ { on = 1; next } on && /^##/ { on = 0 } on' "$COPY/skills/spec/reference.md")
+if printf '%s\n' "$fi_sec" | grep -q 'tracked files' && printf '%s\n' "$fi_sec" | grep -q 'git grep'; then
+  pass "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
+else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say tracked files and git grep"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
