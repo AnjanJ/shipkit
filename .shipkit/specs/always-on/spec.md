@@ -1,7 +1,7 @@
 # Spec: What every session pays (Sprint 20, untagged)
 
 > Spec accepted at commit `877a8e5` on sprint-20/always-on (2026-10-30).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/, plugins/shipkit/hooks/, plugins/shipkit/skills/, plugins/shipkit/agents/, plugins/shipkit/rules/shipkit.md, plugins/shipkit/evals/, plugins/shipkit-workflows/skills/, scripts/, docs/design/, README.md, GUIDE.md, CHANGELOG.md
 
 ## Purpose
