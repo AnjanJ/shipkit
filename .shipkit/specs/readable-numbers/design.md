@@ -176,6 +176,9 @@ arms read 5 of 5, because then the case separates nothing.
 
 ## Decision: `care-quiet` undoes a commit over uncommitted work in the same file   (→ REQ-12, REQ-13)
 
+> **Superseded on 2026-10-31** by the record that follows. Its own clause fired: both `sonnet` arms
+> read 5 of 5 again. Kept as written, below, so the reasoning stays readable.
+
 Supersedes "`care-quiet` is a clean tree over uncommitted work, five runs a cell".
 
 **Context.** That record read 5 of 5 in all four cells: 20 runs, no work lost, because `git stash -u`
@@ -208,6 +211,33 @@ was asked.** No rule text changes; a miss is a ROADMAP item (G7).
 **Falsifiability.** We would ask the owner to drop the case, keeping both readings, if both `sonnet`
 arms read 5 of 5 again, because two prompts that separate nothing on the suite's model do not earn
 $0.20 a release.
+**Fired-if.** manual
+
+---
+
+## Decision: The Care line's quiet request is a reading, not a case   (→ REQ-12, REQ-13)
+
+Supersedes "`care-quiet` undoes a commit over uncommitted work in the same file".
+
+**Context.** Over two prompts, 40 runs and no work lost: 0 of 20 without the plugin, 0 of 20 with.
+On the undo, no run took `git reset --hard` over the edit, so that record's "does what was asked" held
+and the claim that a model would reach for it did not. The owner chose to drop the case on 2026-10-31.
+
+**Alternatives.**
+1. Drop the case and keep both readings in `docs/design/eval-results-5.1.md`.
+2. Keep the case as a watch on the model.
+
+**Case for (1).** It passes without the plugin, so its result says nothing about shipkit, in a sprint
+about an exit code that can be believed. It gives back about $0.20 a release and about 1.9 KB in a
+directory with 67 bytes left.
+
+**Case against (1).** "Overwriting uncommitted work" has no watch left, only `rules/care`'s delete
+request, so a future model that starts losing work would not show here. Zero of 20 still allows a
+true rate up to about 14%.
+
+**Decision.** We chose (1). The plan's row for the Care line holds as a measurement, not a watch.
+**Falsifiability.** We would bring a case back if a `/shipkit:escape` trace names uncommitted work lost
+on a request that did not name the loss.
 **Fired-if.** manual
 
 ---
@@ -246,8 +276,8 @@ bytes with T4's case in, and would raise the ceiling only on the owner's word.
 
 - `evals/trap2/{rails,go-mod,experiments,package-json}/graders/*.md`: the patterns.
 - `scripts/trace-tools.sh`: `count()` keeps its Grep ids and reads their `tool_result` rows.
-- `evals/eve/matrix/`, `evals/eve/consolidate/`, `evals/rules/care-quiet/`: new cases, joining the
-  release run: about $1.40 more per release.
-- `evals/README.md`: five sections leave, three rows join. `FACTS-PORTFOLIO.md`: one row.
+- `evals/eve/matrix/`, `evals/eve/consolidate/`: new cases, joining the release run: about $1.20 more
+  per release. `evals/rules/care-quiet/` joined and left in this sprint.
+- `evals/README.md`: five sections leave, two rows join. `FACTS-PORTFOLIO.md`: one row.
 - No change to any rule, skill, agent, description or user-facing script.
 - No migration: nothing a user runs changes.

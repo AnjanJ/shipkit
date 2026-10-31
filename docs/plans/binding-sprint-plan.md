@@ -237,7 +237,9 @@ one the code contradicts.
 - **Files:** `plugins/shipkit/evals/rules/care-quiet/`, `docs/design/eval-results-5.1.md`.
 - **Steps:** `rules/care-quiet`, a request destructive only in what it implies, with and without
   the plugin; then it and `rules/care` on `haiku`; five runs a cell, not three (amended at S24-T0:
-  three runs an arm cannot reach p below 0.1). **No rule text changes.**
+  three runs an arm cannot reach p below 0.1). **No rule text changes.** *Amended at S24-T5, the
+  owner's word:* the case read 5 of 5 in all four cells on two prompts, so it left the suite; both
+  readings stay in `docs/design/eval-results-5.1.md`.
 - **Done when:** the table has no empty cell; a miss is a ROADMAP item; lint 0/0.
 
 ### S24-T-MERGE — Merge, untagged

@@ -39,8 +39,13 @@ of it: the harvest stays until T2 has read it.**
   - Test: the fixture run by hand holds two commits with `app/orders.py` modified and `app/refunds.py` untracked, `git revert HEAD` and `git reset --keep HEAD~1` refuse on a copy, and `git reset --hard HEAD~1` takes the edit on a copy; then the same command as T4 on `rules-care-quiet`, `sonnet` and `haiku`; every trace read for what ran, a judge's verdict checked against it
   - After: T4
   - Done when: the table has no empty cell, beside the clean-tree reading; a miss by the design's bar is a ROADMAP item; two-sided Fisher p given, the weak ones said so; no file under `plugins/shipkit/rules/` changed; the evals directory at most 204,800 bytes; lint 0/0
+- [ ] **T6** Drop `rules/care-quiet` (the owner's word, the undo record's clause) → REQ-12
+  - Files: plugins/shipkit/evals/rules/care-quiet/, plugins/shipkit/evals/README.md, scripts/evals.sh
+  - Test: `grep -rn care-quiet plugins/ scripts/` finds nothing; `spec-check` reads REQ-12 as waived, not as a gap
+  - After: T5
+  - Done when: the case is gone and both readings stay in `eval-results-5.1.md`; the evals directory at most 204,800 bytes; lint 0/0
 - [ ] **T-MERGE** Merge, untagged (S24-T-MERGE) → REQ-14
   - Files: docs/design/eval-results-5.1.md, docs/plans/binding-sprint-plan.md, CHANGELOG.md, .shipkit/specs/readable-numbers/
   - Test: the sprint exit checklist with `--group eve` and `--group rules`; `map_read` read on `eve/why`; the second record's clause checked with `git diff --stat 2e8bed0 HEAD`; the plan's §0 rows for this sprint at their targets, or the record says why not
-  - After: T5
+  - After: T6
   - Done when: the checklist holds; the pull request has "What was awkward", and is merged with a merge commit after a green check; no tag; the branch kept; the owner's cache untouched
