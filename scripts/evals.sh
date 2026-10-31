@@ -33,6 +33,8 @@
 # `--ablation with-without`, docs/design/eval-results-5.0.md)
 # readable-numbers/REQ-1 (trap2-rails: a call to update_column fails, trailing comment or not; the word in a
 # comment passes)
+# readable-numbers/REQ-2 readable-numbers/REQ-3 (trap2-go-mod: vendoring fails outside a comment; the
+# word in a comment passes; a compile form widens only on a harvested Makefile, and none has been)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
