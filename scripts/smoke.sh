@@ -2366,8 +2366,8 @@ if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --sys
 else failc "skills-merged" "dispatch:$sm_why"; fi
 sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
 sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
-if [ "$sm_n" = "10" ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes)"
-else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes)"; fi
+if [ "$sm_n" = "10" ] && [ "${sm_b:-99999}" -le 2950 ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes, ceiling 2950)"
+else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes, ceiling 2950)"; fi
 
 # 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
 # grandfather's trace mode; the archivist's body is the map skill's forked body
