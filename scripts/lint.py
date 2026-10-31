@@ -591,6 +591,8 @@ if version:
 # 5.0.0 raised it to 200 KiB (thinning plan W10) for the rules/care probe, with 19 bytes of
 # room left at 4.12.0 — the third raise; a fourth before 5.0.0 ships reverses W10's record
 # (always-on/REQ-20).
+# Sprint 24 made its room by moving five README sections to docs/design/eval-history.md, with no
+# raise; the directory stays at or under this ceiling (readable-numbers/REQ-14).
 
 EVALS_MAX_BYTES = 204800
 
