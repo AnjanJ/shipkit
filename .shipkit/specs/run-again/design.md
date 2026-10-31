@@ -119,6 +119,10 @@ schedules a wakeup, or if it goes and a headless session holds open more than 12
 last API call in the release run or the re-run.
 **Fired-if.** manual
 
+**Outcome (2026-10-31).** The baseline scheduled no wakeup in three runs, so the sentence was not
+tried, no skill changed, and the 4.10.0 record is reopened with the headless condition written
+in (`docs/design/eval-results-5.0.md` §4). The owner confirmed at the table.
+
 ---
 
 ## Decision: The loop runs again on `linkshort`, same request, and fixes nothing   (→ REQ-8, REQ-9, REQ-11)

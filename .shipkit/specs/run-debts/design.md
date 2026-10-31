@@ -252,7 +252,13 @@ stopped when it did not. If an interactive session shows it, the harness is not 
 
 **Decision.** We chose (1), E8's default.
 **Falsifiability.** We would add the sentence (2) if an interactive session's reply opens with
-a wait sentence and continues — then it is the skill's shape, not the harness's.
+a wait sentence and continues — then it is the skill's shape, not the harness's; or if a headless
+session schedules a wakeup and holds open more than 120 s past its last API call in the release
+run or the run again.
+> *Reopened 2026-10-31 (thinning plan W14, run-again/REQ-7, the owner's word at the table):* the
+> 4.12 run gave the same wait a timer (`field-notes-4.12.md` §4.1). Three headless intakes without
+> a sentence scheduled no wakeup and took 50–66 s (`eval-results-5.0.md` §4), so the clause kept
+> no sentence and the decision stands. The headless condition above is new.
 **Fired-if.** manual
 
 ---
