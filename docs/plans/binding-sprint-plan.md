@@ -309,7 +309,7 @@ one the code contradicts.
 | A longer list of decisions pulls an agent into a later task's work | **It did: 9 of 10 runs at S23-T2.** `brief-verify.sh` did not bound it, as this row first said: T1 and T2 share files. REQ-14's sentence and a second grader answer it, on the owner's word; the run in S25-T2 reads for it |
 | A grader corrected to pass hides a real failure | Rule 23: nothing runs until the seeded violation fails |
 | One more clause in the reviewer raises the `placeholder` rate, already 3 of the last 10 | The retry stands; the release counts it; a gate with two replies and no verdict fires that decision's record |
-| The ceiling: about 1 KB of margin rests on an estimate | Measured at S23-T3. If it does not fit, `eve/consolidate` is the first case dropped, by the owner's word; no raise |
+| The ceiling: about 1 KB of margin rests on an estimate | **Measured at S23-T-MERGE: the estimate was low.** Sprint 23's three cases cost 8,892 bytes against about 4.4 KB planned: 203,906 of 204,800 after the shared fixture's 3,823, so 894 bytes are left and Sprint 24's three cases need about 4.5 KB. S24-T0 asks the owner which goes; `eve/consolidate` is the first case dropped; no raise without the owner's word |
 | A project set up on 5.0.0 keeps `django.md` | Nothing deletes it. The CHANGELOG names the file; its cost is 583 bytes on a matching read |
 | `office_bestie` will not build in a worktree | The Check first, before any paid step |
 | The run writes into the owner's product repository | A worktree under the scratchpad, never pushed, its removal the owner's yes |

@@ -28,7 +28,7 @@ are read through the eval output directory before that.**
   - Test: first commit: the two fixtures on the shared script, `bash scripts/evals.sh --group reviewer -j 4` still 3 of 3 each, smoke check 77 "reviewer-fixture" (cites `decisions-bind/REQ-13`). Second commit, each written first, red: `reviewer/rejected-alternative` (every requirement met, the code uses what a live record turned down: `VERDICT: FAIL`, the decision named `contradicted`; cites `decisions-bind/REQ-6`, `REQ-7`, `REQ-8`), `reviewer/decision-unbuilt` (a live decision a later task will build, and a superseded record the code does not follow: `VERDICT: PASS`, the first `not built`, the second not marked; cites `decisions-bind/REQ-7`, `REQ-9`, `REQ-10`); smoke check 77 extended: the reviewer's text names both states and no longer says the gate weighs anything (`decisions-bind/REQ-12`); then `--group reviewer`, every case 3 of 3
   - After: T2
   - Done when: every `reviewer` case 3 of 3; check 77 PASS; the evals directory at most 204,800 bytes; `review-and-ship/REQ-6` amended in place with its note; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S23-T-MERGE) → REQ-11
+- [x] **T-MERGE** Merge, untagged (S23-T-MERGE) → REQ-11
   - Files: docs/design/eval-results-5.1.md, .shipkit/specs/decisions-bind/
   - Test: the sprint exit checklist with `--group brief` and `--group reviewer`; `/shipkit:ship` forced twice on `rejected-alternative`'s fixture: contradicted → NOT READY naming the decision; the decision marked superseded by a record the code follows → READY; both results recorded
   - After: T3

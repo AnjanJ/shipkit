@@ -130,3 +130,18 @@ the real replies passing and two seeded markings failing, and the group re-run.
 No reviewer ended itself with `placeholder` in the 30 of this section's 36 runs whose traces were
 read for it; the other six passed their grader, so each reply held a verdict. $3.34: the shared
 fixture's regression $0.57, the red $0.55, two groups at $1.12 and $1.10.
+
+## 3. The gate on a contradicted decision, forced (`decisions-bind/REQ-11`)
+
+`/shipkit:ship refunds base`, headless as smoke check 29 runs it, on `rejected-alternative`'s fixture,
+`sonnet`, at `0bbd950`, 2026-10-31.
+
+| Run | The fixture | First line | Step 4 | The failing step |
+|---|---|---:|---|---|
+| 1 | The code contradicts a live decision | `NOT READY` | `FAIL`, naming "A gateway error reaches the caller" | 4 |
+| 2 | The decision superseded by a record the code follows, committed | `NOT READY` | `PASS` | 7, three `__pycache__/` directories |
+| 3 | The same, those directories removed | `READY` | `PASS` | none |
+
+Run 2 is the runner's error and not the gate's: run 1's test command left the directories behind, the
+fixture has no `.gitignore`, and they were not cleared before the run. The gate was right to count
+them. Run 3 is the requirement's second half. `skills/ship/SKILL.md` did not change. $0.66.
