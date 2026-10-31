@@ -47,6 +47,29 @@ run the loop a third time on the third stack (19).
 | 18 | 4.11.0 | `payments` graded on what the question asked; `eve` measured on her guesses and given one sentence that stays by its number; the reworded `why` probe (the map reached 3 of 3 without a shared word); `notebooks` widened on its trace; `react` closed by record; the five kept rule files on `haiku` — `migrations` cut by the clause, four kept on a number (`docs/design/eval-results-4.11.md`) |
 | 19 | 4.12.0 | The installed-root rule in place of the plan's hook pair (PR #21: the hook prints its version on its own line; `plugin-root` written only from the installed root, any other root writes `plugin-root.dev`; smoke check 62; rule 17's write-back struck for anyone with an installed plugin); the sandbox's refusal text read from a trace into `evals/README.md`; shipkit's loop end to end on a Python/FastAPI project built for the run (`~/code/linkshort`, `docs/design/field-notes-4.12.md`), $1.37, nothing fixed, twelve findings, E4/E6/E7 held and E8 back in a new body; this roadmap for the plan after |
 
+**Still open after Sprint 22** (the run again's findings, `docs/design/field-notes-5.0.md`, by
+section — the same project, the same request, on the thinned plugin; nothing here was fixed in
+Sprint 22, by the plan's W5):
+
+- **A decision binds by the requirement it cites, not the code it governs** — `brief.sh` selects
+  decisions by requirement, so T1's brief said "None recorded", and the agent built the alternative
+  the design rejected (`AwareDatetime`), reporting it under DEVIATIONS (§8.1).
+- **The reviewer reads a decision's choice, not the alternatives it turned down** — it cited
+  `AwareDatetime` under REQ-3 and called the decision "unimplemented, not contradicted" (§9.2).
+- **`python/django.md` loads on a FastAPI project** — setup installs it whatever the framework, and
+  `**/models.py` matches `src/linkshort/models.py`: 583 bytes of Django into a FastAPI agent. Sprint
+  21's W7 caused this (§2.1, §8.2).
+- **`intake.md` stamped 2026-10-05 on 2026-10-31** — the skill asks for a date and names no source
+  (§4.1).
+- **The gate pastes what the reviewer gives `SubagentHandback`** — the `Agent` result is only a
+  pointer to that message, and the likely source of `ship-gate`'s `placeholder` in Sprint 21. It
+  fails closed; the skill does not name the shape (§9.1).
+- **The stack section's alternatives survive as comments** — `<!-- Django / FastAPI / Flask / None
+  -->`, and "async ORM" on a project the section calls sync (§2.2).
+- **A model waits on an agent with `sleep 45`** — a turn, and nothing worse (§4.2).
+- **Seen again from 4.12:** setup's two clocks (§2.3), the singular `Test:` line (§6.1), the
+  hand-written stamp (§7.1).
+
 **Still open after Sprint 19** (the third real run's findings, `docs/design/field-notes-4.12.md`,
 by section — a Python/FastAPI project built for the run, `~/code/linkshort`; nothing here was
 fixed in Sprint 19, by the plan's E17; every item seeds the plan after):
