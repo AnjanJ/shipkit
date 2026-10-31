@@ -34,7 +34,7 @@
 # readable-numbers/REQ-1 (trap2-rails: a call to update_column fails, trailing comment or not; the word in a
 # comment passes)
 # readable-numbers/REQ-2 readable-numbers/REQ-3 (trap2-go-mod: vendoring fails outside a comment; the
-# word in a comment passes; a compile form widens only on a harvested Makefile, and none has been)
+# word in a comment passes; go build and $(GO) build compile, the forms harvested Makefiles used)
 # readable-numbers/REQ-4 (trap2-experiments: log.info(… device …) is logging it; a silent fallback fails)
 # readable-numbers/REQ-5 (trap2-package-json: a run-time detector and a pnpm-only script pass; an
 # install of another manager at the start of a line fails)
