@@ -36,6 +36,12 @@ prints what a session there pays for shipkit, byte by byte.
 
 ### Changed
 
+- **Four one-line debts from the 4.12 run** (thinning plan W13, S22-T1): the brief says each test
+  cites `<slug>/REQ-N`, the convention `spec-check` reads. `brief-verify` and the reviewer no
+  longer report a skill setup installed, by the manifest and not by the directory, so a
+  project's own skill under `.claude/skills/` is still reported. `/shipkit:ship` keeps its
+  pre-step `git status` in `shipkit-ship-status.out`, inside its own cleanup. Setup says eight
+  rules.
 - **`eve`'s prompt trimmed, 16,947 → 12,067 bytes** (thinning plan W9, S21-T4): the cheat-sheet
   table, the example questions, the restated constraints and most of the MemPalace paragraph
   are out, by the audit's one arm. Every `eve` case held 3 of 3 over 15 runs. The matrix and

@@ -28,8 +28,8 @@ Arguments: $ARGUMENTS — `<feature-slug> [base-ref]`
 Before the gate, run `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped` yourself and
 cite every requirement it names — both 4.0.0 gates failed their first run on this two-second check.
 
-Run `git status --porcelain` and keep its output. Step 7 judges the tree **as it was before
-the gate ran**: the gate's own test run can leave files behind (caches, coverage output), and
+Run `git status --porcelain > "${TMPDIR:-/tmp}/shipkit-ship-status.out"`. Step 7 judges the
+tree **as it was before the gate ran**: the gate's own test run can leave files behind (caches, coverage output), and
 those are not the user's unfinished work.
 
 ## The gate — eight steps, in this order
@@ -46,7 +46,7 @@ last lines of its output. **Never record a result for a command you did not run.
 | 4 | Independent review | Start the **`reviewer`** agent (below); write its reply to `"${TMPDIR:-/tmp}/shipkit-ship-review.out"`, then read the file | its last line is `VERDICT: PASS` |
 | 5 | Migration rollback | Is there a database migration in `git diff <base>...HEAD --name-only`? If so, is the way to roll it back written down? | no migration, or a written rollback |
 | 6 | Decisions | Every live decision in `design.md` has a concrete reversal condition | none is vague or missing |
-| 7 | Clean tree | The `git status --porcelain` you captured before step 1 | empty, apart from an earlier report for this slug |
+| 7 | Clean tree | `"${TMPDIR:-/tmp}/shipkit-ship-status.out"`, the capture from before step 1 | empty, apart from an earlier report for this slug |
 | 8 | Decisions fired | `sh "<plugin root>/scripts/decision-check.sh" . --run > "${TMPDIR:-/tmp}/shipkit-ship-decisions.out" 2>&1; echo "exit $?"`, then read the file | no `FIRED` line |
 
 Notes on the steps:

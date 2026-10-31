@@ -235,7 +235,7 @@ Claude Code does not load rules from a plugin, only from a project's `.claude/ru
 "<root>/scripts/install-rules.sh" "<root>"
 ```
 
-It copies all nine rules to `.claude/rules/shipkit/` and stamps `.installed` with the plugin
+It copies all eight rules to `.claude/rules/shipkit/` and stamps `.installed` with the plugin
 version and a digest, so the session hook can tell you when a plugin upgrade has made the copies
 stale. Once the directory exists the hook stops injecting the always-on rules — nothing loads
 twice. If the script exits non-zero, show its message and stop. If it prints a line naming

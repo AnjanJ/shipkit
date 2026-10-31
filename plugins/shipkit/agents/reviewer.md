@@ -46,7 +46,9 @@ If either of the two is missing, say which and stop.
    (`product.md`, `state.md`, `releases/`, `decisions/`, this spec's own folder: shipkit's loop
    writes them and no `Paths` line will name them) — except one inside another spec's folder
    (`.shipkit/specs/<other>/`), which is. Nor is a file under `.claude/rules/shipkit/` or
-   `.shipkit-baseline/`: only `/shipkit:setup`'s installer writes there. `CLAUDE.md` and
+   `.shipkit-baseline/`: only `/shipkit:setup`'s installer writes there. A file under
+   `.claude/skills/` is not beyond the spec if `.claude/rules/shipkit/.installed` lists it: setup
+   installed those; any other is the project's own skill, and is listed. `CLAUDE.md` and
    `.gitignore` are listed even when setup changed them — they hold the project's own content.
    No `Paths` line: write "The spec has no Paths line; not checked."
 5. **Decisions not followed.** For each `## Decision:` in `design.md` that is not marked
