@@ -823,7 +823,8 @@ else failc "registry-columns" "agents/eve.md does not name studio.md, Product an
 # 25. brief: a task becomes a brief, built by a script from the spec, with no model
 # (spec: .shipkit/specs/product-intake-brief/). Cites: product-intake-brief/REQ-18
 # product-intake-brief/REQ-19 product-intake-brief/REQ-20 product-intake-brief/REQ-21
-# product-intake-brief/REQ-22 product-intake-brief/REQ-23
+# product-intake-brief/REQ-22 product-intake-brief/REQ-23 decisions-bind/REQ-1 decisions-bind/REQ-2
+# decisions-bind/REQ-3 decisions-bind/REQ-14
 BRIEF="$COPY/scripts/brief.sh"
 BP="$WORK/brief"; mkdir -p "$BP/.shipkit/specs/refunds" "$BP/.shipkit/specs/old"
 (cd "$BP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
@@ -905,13 +906,14 @@ else
     pass "brief (Already done lists T2 and, through the chain, T1)"
   else failc "brief" "predecessors missing: $out"; fi
   if printf '%s\n' "$out" | grep -q 'Keep a ledger of refunds on the order' \
-     && ! printf '%s\n' "$out" | grep -q 'Old ledger idea\|one README section' \
+     && printf '%s\n' "$out" | grep -q 'Describe refunds in one README section' \
+     && ! printf '%s\n' "$out" | grep -q 'Old ledger idea' \
      && printf '%s\n' "$out" | grep -q 'app/billing/refunds.py' \
      && printf '%s\n' "$out" | grep -q 'test_refund_over_charge_is_rejected' \
      && printf '%s\n' "$out" | grep -q 'Refunds in a second currency' \
      && printf '%s\n' "$out" | grep -q 'Shop owners ask for this weekly' \
      && printf '%s\n' "$out" | grep -q '^RESULT: done | blocked$'; then
-    pass "brief (goal, files, test, binding decision, scope and report form all present; superseded decision left out)"
+    pass "brief (goal, files, test, every live decision, scope and report form all present; superseded decision left out)"
   else failc "brief" "a section is wrong: $out"; fi
   # The tree is dirty here (the spec files are untracked until check 26 commits them): one
   # stderr line says how many files already differ from HEAD, and the brief on stdout is the
@@ -929,6 +931,22 @@ else
   if [ "$rc" -eq 0 ] && ! grep -q 'differ' "$WORK/brief.err" && [ "$out" = "$(cat "$WORK/brief.dirty.out")" ]; then
     pass "brief (not a git repository → no line, the same brief)"
   else failc "brief" "no repo: exit $rc, stderr [$(cat "$WORK/brief.err")]"; fi
+  # A list of decisions reads as a list of work unless the brief says otherwise: 9 of 10 runs of
+  # brief/binds built later tasks' work inside T1 "to follow the binding decisions".
+  if printf '%s\n' "$out" | grep -q '^These limit how you do this task\. They are not extra work: build only what your requirements ask, and contradict none of them\.$'; then
+    pass "brief (above the list: a decision limits how the task is done and is not extra work)"
+  else failc "brief" "the sentence above the list is missing: $out"; fi
+  # No live decision says so, whether design.md holds only a superseded record or does not exist.
+  BND="$WORK/brief-nodecision"; mkdir -p "$BND" && cp -R "$BP/.shipkit" "$BND/"
+  printf '## Decision: Gone   (→ REQ-2)\n\n> **Superseded on 2026-10-05** by nothing.\n' > "$BND/.shipkit/specs/refunds/design.md"
+  bnd_superseded=$(sh "$BRIEF" "$BND" refunds T3 2>/dev/null)
+  rm "$BND/.shipkit/specs/refunds/design.md"
+  bnd_absent=$(sh "$BRIEF" "$BND" refunds T3 2>/dev/null)
+  if printf '%s\n' "$bnd_superseded" | grep -q '^None recorded for this feature\.$' \
+     && ! printf '%s\n' "$bnd_superseded" | grep -q 'Gone\|These limit' \
+     && printf '%s\n' "$bnd_absent" | grep -q '^None recorded for this feature\.$'; then
+    pass "brief (no live decision, or no design.md → says none is recorded for this feature)"
+  else failc "brief" "no live decision: [$bnd_superseded]"; fi
   sh "$BRIEF" "$BP" refunds T9 >/dev/null 2>"$WORK/brief.err"; rc=$?
   if [ "$rc" -eq 1 ] && grep -q 'T9' "$WORK/brief.err" && grep -q 'refunds' "$WORK/brief.err"; then
     pass "brief (unknown task → exit 1, naming the task and the spec)"
