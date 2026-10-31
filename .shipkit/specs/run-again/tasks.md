@@ -24,7 +24,7 @@ reading (rule 13), and traces are read through the eval output directory before 
   - Test: none beyond lint — prose, written while running from the commands and their output; the run itself: a worktree of `~/code/linkshort` at `main` on `shipkit/real-run-4` under this session's scratchpad, `claude --plugin-dir "<this checkout>/plugins/shipkit" --model sonnet` headless at this sprint's branch, the nine steps of `field-notes-4.12.md` in order, the request link expiry (TODO.md item 1), `git status --short` before the first step; `scripts/context-cost.sh` on the worktree before setup, after setup and after the first spec; no file under `plugins/` edited while a step runs
   - After: T1
   - Done when: every step has its six parts and its 4.12 line; the three cost rows are in the notes; REQ-1 to REQ-5 each read as held or not shown; one ROADMAP item per finding; the branch's fate recorded, its log read first, the worktree and branch removed on the owner's yes; lint 0/0
-- [ ] **T3** The roadmap for the plan after (S22-T3) → REQ-12
+- [x] **T3** The roadmap for the plan after (S22-T3) → REQ-12
   - Files: ROADMAP.md
   - Test: lint check 16 holds the status line; the rest read: every "Still open after Sprint 22" item cites a file and a section
   - After: T2
