@@ -2676,6 +2676,35 @@ for mr_case in other mention none notgrep; do mr_want "$mr_case" "0 0"; done
 if [ -z "$mr_fail" ]; then pass "map-read-grep (a Grep listing the map counts, whatever its path; a line naming it from another file, and any other tool's result, do not; map_shell unchanged)"
 else failc "map-read-grep" "$mr_fail"; fi
 
+# 79. django-only: django.md's paths match any models.py, so a FastAPI project loaded Django advice
+# on every read of one, and setup said it loaded on Django files only. It installs only where the
+# framework names Django, and that is a glob, so `Django 5.2` from a model keeps a real project its
+# rule. A framework setup could not detect reads as not Django. No claude needed.
+# Cites: fourth-project/REQ-1 fourth-project/REQ-2 fourth-project/REQ-3
+dj_fail=""; dj_n=0
+dj_install() {  # dj_install <framework> → a fresh project with the python overlay; sets DJ
+  dj_n=$((dj_n + 1)); DJ="$WORK/django-$dj_n"; mkdir -p "$DJ"
+  sh "$COPY/scripts/install-rules.sh" "$COPY" "$DJ" >/dev/null 2>&1
+  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$DJ" TEST_COMMAND=pytest API_STYLE=REST \
+    ASYNC_MODE=no ORM=x PYTHON_FRAMEWORK="$1" TEST_FRAMEWORK=pytest >/dev/null 2>&1 \
+    || dj_fail="$dj_fail [$1: install failed]"
+  [ -f "$DJ/.claude/rules/shipkit/python/pyproject.md" ] || dj_fail="$dj_fail [$1: no pyproject.md]"
+}
+for dj_fw in Django django 'Django 5.2'; do
+  dj_install "$dj_fw"
+  [ -f "$DJ/.claude/rules/shipkit/python/django.md" ] || dj_fail="$dj_fail [$dj_fw: no django.md]"
+  grep -q 'python/django.md' "$DJ/.claude/rules/shipkit/.installed" || dj_fail="$dj_fail [$dj_fw: not in the manifest]"
+done
+for dj_fw in FastAPI Flask None 'TODO: which framework'; do
+  dj_install "$dj_fw"
+  [ ! -f "$DJ/.claude/rules/shipkit/python/django.md" ] || dj_fail="$dj_fail [$dj_fw: django.md installed]"
+  ! grep -q 'python/django.md' "$DJ/.claude/rules/shipkit/.installed" || dj_fail="$dj_fail [$dj_fw: in the manifest]"
+done
+grep -q 'loads on Django files only' "$COPY/skills/setup/SKILL.md" && dj_fail="$dj_fail [setup keeps the parenthesis]"
+grep -q 'django.md. on a Django project' "$COPY/skills/setup/SKILL.md" || dj_fail="$dj_fail [setup does not say when it installs]"
+if [ -z "$dj_fail" ]; then pass "django-only (django.md and its manifest row on Django, django and Django 5.2; neither on FastAPI, Flask, None or a TODO; pyproject.md on all; setup says so)"
+else failc "django-only" "$dj_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

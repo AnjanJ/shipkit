@@ -10,7 +10,8 @@
 #                  not detect — nothing is left as braces.
 #
 # What it does:
-#   stacks/<stack>/.claude/rules/*.md   → <project>/.claude/rules/shipkit/<stack>/
+#   stacks/<stack>/.claude/rules/*.md   → <project>/.claude/rules/shipkit/<stack>/  (python's
+#                                         django.md only where PYTHON_FRAMEWORK names Django)
 #   stacks/<stack>/.claude/skills/*     → <project>/.claude/skills/<name>/  (an existing file
 #                                         shipkit does not own is kept, with a warning, unless
 #                                         SHIPKIT_OVERWRITE_SKILLS=1)
@@ -55,6 +56,7 @@ NONINTERACTIVE="${SHIPKIT_NONINTERACTIVE:-0}"
 # --- collect substitutions: KEY=value → a sed script -------------------------------------
 SEDSCRIPT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
 trap 'rm -f "$SEDSCRIPT"' EXIT
+FRAMEWORK=""
 for kv in "$@"; do
   case "$kv" in
     *=*) ;;
@@ -72,6 +74,7 @@ for kv in "$@"; do
   # escape for sed replacement with '#' delimiter: \ & #
   esc=$(printf '%s' "$val" | sed 's/[\\&#]/\\&/g')
   printf 's#{{%s}}#%s#g\n' "$key" "$esc" >> "$SEDSCRIPT"
+  [ "$key" = PYTHON_FRAMEWORK ] && FRAMEWORK=$val
 done
 
 subst() {  # substitute in place, portably
@@ -109,6 +112,12 @@ if [ -d "$SRC/.claude/rules" ]; then
   mkdir -p "$RDEST" || die "cannot create $RDEST"
   for f in "$SRC"/.claude/rules/*.md; do
     [ -f "$f" ] || continue
+    # django.md's paths match any models.py, so a FastAPI project would load Django advice on
+    # every read of one (fourth-project/REQ-1). A glob, so `Django 5.2` from a model still counts.
+    case "$STACK/$(basename "$f"):$FRAMEWORK" in
+      python/django.md:[Dd]jango*) ;;
+      python/django.md:*) continue ;;
+    esac
     cp "$f" "$RDEST/" || die "failed to copy $f"
     subst "$RDEST/$(basename "$f")"
     note "$RDEST/$(basename "$f")"
