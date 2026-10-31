@@ -43,6 +43,44 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Four graders corrected (S24-T1, 2026-10-31)
+
+`readable-numbers/REQ-6`, the plan's G4 and rule 23. Claude Code 2.1.316. Eval sessions leave no session
+logs, so each written file was rebuilt from its trace's Write and Edit calls onto the fixture; `node`
+with the old patterns gave the harness's result on all 18 harvest files, so the rebuild can be trusted.
+
+| Case | 5.0.0, old grader | Harvest, old grader | Corrected grader | Old grader on the corrected runs' files |
+|---|---:|---:|---:|---:|
+| `trap2/rails` | 2 of 6 | 2 of 5 | 3 of 3 | 1 of 3 |
+| `trap2/go-mod` | 2 of 3 | 5 of 5 | 2 of 3, then 3 of 3 | 2 of 3, then 3 of 3 |
+| `trap2/experiments` | 2 of 6 | 3 of 5 | 3 of 3 | 2 of 3 |
+| `trap2/package-json`, `sonnet` | 3 of 3 | not run | 3 of 3 | 3 of 3 |
+| `trap2/package-json`, `haiku` | 0 of 3 (4.11.0) | 0 of 3 | 3 of 3 | 0 of 3 |
+
+**Reading.** Over the 36 files, the old graders failed 15, and **no file breaks its line**: no real
+call to `update_column`, no `vendor` in any Makefile, every training file logs its device, every
+script is pnpm-only or a run-time detector. So the exit 1s of 4.11.0 and 5.0.0 were the graders',
+as the ROADMAP said. The same fact is the limit of this work: with no real violation in 36
+runs, each grader's failing side has only been shown on seeded files.
+
+What each failed file did:
+
+- `rails`: three harvest files and two later ones call `save!(validate: false)` or `update_attribute`
+  and say why in a comment ("Callbacks still run, unlike update_column").
+- `experiments`: three files log the device with `log.info(`; the pattern read `log\(`.
+- `package-json`: all six `haiku` scripts choose the manager from the lockfile at run time, through
+  `if`, a `case`, or a command array.
+- `go-mod`: the harvest did not reproduce 5.0.0's miss, so the first correction left `go build`
+  alone. The first run on it did: `GO ?= go` and `$(GO) build ./...`, read in `da49f5c`. A run on the
+  graders is what found it, and re-grading kept files through `node` would not have. That is the
+  case for this sprint's run order. All three runs after `da49f5c` wrote `go build`, so `$(GO) build`
+  has been read through `node` and not yet through a harness run.
+- `go-mod`'s comment form has never been written by a run: REQ-2's passing side is two hand-made
+  files, and the commit says so.
+
+$2.46 against the $2.50 line. `--group trap2` did not run, on the owner's word; twelve of its cases
+next run at the release, and the design's second record says what would have brought it forward.
+
 ## Release run 5.0.0
 
 `bash scripts/evals.sh -j 4`, 2026-10-31, at `2a7e796` (`plugins/` byte-identical since `41716d7`, the
@@ -358,3 +396,79 @@ the hand-off and one search — so the decoys did not cost the elder a step; `hi
 seven to nine. The comparison against the no-map and plugin-off arms is in
 `docs/design/eval-results-4.1.md`.
 
+---
+
+*Moved 2026-10-31 (Sprint 24, S24-T3):*
+
+## Two things checked before the XL cases were written (2026-10-07)
+
+- **The eval tool does not pass the caller's environment to a scaffold script.** Probe: a
+  scaffold created an open spec named `probe-${SHIPKIT_EVAL_PROBE:-unset}`, whose slug the
+  session briefing prints and the trace records; run with the variable set, the trace said
+  `probe-unset`. So the no-map arm cannot be selected by `SHIPKIT_EVAL_NO_MAP=1` on the eval
+  command. It runs from a scratch copy of the plugin whose XL scaffolds pass `--no-map`:
+
+  ```sh
+  cp -R plugins/shipkit "$TMPDIR/shipkit-nomap"
+  sed -i '' 's/generate.py" \$flags/generate.py" --no-map/' "$TMPDIR/shipkit-nomap"/evals/grandfather-xl/*/fixture.sh
+  EVALS_OUT="$TMPDIR/xl-nomap" claude plugin eval "$TMPDIR/shipkit-nomap" --case 'grandfather-xl-*' …
+  ```
+
+  The variable is still honoured when a scaffold is run by hand (the `xl-scaffold` smoke check
+  does this). `--keep-temp` keeps a sandbox's `config/` and `out/trace.jsonl`, **not** its
+  workspace — a probe has to surface through the trace.
+- **What the trace holds**, from the kept sandboxes: tool calls are `tool_use` content blocks
+  inside `assistant` rows (there are no tool rows of their own); subagent turns are in the same
+  trace with `parent_tool_use_id` set, so main-session and subagent counts can be split; one
+  API response may arrive as several `assistant` rows sharing `message.id` and the same `usage`
+  block, so tokens are summed once per message id; the `result` row carries `total_cost_usd`.
+  `scripts/trace-tools.sh <output-dir>` prints all of this per run, reading the run list from
+  `aggregate-result.json`. Pass it a directory of sandboxes (`/private/tmp`) to count kept
+  runs without a summary.
+
+## The Gemfile line (4.6.0)
+
+`gemfile.md`'s first bullet now reads "when `bundle install` has run, read the `Gemfile.lock`
+diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" halted three
+runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
+run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
+
+## `eve`'s portfolio (4.9.0)
+
+Three `eve` cases on the generated portfolio fixture (`fixtures/portfolio-gen/generate.py`,
+facts in `fixtures/FACTS-PORTFOLIO.md`): a sweep (`jobs`), a cross-project where (`payments`)
+and a why only a map holds (`why`). Each scaffolds three maps; the one-map and no-map arms are
+scratch copies whose `fixture.sh` defaults `SHIPKIT_EVAL_MAPS` to `1` or `0`. The sweep and
+the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why was answered
+only where `pulse` had a map and said "not recorded" where it had none. The table and the
+readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
+
+**4.11.0 (second-run plan E9, E11).** `payments`' evidence clause now accepts the file that
+handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) beside `Gemfile` and `mix.exs`:
+one right reply per arm in 4.9 cited the handling file and no manifest, and failed on that
+clause alone. `why-reworded` asks the why in words the map does not hold; read `map_read` and
+`map_shell` beside its count. Both in `docs/design/eval-results-4.11.md` (§1, §3).
+
+## Trap 2 (4.6.0)
+
+Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the
+file's second named line, run with and without: four separate (`data`, `gemfile`, `go-mod`,
+`experiments`), twelve pass without on both traps and are named cut candidates for the next
+plan; three cases were corrected on trace evidence before their numbers counted. The table
+and the readings are in `docs/design/eval-results-4.6.md`.
+
+## `intake/answered` (4.4.0)
+
+3 of 3 on the 4.3.0 text before its sentence existed, so the planned search list was not added;
+3 of 3 after; the reading is in `docs/design/eval-history.md`.
+
+*4.8.0 (S15-T2, plan E3):* step 4 of the intake gained two sentences — an assumption a file
+answers names the file and line (the standard `answered`'s grader already asked for; added as a
+standard, not on a number), and a question with several parts counts as several, four being
+the ceiling on parts (the reading `limit`'s grader already applied; the case fell to 0 of 3 in
+the 4.7.0 release run on replies that packed five parts into three numbers). The group once on
+the new text, 2026-10-10, $1.80: `answered` 3 of 3, `nongoal` 3 of 3, `trivial` 3 of 3,
+**`limit` 2 of 3** — the failing run's three numbered questions carried five parts, as before;
+the two passing runs' three carried three and four. The sentence is a standard the case
+watches, not a lever with a number behind it; its record says it comes out if `limit` is still
+below 2 of 3 on a release run.

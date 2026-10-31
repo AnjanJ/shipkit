@@ -66,7 +66,7 @@ As the thinning plan's, with three lines changed:
 
 | # | Command | Must show |
 |---|---|---|
-| 3 | Sprints 23, 24: `bash scripts/evals.sh --group <g> -j 4` for each group the diff touched; Sprint 25: `bash scripts/evals.sh -j 4` | no case that passed before now fails; **Sprint 25 exits 0**, or each failing case is named with its trace and the owner has said go |
+| 3 | Sprints 23, 24: `bash scripts/evals.sh --group <g> -j 4` for each group the diff touched; Sprint 25: `bash scripts/evals.sh -j 4` | no case that passed before now fails; **Sprint 25 exits 0**, or each failing case is named with its trace and the owner has said go. *Amended at S24-T0, the owner's word:* Sprint 24 reads `trap2`'s four changed cases, not the group (`.shipkit/specs/readable-numbers/design.md`, second record) |
 | 6 | `find plugins/shipkit/evals -type f -print0 \| xargs -0 cat \| wc -c` | at most 204,800 (G9: no fourth raise) |
 | 7 | the §0 table above | every row at its target, or the record says why not |
 
@@ -152,7 +152,7 @@ Budget, by rule 15:
 | Sprint | Runs | About |
 |---|---|---|
 | 23 | Brief case 3 runs × 2 arms ≈ $0.80; four `reviewer` cases × 3 ≈ $2; the forced gate twice ≈ $0.60; `--group` at merge ≈ $2 | $5–6 |
-| 24 | `--group trap2` once ≈ $5; two `reports` cases × 3 ≈ $1.20; Care 2 prompts × 3 × 2 arms, then `haiku` ≈ $1; `--group eve`, `--group rules` ≈ $3 | $10 |
+| 24 | *Amended at S24-T0, the owner's word:* `trap2`'s four changed cases, a harvest and once more ≈ $2.50, for `--group trap2` once ≈ $5; two `reports` cases × 3 ≈ $1.20; Care 30 runs, five a cell, ≈ $1, and a sharper prompt, 20 runs, ≈ $0.70 (the owner's word, S24-T4's clause); `--group eve`, `--group rules` ≈ $3 | $10, about $8.40 as amended |
 | 25 | The run ≈ $2–8 (a larger project than `linkshort`'s $1.29); three gates ≈ $1.50; the release run at about 65 cases ≈ $21–23 | $25–33 |
 | Total | | $40–49, one release |
 
@@ -211,11 +211,14 @@ one the code contradicts.
 
 ### S24-T1 — Four graders, both sides (G4, rule 23)
 - **Files:** the four `graders/*.md`, `docs/design/eval-history.md`.
-- **Steps:** one grader per commit. For each: the written file it wrongly failed, taken from the
-  session logs under `~/.claude/projects/`; a seeded violation (`order.update_column(:x, 1)`, `go
+- **Steps:** one grader per commit. For each: the written file it wrongly failed, ~~taken from the
+  session logs under `~/.claude/projects/`~~ rebuilt from a kept trace's Write, Edit and Bash calls,
+  because eval sessions leave no logs there (amended at S24-T0; `package-json`'s on `haiku`, the only
+  model that fails it); a seeded violation (`order.update_column(:x, 1)`, `go
   mod vendor`, a silent fallback with no device logged, an unconditional `npm install`); both
-  through `node` first. A trailing comment after a real call must still fail. Then `--group trap2`.
-- **Done when:** both sides in each commit's test plan; `--group trap2` read from the traces; lint
+  through `node` first. A trailing comment after a real call must still fail. Then the four cases on
+  the corrected graders (amended at S24-T0, the owner's word; it was `--group trap2`).
+- **Done when:** both sides in each commit's test plan; the four cases read from the traces; lint
   0/0.
 
 ### S24-T2 — `map_read` sees a repo-wide Grep (G5)
@@ -233,11 +236,15 @@ one the code contradicts.
 ### S24-T4 — The Care line, read twice more (G7)
 - **Files:** `plugins/shipkit/evals/rules/care-quiet/`, `docs/design/eval-results-5.1.md`.
 - **Steps:** `rules/care-quiet`, a request destructive only in what it implies, with and without
-  the plugin; then it and `rules/care` on `haiku`. **No rule text changes.**
+  the plugin; then it and `rules/care` on `haiku`; five runs a cell, not three (amended at S24-T0:
+  three runs an arm cannot reach p below 0.1). **No rule text changes.** *Amended at S24-T5, the
+  owner's word:* the case read 5 of 5 in all four cells on two prompts, so it left the suite; both
+  readings stay in `docs/design/eval-results-5.1.md`.
 - **Done when:** the table has no empty cell; a miss is a ROADMAP item; lint 0/0.
 
 ### S24-T-MERGE — Merge, untagged
-- The exit checklist with `--group trap2`, `--group eve`, `--group rules`.
+- The exit checklist with `--group eve`, `--group rules`; `trap2`'s four cases read at T1 (amended at
+  S24-T0, the owner's word), and the group run if the design's second record's clause fires.
 
 ---
 
@@ -309,7 +316,7 @@ one the code contradicts.
 | A longer list of decisions pulls an agent into a later task's work | **It did: 9 of 10 runs at S23-T2.** `brief-verify.sh` did not bound it, as this row first said: T1 and T2 share files. REQ-14's sentence and a second grader answer it, on the owner's word; the run in S25-T2 reads for it |
 | A grader corrected to pass hides a real failure | Rule 23: nothing runs until the seeded violation fails |
 | One more clause in the reviewer raises the `placeholder` rate, already 3 of the last 10 | The retry stands; the release counts it; a gate with two replies and no verdict fires that decision's record |
-| The ceiling: about 1 KB of margin rests on an estimate | **Measured at S23-T-MERGE: the estimate was low.** Sprint 23's three cases cost 8,892 bytes against about 4.4 KB planned: 203,906 of 204,800 after the shared fixture's 3,823, so 894 bytes are left and Sprint 24's three cases need about 4.5 KB. S24-T0 asks the owner which goes; `eve/consolidate` is the first case dropped; no raise without the owner's word |
+| The ceiling: about 1 KB of margin rests on an estimate | **Measured at S23-T-MERGE: the estimate was low.** Sprint 23's three cases cost 8,892 bytes against about 4.4 KB planned: 203,906 of 204,800 after the shared fixture's 3,823, so 894 bytes are left and Sprint 24's three cases need about 4.5 KB. S24-T0 asks the owner which goes; `eve/consolidate` is the first case dropped; no raise without the owner's word. **The owner's word, 2026-10-31: the full sprint; five README sections, 4,777 bytes, move to `docs/design/eval-history.md`; no raise.** The closest existing cases put the need at about 6 to 7 KB, not 4.5 |
 | A project set up on 5.0.0 keeps `django.md` | Nothing deletes it. The CHANGELOG names the file; its cost is 583 bytes on a matching read |
 | `office_bestie` will not build in a worktree | The Check first, before any paid step |
 | The run writes into the owner's product repository | A worktree under the scratchpad, never pushed, its removal the owner's yes |

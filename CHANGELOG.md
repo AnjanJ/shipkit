@@ -4,7 +4,7 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [Unreleased] — Sprint 23 of the binding plan (toward 5.1.0)
+## [Unreleased] — Sprints 23 and 24 of the binding plan (toward 5.1.0)
 
 **What changed for you.** A brief now lists every live decision of the feature, not only those citing
 the task's requirements, and says they limit how the task is done and are not extra work. On a case
@@ -16,6 +16,10 @@ where it could be READY before: the reviewer found the contradiction 3 times of 
 it, and the gate had no step that weighed it. Change the code, or mark the decision superseded with
 a new record, so that changing your mind leaves a trace. A decision not built yet is reported and
 does not fail the review.
+
+**Sprint 24 changes nothing you run.** It works on the instruments, so that a release run's exit
+code can be believed: graders that failed correct work are corrected, and `reports.md` has cases
+watching it.
 
 ### Changed
 
@@ -31,6 +35,18 @@ does not fail the review.
   `reviewer/decision-unbuilt`, smoke check 77; §2.
 - **The `reviewer` cases share one fixture script** (G9, S23-T3): `evals/lib/review-fixture.sh`, 3,823
   bytes back under the ceiling.
+- **Four `trap2` graders forbid the act, not the word** (G4, S24-T1): `rails`, `go-mod`, `experiments`,
+  `package-json`. Over 36 files the old graders failed 15, and none of the 36 breaks its line. No real
+  violation turned up, so each grader's failing side is shown only on seeded files.
+- **`map_read` counts a Grep that lists the map** (G5, S24-T2): `trace-tools.sh` reads the Grep's result.
+  On `--group eve` it reads 10 of 18 runs, where the old count would read 6; smoke check 78.
+- **`eve/matrix` and `eve/consolidate` watch `reports.md`** (G6, S24-T3): read in 6 of 6 runs, twice.
+- **The Care line is read on a second model and on quiet requests** (G7, S24-T4 to T6): on the request
+  that says "delete", `haiku` holds 5 of 5 with the plugin and 0 of 5 without, p = 0.008. On two requests
+  that only imply the loss, no work was lost in 40 runs, with or without the plugin, so the case written
+  for them left the suite and the readings stay in `docs/design/eval-results-5.1.md`. No rule text changed.
+- **Five README readings move to `docs/design/eval-history.md`** (G9, S24-T3), so the ceiling holds at
+  204,800: the directory is 202,547. Smoke holds 218 checks, all passed.
 
 ## [5.0.0] — 2026-10-31
 

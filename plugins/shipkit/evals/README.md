@@ -233,6 +233,8 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and cites a manifest (`Gemfile`, `mix.exs`) or a file that handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) (P2; widened in 4.11.0) | regex |
 | `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
 | `eve/why-reworded` | `/shipkit:ask --all` Why did pulse stop logging everyone out at three in the morning, and since when? | the same as `eve/why`; a probe of whether the map is reached when the question shares no word with its Evolution line (P4; 4.11.0) | llm |
+| `eve/matrix` | `/shipkit:ask` We're planning a Stripe upgrade. Across all my projects, which version of the Stripe library is each one on? | `shopfront` `12.4.0`, `pulse` `3.2.0`, both constraints, both lockfiles, `insight` unused | regex |
+| `eve/consolidate` | `/shipkit:ask --all consolidate` | the Stripe handling, a path from each project, and a judgment | regex |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |
@@ -299,55 +301,6 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
 (`.shipkit/specs/map-on-trial/`); the comparison and its numbers are in
 `docs/design/eval-results-4.1.md`. Added in 4.1.0.
 
-### Two things checked before the XL cases were written (2026-10-07)
-
-- **The eval tool does not pass the caller's environment to a scaffold script.** Probe: a
-  scaffold created an open spec named `probe-${SHIPKIT_EVAL_PROBE:-unset}`, whose slug the
-  session briefing prints and the trace records; run with the variable set, the trace said
-  `probe-unset`. So the no-map arm cannot be selected by `SHIPKIT_EVAL_NO_MAP=1` on the eval
-  command. It runs from a scratch copy of the plugin whose XL scaffolds pass `--no-map`:
-
-  ```sh
-  cp -R plugins/shipkit "$TMPDIR/shipkit-nomap"
-  sed -i '' 's/generate.py" \$flags/generate.py" --no-map/' "$TMPDIR/shipkit-nomap"/evals/grandfather-xl/*/fixture.sh
-  EVALS_OUT="$TMPDIR/xl-nomap" claude plugin eval "$TMPDIR/shipkit-nomap" --case 'grandfather-xl-*' …
-  ```
-
-  The variable is still honoured when a scaffold is run by hand (the `xl-scaffold` smoke check
-  does this). `--keep-temp` keeps a sandbox's `config/` and `out/trace.jsonl`, **not** its
-  workspace — a probe has to surface through the trace.
-- **What the trace holds**, from the kept sandboxes: tool calls are `tool_use` content blocks
-  inside `assistant` rows (there are no tool rows of their own); subagent turns are in the same
-  trace with `parent_tool_use_id` set, so main-session and subagent counts can be split; one
-  API response may arrive as several `assistant` rows sharing `message.id` and the same `usage`
-  block, so tokens are summed once per message id; the `result` row carries `total_cost_usd`.
-  `scripts/trace-tools.sh <output-dir>` prints all of this per run, reading the run list from
-  `aggregate-result.json`. Pass it a directory of sandboxes (`/private/tmp`) to count kept
-  runs without a summary.
-
-## The Gemfile line (4.6.0)
-
-`gemfile.md`'s first bullet now reads "when `bundle install` has run, read the `Gemfile.lock`
-diff" (field plan C10): the 4.2.0 line "read the diff after `bundle install`" halted three
-runs in a sandbox with no network. `stacks/gemfile` with the new text, 2026-10-08: 3 of 3, no
-run halted on the network ($0.21). `trap2/gemfile` probes a different line (`ruby_llm`).
-
-## `eve`'s portfolio (4.9.0)
-
-Three `eve` cases on the generated portfolio fixture (`fixtures/portfolio-gen/generate.py`,
-facts in `fixtures/FACTS-PORTFOLIO.md`): a sweep (`jobs`), a cross-project where (`payments`)
-and a why only a map holds (`why`). Each scaffolds three maps; the one-map and no-map arms are
-scratch copies whose `fixture.sh` defaults `SHIPKIT_EVAL_MAPS` to `1` or `0`. The sweep and
-the where held 3 of 3 and 2 of 3 in every arm and read no map in any; the why was answered
-only where `pulse` had a map and said "not recorded" where it had none. The table and the
-readings are in `docs/design/eval-results-4.9.md`; smoke check 59 keeps the generator honest.
-
-**4.11.0 (second-run plan E9, E11).** `payments`' evidence clause now accepts the file that
-handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) beside `Gemfile` and `mix.exs`:
-one right reply per arm in 4.9 cited the handling file and no manifest, and failed on that
-clause alone. `why-reworded` asks the why in words the map does not hold; read `map_read` and
-`map_shell` beside its count. Both in `docs/design/eval-results-4.11.md` (§1, §3).
-
 ## The cuts (4.8.0)
 
 Seven rule files lost their two measured lines in 4.8.0 (`.shipkit/specs/measured-cuts/design.md`,
@@ -366,32 +319,10 @@ grader missed it; the 4.6 and 4.8 counts stay beside (`eval-results-4.11.md` §4
 the trimmed text are in `docs/design/eval-results-4.8.md`; smoke check 58 keeps this list and
 the files honest.
 
-## Trap 2 (4.6.0)
-
-Sixteen `trap2` cases, one per rule whose 4.2.0 case passed without the rule, each on the
-file's second named line, run with and without: four separate (`data`, `gemfile`, `go-mod`,
-`experiments`), twelve pass without on both traps and are named cut candidates for the next
-plan; three cases were corrected on trace evidence before their numbers counted. The table
-and the readings are in `docs/design/eval-results-4.6.md`.
-
 ## Baselines and older readings
 
 The baselines (3.1.0; 3.2.0 after the rule shrink; 4.0.0 XL; 4.1.0 scoped and stacks), the
 4.2.0 spec-first reading and the 4.3.0 to 4.5.0 release runs are in
-`docs/design/eval-history.md` — moved out of this directory for room (field plan C1).
-
-## `intake/answered` (4.4.0)
-
-3 of 3 on the 4.3.0 text before its sentence existed, so the planned search list was not added;
-3 of 3 after; the reading is in `docs/design/eval-history.md`.
-
-*4.8.0 (S15-T2, plan E3):* step 4 of the intake gained two sentences — an assumption a file
-answers names the file and line (the standard `answered`'s grader already asked for; added as a
-standard, not on a number), and a question with several parts counts as several, four being
-the ceiling on parts (the reading `limit`'s grader already applied; the case fell to 0 of 3 in
-the 4.7.0 release run on replies that packed five parts into three numbers). The group once on
-the new text, 2026-10-10, $1.80: `answered` 3 of 3, `nongoal` 3 of 3, `trivial` 3 of 3,
-**`limit` 2 of 3** — the failing run's three numbered questions carried five parts, as before;
-the two passing runs' three carried three and four. The sentence is a standard the case
-watches, not a lever with a number behind it; its record says it comes out if `limit` is still
-below 2 of 3 on a release run.
+`docs/design/eval-history.md` — moved out of this directory for room (field plan C1). So are the
+checks before the XL cases, the Gemfile line, `eve`'s portfolio and its arms, Trap 2 and
+`intake/answered`, moved for room in Sprint 24 (`readable-numbers/REQ-14`).
