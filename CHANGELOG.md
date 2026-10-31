@@ -17,6 +17,11 @@ it, and the gate had no step that weighed it. Change the code, or mark the decis
 a new record, so that changing your mind leaves a trace. A decision not built yet is reported and
 does not fail the review.
 
+**The reviewer runs on `sonnet`, whatever model your session uses.** Reviews cost less from an Opus
+session, and the gate's result no longer depends on the session's model: 21 of 55 reviews on Opus
+5.5 cost more than $2 at list price, the limit the old decision set. A session on `haiku` now pays
+more for a review than it did.
+
 **Sprint 24 changes nothing you run.** It works on the instruments, so that a release run's exit
 code can be believed: graders that failed correct work are corrected, and `reports.md` has cases
 watching it.
@@ -35,6 +40,9 @@ watching it.
   `reviewer/decision-unbuilt`, smoke check 77; §2.
 - **The `reviewer` cases share one fixture script** (G9, S23-T3): `evals/lib/review-fixture.sh`, 3,823
   bytes back under the ceiling.
+- **`agents/reviewer.md` pins `model: sonnet`**, was `inherit`: the `review-and-ship` decision's own
+  clause fired, so a new record in that `design.md` supersedes it. The 55 reviews on Opus 5.5 from
+  2026-10-05 to 2026-10-31 came to $112.34 at list price, $65.29 at `sonnet` prices on the same tokens.
 - **Four `trap2` graders forbid the act, not the word** (G4, S24-T1): `rails`, `go-mod`, `experiments`,
   `package-json`. Over 36 files the old graders failed 15, and none of the 36 breaks its line. No real
   violation turned up, so each grader's failing side is shown only on seeded files.
