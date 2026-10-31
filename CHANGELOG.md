@@ -144,9 +144,10 @@ contradicted" (§8.1, §9.2). Not fixed here; first on the ROADMAP's "Still open
 **One the thinning caused:** `python/django.md`, path-scoped by W7, loads on a FastAPI project's
 `models.py` (§8.2).
 
-**Smoke failed once for a reason that is now likely, not shown.** `ship-gate` got a reviewer reply of
-`placeholder` and answered NOT READY. A subagent can report through `SubagentHandback`, and the
-gate pastes that text (§9.1). It failed closed, and it passed on the next runs.
+**A reviewer can end itself before it reports.** Smoke's `ship-gate` failed because the reviewer's
+last call was `SubagentHandback {"message": "placeholder"}`, which ended the agent with its review
+unsent; the session logs show it, 3 of 74 gate sessions, all in the last ten. The gate failed closed,
+a false NOT READY (§9.1). Smoke holds 212 checks.
 
 ### Added
 

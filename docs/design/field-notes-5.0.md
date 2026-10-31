@@ -207,9 +207,13 @@ the same number.
   1. **The reviewer's reply came through `SubagentHandback`.** The `Agent` tool result was only "This
      agent's report was delivered to you as a message from … Read it there; it is not repeated
      here", and the report arrived as a queued message; the model noticed and said so. So the gate
-     pastes whatever text the reviewer gave that call. This is the likely source of Sprint 21's
-     unexplained smoke failure, where the reply was the literal word `placeholder` and the gate
-     answered NOT READY. That run is gone, so it stays likely, not shown. The gate failed closed.
+     pastes whatever text the reviewer gave that call. **That is the cause of `ship-gate`'s failures,
+     shown from the session logs after this run:** three times the reviewer's last call was
+     `SubagentHandback {"message": "placeholder"}`, once beside a last `grep` and twice alone. The
+     tool answered "Report delivered to your caller", the agent ended, and the review was never sent.
+     Why the model writes that word is not known. 3 of the 74 gate sessions in the logs, all three in
+     the last ten and all on the complete-feature run, two of them in the last four, on Claude Code
+     2.1.316. The gate failed closed each time: a false NOT READY, never a false READY.
   2. **The reviewer missed §8.1.** Its REQ-3 row cites `AwareDatetime` at `api.py:16`, and its
      decisions section says all three are "unimplemented, not contradicted". The code does
      contradict one, by the alternative that record rejected.
@@ -275,8 +279,8 @@ a step, and the session logs hold no call to a removed skill or agent.
 3. `python/django.md` installs on any Python project and its globs match a FastAPI `models.py`, so
    a Django rule loads into a FastAPI agent. Sprint 21's W7 caused this (§2.1, §8.2).
 4. `intake.md` stamped 2026-10-05 on 2026-10-31; the skill names no source for the date (§4.1).
-5. The gate pastes what the reviewer gave `SubagentHandback`; the likely source of `ship-gate`'s
-   `placeholder`. It fails closed, and the skill does not name the shape (§9.1).
+5. A reviewer can end itself with `SubagentHandback {"message": "placeholder"}`, so its review is
+   never sent: `ship-gate`'s failures, shown, cause in the model unknown. It fails closed (§9.1).
 6. The stack section's alternatives survive as comments, and "async ORM" sits on a sync project
    (§2.2).
 7. A model waits on an agent with `sleep 45`: a turn, and nothing worse (§4.2).

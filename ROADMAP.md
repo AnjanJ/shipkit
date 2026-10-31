@@ -59,9 +59,10 @@ Sprint 22, by the plan's W5):
   21's W7 caused this (§2.1, §8.2).
 - **`intake.md` stamped 2026-10-05 on 2026-10-31** — the skill asks for a date and names no source
   (§4.1).
-- **The gate pastes what the reviewer gives `SubagentHandback`** — the `Agent` result is only a
-  pointer to that message, and the likely source of `ship-gate`'s `placeholder` in Sprint 21. It
-  fails closed; the skill does not name the shape (§9.1).
+- **A reviewer can end itself before it reports** — its last call is `SubagentHandback {"message":
+  "placeholder"}`: the tool answers "Report delivered", the agent ends and the review is never sent.
+  3 of 74 gate sessions in the logs, all in the last ten, two in the last four on Claude Code
+  2.1.316; why the model writes that word is not known. It fails closed, a false NOT READY (§9.1).
 - **The stack section's alternatives survive as comments** — `<!-- Django / FastAPI / Flask / None
   -->`, and "async ORM" on a project the section calls sync (§2.2).
 - **A model waits on an agent with `sleep 45`** — a turn, and nothing worse (§4.2).
