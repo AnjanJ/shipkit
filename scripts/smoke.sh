@@ -2647,6 +2647,35 @@ grep -q 'gate weighs' "$COPY/agents/reviewer.md" && rd_fail="$rd_fail [still say
 if [ -z "$rd_fail" ]; then pass "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
 else failc "reviewer-decisions" "$rd_fail"; fi
 
+# 78. map-read-grep: map_read used to read a tool's input path only, so a repo-wide Grep landing on
+# the map did not register, and eve/why read 2 of 3 on a run whose reply cites the map. A trace's
+# Grep result holds the paths ("Found 1 file\napp/x.rb", or "app/x.rb:5:…" in content mode; read on
+# 2026-10-31 from readable-numbers T1's kept traces), so a result line's path counts. A line of
+# another file that only mentions the map does not, and nor does any other tool's result. Stored
+# two-line traces, no claude needed. Cites: readable-numbers/REQ-7 readable-numbers/REQ-8
+MR="$WORK/mr"; mkdir -p "$MR"
+mr_trace() {  # mr_trace <name> <tool> <tool_result content, as JSON>
+  { printf '{"type":"assistant","parent_tool_use_id":null,"message":{"id":"m1","content":[{"type":"tool_use","id":"t1","name":"%s","input":{"pattern":"VACUUM"}}]}}\n' "$2"
+    printf '{"type":"user","parent_tool_use_id":null,"message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":%s}]}}\n' "$3"
+  } > "$MR/$1.jsonl"
+}
+mr_fail=""
+mr_want() {  # mr_want <name> <map_read map_shell>
+  mr_got=$(sh "$ROOT/scripts/trace-tools.sh" "$MR/$1.jsonl" 2>&1 | awk 'NR==2 { print $11, $12 }')
+  [ "$mr_got" = "$2" ] || mr_fail="$mr_fail [$1: wanted $2, read $mr_got]"
+}
+mr_trace files Grep '"Found 2 files\nprojects/pulse/PROJECT_MAP.md\nprojects/pulse/mix.exs"'
+mr_trace content Grep '"projects/pulse/PROJECT_MAP.md:41:the nightly VACUUM FULL"'
+mr_trace blocks Grep '[{"type":"text","text":"Found 1 file\nprojects/pulse/PROJECT_MAP.md"}]'
+mr_trace other Grep '"Found 1 file\napp/orders.py"'
+mr_trace mention Grep '"README.md:3:see PROJECT_MAP.md for the VACUUM note"'
+mr_trace none Grep '"No matches found"'
+mr_trace notgrep Read '"Found 1 file\nprojects/pulse/PROJECT_MAP.md"'
+for mr_case in files content blocks; do mr_want "$mr_case" "1 0"; done
+for mr_case in other mention none notgrep; do mr_want "$mr_case" "0 0"; done
+if [ -z "$mr_fail" ]; then pass "map-read-grep (a Grep listing the map counts, whatever its path; a line naming it from another file, and any other tool's result, do not; map_shell unchanged)"
+else failc "map-read-grep" "$mr_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

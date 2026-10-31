@@ -16,8 +16,11 @@
 #   cost           total_cost_usd from the last result row
 #   map_read       1 if any Read or Grep tool_use (main session or subagent) has an input path
 #                  ending in PROJECT_MAP.md, else 0 — the elder's read rate (second-traps/REQ-9;
-#                  Grep counted since 4.7.0, harness-debts/REQ-8 — 4.6's rates were Read only)
-#   map_shell      1 if any Bash tool_use's command mentions PROJECT_MAP.md (cat, grep, sed…),
+#                  Grep counted since 4.7.0, harness-debts/REQ-8 — 4.6's rates were Read only),
+#                  or any Grep whose result lists that file: a repo-wide Grep landing on the
+#                  map (readable-numbers/REQ-7, REQ-8). A files-mode hit counts though the map's
+#                  lines did not reach the model, so read map_read beside the reply
+#   map_shell     1 if any Bash tool_use's command mentions PROJECT_MAP.md (cat, grep, sed…),
 #                  else 0 — a read the model made without the Read tool (harness-debts/REQ-9)
 #
 # Where runs come from: an output dir with aggregate-result.json (what `scripts/evals.sh`
@@ -28,14 +31,23 @@
 # What the trace holds (Claude Code 2.1.289, checked 2026-10-07 on kept sandboxes): tool calls
 # are content blocks inside "assistant" rows, not rows of their own; subagent turns appear in
 # the same trace with parent_tool_use_id set; one API response may arrive as several assistant
-# rows sharing message.id and usage; the result row carries total_cost_usd. POSIX sh + python3.
-# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11 second-traps/REQ-9
+# rows sharing message.id and usage; the result row carries total_cost_usd. A tool's result is a
+# tool_result block in a "user" row, tied to its call by tool_use_id; a Grep's content starts each
+# line with a path, in files mode and in content mode (checked 2026-10-31). POSIX sh + python3.
+# Cites: map-on-trial/REQ-10 map-on-trial/REQ-11 second-traps/REQ-9 readable-numbers/REQ-7
+# readable-numbers/REQ-8
 [ $# -ge 1 ] || { echo "usage: trace-tools.sh <eval output dir | sandbox dir | trace.jsonl> ..." >&2; exit 2; }
 exec python3 - "$@" <<'PY'
 import json, os, sys, glob
 
+def lists_map(content):
+    if isinstance(content, list):
+        content = "\n".join(str(b.get("text") or "") for b in content if isinstance(b, dict))
+    return any(l.split(":", 1)[0].endswith("PROJECT_MAP.md") for l in str(content or "").splitlines())
+
 def count(path):
     tools, tools_main, agent = set(), set(), 0
+    greps = set()
     map_read = 0
     map_shell = 0
     tokens, tokens_main, seen = 0, 0, set()
@@ -59,6 +71,8 @@ def count(path):
                         tools_main.add(bid)
                     if c.get("name") == "Agent":
                         agent += 1
+                    if c.get("name") == "Grep":
+                        greps.add(bid)
                     inp = c.get("input") or {}
                     if c.get("name") in ("Read", "Grep") and str(inp.get("file_path") or inp.get("path") or "").endswith("PROJECT_MAP.md"):
                         map_read = 1
@@ -72,6 +86,11 @@ def count(path):
                 tokens += n
                 if main:
                     tokens_main += n
+        elif t == "user":
+            content = (r.get("message") or {}).get("content")
+            for c in content if isinstance(content, list) else []:
+                if isinstance(c, dict) and c.get("type") == "tool_result" and c.get("tool_use_id") in greps and lists_map(c.get("content")):
+                    map_read = 1
         elif t == "result" and r.get("total_cost_usd") is not None:
             cost = float(r["total_cost_usd"])
     return (len(tools), len(tools_main), agent, tokens, tokens_main, cost, map_read, map_shell), None

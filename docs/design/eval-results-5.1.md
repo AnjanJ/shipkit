@@ -145,3 +145,19 @@ fixture's regression $0.57, the red $0.55, two groups at $1.12 and $1.10.
 Run 2 is the runner's error and not the gate's: run 1's test command left the directories behind, the
 fixture has no `.gitignore`, and they were not cleared before the run. The gate was right to count
 them. Run 3 is the requirement's second half. `skills/ship/SKILL.md` did not change. $0.66.
+
+## 4. `map_read` and a repo-wide Grep (G5, S24-T2)
+
+`readable-numbers/REQ-7`, `REQ-8`. **The plan's check-first holds:** on the 18 traces T1 kept, every
+one of the 9 Grep calls has its result in a `tool_result` block of a `user` row, tied by `tool_use_id`,
+and its `content` is a string that starts each line with a path: `Found 1 file\napp/models/order.rb` in
+files mode, `app/models/order.rb:5:…` in content mode. Claude Code 2.1.316, 2026-10-31.
+
+The count reads the path at the start of a result line and does not search the text, a thing the plan
+did not say: a content-mode line from another file can name the map (`README.md:3:see PROJECT_MAP.md`),
+and that is not a read of it. A files-mode hit does count though none of the map's lines reached the
+model, which is the record's case against, so `map_read` is read beside the reply.
+
+Smoke check 78 holds both, on stored two-line traces: red on the old script, three listing cases
+reading 0, then PASS; check 40 still PASS. Whether this was `eve/why`'s third run in Sprint 21 is
+still not shown; that sandbox is gone. `--group eve` at the merge reads it.
