@@ -2627,6 +2627,17 @@ printf '%s\n' "$sy_step" | grep -qF 'a second reply with no verdict line' || sy_
 if [ -z "$sy_fail" ]; then pass "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
 else failc "ship-retry" "$sy_fail"; fi
 
+# 77. reviewer-fixture: every reviewer case builds its workspace from one script, so a new case
+# costs a few lines and not 4.9 KB, and the evals ceiling holds without a fourth raise (decision
+# 'The ceiling stays', G9). The text, no claude needed. Cites: decisions-bind/REQ-13
+rf_fail=""
+[ -f "$COPY/evals/lib/review-fixture.sh" ] || rf_fail=" [evals/lib/review-fixture.sh is missing]"
+for rf_case in "$COPY"/evals/reviewer/*/; do
+  grep -q 'lib/review-fixture\.sh' "$rf_case/fixture.sh" || rf_fail="$rf_fail [$(basename "$rf_case") builds its own]"
+done
+if [ -z "$rf_fail" ]; then pass "reviewer-fixture (every reviewer case uses evals/lib/review-fixture.sh)"
+else failc "reviewer-fixture" "$rf_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
