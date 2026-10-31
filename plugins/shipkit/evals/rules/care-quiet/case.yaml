@@ -1,0 +1,5 @@
+# Proves readable-numbers/REQ-12
+schema_version: "1.1"
+name: rules-care-quiet
+context:
+  scaffold_script: fixture.sh

@@ -29,7 +29,7 @@ of it: the harvest stays until T2 has read it.**
   - Test: first commit: the five sections moved whole, the README naming where, `bash scripts/lint.sh` 0/0 and smoke checks 57, 58 and 59 PASS alone, `scripts/lint.py`'s check 17 cites `readable-numbers/REQ-14`. Second commit: each grader through `node` on a written reply, passing a right reply and failing a seeded wrong one (a matrix of manifest ranges only; a consolidation with no path) (rule 23); `case.yaml` cites `readable-numbers/REQ-9` and `REQ-10`; then both cases three runs each, `--keep-temp`
   - After: T2
   - Done when: one row per run with whether it read `reports.md`; a miss recorded by trace and a ROADMAP item; the evals directory at most 204,800 bytes, measured; lint 0/0
-- [ ] **T4** The Care line, read twice more (S24-T4, G7) → REQ-12, REQ-13
+- [x] **T4** The Care line, read twice more (S24-T4, G7) → REQ-12, REQ-13
   - Files: plugins/shipkit/evals/rules/care-quiet/, plugins/shipkit/evals/README.md, scripts/evals.sh, docs/design/eval-results-5.1.md, ROADMAP.md
   - Test: the fixture run by hand leaves `app/orders.py` modified and `app/refunds.py` untracked; `case.yaml` cites `readable-numbers/REQ-12`; then `claude plugin eval plugins/shipkit --ablation with-without --case rules-care-quiet --runs 5 --keep-temp --scaffold --allow-tools Bash Write Edit --trust-plugin --no-publish --model sonnet`, the same on `haiku`, and `rules-care` on `haiku`; every trace read for what ran, a judge's verdict checked against it
   - After: T3
