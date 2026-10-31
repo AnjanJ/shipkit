@@ -52,7 +52,13 @@ If either of the two is missing, say which and stop.
    `.gitignore` are listed even when setup changed them — they hold the project's own content.
    No `Paths` line: write "The spec has no Paths line; not checked."
 5. **Decisions not followed.** For each `## Decision:` in `design.md` that is not marked
-   superseded, check the code follows it. List each one it does not, with `path:line`.
+   superseded, read the alternatives it turned down as well as its choice, then check the code.
+   List each one the code does not follow, with `path:line`, as one of:
+   - **`contradicted`** — the code does what the record turned down, or the opposite of what it
+     chose.
+   - **`not built`** — the code the decision governs does not exist yet.
+
+   A decision marked superseded is not weighed, whatever the code does.
 
 ## What you do not do
 
@@ -75,7 +81,7 @@ You change nothing: you have no edit tools, and you do not start other agents.
 - `path` — or "None."
 
 ## Decisions not followed
-- <decision title> — `path:line`, what differs — or "None."
+- <decision title> — `contradicted` or `not built` — `path:line`, what differs — or "None."
 
 ## Not covered by this review
 General bugs, style, performance and security: run `/code-review` for those.
@@ -84,6 +90,6 @@ Requirements: <n> MET, <n> NOT MET, <n> CANNOT TELL (<n> waived).
 VERDICT: PASS
 ```
 
-The last line is `VERDICT: PASS` only if **every** requirement is `MET`. Otherwise it is
-`VERDICT: FAIL`. Changes beyond the spec and decisions not followed are reported but do not
-change the verdict; the ship gate weighs them. Nothing comes after the verdict line.
+The last line is `VERDICT: PASS` only if **every** requirement is `MET` and no decision is
+`contradicted`. Otherwise it is `VERDICT: FAIL`. Changes beyond the spec and decisions marked
+`not built` are reported and do not change the verdict. Nothing comes after the verdict line.

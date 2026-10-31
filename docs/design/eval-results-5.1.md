@@ -101,3 +101,32 @@ the claim stands. What changed the agent's behaviour is mostly that it now opens
 "(Full text: …)" line used to print only when a decision was listed, and T1's brief listed none.
 
 One fixture, one model. The brief grows by 233 to 422 bytes on three real specs, plus the sentence.
+
+## 2. A contradicted decision fails the review (G2, G3)
+
+`bash scripts/evals.sh --group reviewer -j 4 --keep-temp`, three runs per case, `sonnet`, Claude Code
+2.1.316, 2026-10-31. `rejected-alternative` meets every requirement and catches a gateway failure
+the record turned down. `decision-unbuilt` holds a decision a later task builds and a superseded one
+the code does not follow.
+
+| Case | `reviewer.md` before | After |
+|---|---:|---:|
+| `reviewer-rejected-alternative` | 0 of 3 | 3 of 3 |
+| `reviewer-decision-unbuilt` | 0 of 3 | 3 of 3 |
+| `reviewer-all-met` | 3 of 3 | 3 of 3 |
+| `reviewer-missing-req` | 3 of 3 | 3 of 3 |
+
+**Reading.** Before, all three `rejected-alternative` runs found the contradiction, described it
+correctly, and still ended `VERDICT: PASS`. That is the gap read from the text in the plan's §3,
+observed: sight was never the problem, the rule was. After, all three end `VERDICT: FAIL` with no
+requirement `NOT MET`, so the decision alone fails the review. `decision-unbuilt`'s 0 of 3 before says
+less: the old reviewer could not use the words `not built`, and its verdict was already right.
+
+The new grader was wrong first. It read 0 of 3 after the change, on replies that were correct: "is
+superseded, so I did not weigh it". It forbade `app/billing.py` on a bullet where the defect is
+marking that decision, the same mistake as `trap2/rails`' grader. It was corrected under rule 23, with
+the real replies passing and two seeded markings failing, and the group re-run.
+
+No reviewer ended itself with `placeholder` in the 30 of this section's 36 runs whose traces were
+read for it; the other six passed their grader, so each reply held a verdict. $3.34: the shared
+fixture's regression $0.57, the red $0.55, two groups at $1.12 and $1.10.

@@ -40,8 +40,11 @@ intake beside this file (`intake.md`).
   "Changes beyond the spec". [untested: agent prose, verified by reading]
 - **REQ-5.** The reviewer shall list every decision in `design.md` that the code does not
   follow. [untested: agent prose, verified by reading]
-- **REQ-6.** The reviewer's reply shall end with `VERDICT: PASS` if every requirement is `MET`,
-  and with `VERDICT: FAIL` otherwise.
+- **REQ-6.** The reviewer's reply shall end with `VERDICT: PASS` if every requirement is `MET` and
+  no live decision is `contradicted`, and with `VERDICT: FAIL` otherwise.
+  > *Amended 2026-10-31 (`decisions-bind/REQ-8`, the binding plan's G3):* decisions not followed were
+  > reported only, on the reviewer's word that the ship gate weighed them. The gate had no such
+  > step, and a reviewer that found the contradiction still said `VERDICT: PASS`, 3 of 3.
 - **REQ-7.** The reviewer shall have the tools `Read`, `Glob`, `Grep` and `Bash`, and shall not
   have `Edit`, `Write` or `Agent`.
 - **REQ-8.** The reviewer shall not review for general bugs or style, shall say so, and shall

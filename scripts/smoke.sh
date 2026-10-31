@@ -2629,7 +2629,9 @@ else failc "ship-retry" "$sy_fail"; fi
 
 # 77. reviewer-fixture: every reviewer case builds its workspace from one script, so a new case
 # costs a few lines and not 4.9 KB, and the evals ceiling holds without a fourth raise (decision
-# 'The ceiling stays', G9). The text, no claude needed. Cites: decisions-bind/REQ-13
+# 'The ceiling stays', G9). reviewer-decisions: a contradicted decision fails the review, and the
+# text says so; it used to say "the ship gate weighs them", and the gate has no such step. The
+# text, no claude needed. Cites: decisions-bind/REQ-12 decisions-bind/REQ-13
 rf_fail=""
 [ -f "$COPY/evals/lib/review-fixture.sh" ] || rf_fail=" [evals/lib/review-fixture.sh is missing]"
 for rf_case in "$COPY"/evals/reviewer/*/; do
@@ -2637,6 +2639,13 @@ for rf_case in "$COPY"/evals/reviewer/*/; do
 done
 if [ -z "$rf_fail" ]; then pass "reviewer-fixture (every reviewer case uses evals/lib/review-fixture.sh)"
 else failc "reviewer-fixture" "$rf_fail"; fi
+rd_fail=""
+for rd_want in '`contradicted`. Otherwise it is' '`not built`' 'turned down'; do
+  grep -qF "$rd_want" "$COPY/agents/reviewer.md" || rd_fail="$rd_fail [no: $rd_want]"
+done
+grep -q 'gate weighs' "$COPY/agents/reviewer.md" && rd_fail="$rd_fail [still says the gate weighs them]"
+if [ -z "$rd_fail" ]; then pass "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
+else failc "reviewer-decisions" "$rd_fail"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
