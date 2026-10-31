@@ -233,6 +233,8 @@ no spec was proposed); read its two graders separately when its score is not 0 o
 | `eve/payments` | `/shipkit:ask --all` Where do I handle payments across my projects, and with which provider? | gives `shopfront` and `pulse` Stripe, `insight` none, and cites a manifest (`Gemfile`, `mix.exs`) or a file that handles the charge (`stripe_charge.rb`, `billing/stripe.ex`) (P2; widened in 4.11.0) | regex |
 | `eve/why` | `/shipkit:ask --all` Why did pulse move sessions off the database, and when? | gives the vacuum-lock reason and the move, or says plainly the repository does not record why and presents no reason as the reason (P4) | llm |
 | `eve/why-reworded` | `/shipkit:ask --all` Why did pulse stop logging everyone out at three in the morning, and since when? | the same as `eve/why`; a probe of whether the map is reached when the question shares no word with its Evolution line (P4; 4.11.0) | llm |
+| `eve/matrix` | `/shipkit:ask` We're planning a Stripe upgrade. Across all my projects, which version of the Stripe library is each one on? | `shopfront` `12.4.0`, `pulse` `3.2.0`, both constraints, both lockfiles, `insight` unused | regex |
+| `eve/consolidate` | `/shipkit:ask --all consolidate` | the Stripe handling, a path from each project, and a judgment | regex |
 | `grandfather-xl/lookup` | `/shipkit:ask` Where is the job retry cap set? | names `jobs/policy.py` and the number 7, past two decoy `MAX_RETRIES` (XL1) | regex |
 | `grandfather-xl/explain` | `/shipkit:ask` How is VAT applied at checkout? | names `apply_vat`, `billing/tax.py` and `checkout.py` (XL2) | regex |
 | `grandfather-xl/drift` | `/shipkit:ask` Where are inventory counts cached? | says an in-process dict and says the map is wrong (XL3) | llm |

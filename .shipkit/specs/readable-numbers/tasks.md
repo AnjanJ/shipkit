@@ -24,7 +24,7 @@ of it: the harvest stays until T2 has read it.**
   - Test: the check-first on T1's traces: does a Grep's `tool_result` carry the matched paths? Smoke check 78, written first, red, on a stored two-line trace: a Grep with no path whose result lists `PROJECT_MAP.md` reads `map_read` 1 (cites `readable-numbers/REQ-7`), one whose result does not reads 0 and `map_shell` is unchanged (cites `readable-numbers/REQ-8`)
   - After: T1
   - Done when: check 78 PASS; the check-first's result in the table; T1's sandboxes removed; lint 0/0
-- [ ] **T3** `reports.md` watched, and the room for it (S24-T3, G6, G9) → REQ-9, REQ-10, REQ-11, REQ-14
+- [x] **T3** `reports.md` watched, and the room for it (S24-T3, G6, G9) → REQ-9, REQ-10, REQ-11, REQ-14
   - Files: plugins/shipkit/evals/README.md, docs/design/eval-history.md, plugins/shipkit/evals/eve/matrix/, plugins/shipkit/evals/eve/consolidate/, plugins/shipkit/evals/fixtures/FACTS-PORTFOLIO.md, scripts/lint.py, docs/design/eval-results-5.1.md
   - Test: first commit: the five sections moved whole, the README naming where, `bash scripts/lint.sh` 0/0 and smoke checks 57, 58 and 59 PASS alone, `scripts/lint.py`'s check 17 cites `readable-numbers/REQ-14`. Second commit: each grader through `node` on a written reply, passing a right reply and failing a seeded wrong one (a matrix of manifest ranges only; a consolidation with no path) (rule 23); `case.yaml` cites `readable-numbers/REQ-9` and `REQ-10`; then both cases three runs each, `--keep-temp`
   - After: T2

@@ -161,3 +161,33 @@ model, which is the record's case against, so `map_read` is read beside the repl
 Smoke check 78 holds both, on stored two-line traces: red on the old script, three listing cases
 reading 0, then PASS; check 40 still PASS. Whether this was `eve/why`'s third run in Sprint 21 is
 still not shown; that sandbox is gone. `--group eve` at the merge reads it.
+
+## 5. `reports.md` watched (G6, S24-T3)
+
+`readable-numbers/REQ-11`. `eve/matrix` asks through `/shipkit:ask` in plain words, with neither `--all`
+nor `matrix`; `eve/consolidate` runs `/shipkit:ask --all consolidate`. Three runs each, `sonnet`, Claude
+Code 2.1.316, 2026-10-31, each row read from its trace.
+
+| Case | Run | Passed | Read `reports.md` | `map_read` | `map_shell` | Tools | Cost |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `eve/matrix` | 1 | yes | yes | 0 | 0 | 6 | $0.15 |
+| `eve/matrix` | 2 | yes | yes | 0 | 0 | 5 | $0.13 |
+| `eve/matrix` | 3 | yes | yes | 0 | 0 | 5 | $0.13 |
+| `eve/consolidate` | 1 | yes | yes | 0 | 1 | 8 | $0.18 |
+| `eve/consolidate` | 2 | yes | yes | 0 | 1 | 7 | $0.18 |
+| `eve/consolidate` | 3 | yes | yes | 1 | 1 | 8 | $0.17 |
+
+**Reading.** The gap `eval-results-5.0.md` §3 named is closed: a matrix asked in words, with no flag,
+reached `eve` with the report's shape in all three runs, and each reply gave lockfile versions, the
+declared constraints and `path:line` evidence, with no map read, as `reports.md` says. A pass could
+not prove the route; the traces do, 6 of 6. Three clean runs happen 29.6% of the time at a 1-in-3 miss
+rate, so this says the route works, not how often. No miss, so no ROADMAP item. $0.93.
+
+`eve/consolidate` run 3 is the first real sighting of T2's count: a repo-wide Grep with no map in its
+path, whose result lists `PROJECT_MAP.md`, reads `map_read` 1, and the old script read 0. It is also the
+record's case against in small: the same run had already `cat` the maps by shell. Run 1's `map_shell` 1
+is a `wc -l`, and its reply says it read no map, so that column counts a mention, as it documents.
+
+The grader was wrong first, in the wide direction this time. It took `[Ss]hared` as a judgment, so a
+reply saying "could become a shared module" and judging nothing would pass. All three replies pass
+without it, so it came out before the case was committed, with that reply as a seed.
