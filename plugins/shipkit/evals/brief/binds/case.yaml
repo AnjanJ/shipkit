@@ -1,0 +1,5 @@
+# Proves decisions-bind/REQ-4 and decisions-bind/REQ-14
+schema_version: "1.1"
+name: brief-binds
+context:
+  scaffold_script: fixture.sh

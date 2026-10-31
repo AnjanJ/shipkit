@@ -10,8 +10,8 @@
 #   You may edit               the task's Files line — and nothing else
 #   Prove it with              the task's Test and Done when lines
 #   Already done               every task this one comes after, directly or through a chain
-#   Decisions that bind you    titles of the design.md decisions that cite the same requirements
-#                              (a decision marked "Superseded" is left out)
+#   Decisions that bind you    titles of every live decision in design.md, whichever requirements
+#                              it cites (a decision marked "Superseded" is left out)
 #   Not in scope               the Out of scope section of spec.md
 #   Report back …              the fixed form the agent answers in
 #
@@ -99,27 +99,16 @@ requirement() {
   ' "$SPEC"
 }
 
-# decisions <reqs…> → titles of live decisions in design.md whose heading cites one of them.
-# A heading may cite a range: "(→ REQ-11 to REQ-17)".
+# decisions → titles of every live decision in design.md. A decision binds whoever touches what
+# it governs, and that is not the tasks that cite its requirements: linkshort's T1 built what a
+# decision on T2's requirements had rejected (field-notes-5.0.md §8.1).
 decisions() {
   [ -f "$DESIGN" ] || return 0
-  awk -v reqs="$*" '
-    function cites(h,   t, a, b, i) {
-      t = h
-      while (match(t, /REQ-[0-9]+ to REQ-[0-9]+/)) {
-        s = substr(t, RSTART, RLENGTH); a = s; sub(/^REQ-/, "", a); sub(/ to .*/, "", a); b = s; sub(/.*REQ-/, "", b)
-        for (i = a + 0; i <= b + 0; i++) if (i in want) return 1
-        t = substr(t, RSTART + RLENGTH)
-      }
-      t = h
-      while (match(t, /REQ-[0-9]+/)) { if (substr(t, RSTART + 4, RLENGTH - 4) in want) return 1; t = substr(t, RSTART + RLENGTH) }
-      return 0
-    }
+  awk '
     function flush() { if (title != "" && !dead) print "- " title; title = "" }
-    BEGIN { n = split(reqs, r, " "); for (i = 1; i <= n; i++) want[r[i]] = 1 }
     /^## Decision:/ {
       flush(); dead = 0
-      if (cites($0)) { title = $0; sub(/^## Decision:[ \t]*/, "", title); sub(/[ \t]*\(→.*$/, "", title) }
+      title = $0; sub(/^## Decision:[ \t]*/, "", title); sub(/[ \t]*\(→.*$/, "", title)
       next
     }
     /^## / { flush(); next }
@@ -175,13 +164,13 @@ else
 fi
 echo
 echo "## Decisions that bind you"
-# shellcheck disable=SC2086
-DEC=$(decisions $REQS)
+DEC=$(decisions)
 if [ -n "$DEC" ]; then
+  echo "These limit how you do this task. They are not extra work: build only what your requirements ask, and contradict none of them."
   printf '%s\n' "$DEC"
   echo "(Full text: .shipkit/specs/$SLUG/design.md)"
 else
-  echo "None recorded for this task's requirements."
+  echo "None recorded for this feature."
 fi
 echo
 echo "## Not in scope"

@@ -4,6 +4,34 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
+## [Unreleased] — Sprint 23 of the binding plan (toward 5.1.0)
+
+**What changed for you.** A brief now lists every live decision of the feature, not only those citing
+the task's requirements, and says they limit how the task is done and are not extra work. On a case
+built from the `linkshort` failure, an agent built what the design had rejected in 3 of 10 runs
+before and 0 of 20 after. A brief grows by a few hundred bytes.
+
+**`/shipkit:ship` is stricter.** A feature whose code contradicts a live decision is now NOT READY,
+where it could be READY before: the reviewer found the contradiction 3 times of 3 and still passed
+it, and the gate had no step that weighed it. Change the code, or mark the decision superseded with
+a new record, so that changing your mind leaves a trace. A decision not built yet is reported and
+does not fail the review.
+
+### Changed
+
+- **Every live decision reaches every brief** (binding plan G1, S23-T2): `brief.sh` stops selecting
+  by the requirements a decision cites, because a decision binds whoever touches what it governs. A
+  sentence above the list says a decision is not extra work (`decisions-bind/REQ-14`): without it, 9
+  of 10 runs built later tasks' work inside the task, 1 of 10 with it. `brief/binds` watches both;
+  smoke check 25. Numbers in `docs/design/eval-results-5.1.md` §1.
+- **A contradicted decision fails the review** (binding plan G2, G3, S23-T3): the reviewer reads what
+  a decision turned down, marks each one it lists `contradicted` or `not built`, and `VERDICT: PASS`
+  needs no `contradicted` one. `review-and-ship/REQ-6` amended in place; `agents/reviewer.md` no
+  longer says the gate weighs what it does not. Cases `reviewer/rejected-alternative` and
+  `reviewer/decision-unbuilt`, smoke check 77; §2.
+- **The `reviewer` cases share one fixture script** (G9, S23-T3): `evals/lib/review-fixture.sh`, 3,823
+  bytes back under the ceiling.
+
 ## [5.0.0] — 2026-10-31
 
 **What changed for you.** Shipkit costs a session less, and seven skill names changed to get there.
