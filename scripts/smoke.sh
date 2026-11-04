@@ -2676,6 +2676,134 @@ for mr_case in other mention none notgrep; do mr_want "$mr_case" "0 0"; done
 if [ -z "$mr_fail" ]; then pass "map-read-grep (a Grep listing the map counts, whatever its path; a line naming it from another file, and any other tool's result, do not; map_shell unchanged)"
 else failc "map-read-grep" "$mr_fail"; fi
 
+# 79. django-only: django.md's paths match any models.py, so a FastAPI project loaded Django advice
+# on every read of one, and setup said it loaded on Django files only. It installs only where the
+# framework names Django, and that is a glob, so `Django 5.2` from a model keeps a real project its
+# rule. A framework setup could not detect reads as not Django. No claude needed.
+# Cites: fourth-project/REQ-1 fourth-project/REQ-2 fourth-project/REQ-3
+dj_fail=""; dj_n=0
+dj_install() {  # dj_install <framework> → a fresh project with the python overlay; sets DJ
+  dj_n=$((dj_n + 1)); DJ="$WORK/django-$dj_n"; mkdir -p "$DJ"
+  sh "$COPY/scripts/install-rules.sh" "$COPY" "$DJ" >/dev/null 2>&1
+  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$DJ" TEST_COMMAND=pytest API_STYLE=REST \
+    ASYNC_MODE=no ORM=x PYTHON_FRAMEWORK="$1" TEST_FRAMEWORK=pytest >/dev/null 2>&1 \
+    || dj_fail="$dj_fail [$1: install failed]"
+  [ -f "$DJ/.claude/rules/shipkit/python/pyproject.md" ] || dj_fail="$dj_fail [$1: no pyproject.md]"
+}
+for dj_fw in Django django 'Django 5.2'; do
+  dj_install "$dj_fw"
+  [ -f "$DJ/.claude/rules/shipkit/python/django.md" ] || dj_fail="$dj_fail [$dj_fw: no django.md]"
+  grep -q 'python/django.md' "$DJ/.claude/rules/shipkit/.installed" || dj_fail="$dj_fail [$dj_fw: not in the manifest]"
+done
+for dj_fw in FastAPI Flask None 'TODO: which framework'; do
+  dj_install "$dj_fw"
+  [ ! -f "$DJ/.claude/rules/shipkit/python/django.md" ] || dj_fail="$dj_fail [$dj_fw: django.md installed]"
+  ! grep -q 'python/django.md' "$DJ/.claude/rules/shipkit/.installed" || dj_fail="$dj_fail [$dj_fw: in the manifest]"
+done
+grep -q 'loads on Django files only' "$COPY/skills/setup/SKILL.md" && dj_fail="$dj_fail [setup keeps the parenthesis]"
+grep -q 'django.md. on a Django project' "$COPY/skills/setup/SKILL.md" || dj_fail="$dj_fail [setup does not say when it installs]"
+if [ -z "$dj_fail" ]; then pass "django-only (django.md and its manifest row on Django, django and Django 5.2; neither on FastAPI, Flask, None or a TODO; pyproject.md on all; setup says so)"
+else failc "django-only" "$dj_fail"; fi
+
+# 80. stamp-dates: six stamp lines in five skills held a literal date with no source named, and a
+# real intake was stamped 2026-10-05 on 2026-10-31 (field-notes-5.0.md §4.1). Each now holds
+# <YYYY-MM-DD> and its file names `date +%F`. This reads the templates: what a model does with them
+# is read on a real run (fourth-project T2). No claude needed.
+# Cites: fourth-project/REQ-4 fourth-project/REQ-5
+sd_fail=""
+sd_hits=$(grep -rlE '^[[:space:]]*> .*20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$COPY/skills" | sed "s#^$COPY/##" | tr '\n' ' ')
+[ -z "$sd_hits" ] || sd_fail="$sd_fail [a literal date on a stamp line: $sd_hits]"
+while IFS='|' read -r sd_file sd_line; do
+  grep -qF "$sd_line" "$COPY/skills/$sd_file" || sd_fail="$sd_fail [$sd_file: no '$sd_line']"
+  grep -qF 'date +%F' "$COPY/skills/$sd_file" || sd_fail="$sd_fail [$sd_file: no date +%F]"
+done <<'SDEOF'
+escape/SKILL.md|> Recorded on <YYYY-MM-DD>.
+handoff/SKILL.md|> Written <YYYY-MM-DD> at commit
+product/SKILL.md|> Studio reviewed on <YYYY-MM-DD>.
+product/reference.md|> Product reviewed on <YYYY-MM-DD>.
+intake/SKILL.md|> Intake taken on <YYYY-MM-DD>.
+ship/reference.md|> Checked on <YYYY-MM-DD> at commit
+SDEOF
+if [ -z "$sd_fail" ]; then pass "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
+else failc "stamp-dates" "$sd_fail"; fi
+
+# 81. section-clean: a filled section kept every template comment, the alternatives the project did
+# not pick (`<!-- Django / FastAPI / Flask / None -->`) among them, in a file every session loads,
+# and told a sync project to use an async ORM (field-notes-5.0.md §2.2). Comments go as the template
+# is read, so no value and neither marker can be touched, and the sources keep them for setup's
+# TODO hints. The sha is taken from the section as written: a re-run reads "already current", a
+# changed value refreshes without an "edited" warning, and an unedited section from 5.0.0, comments
+# and all, refreshes at the next setup. No claude needed.
+# Cites: fourth-project/REQ-6 fourth-project/REQ-7 fourth-project/REQ-8 fourth-project/REQ-9
+sc2_fail=""
+sc2_inner() {  # sc2_inner <stack> <CLAUDE.md> → the lines between that stack's markers
+  awk -v s="<!-- shipkit:stack:$1 -->" -v e="<!-- /shipkit:stack:$1 -->" \
+    'index($0,s){on=1; next} index($0,e){on=0; next} on' "$2"
+}
+sc2_n=0
+for sc2_src in "$COPY"/stacks/*/CLAUDE.md.append; do
+  sc2_st=$(basename "$(dirname "$sc2_src")"); sc2_n=$((sc2_n + 1))
+  sc2_d="$WORK/section-$sc2_st"; mkdir -p "$sc2_d"
+  # shellcheck disable=SC2046
+  sh "$COPY/scripts/install-stack.sh" "$COPY" "$sc2_st" "$sc2_d" \
+    $(grep -rho '{{[A-Z_][A-Z0-9_]*}}' "$COPY/stacks/$sc2_st" | sed 's/[{}]//g' | sort -u | sed 's/$/=x/') >/dev/null 2>&1 \
+    || sc2_fail="$sc2_fail [$sc2_st: install failed]"
+  sc2_inner "$sc2_st" "$sc2_d/CLAUDE.md" | grep -q '<!--' && sc2_fail="$sc2_fail [$sc2_st: a comment survived]"
+  grep -qF "<!-- shipkit:stack:$sc2_st -->" "$sc2_d/CLAUDE.md" && grep -qF "<!-- /shipkit:stack:$sc2_st -->" "$sc2_d/CLAUDE.md" \
+    || sc2_fail="$sc2_fail [$sc2_st: a marker went]"
+  sc2_inner "$sc2_st" "$sc2_d/CLAUDE.md" | grep -q '[^[:space:]]' || sc2_fail="$sc2_fail [$sc2_st: the section is empty]"
+done
+[ "$sc2_n" -ge 10 ] || sc2_fail="$sc2_fail [only $sc2_n stacks read]"
+grep -qF '<!-- Django / FastAPI / Flask / None -->' "$COPY/stacks/python/CLAUDE.md.append" \
+  || sc2_fail="$sc2_fail [the source lost its comment]"
+sc2_py() {  # sc2_py <dir> <ASYNC_MODE> [TEST_COMMAND] → install python there
+  mkdir -p "$1"
+  sh "$COPY/scripts/install-stack.sh" "$COPY" python "$1" TEST_COMMAND="${3:-pytest}" API_STYLE=REST \
+    ASYNC_MODE="$2" ORM=x PYTHON_FRAMEWORK=FastAPI TEST_FRAMEWORK=pytest 2>&1
+}
+for sc2_async in no No; do
+  sc2_d="$WORK/section-sync-$sc2_async"; sc2_py "$sc2_d" "$sc2_async" >/dev/null
+  grep -q 'Async DB:' "$sc2_d/CLAUDE.md" && sc2_fail="$sc2_fail [ASYNC_MODE=$sc2_async keeps Async DB]"
+  grep -q '^- \*\*Async:\*\* [Nn]o$' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [ASYNC_MODE=$sc2_async: no clean Async line]"
+done
+sc2_d="$WORK/section-async"; sc2_py "$sc2_d" yes >/dev/null
+grep -q 'Async DB:' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [ASYNC_MODE=yes lost Async DB]"
+sc2_d="$WORK/section-todo"; sc2_py "$sc2_d" 'TODO: async or not' >/dev/null
+grep -q 'Async DB:' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [a TODO lost Async DB]"
+# The sha, read three ways. A sync project, so it holds after both cuts.
+sc2_d="$WORK/section-sha"; sc2_py "$sc2_d" no >/dev/null
+sc2_shaf="$sc2_d/.claude/rules/shipkit/.section-python.sha"
+sc2_inner python "$sc2_d/CLAUDE.md" > "$WORK/section-inner"
+[ "$(. "$COPY/scripts/lib-manifest.sh"; file_sha "$WORK/section-inner")" = "$(cat "$sc2_shaf" 2>/dev/null)" ] \
+  || sc2_fail="$sc2_fail [the sha is not of the section as written]"
+cp "$sc2_d/CLAUDE.md" "$WORK/section-before"
+sc2_out=$(sc2_py "$sc2_d" no)
+printf '%s\n' "$sc2_out" | grep -q 'already current' || sc2_fail="$sc2_fail [a re-run did not read current]"
+cmp -s "$sc2_d/CLAUDE.md" "$WORK/section-before" || sc2_fail="$sc2_fail [a re-run changed CLAUDE.md]"
+sc2_out=$(sc2_py "$sc2_d" no 'uv run pytest')
+printf '%s\n' "$sc2_out" | grep -q 'section was edited' && sc2_fail="$sc2_fail [a changed value read as edited]"
+grep -q 'uv run pytest' "$sc2_d/CLAUDE.md" || sc2_fail="$sc2_fail [a changed value did not refresh]"
+# As a project set up on 5.0.0: its section holds the comments, and its sha is of that text.
+sc2_d="$WORK/section-old"; sc2_py "$sc2_d" no >/dev/null
+awk '{ if ($0 == "- **Async:** no") print "- **Async:** no <!-- yes/no -->"; else print }' "$sc2_d/CLAUDE.md" > "$WORK/section-oldmd"
+cat "$WORK/section-oldmd" > "$sc2_d/CLAUDE.md"
+sc2_inner python "$sc2_d/CLAUDE.md" > "$WORK/section-oldinner"
+(. "$COPY/scripts/lib-manifest.sh"; file_sha "$WORK/section-oldinner") > "$sc2_d/.claude/rules/shipkit/.section-python.sha"
+sc2_out=$(sc2_py "$sc2_d" no)
+sc2_inner python "$sc2_d/CLAUDE.md" | grep -q '<!--' && sc2_fail="$sc2_fail [a 5.0.0 section kept its comment: $(printf '%s' "$sc2_out" | tr '\n' '|' | cut -c1-120)]"
+if [ -z "$sc2_fail" ]; then pass "section-clean (no comment between the markers in any of $sc2_n stacks, markers and sources kept; no Async DB on no or No, kept on yes and a TODO; the sha is of what was written: a re-run is current, a new value refreshes, a 5.0.0 section loses its comments)"
+else failc "section-clean" "$sc2_fail"; fi
+
+# 82. fired-if-tracked: a model-written `grep -rl expires_at src` fired on __pycache__/*.pyc after
+# the first pytest, because decision-check.sh runs over untracked files too. The line is taught in
+# spec/reference.md, and decide/SKILL.md sends its reader there, so one sentence serves both. Read
+# from that section only: a `git grep` elsewhere in the file would not be where the writer looks.
+# No claude needed. Cites: fourth-project/REQ-10
+fi_sec=$(awk '/^### The `Fired-if` line/ { on = 1; next } on && /^##/ { on = 0 } on' "$COPY/skills/spec/reference.md")
+if printf '%s\n' "$fi_sec" | grep -q 'tracked files' && printf '%s\n' "$fi_sec" | grep -q 'git grep'; then
+  pass "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
+else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say tracked files and git grep"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

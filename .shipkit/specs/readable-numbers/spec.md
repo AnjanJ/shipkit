@@ -1,7 +1,7 @@
 # Spec: What a number can say (Sprint 24)
 
 > Spec accepted at commit `2e8bed0` on sprint-24/readable-numbers (2026-10-31).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/evals/trap2/, plugins/shipkit/evals/eve/, plugins/shipkit/evals/rules/, plugins/shipkit/evals/fixtures/FACTS-PORTFOLIO.md, plugins/shipkit/evals/README.md, scripts/trace-tools.sh, scripts/smoke.sh, scripts/evals.sh, scripts/lint.py, docs/design/eval-history.md, docs/design/eval-results-5.1.md, docs/plans/binding-sprint-plan.md, ROADMAP.md, CHANGELOG.md
 
 ## Purpose

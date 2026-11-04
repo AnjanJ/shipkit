@@ -10,7 +10,8 @@
 #                  not detect — nothing is left as braces.
 #
 # What it does:
-#   stacks/<stack>/.claude/rules/*.md   → <project>/.claude/rules/shipkit/<stack>/
+#   stacks/<stack>/.claude/rules/*.md   → <project>/.claude/rules/shipkit/<stack>/  (python's
+#                                         django.md only where PYTHON_FRAMEWORK names Django)
 #   stacks/<stack>/.claude/skills/*     → <project>/.claude/skills/<name>/  (an existing file
 #                                         shipkit does not own is kept, with a warning, unless
 #                                         SHIPKIT_OVERWRITE_SKILLS=1)
@@ -55,6 +56,7 @@ NONINTERACTIVE="${SHIPKIT_NONINTERACTIVE:-0}"
 # --- collect substitutions: KEY=value → a sed script -------------------------------------
 SEDSCRIPT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
 trap 'rm -f "$SEDSCRIPT"' EXIT
+FRAMEWORK=""; ASYNC=""
 for kv in "$@"; do
   case "$kv" in
     *=*) ;;
@@ -72,6 +74,8 @@ for kv in "$@"; do
   # escape for sed replacement with '#' delimiter: \ & #
   esc=$(printf '%s' "$val" | sed 's/[\\&#]/\\&/g')
   printf 's#{{%s}}#%s#g\n' "$key" "$esc" >> "$SEDSCRIPT"
+  [ "$key" = PYTHON_FRAMEWORK ] && FRAMEWORK=$val
+  [ "$key" = ASYNC_MODE ] && ASYNC=$val
 done
 
 subst() {  # substitute in place, portably
@@ -109,6 +113,12 @@ if [ -d "$SRC/.claude/rules" ]; then
   mkdir -p "$RDEST" || die "cannot create $RDEST"
   for f in "$SRC"/.claude/rules/*.md; do
     [ -f "$f" ] || continue
+    # django.md's paths match any models.py, so a FastAPI project would load Django advice on
+    # every read of one (fourth-project/REQ-1). A glob, so `Django 5.2` from a model still counts.
+    case "$STACK/$(basename "$f"):$FRAMEWORK" in
+      python/django.md:[Dd]jango*) ;;
+      python/django.md:*) continue ;;
+    esac
     cp "$f" "$RDEST/" || die "failed to copy $f"
     subst "$RDEST/$(basename "$f")"
     note "$RDEST/$(basename "$f")"
@@ -166,7 +176,19 @@ ENDMARK="<!-- /shipkit:stack:$STACK -->"
 if [ -f "$SRC/CLAUDE.md.append" ]; then
   CM="$PROJ/CLAUDE.md"
   SECTION=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
-  { printf '\n%s\n' "$MARK"; cat "$SRC/CLAUDE.md.append"; printf '%s\n' "$ENDMARK"; } > "$SECTION"
+  # What a filled section keeps of its template (fourth-project/REQ-6, REQ-8). A comment there
+  # served whoever filled the value in, and costs every session after: setup reads the source
+  # for a TODO's hint, so the source keeps them. Cut before subst, where neither a value nor a
+  # marker can be reached. `Async DB` tells a sync project to use an async ORM; a TODO keeps it.
+  section_body() {
+    sed -e '/^[[:space:]]*<!--.*-->[[:space:]]*$/d' -e 's/[[:space:]]*<!--.*-->[[:space:]]*$//' \
+        "$SRC/CLAUDE.md.append" \
+      | case "$STACK:$ASYNC" in
+          python:no|python:No) grep -v '^- \*\*Async DB:\*\*' ;;
+          *) cat ;;
+        esac
+  }
+  { printf '\n%s\n' "$MARK"; section_body; printf '%s\n' "$ENDMARK"; } > "$SECTION"
   subst "$SECTION"
   if grep -q '{{[A-Z_][A-Z0-9_]*}}' "$SECTION"; then   # cannot happen after the pre-check; belt and braces
     rm -f "$SECTION"; die "internal: placeholders survived substitution in the CLAUDE.md section"

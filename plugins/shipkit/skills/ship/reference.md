@@ -1,14 +1,14 @@
 # /shipkit:ship — Report format
 
 `.shipkit/releases/<YYYY-MM-DD>-<slug>.md`. The first line is read by scripts and by people in
-a hurry: exactly `READY` or `NOT READY`, nothing else on it.
+a hurry: exactly `READY` or `NOT READY`, nothing else on it. Both dates come from `date +%F`.
 
 ```markdown
 NOT READY
 
 # Ship report: refunds
 
-> Checked on 2026-10-06 at commit `a1b2c3d` on `feature/refunds`, against base `9f8e7d6`.
+> Checked on <YYYY-MM-DD> at commit `a1b2c3d` on `feature/refunds`, against base `9f8e7d6`.
 
 | # | Step | Result | Reason |
 |---|------|--------|--------|

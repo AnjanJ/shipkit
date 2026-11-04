@@ -87,7 +87,9 @@ measured from the repository, add one line after the clause holding a shell comm
 or `grep -q …` composes straight from the sentence. Exit 1 means it still holds; anything
 above 1 is an error. The command must exit 1 on the tree the record is written against: a
 condition about code that does not exist yet (its size, its test count) errors today and fires
-the day the file appears, before the decision has had a chance to be wrong. A note after the
+the day the file appears, before the decision has had a chance to be wrong. A command that
+searches should read tracked files: `git grep -q expires_at -- src`, not `grep -r`, which also
+reads what a test run leaves behind (`__pycache__/*.pyc`) and fires on it. A note after the
 command goes in a trailing `<!-- … -->`, which `decision-check.sh` ignores.
 
 ```markdown

@@ -1,7 +1,7 @@
 # Spec: What a decision binds (Sprint 23)
 
 > Spec accepted at commit `6379fd7` on sprint-23/decisions-bind (2026-10-31).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/brief.sh, plugins/shipkit/agents/reviewer.md, plugins/shipkit/evals/brief/, plugins/shipkit/evals/reviewer/, plugins/shipkit/evals/lib/, scripts/smoke.sh, docs/design/eval-results-5.1.md, docs/plans/binding-sprint-plan.md, .shipkit/specs/review-and-ship/spec.md, CHANGELOG.md
 
 ## Purpose

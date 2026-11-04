@@ -43,6 +43,54 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 5.1.0
+
+`bash scripts/evals.sh -j 4`, 2026-11-04, at `073938c` (the release prep commit; `plugins/`
+byte-identical through the three gates below), Claude Code 2.1.318: 65 cases, 227 runs, 1,356 s,
+**$21.10, exit 0**, inside the plan's $21 to $23. The four graders Sprint 24 corrected read 3 of 3,
+`trap2/rails` and `trap2/experiments` among them, which read 1 of 3 each in 5.0.0. 62 cases at full
+score; three at 2 of 3, the threshold, none of them a case this plan touched:
+
+- `grandfather-xl/drift`: run 3's judges voted FAIL FAIL FAIL on `dict-and-map-wrong`.
+- `hello`: run 1's last message did not hold the `names-map` pattern.
+- `intake/limit`: run 2's judges voted FAIL FAIL PASS on `four-questions-or-fewer`, its shape since
+  4.9.0.
+
+The run kept no traces (no `--keep-temp`), so the three are named by their graders alone.
+
+The smoke suite ran on `073938c`: 222 checks, **221 passed**. The one failure is `briefing`'s
+fifty-spec timing, 1.02 s on a 1 s limit with the suite's own load near 3.5; the same fifty specs
+timed alone took 0.72 to 0.75 s in five runs of five, and `briefing.sh` and `session-start.sh` have
+no diff from `v5.0.0`. Sprint 23's merge saw the same check at 1.01 s.
+
+**The gates**, `/shipkit:ship` headless on `sonnet` with `--plugin-dir` at the checkout and the test
+command `bash scripts/lint.sh && sh plugins/shipkit/scripts/spec-check.sh .`, one at a time:
+`decisions-bind` against `6379fd7`, READY at `073938c`, 117 s, $0.37; `readable-numbers` against
+`2e8bed0`, READY at `47a3827`, 147 s, $0.51; `fourth-project` against `6831e71`, NOT READY at
+`bbc0a46`, 122 s, $0.40. Its review failed on eight `[untested]` requirements, each read as the
+reviewer's rule says (`agents/reviewer.md:38`). Three the record had not reached yet: REQ-14's
+evidence, REQ-17's run and REQ-19's count, on this page and in `field-notes-5.1.md` since. One the
+reviewer did not find: REQ-16's line is at `ROADMAP.md:87`, and its
+`grep -n "198,837\|198837" ROADMAP.md` printed nothing, where the same command in the owner's
+session prints that line. Claude Code's shell snapshot holds the owner's `alias -- grep=rg` beside
+its own `grep` function, and ripgrep reads `\|` as a pipe; which of the two the reviewer's shell
+ran is not recorded. Four the spec cannot meet at its own gate: REQ-15, whose worktree a reboot
+removed before the owner's yes; REQ-18, which asks for this gate's own READY; REQ-21 and REQ-22,
+the steps that follow the gate. The owner amended those four (`40d9ce3`), and on 2026-11-05 the
+gate read READY at `1d0f0df`, 255 s, $0.48: 20 MET, the reviewer on `sonnet` with no placeholder.
+Its Bash `grep` with `\|` printed nothing for `ROADMAP.md` again, and its Grep tool found line 87.
+
+**The `placeholder` reviewer, counted again** (`fourth-project/REQ-19`). Every session in
+`~/.claude/projects/` whose first prompt runs `/shipkit:ship` and that started a `shipkit:reviewer`:
+156 since 2026-10-05, 7 with a `SubagentHandback {"message": "placeholder"}`, the last on
+2026-10-31 at 17:28 UTC. The reviewer has run on `sonnet` since `4f81799`: 7 gate sessions, every
+reviewer on `claude-sonnet-5-5`, none with a placeholder. Against 3 of 74: counted the same way up
+to the moment that number was committed (2026-10-31, 09:35 UTC), the logs hold the same three
+placeholders in 127 sessions, not 74; how 74 was counted is not recorded. All seven placeholder
+reviewers ran on `claude-sonnet-5-5`, as did 134 of the 149 before the pin, so the pin does not
+separate the model as the design supposed, and 0 of 7 at the earlier rate of 7 in 149 happens about
+seven times in ten. It shows almost nothing, as the design said it would.
+
 ## Four graders corrected (S24-T1, 2026-10-31)
 
 `readable-numbers/REQ-6`, the plan's G4 and rule 23. Claude Code 2.1.316. Eval sessions leave no session

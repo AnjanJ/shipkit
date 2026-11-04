@@ -1,12 +1,13 @@
 # /shipkit:product — Reference
 
 The shape of `.shipkit/product.md`. Seven headings, in this order, all present. At most 60
-lines. Other skills read it by heading, so keep the heading text exactly as written here.
+lines. Other skills read it by heading, so keep the heading text exactly as written here. The
+date comes from `date +%F`.
 
 ```markdown
 # Product: <name>
 
-> Product reviewed on 2026-10-05.
+> Product reviewed on <YYYY-MM-DD>.
 
 ## One line
 <what it is and who it is for, in one sentence>

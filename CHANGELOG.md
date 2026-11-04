@@ -4,22 +4,55 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [Unreleased] — Sprints 23 and 24 of the binding plan (toward 5.1.0)
+## [5.1.0] — 2026-11-05
 
-**What changed for you.** A brief now lists every live decision of the feature, not only those citing
-the task's requirements, and says they limit how the task is done and are not extra work. On a case
-built from the `linkshort` failure, an agent built what the design had rejected in 3 of 10 runs
-before and 0 of 20 after. A brief grows by a few hundred bytes.
+**What changed for you.** `/shipkit:ship` is stricter. A feature whose code contradicts a live
+decision is now NOT READY, where it could be READY before: the reviewer found the contradiction 3
+times of 3 and still passed it, and the gate had no step that weighed it. Change the code, or mark
+the decision superseded with a new record, so that changing your mind leaves a trace. A decision
+not built yet is reported and does not fail the review.
 
-**`/shipkit:ship` is stricter.** A feature whose code contradicts a live decision is now NOT READY,
-where it could be READY before: the reviewer found the contradiction 3 times of 3 and still passed
-it, and the gate had no step that weighed it. Change the code, or mark the decision superseded with
-a new record, so that changing your mind leaves a trace. A decision not built yet is reported and
-does not fail the review.
+**A brief lists every live decision of the feature**, not only those citing the task's
+requirements, and says they limit how the task is done and are not extra work. On a case built
+from the `linkshort` failure, an agent built what the design had rejected in 3 of 10 runs before
+and 0 of 20 after. A brief grows by a few hundred bytes.
+
+**The reviewer runs on `sonnet`, whatever model your session uses.** Reviews cost less from an Opus
+session, and the gate's result no longer depends on the session's model: 21 of 55 reviews on Opus
+5.5 cost more than $2 at list price, the limit the old decision set. A session on `haiku` now pays
+more for a review than it did.
+
+**Setup writes less that is not about your project.** A Python project that is not Django no
+longer gets `django.md`, which loaded Django advice whenever a `models.py` was read. A stack
+section in `CLAUDE.md` says what your project is: the comments listing the choices it did not
+make are gone, and a sync Python project no longer gets the line telling it to use an async ORM.
+The files `/shipkit:intake`, `/shipkit:escape`, `/shipkit:handoff`, `/shipkit:product` and
+`/shipkit:ship` write carry today's date, where a template's example date could be copied before.
+
+**If you set up a project on 5.0.0**, your next `/shipkit:setup` refreshes a stack section still
+exactly as shipkit wrote it, so it loses its comments; a section you edited is left alone, and
+setup shows you the diff and asks before replacing it. `.claude/rules/shipkit/python/django.md`
+stays, because nothing deletes it. If your project is not Django, delete it yourself: it costs
+583 bytes whenever a `models.py`, `views.py`, `serializers.py`, migration or `settings*.py` file
+is read.
 
 **Sprint 24 changes nothing you run.** It works on the instruments, so that a release run's exit
 code can be believed: graders that failed correct work are corrected, and `reports.md` has cases
 watching it.
+
+| What | 5.0.0 | 5.1.0 |
+|---|---|---|
+| Decisions reaching T1's brief, in `linkshort`'s shape | 0 of 3 | 3 of 3 |
+| The gate on a live decision the code contradicts | READY is possible | NOT READY |
+| The release run's exit | 1, on two graders | 0, on 65 cases |
+| Graders narrower than their line | 4 | 0 |
+| `python/django.md` on a FastAPI project | 583 bytes on any `models.py` | not installed |
+| Skill templates with a literal date on a stamp line | 6 lines in 5 skills | 0 |
+| `reports.md` cases | 0 | 2 |
+| The Care line measured on | 1 prompt, 1 model | 3 prompts, 2 models |
+| E1, E2, E3 exercised on a real project | never, since 4.10.0 | 3, all held |
+| Evals directory | 198,837 of 204,800 bytes | 202,547 |
+| Three always-on rules | 2,999 of 3,000 bytes | 2,999 |
 
 ### Changed
 
@@ -35,6 +68,9 @@ watching it.
   `reviewer/decision-unbuilt`, smoke check 77; §2.
 - **The `reviewer` cases share one fixture script** (G9, S23-T3): `evals/lib/review-fixture.sh`, 3,823
   bytes back under the ceiling.
+- **`agents/reviewer.md` pins `model: sonnet`**, was `inherit`: the `review-and-ship` decision's own
+  clause fired, so a new record in that `design.md` supersedes it. The 55 reviews on Opus 5.5 from
+  2026-10-05 to 2026-10-31 came to $112.34 at list price, $65.29 at `sonnet` prices on the same tokens.
 - **Four `trap2` graders forbid the act, not the word** (G4, S24-T1): `rails`, `go-mod`, `experiments`,
   `package-json`. Over 36 files the old graders failed 15, and none of the 36 breaks its line. No real
   violation turned up, so each grader's failing side is shown only on seeded files.
@@ -47,6 +83,47 @@ watching it.
   for them left the suite and the readings stay in `docs/design/eval-results-5.1.md`. No rule text changed.
 - **Five README readings move to `docs/design/eval-history.md`** (G9, S24-T3), so the ceiling holds at
   204,800: the directory is 202,547. Smoke holds 218 checks, all passed.
+- **`django.md` installs only on a Django project** (binding plan G8, S25-T1): `install-stack.sh`
+  writes `python/django.md` only where `PYTHON_FRAMEWORK` names Django, and setup's table no longer
+  says it "loads on Django files only", which was untrue: its `paths:` match any `models.py`. A
+  project set up on 5.0.0 keeps its copy. Smoke check 79.
+- **A stamp line holds a placeholder** (G8, S25-T1): the six stamp lines in `intake`, `escape`,
+  `handoff`, `product` (two) and `ship` hold `<YYYY-MM-DD>`, and each file says the date comes from
+  `date +%F`. A real intake had been stamped 2026-10-05, the template's own date, on 2026-10-31.
+  Smoke check 80.
+- **A filled stack section says what the project is** (G8, S25-T1): `install-stack.sh` drops every
+  `<!-- … -->` comment from a section as it writes it, 34 across ten stacks, and keeps both shipkit
+  markers; the source files keep theirs, which setup reads for a `TODO:` hint. A Python section
+  with `ASYNC_MODE` `no` loses its `**Async DB:**` line. The recorded sha is taken from what is
+  written, so a re-run with the same values reads "already current". Smoke check 81.
+- **A `Fired-if` that searches reads tracked files** (G8, S25-T1): `skills/spec/reference.md` says
+  so and names `git grep`; a `grep -r` fired on `__pycache__` bytecode in 4.12. It is advice, and
+  nothing enforces it. Smoke check 82.
+
+### What using it for real showed
+
+**On a project with its own `CLAUDE.md` and rules, the fixes held.** The loop ran on
+`~/code/office_bestie`, the owner's Phoenix project: setup, product, intake twice, spec, a brief,
+one task built, the gate, and a walk, in eight headless sessions on `sonnet` for $2.14. E1, E2 and
+E3 held, each on the line it was written for, the first real run to reach them since 4.10.0. All
+three of the feature's decisions reached the task's brief, and the agent built none of the later
+tasks' work. The gate read NOT READY for the right reason, one task of five built; its reviewer
+cited every line correctly and marked nothing contradicted, rightly
+(`docs/design/field-notes-5.1.md`).
+
+**The stricter gate has no real reading yet.** Nothing on that run contradicted a decision, so the
+new NOT READY is shown on a fixture only (`docs/design/eval-results-5.1.md` §3).
+
+**The largest finding is a wait.** A headless intake sat four minutes on two `Monitor` watches the
+model armed for an agent that had already finished, and returned the last idle turn as its result.
+It is on the ROADMAP with ten others, under "Still open after Sprint 25".
+
+**The release run exited 0.** 65 cases, $21.10: 62 at full score and three at 2 of 3, none of them a
+case this release touched, and the four corrected graders read 3 of 3. Smoke passed 221 of 222
+checks; the one miss is a timing check, 1.02 s on a 1 s limit under the suite's own load, and 0.75 s
+at most alone. Since the reviewer moved to `sonnet`, none of its 7 gate sessions ended in
+`placeholder`, but all 7 that did before ran on `sonnet` too, so that shows almost nothing
+(`docs/design/eval-history.md`, "Release run 5.1.0").
 
 ## [5.0.0] — 2026-10-31
 

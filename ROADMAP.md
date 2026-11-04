@@ -12,13 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-10-31, v5.0.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
-evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan and 17 to 19 of the
-second-run plan are done, and so are Sprints 20 to 22 of the thinning plan
-(`docs/plans/thinning-sprint-plan.md`, approved 2026-10-30), one release, 5.0.0; see "The thinning
-plan" below. Everything in this document is shipped except the items
-under "Still open after Sprint 22", which seed the plan after (each item carries a note when a
-sprint pays it).
+**Status (as of 2026-11-05, v5.1.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
+second-run plan and 20 to 22 of the thinning plan are done, and so are Sprints 23 to 25 of the
+binding plan (`docs/plans/binding-sprint-plan.md`, approved 2026-10-31), one release, 5.1.0; see
+"The binding plan" below. Everything in this document is shipped except the items under "Still
+open after Sprint 25", which seed the plan after (each item carries a note when a sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -31,6 +30,91 @@ sprint pays it).
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The binding plan — ✅ Sprints 23–25 SHIPPED 2026-10-31 to 2026-11-05 as 5.1.0
+
+Full plan: [`docs/plans/binding-sprint-plan.md`](docs/plans/binding-sprint-plan.md). What a decision
+holds an agent to, and what a number can say: every live decision in every brief and a gate that
+fails on a contradicted one (23), graders and counts that a release run's exit code can rest on
+(24), then four debts, the loop on the owner's own project, and one release (25). Numbers:
+`docs/design/eval-results-5.1.md`, `docs/design/field-notes-5.1.md`.
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 23 | 5.1.0 (merged untagged, `2e8bed0`) | Every live decision in every brief, said not to be extra work: on `brief/binds` the rejected alternative went from 3 of 10 runs to 0 of 20, later tasks' work from 9 of 10 to 1 of 10; a reviewer that marks a decision `contradicted` or `not built`, and a review that fails on a contradicted one; the gate forced both ways, NOT READY on the contradiction and READY once a new record superseded it; the two `reviewer` fixtures on one script |
+| 24 | 5.1.0 (merged untagged, `6831e71`) | Four `trap2` graders that forbid the act, not the word, where the old ones failed 15 of 36 correct files; `map_read` counting a Grep that lists the map, 10 of 18 on `--group eve` where the old count read 6; `eve/matrix` and `eve/consolidate` watching `reports.md`, 6 of 6; the Care line read on `haiku`, 5 of 5 with the plugin and 0 of 5 without, and on two quiet requests, no work lost in 40 runs, no rule text changed; the evals at 202,547 of 204,800 bytes, no raise |
+| 25 | 5.1.0 | Four debts paid, each with a smoke check (79 to 82): `django.md` only on a Django project, six stamp lines dated by `date +%F`, a filled section with no comment and a sync project with no async line, a `Fired-if` taught to read tracked files; the reviewer pinned to `sonnet` (`4f81799`); the nine steps and a walk on `~/code/office_bestie`, a project with its own `CLAUDE.md` and rules: G1 and E1 to E3 held, G2 held as far as shown, G3 not shown; the nine steps $1.81 and 698 s against 4.9's about $4 and 449 s, or 445 s without a 253-second idle wait; this roadmap |
+
+**Still open after Sprint 25** (the fourth real run's findings, `docs/design/field-notes-5.1.md`, by
+section — the owner's Phoenix project, with its own `CLAUDE.md`, rules and skills, on the 4.9 run's
+request; nothing here was fixed in Sprint 25, by `fourth-project/REQ-14`):
+
+- **A headless session waits out a `Monitor` the model armed for a background agent** — `grandfather`
+  was done in 53 s; refused `sleep 90`, the model armed two five-minute watches, and the session
+  stayed open four more minutes for two idle turns. The `result` a headless caller gets is the last
+  of those turns, not the report. Mostly the platform's (§4.1, §4.2).
+- **The Done-when copies a test command the project's shell cannot run** — `CLAUDE.md:10` says
+  `MIX_ENV=test mix test`, the project pins its toolchain, and nothing setup writes says `mise`, so
+  every headless step had to be told the working command (§7.1). 4.9's item, seen again.
+- **A first spec still lists setup's `.gitignore` and `CLAUDE.md` as changes beyond the spec** —
+  `.claude/rules/shipkit/` left that list at 4.9; these two did not (§9.1).
+- **`lib/<app>/` stays literal in the elixir section** — the Key Paths table holds `<app>` as text
+  and no placeholder covers it, beside a LiveView half that names `test/office_bestie_web/live`
+  (§2.2).
+- **A second `## Elixir-Specific` stays, named and not merged** — both sections load in every
+  session, and the project's `MIX_ENV=test mix test` and shipkit's `mix test` still disagree.
+  `run-debts` chose to name it; this is the second run to see what that leaves (§2.1).
+- **A `Status: draft` line in `design.md` that no template has and no script reads** — the spec
+  skill's model wrote it, and it stayed after the stamp beside a spec reading `open`; the gate's
+  model saw it, no script did (§6.1, §7.3).
+- **The reviewer's two marks have no word for half built** — the third decision's fallback exists
+  and nothing reads a workspace's zone yet; the reviewer said both, in words, under `not built`
+  (§9.2).
+- **An agent gets a decision's title, not its record** — T1's agent never opened `design.md`, so no
+  reason reached it. Harmless here, and untested where a turned-down alternative is the easy way
+  (§8.2).
+- **`walk.md:3` reads "The agent It cannot ask the user anything mid-run"** — an edit `7595cb5` left
+  half done, in a comment the skill hands to the agent whole (§10.1).
+- **`ship/SKILL.md` names `${TMPDIR:-/tmp}` for a file the `Write` tool writes** — `Write` takes a
+  literal path, so the model wrote `/tmp/shipkit-ship-review.out`, and removed it after (§9.4).
+  Small.
+- **Seen again:** the `Test:` line holding a list (§6.3) and the hand-written stamp (§7.2).
+
+What the plan left watching:
+
+- **Every user carries the evals and never runs them** — `plugins/shipkit/evals/` ships inside the
+  plugin: 198,837 of the 528,427 bytes of an installed 5.0.0 (52 of those bytes an `.in_use`
+  marker), and 202,547 on this branch. Only `scripts/evals.sh`, from a checkout, runs them; no skill,
+  agent, hook or rule reads them (`docs/plans/binding-sprint-plan.md` §0, "Evals directory").
+
+Found at the release:
+
+- **The gate's shell is the user's shell** — Claude Code's shell snapshot carries the owner's
+  aliases into the gate. The `fourth-project` reviewer's `grep -n "198,837\|198837" ROADMAP.md`
+  printed nothing for a line that is there, and it marked REQ-16 NOT MET: its four searches for that
+  line all used `\|` and printed nothing, and its searches without `\|` worked. The snapshot holds
+  the owner's `alias -- grep=rg` beside Claude Code's own `grep` function, which reads `\|` as "or"
+  where ripgrep reads a pipe; which of the two the reviewer's shell ran is not recorded. The
+  `readable-numbers` gate could not read back its own scratch reply, `cat` being `bat` and
+  `$TMPDIR` not `/tmp`, and pasted the handback instead
+  (`.shipkit/releases/2026-11-04-readable-numbers.md:116`). The run met the same alias at setup
+  (`field-notes-5.1.md` §2; `docs/design/eval-history.md`, "Release run 5.1.0").
+- **A release spec can hold requirements its own gate cannot meet** — `fourth-project`'s REQ-18 asks
+  for this gate's own READY, and REQ-21 and REQ-22 for the steps after the gate, so its first gate
+  read NOT READY on them; `run-again`'s REQ-14 named only the other two specs
+  (`docs/design/eval-history.md`, "Release run 5.1.0").
+
+What the plan's §5 left, each below it in place (`docs/plans/binding-sprint-plan.md` §5): why the
+model writes `placeholder`, which 5.1.0's release counts again; the singular `Test:` line, the
+hand-written stamp and setup's two clocks; `sleep 45`, which Claude Code now refuses, the first item
+above being what came instead; the pinned toolchain, the second item above; the `agents` and
+`rules-skip` smoke flakes; the strict `why` number, the map with no shared word, the four rule files
+kept on a number, the smoke header range, the `-rerun` report and the product skill's
+contradiction; the `eve` trim, not re-measured. Still open from "Still open after Sprint 22" as
+well: the `walkthrough` trigger, unread again because this run asked for `--walk` by name
+(`field-notes-5.1.md` §10); a rare wakeup; the stack-skill lines, not shown again because the
+overlay's one skill was the project's (`field-notes-5.1.md`, "Did the decisions and the debts
+hold?").
 
 ## The thinning plan — ✅ Sprints 20–22 SHIPPED 2026-10-30 to 2026-10-31 as 5.0.0
 
@@ -52,13 +136,23 @@ Sprint 22, by the plan's W5):
 - **A decision binds by the requirement it cites, not the code it governs** — `brief.sh` selects
   decisions by requirement, so T1's brief said "None recorded", and the agent built the alternative
   the design rejected (`AwareDatetime`), reporting it under DEVIATIONS (§8.1).
+  *Paid in 5.1.0: every live decision reaches every brief; on `brief/binds` the rejected
+  alternative went from 3 of 10 runs to 0 of 20 (decisions-bind/REQ-1 to REQ-3, REQ-14;
+  `eval-results-5.1.md` §1).*
 - **The reviewer reads a decision's choice, not the alternatives it turned down** — it cited
   `AwareDatetime` under REQ-3 and called the decision "unimplemented, not contradicted" (§9.2).
+  *Paid in 5.1.0: the reviewer marks a decision `contradicted` or `not built`, and a contradicted
+  one fails the review and the gate (decisions-bind/REQ-6 to REQ-12; `eval-results-5.1.md` §2,
+  §3).*
 - **`python/django.md` loads on a FastAPI project** — setup installs it whatever the framework, and
   `**/models.py` matches `src/linkshort/models.py`: 583 bytes of Django into a FastAPI agent. Sprint
   21's W7 caused this (§2.1, §8.2).
+  *Paid in 5.1.0: installed only where the framework is Django (fourth-project/REQ-1 to REQ-3, smoke
+  check 79). A project set up on 5.0.0 keeps its copy.*
 - **`intake.md` stamped 2026-10-05 on 2026-10-31** — the skill asks for a date and names no source
   (§4.1).
+  *Paid in 5.1.0: the six stamp lines hold `<YYYY-MM-DD>` and name `date +%F` (fourth-project/REQ-4,
+  REQ-5, check 80), and every stamp Sprint 25's run wrote held its date (`field-notes-5.1.md`).*
 - **A reviewer can end itself before it reports** — its last call is `SubagentHandback {"message":
   "placeholder"}`: the tool answers "Report delivered", the agent ends and the review is never sent.
   3 of 74 gate sessions in the logs, all in the last ten, two in the last four on Claude Code
@@ -67,7 +161,11 @@ Sprint 22, by the plan's W5):
   cause is open.*
 - **The stack section's alternatives survive as comments** — `<!-- Django / FastAPI / Flask / None
   -->`, and "async ORM" on a project the section calls sync (§2.2).
+  *Paid in 5.1.0: a filled section holds no comment, and a sync project no `**Async DB:**` line
+  (fourth-project/REQ-6 to REQ-9, check 81).*
 - **A model waits on an agent with `sleep 45`** — a turn, and nothing worse (§4.2).
+  *Claude Code now refuses it; what the model did instead is under Sprint 25
+  (`field-notes-5.1.md` §4.1).*
 - **Seen again from 4.12:** setup's two clocks (§2.3), the singular `Test:` line (§6.1), the
   hand-written stamp (§7.1).
 
@@ -76,6 +174,8 @@ Sprint 22, by the plan's W5):
   4.12.0, 2 of 6 in 5.0.0. `trap2/go-mod`'s wants the literal `go build`. Both are narrower than their
   line, as `trap2/experiments` and `trap2/package-json` are (`docs/design/eval-history.md`, "Release
   run 5.0.0").
+  *Paid in 5.1.0: all four forbid the act, not the word; the old ones failed 15 of 36 correct files
+  (readable-numbers/REQ-1 to REQ-6; `eval-history.md`, "Four graders corrected").*
 
 What Sprint 21 and the plan's tables left watching:
 
@@ -85,21 +185,31 @@ What Sprint 21 and the plan's tables left watching:
 - **`map_read` misses a repo-wide Grep** — it counts a Read or Grep whose path ends in
   `PROJECT_MAP.md`, so `eve/why` read 2 of 3 on a run whose reply cites the map
   (`scripts/trace-tools.sh`; `eval-results-5.0.md` §3, "At the merge").
+  *Paid in 5.1.0: a Grep whose result lists the map counts, 10 of 18 on `--group eve` where the old
+  count read 6 (readable-numbers/REQ-7, REQ-8, check 78; `eval-results-5.1.md` §4, §7).*
 - **The `eve` trim is not measurably cheaper** — 15 runs each, input tokens −2.2%, dollars +1.0%,
   inside the runs' spread; "no worse" held, "cheaper" did not show (`eval-results-5.0.md` §3).
 - **`reports.md` has no case** — two probes per route; nothing watches a `--all matrix` or `--all
   consolidate` request in a release run, and a matrix asked for in words was not run
   (`eval-results-5.0.md` §3, "What this does not show").
+  *Paid in 5.1.0: `eve/matrix` and `eve/consolidate`, 6 of 6 (readable-numbers/REQ-9 to REQ-11;
+  `eval-results-5.1.md` §5).*
 - **The Care line is measured on one prompt and one model** — a quieter destructive request, or
   `haiku`, is unmeasured (`eval-results-5.0.md` §1).
+  *Paid in 5.1.0, as a reading: on `haiku` 5 of 5 with the plugin and 0 of 5 without, and on two
+  quiet requests no work lost in 40 runs; no rule text changed (readable-numbers/REQ-12, REQ-13;
+  `eval-results-5.1.md` §6).*
 - **The `walkthrough` trigger is unread on a real project** — `eval-results-5.0.md` §2 called the run
   again the first place to look, but the nine steps hold no walkthrough, so the merge rests on a
   nine-file fixture where neither form fired (`field-notes-5.0.md`).
+  *Still unread: Sprint 25's run asked for `--walk` by name (`field-notes-5.1.md` §10).*
 - **A rare wakeup is not ruled out** — four headless intakes, none; one in four would be missed
   about a third of the time (`eval-results-5.0.md` §4, `field-notes-5.0.md` §4).
 - **The stack-skill lines are proved by smoke alone** — a default setup installs no skill, so no
   real run has seen them (`field-notes-5.0.md`, "Did W13's four lines hold?";
   `.shipkit/specs/run-again/design.md`).
+  *Not shown on Sprint 25's run either: the overlay's one skill was the project's
+  (`field-notes-5.1.md`, "Did the decisions and the debts hold?").*
 
 What "Still open after Sprint 19" still holds, each below it in place: the `Fired-if` on bytecode,
 not seen on this run because the spec's commands read one named file (`field-notes-5.0.md` §6);
@@ -107,6 +217,10 @@ the product skill's contradiction, named this time by one roll of the model with
 (§3); the two graders; the strict `why` number; the map with no shared word; four rule files kept
 on a number; the smoke header range; the pinned toolchain; `rules-skip` on `haiku`; the `-rerun`
 report; E1, E2 and E3, again not exercised, the project having no `CLAUDE.md` or `.claude/rules/`.
+*Since then, paid in 5.1.0: the `Fired-if` sentence (fourth-project/REQ-10), and Sprint 25's model
+wrote `git grep` (`field-notes-5.1.md` §6); the two graders (readable-numbers/REQ-4, REQ-5). E1, E2
+and E3 held on Sprint 25's run, the first to exercise them (`field-notes-5.1.md`, "Did the decisions
+and the debts hold?").*
 
 ## The second-run plan — ✅ Sprints 17–19 SHIPPED 2026-10-10 to 2026-10-30 as 4.10.0, 4.11.0, 4.12.0
 

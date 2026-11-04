@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "Checks a branch against its spec with fresh eyes: given only a spec folder name and a base git ref, gives one verdict per requirement (MET with file and line, NOT MET, CANNOT TELL), lists changes beyond the spec and decisions not followed, and ends VERDICT: PASS or FAIL. Read-only. Used by /shipkit:ship."
-model: inherit
+model: sonnet
 tools: Read, Glob, Grep, Bash
 disallowedTools: Edit, Write, Agent
 maxTurns: 40

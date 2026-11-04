@@ -77,12 +77,12 @@ already answers.
 ## 5. Write `.shipkit/specs/<slug>/intake.md`
 
 `<slug>` is a short kebab-case name for the feature. Once the questions are answered — or, when
-nobody could answer, with them marked unanswered — write:
+nobody could answer, with them marked unanswered — write, dated from `date +%F`:
 
 ```markdown
 # Intake: <feature>
 
-> Intake taken on 2026-10-05.
+> Intake taken on <YYYY-MM-DD>.
 
 ## Request
 <the request, in the user's words>

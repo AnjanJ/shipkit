@@ -11,6 +11,10 @@ main session starts the reviewer; no agent starts another.
 
 ## Decision: The reviewer uses the session's model   (→ REQ-2, REQ-6)
 
+> **Superseded on 2026-10-31** by the record that follows. Its own clause fired: 21 of the 55
+> reviews on Opus 5.5 cost more than $2 at list price, the highest $9.34. Kept as written, below,
+> so the reasoning stays readable.
+
 **Context.** The reviewer reads a spec and a diff and judges each requirement. A wrong `MET`
 is the costly error: it lets unfinished work through the gate. The owner settled this as A4.
 Whether an agent file may omit `model:` and inherit the session's model is a platform claim
@@ -35,6 +39,39 @@ written fallback is `model: sonnet`.
 **Falsifiability.** We would reverse this — pin a model — if the `reviewer/missing-req` eval
 passes on `sonnet` and fails on the session default in two of three runs, or if a single
 `/shipkit:ship` review of a sprint-sized diff costs more than $2 at list price.
+
+---
+
+## Decision: The reviewer runs on `sonnet`   (→ REQ-2, REQ-6)
+
+Supersedes "The reviewer uses the session's model".
+
+**Context.** That record would pin a model if a single review cost more than $2 at list price.
+The transcripts from 2026-10-05 to 2026-10-31 hold 89 reviews in real repositories, 55 of them on
+Opus 5.5. 21 of the 55 cost more than $2, the highest $9.34. The 55 came to $112.34; the same
+tokens at `sonnet` prices come to $65.29. Diff size was not measured, so how many of the 21 were
+sprint-sized is not known. The owner reversed the record on 2026-10-31.
+
+**Alternatives.**
+1. Keep `model: inherit`.
+2. Pin `model: sonnet`.
+3. Pin `model: haiku`.
+
+**Case for (2).** The evals already grade the reviewer on `sonnet`, so the model that runs becomes
+the model that was measured: all four `reviewer` cases passed 3 of 3 on 2026-10-31
+(`docs/design/eval-results-5.1.md` §2). The gate's result stops depending on which model the
+session happened to be using, which was a case against the old record. Option 3 has no eval
+behind it.
+
+**Case against (2).** The old worry stands: a reviewer weaker than the implementer waves through
+what it cannot follow. All 97 eval runs of the reviewer in those transcripts were on `sonnet`, so
+nothing compares it with Opus, and the fixtures are small. A session on `haiku` now pays more for
+a review than it did.
+
+**Decision.** We chose (2).
+**Falsifiability.** We would reverse this if a `/shipkit:escape` trace names a `MET` from a
+`sonnet` reviewer as the link that broke, or if a `reviewer` case passes on Opus and fails on
+`sonnet` in two of three runs.
 
 ---
 
