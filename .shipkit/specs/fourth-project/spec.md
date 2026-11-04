@@ -1,7 +1,7 @@
 # Spec: The owner's project, and 5.1.0 (Sprint 25)
 
 > Spec accepted at commit `6831e71` on sprint-25/fourth-project (2026-10-31).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/scripts/install-stack.sh, plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/skills/escape/SKILL.md, plugins/shipkit/skills/handoff/SKILL.md, plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/product/, plugins/shipkit/skills/ship/reference.md, plugins/shipkit/skills/spec/reference.md, scripts/smoke.sh, docs/design/field-notes-5.1.md, docs/design/eval-history.md, ROADMAP.md, CHANGELOG.md, README.md
 
 ## Purpose
