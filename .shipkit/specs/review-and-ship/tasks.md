@@ -24,6 +24,11 @@ One commit per task, test and code together. The steps for each task are in
   - Test: scripts/lint.py check "13. Rails overlay points at the ship gate" (an error when either skill lacks the line; written first)
   - After: none
   - Done when: `bash scripts/lint.sh` → 0 error(s), 0 warning(s); `grep -c 'If this feature has a spec, run `/shipkit:ship <slug>` first.'` → 1 in each of the two skills
+- [x] **T6** A re-run names the report it supersedes (after 5.1.0, the owner's word) → REQ-20
+  - Files: plugins/shipkit/skills/ship/SKILL.md, scripts/smoke.sh, .shipkit/specs/review-and-ship/, CHANGELOG.md
+  - Test: smoke check 83 "superseded-report" (the report section names an earlier day's untracked report as superseded and leaves it; written first, red)
+  - After: none
+  - Done when: check 83 PASS alone after reading red; `bash scripts/lint.sh` → 0 error(s), 0 warning(s); spec-check 0 gaps; decision-check 0 fired
 ## After the gate
 
 Not tasks the gate can check — they are the gate and the release, and come after it. (They

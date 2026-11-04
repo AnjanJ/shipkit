@@ -104,7 +104,9 @@ commit sha, and the evidence for every step. Then remove the scratch files this 
 and removing those files are the only changes you make.
 
 Then tell the user, in a few lines: the first line of the report, each step that did not pass
-and what would fix it, and where the report is.
+and what would fix it, and where the report is. If the capture from before step 1 holds an
+untracked report for this slug with an earlier date, say that the new report supersedes it, by
+its path, and leave it: deleting it, or keeping it out of the commit, is the user's call.
 
 ## After a READY result
 

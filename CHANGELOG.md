@@ -6,10 +6,19 @@ file — follows it (from 2026-10-22; the three entries before it carry the para
 
 ## [Unreleased] — after 5.1.0
 
-**What changed for you.** The README and the guide say how to update: the marketplace first, then
-each plugin, in each scope it is installed in. An install made for one project keeps its version
-through the update of your own, until the same command runs with `--scope local` from inside that
-project.
+**What changed for you.** `/shipkit:ship` run again on a later day names the earlier report it
+replaces, when that one was never committed, and leaves it for you to delete or keep out of the
+commit. The README and the guide say how to update: the marketplace first, then each plugin, in
+each scope it is installed in. An install made for one project keeps its version through the
+update of your own, until the same command runs with `--scope local` from inside that project.
+
+### Changed
+
+- **A gate re-run names the report it supersedes** (`review-and-ship/REQ-20`, smoke check 83). A
+  report's name carries the day the gate ran, so a re-run on a later day writes a second file: at
+  the 5.1.0 release, `fourth-project`'s READY report of 2026-11-05 sat beside its untracked NOT
+  READY report of 2026-11-04, and nothing said so. The gate still changes no file but its report
+  (REQ-14); why it names the file rather than removing it is in `review-and-ship/design.md`.
 
 ### Docs
 

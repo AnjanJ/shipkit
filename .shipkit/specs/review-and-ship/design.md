@@ -104,6 +104,34 @@ not match a re-run, even once.
 
 ---
 
+## Decision: An earlier day's report is named, not removed   (→ REQ-14, REQ-20)
+
+**Context.** The report's name carries the date the gate ran, so a re-run on a later day writes
+a second file and leaves the first. At the 5.1.0 release, `fourth-project`'s re-run of
+2026-11-05 wrote its READY report beside the first run's NOT READY report of 2026-11-04,
+untracked, and nothing in the gate's reply said so. Step 7 already lets such a file stand.
+
+**Alternatives.**
+1. Name the earlier file in the reply as superseded, and leave it.
+2. Remove it while writing the new report.
+3. Drop the date from the name, so that a re-run overwrites.
+
+**Case for (1).** REQ-14 says the gate changes no file but its report, and the Care rule asks
+before deleting, which a headless gate cannot do. One line in the reply reaches the person who
+commits the report. Under (3), committed reports would lose the date that people and scripts
+read them by.
+
+**Case against (1).** The file is still removed by hand, and a reply nobody reads changes
+nothing: a NOT READY report can still be committed beside its READY one. Smoke check 83 reads
+the skill's text, not a gate's reply; no gate has run with the sentence yet.
+
+**Decision.** We chose (1).
+**Falsifiability.** We would reverse this if a NOT READY report is committed to
+`.shipkit/releases/`.
+**Fired-if.** `git grep -q '^NOT READY$' -- .shipkit/releases/`
+
+---
+
 ## Data / interface changes
 
 - New agent `reviewer` (core goes from 5 to 6 agents) — REQ-1 to REQ-8.

@@ -72,6 +72,13 @@ intake beside this file (`intake.md`).
   `READY` result and the owner's yes — the spec's `Status` line.
 - **REQ-15.** `/shipkit:ship` shall never deploy, push, merge, tag or edit code; on
   `NOT READY` it shall list what to fix and stop. [untested: skill prose, verified by reading]
+- **REQ-20.** When the tree captured before step 1 holds an untracked report for the same slug
+  with an earlier date, the ship skill shall tell the gate to name that file in its reply as
+  superseded by the new report, and to leave it in place.
+  > *Added 2026-11-05 (after the 5.1.0 release, the owner's word):* `fourth-project`'s re-run on
+  > 2026-11-05 wrote its READY report beside the first run's untracked NOT READY report of
+  > 2026-11-04, and nothing said so. REQ-14 keeps the gate from removing it. Smoke check 83 reads
+  > the skill's text; no gate has run with it yet.
 
 ### `/shipkit:escape` (S4-T3)
 

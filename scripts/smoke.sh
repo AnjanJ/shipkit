@@ -2812,6 +2812,18 @@ if printf '%s\n' "$fi_sec" | grep -q 'tracked files' && printf '%s\n' "$fi_sec" 
   pass "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
 else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say tracked files and git grep"; fi
 
+# 83. superseded-report: a report's name carries the gate's date, so a re-run on a later day wrote
+# 2026-11-05-fourth-project.md beside the first run's untracked NOT READY report of 2026-11-04, and
+# nothing said so. The report section tells the gate to name such a file as superseded and to
+# leave it, since the gate changes no file but its report (review-and-ship/REQ-14). Read from that
+# section only, its lines joined so a wrap cannot hide a phrase. No claude needed.
+# Cites: review-and-ship/REQ-20
+sr_sec=$(awk '/^## The report/ { on = 1; next } on && /^## / { on = 0 } on' "$COPY/skills/ship/SKILL.md" | tr '\n' ' ')
+if printf '%s\n' "$sr_sec" | grep -q 'earlier date' && printf '%s\n' "$sr_sec" | grep -q 'supersede' \
+   && printf '%s\n' "$sr_sec" | grep -q 'leave it'; then
+  pass "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
+else failc "superseded-report" "ship/SKILL.md's report section does not name an earlier day's report as superseded and leave it"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
