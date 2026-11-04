@@ -18,6 +18,15 @@ project.
   installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
   `--scope local` ran from inside its project.
 
+### Fixed
+
+- **Smoke check 30's fifty-spec timing takes the best of up to three runs**, stopping at the
+  first under a second; `briefing-and-handoff/REQ-8`'s limit is unchanged. One run under the
+  suite's own load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone
+  it reads 0.72 to 0.75 s. With 1.1 s added to the briefing, the old check failed on a stall in
+  the first run only and the new one passes on its second; with 1.1 s added to every run, both
+  fail.
+
 ## [5.1.0] — 2026-11-05
 
 **What changed for you.** `/shipkit:ship` is stricter. A feature whose code contradicts a live
