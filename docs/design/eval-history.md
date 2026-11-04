@@ -76,7 +76,9 @@ session prints that line. Claude Code's shell snapshot holds the owner's `alias 
 its own `grep` function, and ripgrep reads `\|` as a pipe; which of the two the reviewer's shell
 ran is not recorded. Four the spec cannot meet at its own gate: REQ-15, whose worktree a reboot
 removed before the owner's yes; REQ-18, which asks for this gate's own READY; REQ-21 and REQ-22,
-the steps that follow the gate.
+the steps that follow the gate. The owner amended those four (`40d9ce3`), and on 2026-11-05 the
+gate read READY at `1d0f0df`, 255 s, $0.48: 20 MET, the reviewer on `sonnet` with no placeholder.
+Its Bash `grep` with `\|` printed nothing for `ROADMAP.md` again, and its Grep tool found line 87.
 
 **The `placeholder` reviewer, counted again** (`fourth-project/REQ-19`). Every session in
 `~/.claude/projects/` whose first prompt runs `/shipkit:ship` and that started a `shipkit:reviewer`:
