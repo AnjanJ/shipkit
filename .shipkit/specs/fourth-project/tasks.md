@@ -21,7 +21,7 @@ about $1.50, the full run $21 to $23. Anything else needs the owner's yes (rule 
   - Test: the Check first, free and before any paid step: the worktree at `/private/tmp/shipkit-real-run-5`, `mise exec -- mix deps.get`, `mix compile`, `MIX_TEST_PARTITION=_shipkit5 mix test`, the count recorded; then the nine steps and `/shipkit:ask --walk`, each by `claude --plugin-dir <checkout>/plugins/shipkit --model sonnet --allowedTools Read Glob Grep Bash Write Edit Skill Agent --output-format json -p`, standard input from `/dev/null`, `MIX_TEST_PARTITION` set for each; every stamp the run writes read against the run's date
   - After: T1
   - Done when: every step has its six parts; G1, G2, G3, E1, E2 and E3 each read as held or not shown; the owner's product repository holds nothing from the run but the worktree and branch; those and the run's database removed on the owner's yes, the log read first; lint 0/0
-- [ ] **T3** The roadmap for the plan after (S25-T3) → REQ-16
+- [x] **T3** The roadmap for the plan after (S25-T3) → REQ-16
   - Files: ROADMAP.md
   - Test: `bash scripts/lint.sh` → 0/0; every new item read for a file and a section
   - After: T2
