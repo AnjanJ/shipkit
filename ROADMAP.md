@@ -88,6 +88,20 @@ What the plan left watching:
   marker), and 202,547 on this branch. Only `scripts/evals.sh`, from a checkout, runs them; no skill,
   agent, hook or rule reads them (`docs/plans/binding-sprint-plan.md` §0, "Evals directory").
 
+Found at the release:
+
+- **The gate's shell is the user's shell** — Claude Code's shell snapshot carries the owner's
+  aliases into the gate. The `fourth-project` reviewer's `grep -n "198,837\|198837" ROADMAP.md`
+  printed nothing for a line that is there, and it marked REQ-16 NOT MET; the snapshot holds
+  `alias -- grep=rg`, and ripgrep reads `\|` as a pipe. The `readable-numbers` gate could not read
+  back its own scratch reply, `cat` being `bat` and `$TMPDIR` not `/tmp`, and pasted the handback
+  instead (`.shipkit/releases/2026-11-04-readable-numbers.md:116`). The run met the same alias at
+  setup (`field-notes-5.1.md` §2; `docs/design/eval-history.md`, "Release run 5.1.0").
+- **A release spec can hold requirements its own gate cannot meet** — `fourth-project`'s REQ-18 asks
+  for this gate's own READY, and REQ-21 and REQ-22 for the steps after the gate, so its first gate
+  read NOT READY on them; `run-again`'s REQ-14 named only the other two specs
+  (`docs/design/eval-history.md`, "Release run 5.1.0").
+
 What the plan's §5 left, each below it in place (`docs/plans/binding-sprint-plan.md` §5): why the
 model writes `placeholder`, which 5.1.0's release counts again; the singular `Test:` line, the
 hand-written stamp and setup's two clocks; `sleep 45`, which Claude Code now refuses, the first item

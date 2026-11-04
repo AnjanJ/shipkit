@@ -44,6 +44,7 @@ watching it.
 |---|---|---|
 | Decisions reaching T1's brief, in `linkshort`'s shape | 0 of 3 | 3 of 3 |
 | The gate on a live decision the code contradicts | READY is possible | NOT READY |
+| The release run's exit | 1, on two graders | 0, on 65 cases |
 | Graders narrower than their line | 4 | 0 |
 | `python/django.md` on a FastAPI project | 583 bytes on any `models.py` | not installed |
 | Skill templates with a literal date on a stamp line | 6 lines in 5 skills | 0 |
@@ -116,6 +117,13 @@ new NOT READY is shown on a fixture only (`docs/design/eval-results-5.1.md` §3)
 **The largest finding is a wait.** A headless intake sat four minutes on two `Monitor` watches the
 model armed for an agent that had already finished, and returned the last idle turn as its result.
 It is on the ROADMAP with ten others, under "Still open after Sprint 25".
+
+**The release run exited 0.** 65 cases, $21.10: 62 at full score and three at 2 of 3, none of them a
+case this release touched, and the four corrected graders read 3 of 3. Smoke passed 221 of 222
+checks; the one miss is a timing check, 1.02 s on a 1 s limit under the suite's own load, and 0.75 s
+at most alone. Since the reviewer moved to `sonnet`, none of its 7 gate sessions ended in
+`placeholder`, but all 7 that did before ran on `sonnet` too, so that shows almost nothing
+(`docs/design/eval-history.md`, "Release run 5.1.0").
 
 ## [5.0.0] — 2026-10-31
 

@@ -25,7 +25,10 @@ Check, free and first: `mise exec -- mix deps.get` exit 0, compile exit 0 (236 f
 "/shipkit:<skill> … This run is not interactive"` from the worktree, the checkout at the sprint
 branch (`a5a28d3`: 5.0.0 plus Sprints 23 and 24 and T1's four debts), standard input from
 `/dev/null`, `MIX_TEST_PARTITION` exported for each. Claude Code 2.1.316. Cost is `total_cost_usd`;
-wall clock is from `date` around the session. No file under `plugins/` was edited while a step ran.
+wall clock is from `date` around the session. No file under `plugins/` was edited while a step ran:
+between 18:44 and 19:08 UTC the orchestrating session's 23 Edit and Write calls are all to this file,
+none of its 51 Bash commands writes under `plugins/`, and `git log a5a28d3..dde2099 -- plugins/` is
+empty.
 
 **Where the evidence is now.** Each step's output went to `/private/tmp/shipkit-real-run-5-tools/run/`,
 the `run/` that the sections below cite. A reboot on 2026-11-04 cleared it, the worktree and the
