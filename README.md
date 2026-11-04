@@ -62,9 +62,10 @@ the session hook (`shipkit: plugin root is …`).
 | 9 | **Digest** — which product needs attention this week, and why | `/shipkit:ask --all digest` | `~/.claude/shipkit/digests/<date>.md` |
 
 Step 7 is the gate: spec-check as shipped, the project's tests, every task ticked, the
-`reviewer` agent's verdict per requirement, a rollback for any migration, a concrete reversal
-condition on every decision, a clean tree, and no decision whose `Fired-if` command says its
-reason has expired. It never deploys, pushes or edits; it reports.
+`reviewer` agent's verdict (every requirement met, no live decision contradicted), a rollback for
+any migration, a concrete reversal condition on every decision, a clean tree, and no decision
+whose `Fired-if` command says its reason has expired. It never deploys, pushes or edits; it
+reports.
 
 ```
 /shipkit:ask are any of our past decisions now falsified?    # grandfather runs decision-check.sh
