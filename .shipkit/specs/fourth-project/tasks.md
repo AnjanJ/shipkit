@@ -26,8 +26,8 @@ about $1.50, the full run $21 to $23. Anything else needs the owner's yes (rule 
   - Test: `bash scripts/lint.sh` → 0/0; every new item read for a file and a section
   - After: T2
   - Done when: the plan's section has its three rows and 5.1.0; "Still open after Sprint 25" holds the run's findings, what §5 left, and the evals line at 198,837 of 528,427 bytes; lint 0/0
-- [x] **T-REL** Release 5.1.0 (S25-T-REL, G11, G12) → REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22
-  - Files: .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/
+- [x] **T-REL** Release 5.1.0 (S25-T-REL, G11, G12) → REQ-17, REQ-18, REQ-19, REQ-20
+  - Files: .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, docs/design/field-notes-5.1.md, .shipkit/specs/decisions-bind/spec.md, .shipkit/specs/readable-numbers/spec.md, .shipkit/specs/fourth-project/spec.md, .shipkit/specs/fourth-project/tasks.md
   - Test: the plan's exit checklist in full, one run at a time: `bash scripts/lint.sh`, `sh scripts/smoke.sh </dev/null`, `bash scripts/evals.sh -j 4`, `spec-check`, the three rules, the evals' bytes, the §0 table; then `/shipkit:ship` on `decisions-bind` against `6379fd7`, `readable-numbers` against `2e8bed0` and `fourth-project` against `6831e71`; the `placeholder` count from the session logs
   - After: T3
   - Done when: all three READY; each spec `shipped` on the owner's yes; the run in `eval-history.md`; the pull request with "What was awkward", a green check and a merge commit; `git ls-remote` shows `v5.1.0`, annotated; each of G12 done on its own yes or left, and said so

@@ -86,8 +86,13 @@ Source: `docs/plans/binding-sprint-plan.md` (approved 2026-10-31), G8, G10, G11,
 - **REQ-14.** While a step of the run is in progress, no file under `plugins/` shall be edited, and
   nothing the run finds shall be fixed in this sprint: each finding goes to the ROADMAP.
   [untested: a rule of the run, verified by the log and `git log`]
-- **REQ-15.** The worktree, the branch and the run's test database shall each be removed only on the
+- **REQ-15.** The run shall remove the worktree, the branch and the run's test database only on the
   owner's yes, after the log has been read. [untested: a step, verified by reading]
+  > *Amended 2026-11-05 (T-REL, before this spec's gate, the owner's word):* this said the three
+  > "shall each be removed only on the owner's yes". The reboot of 2026-11-04 cleared the
+  > worktree's folder before the yes, a risk the plan's §6 accepted ("A reboot can clear it"). The
+  > run removed nothing without the yes: the branch and the database waited for it
+  > (`docs/design/field-notes-5.1.md`, "What became of the branch").
 
 ### The roadmap (S25-T3)
 
@@ -101,9 +106,12 @@ Source: `docs/plans/binding-sprint-plan.md` (approved 2026-10-31), G8, G10, G11,
 - **REQ-17.** The plan's exit checklist shall hold in full, with `bash scripts/evals.sh -j 4` exiting
   0, or each failing case named with its trace and the owner having said go, and the run recorded in
   `docs/design/eval-history.md`. [untested: a release step, verified by reading]
-- **REQ-18.** `/shipkit:ship` shall read READY on `decisions-bind`, `readable-numbers` and
-  `fourth-project`, one at a time, each against its acceptance commit, and each spec's `Status:` shall
-  change to `shipped` on the owner's yes. [untested: the gate is its own check]
+- **REQ-18.** `/shipkit:ship` shall read READY on `decisions-bind` and `readable-numbers`, one at a
+  time, each against its acceptance commit, and each spec's `Status:` shall change to `shipped` on
+  the owner's yes. [untested: the gate is its own check]
+  > *Amended 2026-11-05 (T-REL, before this spec's gate, the owner's word):* this also named
+  > `fourth-project`, which no gate can hold true of itself: its report and its `Status` come after
+  > it. That state stays under the release steps below, as `run-again` kept it.
 - **REQ-19.** The reviewer's `placeholder` shall be counted again from the session logs against 3 of
   74, and the count shall say the reviewer has run on `sonnet` since `4f81799`.
   [untested: a count, verified by reading]
@@ -111,11 +119,21 @@ Source: `docs/plans/binding-sprint-plan.md` (approved 2026-10-31), G8, G10, G11,
   changed for you", lead with the gate's new NOT READY, and say what a project set up on 5.0.0 sees:
   `django.md` stays, and an unedited section loses its comments at the next setup.
   [untested: a release step, verified by reading]
-- **REQ-21.** The release shall reach `main` by a pull request holding "What was awkward", a green
-  check and a merge commit, and the annotated tag `v5.1.0` shall be on the remote.
-  [untested: a release step, verified by `git ls-remote`]
-- **REQ-22.** Each of G12's three items shall happen only on its own yes, by rule 26.
-  [untested: a step, verified by reading]
+
+> *Amended 2026-11-05 (T-REL, before this spec's gate, the owner's word):* REQ-21 (the pull
+> request, its green check, the merge commit and the tag `v5.1.0` on the remote) and REQ-22 (each
+> of G12's three items on its own yes) stood here. Both come after this spec's gate, which cannot
+> read them, so they are under the release steps below, as `run-again` and `third-run` kept theirs.
+
+## Release steps (not requirements)
+
+- `/shipkit:ship` reads READY on `fourth-project` against `6831e71`; the report is committed, and
+  the spec's `Status:` changes to `shipped` on the owner's yes.
+- The release reaches `main` by a pull request holding "What was awkward", a green check and a
+  merge commit, and the annotated tag `v5.1.0` is on the remote (`git ls-remote`).
+- Each of G12's three items happens only on its own yes, by rule 26: the owner's cache to 5.1.0
+  after the tag; this plan's three sprint branches; `shipkit/4.12.0` and `shipkit-workflows/4.12.0`
+  once nothing holds them.
 
 ## Out of scope
 
