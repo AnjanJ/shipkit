@@ -4,7 +4,7 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [5.1.0] — 2026-11-04
+## [5.1.0] — 2026-11-05
 
 **What changed for you.** `/shipkit:ship` is stricter. A feature whose code contradicts a live
 decision is now NOT READY, where it could be READY before: the reviewer found the contradiction 3

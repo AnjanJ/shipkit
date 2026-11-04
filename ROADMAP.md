@@ -12,13 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-11-04, v5.1.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+**Status (as of 2026-11-05, v5.1.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
-second-run plan and 20 to 22 of the thinning plan are done. The binding plan
-(`docs/plans/binding-sprint-plan.md`, approved 2026-10-31) has run Sprints 23 and 24, merged
-untagged, and Sprint 25, releasing all three as 5.1.0; see "The binding plan" below. Everything in
-this document is shipped except the items under "Still open after Sprint 25", which seed the plan
-after (each item carries a note when a sprint pays it).
+second-run plan and 20 to 22 of the thinning plan are done, and so are Sprints 23 to 25 of the
+binding plan (`docs/plans/binding-sprint-plan.md`, approved 2026-10-31), one release, 5.1.0; see
+"The binding plan" below. Everything in this document is shipped except the items under "Still
+open after Sprint 25", which seed the plan after (each item carries a note when a sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -32,7 +31,7 @@ after (each item carries a note when a sprint pays it).
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The binding plan — Sprints 23–25 run, releasing as 5.1.0
+## The binding plan — ✅ Sprints 23–25 SHIPPED 2026-10-31 to 2026-11-05 as 5.1.0
 
 Full plan: [`docs/plans/binding-sprint-plan.md`](docs/plans/binding-sprint-plan.md). What a decision
 holds an agent to, and what a number can say: every live decision in every brief and a gate that
