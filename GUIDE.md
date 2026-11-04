@@ -48,6 +48,25 @@ can start using them immediately — no configuration needed.
 For the best experience, run `/shipkit:setup` once per project to tailor everything to your stack
 and pick a workflow style.
 
+### Updating
+
+From a terminal: fetch the marketplace's new catalogue, then update each plugin. The new version
+loads in the next session, so restart Claude Code after.
+
+```
+claude plugin marketplace update shipkit
+claude plugin update shipkit@shipkit --scope user
+claude plugin update shipkit-workflows@shipkit --scope user
+```
+
+Each install is updated in its own scope. `claude plugin list` shows the scope of each install,
+and an install for one project (`Scope: local`) keeps its version through the user-scope update:
+run the same two `claude plugin update` lines with `--scope local` from inside that project.
+`claude plugin update --help` lists the scopes.
+
+In a project set up with `/shipkit:setup`, the session hook then says when the rules setup copied
+into `.claude/rules/shipkit/` are older than the plugin, and running setup again refreshes them.
+
 ---
 
 ## How Shipkit Works

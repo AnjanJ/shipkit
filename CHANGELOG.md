@@ -4,6 +4,20 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
+## [Unreleased] — after 5.1.0
+
+**What changed for you.** The README and the guide say how to update: the marketplace first, then
+each plugin, in each scope it is installed in. An install made for one project keeps its version
+through the update of your own, until the same command runs with `--scope local` from inside that
+project.
+
+### Docs
+
+- **How to update, in `README.md` and `GUIDE.md` ("Updating").** Both showed only the install
+  commands. At the 5.1.0 release, `claude plugin update --scope user` moved the owner's user-scope
+  installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
+  `--scope local` ran from inside its project.
+
 ## [5.1.0] — 2026-11-05
 
 **What changed for you.** `/shipkit:ship` is stricter. A feature whose code contradicts a live

@@ -40,6 +40,18 @@ Then, once per project, `/shipkit:setup`: it installs the rules as files under
 a `CLAUDE.md` of project facts, and installs the stack overlay. Optional, recommended, and
 reversible with `/shipkit:setup remove`.
 
+To update, run these in a terminal, then restart Claude Code:
+
+```
+claude plugin marketplace update shipkit
+claude plugin update shipkit@shipkit --scope user
+claude plugin update shipkit-workflows@shipkit --scope user
+```
+
+An install for one project (`claude plugin list` shows `Scope: local`) is not moved by these:
+run the two update lines with `--scope local` from inside that project. [More in the
+guide](GUIDE.md#updating).
+
 To run from a checkout instead, point at the two plugin roots:
 `claude --plugin-dir ~/code/shipkit/plugins/shipkit --plugin-dir ~/code/shipkit/plugins/shipkit-workflows`.
 
