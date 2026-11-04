@@ -92,11 +92,14 @@ Found at the release:
 
 - **The gate's shell is the user's shell** — Claude Code's shell snapshot carries the owner's
   aliases into the gate. The `fourth-project` reviewer's `grep -n "198,837\|198837" ROADMAP.md`
-  printed nothing for a line that is there, and it marked REQ-16 NOT MET; the snapshot holds
-  `alias -- grep=rg`, and ripgrep reads `\|` as a pipe. The `readable-numbers` gate could not read
-  back its own scratch reply, `cat` being `bat` and `$TMPDIR` not `/tmp`, and pasted the handback
-  instead (`.shipkit/releases/2026-11-04-readable-numbers.md:116`). The run met the same alias at
-  setup (`field-notes-5.1.md` §2; `docs/design/eval-history.md`, "Release run 5.1.0").
+  printed nothing for a line that is there, and it marked REQ-16 NOT MET: its four searches for that
+  line all used `\|` and printed nothing, and its searches without `\|` worked. The snapshot holds
+  the owner's `alias -- grep=rg` beside Claude Code's own `grep` function, which reads `\|` as "or"
+  where ripgrep reads a pipe; which of the two the reviewer's shell ran is not recorded. The
+  `readable-numbers` gate could not read back its own scratch reply, `cat` being `bat` and
+  `$TMPDIR` not `/tmp`, and pasted the handback instead
+  (`.shipkit/releases/2026-11-04-readable-numbers.md:116`). The run met the same alias at setup
+  (`field-notes-5.1.md` §2; `docs/design/eval-history.md`, "Release run 5.1.0").
 - **A release spec can hold requirements its own gate cannot meet** — `fourth-project`'s REQ-18 asks
   for this gate's own READY, and REQ-21 and REQ-22 for the steps after the gate, so its first gate
   read NOT READY on them; `run-again`'s REQ-14 named only the other two specs
