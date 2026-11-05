@@ -30,7 +30,7 @@ after reading (rule 13).
   - Test: scripts/smoke.sh, written first and run alone, red: check 92 "wait-probe" (`wait-probe.sh --scaffold <dir>` writes the fixture repository with no model call, `users-machine/REQ-7`; given two stored transcripts, one whose `intake.md` write is followed by two `Monitor` calls, a `sleep` and 240 s to its last entry, one with 5 s and neither, `--read` prints those numbers, `REQ-8`); then the five runs, on the owner's yes. **STOP: the owner sees the table** before any sentence goes in. On G7's bar only: check 93, written first, red, holds the sentence in both skills (`REQ-10`), and five runs again
   - After: T2
   - Done when: check 92 PASS alone; `eval-results-5.2.md`'s table has no empty cell; the owner's go in the thread; the sentence and check 93 PASS, or the ROADMAP line, as REQ-10 says; lint 0/0
-- [ ] **T4** The evals' home, recorded (S27-T4, G8) → REQ-11
+- [x] **T4** The evals' home, recorded (S27-T4, G8) → REQ-11
   - Files: .shipkit/decisions/0005-evals-home.md, ROADMAP.md
   - Test: `sh plugins/shipkit/scripts/decision-check.sh . --run` reads `0005-evals-home.md` with no FIRED or ERROR line; `bash scripts/lint.sh` → 0/0
   - After: T3
