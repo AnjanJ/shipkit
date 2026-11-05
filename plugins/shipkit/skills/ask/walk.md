@@ -1,7 +1,8 @@
 <!-- Reference body for `/shipkit:ask --walk` (was the walkthrough skill until 5.0.0). The ask
      skill hands this whole file, plus the argument, to `grandfather` in trace mode as its
-     prompt (the `tracer` agent until 5.0.0). The agent It cannot ask the user anything mid-run and cannot write files. It traces
-     end-to-end and RETURNS the walkthrough; the main session presents it and writes
+     prompt (the `tracer` agent until 5.0.0). The agent cannot ask the user anything mid-run
+     and cannot write files. It traces end-to-end and RETURNS the walkthrough; the main
+     session presents it and writes
      docs/code-walkthrough/<feature>.md only after the user approves. -->
 
 # /shipkit:ask --walk — Guided Code Walkthrough

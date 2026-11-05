@@ -109,6 +109,7 @@ must exist.
 | `{{DB_LIBRARY}}` | database/sql / sqlx / GORM / ent, from `go.mod` |
 | `{{ELIXIR_FRAMEWORK}}` | Phoenix (if `:phoenix` in `mix.exs`) / bare Elixir |
 | `{{ELIXIR_FRONTEND}}` | LiveView / API-only / SPA, from `mix.exs` and `lib/*_web/` |
+| `{{APP_NAME}}` | the `app:` key of `project/0` in `mix.exs`, without the colon (e.g. `my_app`) |
 | `{{REACT_PATTERN}}` | Functional components (default) / Class components |
 | `{{STATE_MANAGEMENT}}` | Zustand / Redux / Context / None, from `package.json` |
 | `{{STYLING}}` | Tailwind / CSS Modules / styled-components, from config files and `package.json` |
@@ -315,6 +316,10 @@ to merge them. Edit neither section — the project's is theirs, shipkit's is re
 Ask the user if they want `.claude/settings.json` with safe defaults. See @reference.md for settings details and enterprise mode options.
 
 ## Phase 7: Summary
+
+First, with every write to `CLAUDE.md` and `.gitignore` done, run
+`sh "<root>/scripts/setup-files.sh" . record`. It notes both files as setup left them, so the
+first spec's review does not list setup's own lines as changes beyond the spec.
 
 Report what was installed:
 - Backup location (`.shipkit-backup-<ts>/`), and the baseline (`.shipkit-baseline/`) — say

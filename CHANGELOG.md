@@ -19,6 +19,32 @@ update of your own, until the same command runs with `--scope local` from inside
   the 5.1.0 release, `fourth-project`'s READY report of 2026-11-05 sat beside its untracked NOT
   READY report of 2026-11-04, and nothing said so. The gate still changes no file but its report
   (REQ-14); why it names the file rather than removing it is in `review-and-ship/design.md`.
+- **Setup's own `CLAUDE.md` and `.gitignore` no longer count against your first spec**
+  (`gate-on-setup/REQ-7` to `REQ-13`, smoke check 88). On three real runs in a row the gate's
+  reviewer listed both as changes beyond the spec with nothing in them but setup's lines. Setup now
+  ends by recording each file's git blob id in `.claude/rules/shipkit/.setup-files`
+  (`scripts/setup-files.sh`); `brief-verify.sh` and the reviewer leave a file out while it is
+  exactly as setup left it. One more line in it, from you or an agent, and the whole file is
+  listed as before; so is a project set up before this version, until `/shipkit:setup` runs
+  again. `/shipkit:setup remove` deletes the record with the manifest. The `run-debts` record that
+  chose to report them is marked superseded; why a blob id and not shipkit's section markers is in
+  `gate-on-setup/design.md`.
+- **The reviewer has a third mark, `partly built`** (`gate-on-setup/REQ-14`, `REQ-15`, smoke check
+  89). The 5.1 gate's reviewer marked a decision `not built` and named, in the same line, the
+  fallback that does exist (`field-notes-5.1.md` §9.2): the code fit neither of its two marks. A
+  decision with some of its code in place is now `partly built`, each part named with `path:line`
+  or the file it would be in; like `not built`, it does not change the verdict. A part that does
+  what the record turned down still makes the decision `contradicted`, and so fails the review.
+- **The elixir section names your app** (`gate-on-setup/REQ-3`, `REQ-4`, smoke check 86). Its Key
+  Paths wrote `lib/<app>/` into `CLAUDE.md`, beside a LiveView section naming the real
+  `test/<your app>_web/live` (`field-notes-5.1.md` §2.2). They now take `APP_NAME`, the `app:` key
+  of `mix.exs`, which `/shipkit:setup` reads. A direct call to `install-stack.sh elixir` without
+  `APP_NAME=` now exits 2 naming it, as for every placeholder.
+- **A `Status:` line outside `spec.md` is a spec-check gap** (`gate-on-setup/REQ-5`, `REQ-6`, smoke
+  check 87). The 5.1 run's spec skill wrote `> Status: draft` in `design.md` too; the stamp set
+  `spec.md` to `open` and `design.md` kept `draft`, unread by any script (`field-notes-5.1.md`
+  §6.1, §7.3). `spec-check` now prints `STRAY-STATUS <slug> <file>` and exits 1, so the gate's
+  step 1 fails on it; deleting the line clears it.
 
 ### Docs
 
@@ -29,6 +55,14 @@ update of your own, until the same command runs with `--scope local` from inside
 
 ### Fixed
 
+- **`walk.md`'s opening comment is one sentence again** (`gate-on-setup/REQ-1`, smoke check 84).
+  It read "The agent It cannot ask the user anything mid-run", an edit `7595cb5` left half done in
+  the comment `/shipkit:ask --walk` hands to `grandfather` whole (`field-notes-5.1.md` §10.1).
+- **The gate gives `Write` a path it can use** (`gate-on-setup/REQ-2`, smoke check 85). Step 4
+  told the `Write` tool to write the reviewer's reply to `"${TMPDIR:-/tmp}/…"`, and `Write` expands
+  no variable, so the 5.1 gate wrote `/tmp/shipkit-ship-review.out` while every Bash step used
+  `$TMPDIR` (`field-notes-5.1.md` §9.4). The gate now prints the path with `printf` and gives
+  `Write` what it printed.
 - **Smoke check 30's fifty-spec timing takes the best of up to three runs**, stopping at the
   first under a second; `briefing-and-handoff/REQ-8`'s limit is unchanged. One run under the
   suite's own load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone

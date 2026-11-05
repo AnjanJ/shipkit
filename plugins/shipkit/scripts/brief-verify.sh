@@ -16,8 +16,10 @@
 # written by shipkit's own loop and no Files line will ever name them — EXCEPT a file inside
 # another spec's folder, which is reported (gate-blind-spots/REQ-6, REQ-7). So is everything
 # under .claude/rules/shipkit/ and .shipkit-baseline/: only the installer writes there
-# (run-debts/REQ-6). CLAUDE.md and .gitignore are still reported even when setup changed them:
-# they hold the project's own content, and a line about them is worth reading. A skill under
+# (run-debts/REQ-6). CLAUDE.md and .gitignore are allowed only while each is byte for byte as
+# setup left it, by the git blob id setup recorded in .claude/rules/shipkit/.setup-files
+# (setup-files.sh check); a file that differs at all, or has no record, is reported: they hold
+# the project's own content (gate-on-setup/REQ-9, superseding run-debts/REQ-6's half). A skill under
 # .claude/skills/ is allowed only if the manifest lists it: setup put those there, but the
 # directory is also where a project keeps its own skills, and those are reported
 # (run-again/REQ-2). Ignored files
@@ -59,9 +61,14 @@ if [ -f "$HERE/lib-manifest.sh" ] && . "$HERE/lib-manifest.sh" 2>/dev/null; then
   SKILLS=$(manifest_paths "$PROJ" 2>/dev/null | grep '^\.claude/skills/')
 fi
 
+# CLAUDE.md and .gitignore while they are as setup left them (see the header).
+SETUP=""
+[ -f "$HERE/setup-files.sh" ] && SETUP=$(sh "$HERE/setup-files.sh" "$PROJ" check 2>/dev/null)
+
 # The list goes in through the environment: BSD awk (macOS) rejects a newline in a -v value.
-OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" BV_SKILLS="$SKILLS" awk -v tasks="$TASKS_FILE" -v own=".shipkit/specs/$SLUG/" '
-  BEGIN { n = split(ENVIRON["BV_ALLOWED"], a, "\n"); m = split(ENVIRON["BV_SKILLS"], s, "\n") }
+OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" BV_SKILLS="$SKILLS" BV_SETUP="$SETUP" awk -v tasks="$TASKS_FILE" -v own=".shipkit/specs/$SLUG/" '
+  BEGIN { n = split(ENVIRON["BV_ALLOWED"], a, "\n"); m = split(ENVIRON["BV_SKILLS"], s, "\n")
+          k = split(ENVIRON["BV_SETUP"], u, "\n") }
   $0 == "" { next }
   {
     ok = ($0 == tasks)
@@ -70,6 +77,7 @@ OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" BV_SKILLS="$SKILLS" awk -
     # the two directories setup owns: written only by the installer (see the header)
     if (!ok && (index($0, ".claude/rules/shipkit/") == 1 || index($0, ".shipkit-baseline/") == 1)) ok = 1
     for (i = 1; i <= m && !ok; i++) if ($0 == s[i]) ok = 1
+    for (i = 1; i <= k && !ok; i++) if ($0 == u[i]) ok = 1
     for (i = 1; i <= n && !ok; i++) {
       if ($0 == a[i]) ok = 1
       else if (a[i] ~ /\/$/ && index($0, a[i]) == 1) ok = 1

@@ -89,8 +89,8 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
    `sh "<plugin root>/scripts/spec-check.sh" . <feature-slug> --as-open` (the root is in the
    `shipkit: plugin root is …` context line; `--as-open` reads the draft as if accepted — never
    change the `Status` line to get a check). Any `MISSING-TASK`, `MISSING-FIELD`, `BAD-AFTER`,
-   `CONFLICT` or `CYCLE` line is a defect in the spec you just wrote — correct `tasks.md` and run it
-   again until it exits 0. Do not hand the spec over with findings open. Then run
+   `CONFLICT`, `CYCLE` or `STRAY-STATUS` line is a defect in the spec you just wrote — correct
+   `tasks.md`, or delete the `Status:` line outside `spec.md`, and run it again until it exits 0. Do not hand the spec over with findings open. Then run
    `sh "<plugin root>/scripts/decision-check.sh" . --run`: a `FIRED` or `ERROR` line on a record
    you just wrote is a defect too — the condition fires, or cannot run, on a tree where the
    code does not exist yet (a line count on a file not yet written). Rewrite that clause.

@@ -138,6 +138,12 @@ the line printed — then the reminder is not read and the verifier must cope.
 
 ## Decision: Setup's two directories join the always-allowed list   (→ REQ-6, REQ-7)
 
+> **Superseded on 2026-11-05** by `gate-on-setup`'s "Setup's files are setup's while they are as
+> setup left them". Its own clause was met: 4.12, 5.0 and 5.1 each reported `CLAUDE.md` and
+> `.gitignore` with nothing in them but setup's (`field-notes-4.12.md:379`,
+> `field-notes-5.0.md:203`, `field-notes-5.1.md` §9.1). The two directories stay allowed, as
+> chosen here. Kept as written, below, so the reasoning stays readable.
+
 **Context.** Since 4.5.0 everything under `.shipkit/` is inside every task's files, for
 `brief-verify` by code and the reviewer by its step 4, because shipkit's own loop writes them
 and no Files or Paths line will name them (`gate-blind-spots` REQ-5 to REQ-7). Setup's files

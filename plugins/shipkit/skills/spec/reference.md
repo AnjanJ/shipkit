@@ -224,7 +224,8 @@ sh "<plugin root>/scripts/spec-check.sh" . <feature-slug>
 ```
 
 It prints one line per gap — `MISSING-TASK`, `MISSING-TEST`, `MISSING-FIELD`, `BAD-AFTER`,
-`CONFLICT`, `CYCLE` — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are information, not gaps.
+`CONFLICT`, `CYCLE`, `STRAY-STATUS` (a `Status:` line in `design.md` or `tasks.md`: only `spec.md`
+carries one) — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are information, not gaps.
 
 ---
 

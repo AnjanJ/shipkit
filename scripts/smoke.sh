@@ -2824,6 +2824,153 @@ if printf '%s\n' "$sr_sec" | grep -q 'earlier date' && printf '%s\n' "$sr_sec" |
   pass "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
 else failc "superseded-report" "ship/SKILL.md's report section does not name an earlier day's report as superseded and leave it"; fi
 
+# 84. walk-sentence: the comment that opens walk.md, which ask hands to grandfather whole, read
+# "The agent It cannot ask the user anything mid-run", an edit 7595cb5 left half done
+# (field-notes-5.1.md §10.1). Read from the comment only. No claude needed.
+# Cites: gate-on-setup/REQ-1
+ws_head=$(awk '{ print } /-->/ { exit }' "$COPY/skills/ask/walk.md" | tr '\n' ' ' | tr -s ' ')
+if printf '%s\n' "$ws_head" | grep -qF 'The agent cannot ask the user anything mid-run and cannot write files' \
+   && ! printf '%s\n' "$ws_head" | grep -qF 'The agent It'; then
+  pass "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
+else failc "walk-sentence" "walk.md's opening comment still reads: $(printf '%s\n' "$ws_head" | grep -o 'The agent[^.]*\.' | head -1)"; fi
+
+# 85. ship-write-path: step 4 gave the Write tool "${TMPDIR:-/tmp}/shipkit-ship-review.out", and
+# Write takes a literal path, so the 5.1 gate wrote /tmp/… while every Bash step used $TMPDIR
+# (field-notes-5.1.md §9.4). The gate prints the path first and gives Write what it printed; the
+# table's row 4 names no path for it to copy. Read from step 4 and row 4, lines joined so a wrap
+# cannot hide a phrase. No claude needed. Cites: gate-on-setup/REQ-2
+sw_ship="$COPY/skills/ship/SKILL.md"; sw_fail=""
+sw_step=$(awk '/^- \*\*Step 4 — the reviewer/ { on = 1 } /^- \*\*Step 5 — / { on = 0 } on' "$sw_ship" | tr '\n' ' ' | tr -s ' ')
+printf '%s\n' "$sw_step" | grep -qF "printf '%s\n' \"\${TMPDIR:-/tmp}/shipkit-ship-review.out\"" || sw_fail="$sw_fail [step 4 does not print the path first]"
+printf '%s\n' "$sw_step" | grep -qF 'to the path it printed' || sw_fail="$sw_fail [step 4 does not give Write the printed path]"
+printf '%s\n' "$sw_step" | grep -qF 'unchanged, to `"${TMPDIR' && sw_fail="$sw_fail [step 4 still gives Write \${TMPDIR}]"
+grep -E '^\| 4 \|' "$sw_ship" | grep -qF '${TMPDIR' && sw_fail="$sw_fail [row 4 still names \${TMPDIR} for the reply]"
+if [ -z "$sw_fail" ]; then pass "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
+else failc "ship-write-path" "$sw_fail"; fi
+
+# 86. elixir-app: the elixir section's Key Paths wrote `lib/<app>/` into a project's CLAUDE.md,
+# beside a LiveView section naming test/office_bestie_web/live (field-notes-5.1.md §2.2). They
+# take APP_NAME, the app: key of mix.exs: missing, the install fails naming it, as for every
+# placeholder; given, no <app> is left. Lint check 9 holds setup's table row. No claude needed.
+# Cites: gate-on-setup/REQ-3 gate-on-setup/REQ-4
+EA="$WORK/elixir-app"; ea_fail=""; mkdir -p "$EA"; printf '# demo\n' > "$EA/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$EA" >/dev/null 2>&1 || ea_fail="$ea_fail [install-rules failed]"
+ea_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView 2>&1 >/dev/null); ea_rc=$?
+[ "$ea_rc" -eq 2 ] || ea_fail="$ea_fail [no APP_NAME: exit $ea_rc, not 2]"
+printf '%s\n' "$ea_err" | grep -q 'APP_NAME' || ea_fail="$ea_fail [no APP_NAME: the error does not name it]"
+grep -q 'shipkit:stack:elixir' "$EA/CLAUDE.md" && ea_fail="$ea_fail [no APP_NAME: a section was written anyway]"
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app >/dev/null 2>&1 \
+  || ea_fail="$ea_fail [with APP_NAME: exit $?]"
+grep -qF '`lib/my_app/`' "$EA/CLAUDE.md" && grep -qF '`lib/my_app_web/live/`' "$EA/CLAUDE.md" \
+  || ea_fail="$ea_fail [with APP_NAME: lib/my_app/ not written]"
+grep -qF '<app>' "$EA/CLAUDE.md" && ea_fail="$ea_fail [with APP_NAME: <app> still in CLAUDE.md]"
+if [ -z "$ea_fail" ]; then pass "elixir-app (no APP_NAME → exit 2 naming it, nothing written; APP_NAME=my_app → lib/my_app/, no <app>)"
+else failc "elixir-app" "$ea_fail"; fi
+
+# 87. stray-status: the 5.1 spec skill's model wrote `> Status: draft` in design.md as well as in
+# spec.md; the stamp set spec.md to open, design.md kept draft, and no script looked
+# (field-notes-5.1.md §6.1, §7.3). Only spec.md carries a Status line: spec-check names one
+# elsewhere as STRAY-STATUS and exits 1, and the spec skill's two lists of gaps name it. No
+# claude needed. Cites: gate-on-setup/REQ-5 gate-on-setup/REQ-6
+SS="$WORK/stray-status"; ss_fail=""; mkdir -p "$SS/.shipkit/specs/s"
+(cd "$SS" && git init -q)
+printf '# Spec: s\n\n> Status: open\n\n- **REQ-1.** The thing shall work. [untested: a fixture]\n' > "$SS/.shipkit/specs/s/spec.md"
+printf '# Tasks: s\n\n- [ ] **T1** Build it → REQ-1\n  - Files: a.txt\n  - Test: none\n  - After: none\n  - Done when: it works\n' > "$SS/.shipkit/specs/s/tasks.md"
+printf '# Design: s\n\n> Status: draft\n' > "$SS/.shipkit/specs/s/design.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 1 ] && printf '%s\n' "$ss_out" | grep -qx 'STRAY-STATUS s design.md'; } || ss_fail="$ss_fail [design.md: exit $ss_rc: $ss_out]"
+printf '# Design: s\n' > "$SS/.shipkit/specs/s/design.md"; printf '> Status: open\n' >> "$SS/.shipkit/specs/s/tasks.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 1 ] && printf '%s\n' "$ss_out" | grep -qx 'STRAY-STATUS s tasks.md'; } || ss_fail="$ss_fail [tasks.md: exit $ss_rc: $ss_out]"
+sed -i.bak '/^> Status:/d' "$SS/.shipkit/specs/s/tasks.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 0 ] && ! printf '%s\n' "$ss_out" | grep -q 'STRAY-STATUS'; } || ss_fail="$ss_fail [none: exit $ss_rc: $ss_out]"
+grep -q 'STRAY-STATUS' "$COPY/skills/spec/SKILL.md" || ss_fail="$ss_fail [spec/SKILL.md does not name it]"
+grep -q 'STRAY-STATUS' "$COPY/skills/spec/reference.md" || ss_fail="$ss_fail [spec/reference.md does not name it]"
+if [ -z "$ss_fail" ]; then pass "stray-status (a Status line in design.md or tasks.md → STRAY-STATUS, exit 1; none → exit 0; both spec skill lists name it)"
+else failc "stray-status" "$ss_fail"; fi
+
+# 88. setup-files: a first spec after setup listed CLAUDE.md and .gitignore as beyond the spec on
+# three real runs in a row, with nothing in them but setup's (field-notes-4.12.md:379,
+# field-notes-5.0.md:203, field-notes-5.1.md §9.1). Setup ends by recording each file's git blob
+# id; a file that still matches is setup's, for brief-verify by code and for the reviewer by its
+# step 4. One more line, or no record, and the file is reported as before. The fixture is
+# linkshort's shape: setup created CLAUDE.md, and wrote five .gitignore lines. No claude needed.
+# Cites: gate-on-setup/REQ-7 gate-on-setup/REQ-8 gate-on-setup/REQ-9 gate-on-setup/REQ-10
+# gate-on-setup/REQ-11 gate-on-setup/REQ-12
+SFS="$COPY/scripts/setup-files.sh"; BV="$COPY/scripts/brief-verify.sh"; SF="$WORK/setup-files"; sf_fail=""
+mkdir -p "$SF/.shipkit/specs/s" "$SF/app"
+printf '# Spec: s\n\n> Status: open\n> Paths: app/\n\n- **REQ-1.** It shall work.\n' > "$SF/.shipkit/specs/s/spec.md"
+printf '# Tasks: s\n\n- [ ] **T1** Build it → REQ-1\n  - Files: app/x.txt\n  - Test: t\n  - After: none\n  - Done when: d\n' > "$SF/.shipkit/specs/s/tasks.md"
+(cd "$SF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m base)
+sf_base=$(cd "$SF" && git rev-parse HEAD)
+sf_setup() {  # what setup leaves: a new CLAUDE.md with a stack section, five .gitignore lines
+  printf '# Project\n\nA demo.\n\n<!-- shipkit:stack:elixir -->\n## Elixir-Specific\n<!-- /shipkit:stack:elixir -->\n' > "$SF/CLAUDE.md"
+  printf '.shipkit-baseline/\n.shipkit-backup-*/\n.shipkit-recovery-*/\n.shipkit/state.md\n.claude/settings.local.json\n' > "$SF/.gitignore"
+  mkdir -p "$SF/.claude/rules/shipkit"
+}
+sf_setup
+if [ ! -f "$SFS" ]; then sf_fail="$sf_fail [scripts/setup-files.sh does not exist]"
+else
+  [ -x "$SFS" ] || sf_fail="$sf_fail [setup-files.sh is not executable]"
+  sh -n "$SFS" 2>/dev/null || sf_fail="$sf_fail [sh -n reports a syntax error]"
+  sf_out=$(sh "$SFS" "$SF" check 2>&1); sf_rc=$?
+  { [ "$sf_rc" -eq 0 ] && [ -z "$sf_out" ]; } || sf_fail="$sf_fail [check with no record: exit $sf_rc: $sf_out]"
+  sh "$SFS" "$SF" record >/dev/null 2>&1 || sf_fail="$sf_fail [record: exit $?]"
+  sf_rec="$SF/.claude/rules/shipkit/.setup-files"
+  { [ "$(grep -cE '^[0-9a-f]{40,64} (CLAUDE\.md|\.gitignore)$' "$sf_rec" 2>/dev/null)" -eq 2 ] \
+    && grep -q " CLAUDE.md$" "$sf_rec" && [ "$(cd "$SF" && git hash-object CLAUDE.md) CLAUDE.md" = "$(grep ' CLAUDE.md$' "$sf_rec")" ]; } \
+    || sf_fail="$sf_fail [record: .setup-files is not two '<blob id> <path>' lines: $(cat "$sf_rec" 2>/dev/null)]"
+  sf_out=$(sh "$SFS" "$SF" check 2>&1)
+  [ "$(printf '%s\n' "$sf_out" | sort | tr '\n' ' ')" = ".gitignore CLAUDE.md " ] || sf_fail="$sf_fail [check after record: $sf_out]"
+fi
+printf 'x\n' > "$SF/app/x.txt"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 0 ] && ! printf '%s\n' "$sf_out" | grep -q '^OUTSIDE'; } || sf_fail="$sf_fail [as setup left them: exit $sf_rc: $sf_out]"
+printf 'mine\n' >> "$SF/CLAUDE.md"; printf 'tmp/\n' >> "$SF/.gitignore"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 1 ] && printf '%s\n' "$sf_out" | grep -qx 'OUTSIDE CLAUDE.md' && printf '%s\n' "$sf_out" | grep -qx 'OUTSIDE .gitignore'; } \
+  || sf_fail="$sf_fail [one more line in each: exit $sf_rc: $sf_out]"
+sf_setup; rm -f "$SF/.claude/rules/shipkit/.setup-files"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 1 ] && [ "$(printf '%s\n' "$sf_out" | grep -c '^OUTSIDE')" -eq 2 ]; } || sf_fail="$sf_fail [no record: exit $sf_rc: $sf_out]"
+sf_step4=$(awk '/^4\. \*\*Changes beyond the spec/ { on = 1 } /^5\. / { on = 0 } on' "$COPY/agents/reviewer.md" | tr '\n' ' ')
+{ printf '%s\n' "$sf_step4" | grep -qF '.claude/rules/shipkit/.setup-files' && printf '%s\n' "$sf_step4" | grep -qF 'git hash-object'; } \
+  || sf_fail="$sf_fail [the reviewer's step 4 does not read .setup-files with git hash-object]"
+sf_p7=$(awk '/^## Phase 7/ { on = 1; next } on && /^## / { on = 0 } on' "$COPY/skills/setup/SKILL.md")
+printf '%s\n' "$sf_p7" | grep -qF 'scripts/setup-files.sh" . record' || sf_fail="$sf_fail [setup's Phase 7 does not run setup-files.sh record]"
+SU="$WORK/setup-files-un"; mkdir -p "$SU"
+if sh "$COPY/scripts/install-rules.sh" "$COPY" "$SU" >/dev/null 2>&1 && printf '# p\n' > "$SU/CLAUDE.md" \
+   && sh "$SFS" "$SU" record >/dev/null 2>&1 && [ -f "$SU/.claude/rules/shipkit/.setup-files" ]; then
+  sh "$COPY/scripts/unsetup-remove.sh" "$SU" --yes >/dev/null 2>&1
+  { [ ! -e "$SU/.claude/rules/shipkit/.setup-files" ] && [ ! -d "$SU/.claude/rules/shipkit" ]; } \
+    || sf_fail="$sf_fail [unsetup-remove left .setup-files or the directory]"
+else sf_fail="$sf_fail [could not install and record for the unsetup fixture]"; fi
+if [ -z "$sf_fail" ]; then pass "setup-files (recorded and unchanged → not OUTSIDE; one more line, or no record → OUTSIDE; the reviewer, setup and unsetup follow)"
+else failc "setup-files" "$sf_fail"; fi
+
+
+# 89. reviewer-marks: the 5.1 reviewer marked a decision `not built` "for the workspace path" and
+# named, in the same line, the fallback that does exist (field-notes-5.1.md §9.2): two marks, and
+# the code fit neither. A third, `partly built`, names each part; it changes no verdict, and a part
+# that does what the record turned down still makes the decision `contradicted`. The text is read
+# with its lines joined, so a rewrap does not break it. No claude needed.
+# Cites: gate-on-setup/REQ-14 gate-on-setup/REQ-15
+rm_flat=$(tr '\n' ' ' < "$COPY/agents/reviewer.md" | tr -s ' ')
+rm_step5=$(printf '%s' "$rm_flat" | sed -n 's/.*5\. \*\*Decisions not followed\.\*\*\(.*\)## What you do not do.*/\1/p')
+rm_fail=""
+[ -n "$rm_step5" ] || rm_fail=" [no step 5]"
+for rm_want in '**`contradicted`**' '**`partly built`**' '**`not built`**' 'the file it would be in' \
+  'A part that does what the record turned down makes the decision `contradicted`'; do
+  case "$rm_step5" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [step 5, no: $rm_want]" ;; esac
+done
+for rm_want in '`contradicted`, `partly built` or `not built`' \
+  'decisions marked `not built` or `partly built` are reported and do not change the verdict'; do
+  case "$rm_flat" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [no: $rm_want]" ;; esac
+done
+if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
+else failc "reviewer-marks" "$rm_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
