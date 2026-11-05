@@ -41,6 +41,14 @@ project-scope entry to the owner's files for the length of the task.
 
 **Decision.** We chose (1). The checksums of the two files are taken before the first command and
 after each, and T1 stops at the first that moves.
+*Amended at S28-T1, on the owner's yes of 2026-11-06, twice: a marketplace added by path loads its
+plugins in place, "whatever its version string says", so no update has anything to do
+(`code.claude.com/docs/en/plugins/loading.md`, "In-place and copied plugins"); and
+`claude plugin marketplace add` refuses a `file://` URL to a local git repository ("Invalid
+marketplace source format"; the git forms are `owner/repo`, `https://` and `git@host:path`,
+`code.claude.com/docs/en/plugins/install.md`, "Add a marketplace"). The scratch config stays; the
+marketplace is this repository on GitHub, `AnjanJ/shipkit#v5.0.0`, its pin moved to `v5.1.0` in
+the scratch config's own files (`docs/design/field-notes-5.2.md` §0).*
 **Falsifiability.** We would take (2) if either checksum changes during T1, or if the local
 marketplace's 5.1.1 is not offered to `claude plugin update` from either place.
 **Fired-if.** manual
