@@ -2859,7 +2859,7 @@ ea_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWO
 [ "$ea_rc" -eq 2 ] || ea_fail="$ea_fail [no APP_NAME: exit $ea_rc, not 2]"
 printf '%s\n' "$ea_err" | grep -q 'APP_NAME' || ea_fail="$ea_fail [no APP_NAME: the error does not name it]"
 grep -q 'shipkit:stack:elixir' "$EA/CLAUDE.md" && ea_fail="$ea_fail [no APP_NAME: a section was written anyway]"
-sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app >/dev/null 2>&1 \
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app TEST_COMMAND="mix test" >/dev/null 2>&1 \
   || ea_fail="$ea_fail [with APP_NAME: exit $?]"
 grep -qF '`lib/my_app/`' "$EA/CLAUDE.md" && grep -qF '`lib/my_app_web/live/`' "$EA/CLAUDE.md" \
   || ea_fail="$ea_fail [with APP_NAME: lib/my_app/ not written]"
@@ -2970,6 +2970,44 @@ for rm_want in '`contradicted`, `partly built` or `not built`' \
 done
 if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
 else failc "reviewer-marks" "$rm_fail"; fi
+
+
+# 90. pinned-toolchain: office_bestie pins Elixir and Erlang in .tool-versions, and in a headless
+# shell nothing activates mise, so the 5.1 runner typed `mise exec --` by hand at every step
+# (field-notes-5.1.md). Setup now writes it into the test command when the project pins with mise
+# and mise is on the PATH, after any VAR=value words; otherwise the command as detected. The elixir
+# and go sections said `mix test` and `go test ./...` whatever setup detected, so they take
+# TEST_COMMAND: missing, the install fails naming it; given, each section names it. No claude
+# needed. Cites: users-machine/REQ-1 users-machine/REQ-2 users-machine/REQ-3
+pt_fail=""
+pt_flat=$(tr '\n' ' ' < "$COPY/skills/setup/SKILL.md" | tr -s ' ')
+for pt_want in '`.tool-versions`, `mise.toml` or `.mise.toml`' 'command -v mise' 'mise exec --' \
+  'after any leading `VAR=value` words' '`MIX_ENV=test mise exec -- mix test`' 'Otherwise write the test command as detected'; do
+  case "$pt_flat" in *"$pt_want"*) ;; *) pt_fail="$pt_fail [setup, no: $pt_want]" ;; esac
+done
+PT="$WORK/pinned"; mkdir -p "$PT/ex" "$PT/ex2" "$PT/go" "$PT/go2"
+for pt_d in ex ex2 go go2; do printf '# demo\n' > "$PT/$pt_d/CLAUDE.md"; done
+pt_ex="ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app"
+pt_go="GO_FRAMEWORK=Chi MODULE_PATH=example.com/demo DB_LIBRARY=sqlx API_STYLE=REST"
+# shellcheck disable=SC2086
+pt_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$PT/ex" $pt_ex 2>&1 >/dev/null); pt_rc=$?
+[ "$pt_rc" -eq 2 ] && printf '%s\n' "$pt_err" | grep -q 'TEST_COMMAND' || pt_fail="$pt_fail [elixir, no TEST_COMMAND: exit $pt_rc, not 2 naming it]"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$PT/ex2" $pt_ex TEST_COMMAND='MIX_ENV=test mise exec -- mix test' >/dev/null 2>&1 \
+  || pt_fail="$pt_fail [elixir, with TEST_COMMAND: install failed]"
+grep -qF -- '- **Run all:** `MIX_ENV=test mise exec -- mix test`' "$PT/ex2/CLAUDE.md" \
+  && grep -qF -- '- **Run specific:** `MIX_ENV=test mise exec -- mix test <path>`' "$PT/ex2/CLAUDE.md" \
+  || pt_fail="$pt_fail [elixir: the section does not name TEST_COMMAND on both lines]"
+grep -qF '`mix test' "$PT/ex2/CLAUDE.md" && pt_fail="$pt_fail [elixir: a bare mix test is left]"
+# shellcheck disable=SC2086
+pt_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" go "$PT/go" $pt_go 2>&1 >/dev/null); pt_rc=$?
+[ "$pt_rc" -eq 2 ] && printf '%s\n' "$pt_err" | grep -q 'TEST_COMMAND' || pt_fail="$pt_fail [go, no TEST_COMMAND: exit $pt_rc, not 2 naming it]"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" go "$PT/go2" $pt_go TEST_COMMAND='mise exec -- go test ./...' >/dev/null 2>&1 \
+  || pt_fail="$pt_fail [go, with TEST_COMMAND: install failed]"
+grep -qF -- '- **Run all:** `mise exec -- go test ./...`' "$PT/go2/CLAUDE.md" || pt_fail="$pt_fail [go: Run all does not name TEST_COMMAND]"
+if [ -z "$pt_fail" ]; then pass "pinned-toolchain (setup prefixes mise exec -- after VAR=value on a pinned project; elixir and go take TEST_COMMAND)"
+else failc "pinned-toolchain" "$pt_fail"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
