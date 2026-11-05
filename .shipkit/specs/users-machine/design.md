@@ -126,6 +126,10 @@ holds a session open with nothing written. (2) sees that and (1) does not. (3) w
 once.
 
 **Decision.** We chose (1); the script prints (2)'s wall time beside it for every run.
+*Amended at S27-T3, on the owner's yes of 2026-11-05: a write of `intake.md` is also a Bash
+command that redirects or tees into it. The 5.1 intake wrote its file with `cat > … <<EOF`, which
+"a `Write` or `Edit`" alone misses (`scripts/wait-probe.sh`, `d8e521b`). Each call counts once by
+its id, and `sleep` counts in Bash commands only, since a `Monitor`'s own loop sleeps.*
 **Falsifiability.** We would count by (2) if, on any of the five runs, the transcript's last entry
 and the process's exit differ by more than 10 s.
 **Fired-if.** manual
