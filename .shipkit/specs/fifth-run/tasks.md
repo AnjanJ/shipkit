@@ -13,7 +13,7 @@ read (rule 13).
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . fifth-run --as-open` → 0 gaps; `sh plugins/shipkit/scripts/decision-check.sh . --run` → no FIRED or ERROR; `bash scripts/lint.sh` → 0/0; the spec read against rule 27
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the requirements, the design and the run's item in the thread; stamped at the branch-point commit `f138e94`, `Status: open`; the plan's S28-T1 and S28-T-REL Files lines amended and its status line noting it, in the same commit
-- [ ] **T1** `--scope project` (S28-T1, G11) → REQ-1, REQ-2, REQ-3
+- [x] **T1** `--scope project` (S28-T1, G11) → REQ-1, REQ-2, REQ-3
   - Files: docs/design/field-notes-5.2.md, README.md, GUIDE.md
   - Test: the checksums of `~/.claude/plugins/installed_plugins.json` and `known_marketplaces.json` first; then, every command under `CLAUDE_CONFIG_DIR` set to a scratch folder: the local marketplace at 5.1.0 added by path, both plugins installed with `--scope project` in a scratch project, the copy's five version lines set to 5.1.1, `claude plugin marketplace update`, `claude plugin update <plugin> --scope project` from outside the project and from inside it, `claude plugin list` after each; the checksums again after each command
   - After: T0
