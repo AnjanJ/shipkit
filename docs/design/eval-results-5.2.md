@@ -26,6 +26,20 @@ into the intake and ask skills and five more runs are recorded below; otherwise 
 
 | Run | Wall s | Idle s (transcript) | Idle s (disk) | Exit − last entry s | Monitor | sleep | Background agent | Cost |
 |---:|---:|---:|---:|---:|---:|---:|---|---:|
+| 1 | 74 | 24 | 25 | 1 | 0 | 2 | yes | $0.20 |
+| 2 | 74 | 9 | 10 | 1 | 0 | 1 | yes | $0.16 |
+| 3 | 57 | 8 | 8 | 1 | 0 | 1 | yes | $0.14 |
+| 4 | 81 | 6 | 7 | 1 | 0 | 0 | yes | $0.13 |
+| 5 | 55 | 7 | 7 | 1 | 0 | 1 | yes | $0.14 |
 
-The five runs are made at the sprint's end, on the owner's yes (rule 15), and the table is filled
-from `table.md` in the run's output folder.
+Run on 2026-11-06 at `4bae74a`, Claude Code 2.1.318, `sonnet`; $0.77 for the five. Each run's
+result, transcript and subagent logs were kept in the output folder until the sprint's end.
+
+**Reading.** No run idled over 60 s: 6 to 24 s from the write of `intake.md` to the session's last
+entry, against 260 s on the 5.1 transcript. Every run started `grandfather` in the background, the
+shape that waited at 5.1, so the fixture held (the design's fixture record does not fire). No run
+armed a `Monitor`. Four of five reached for `sleep` while `grandfather` ran, all before the file was
+written: `sleep 60`, `sleep 45` and `sleep 45` were blocked with the platform's "use Monitor"
+message, run 1's later bare `sleep 45` went to the background, and run 2's `sleep 1` ran. None of
+them armed the watch the 5.1 run armed instead. The gap from the last entry to the process's exit
+was 1 s on every run, so the transcript's count stands (the design's 10 s condition does not fire).

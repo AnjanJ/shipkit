@@ -68,6 +68,12 @@ update of your own, until the same command runs with `--scope local` from inside
   commands. At the 5.1.0 release, `claude plugin update --scope user` moved the owner's user-scope
   installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
   `--scope local` ran from inside its project.
+- **The headless intake's wait, measured, and no sentence added** (`users-machine/REQ-7` to
+  `REQ-10`, smoke check 92). The 5.1 intake stayed open 260 s after writing its file, held by two
+  `Monitor` watches on an agent that had already finished. `scripts/wait-probe.sh` scaffolds a small
+  fixture, runs headless intakes on it and reads the wait from each session's transcript. Five runs
+  idled 6 to 24 s and armed no watch, under the bar of 2 runs over 60 s, so the intake and ask skills
+  say nothing about waiting and the ROADMAP watches for it (`docs/design/eval-results-5.2.md` §1).
 
 ### Fixed
 

@@ -89,6 +89,10 @@ What the plan left watching:
   *Sprint 27 (S27-T4, G8): kept by record. The plugin docs copy a marketplace plugin whole and
   take an eval directory only below the plugin; the record names the docs change that would move
   them (`.shipkit/decisions/0005-evals-home.md`).*
+- **A headless session waits on its own watches** — at 5.1 two `Monitor` watches, armed on an
+  agent that had already finished, held an intake open 260 s; five runs at Sprint 27 armed none and
+  idled 6 to 24 s, so no skill says anything about waiting. Watch it in the next real run
+  (`docs/design/eval-results-5.2.md` §1).
 
 Found at the release:
 
