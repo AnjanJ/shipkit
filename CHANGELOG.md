@@ -29,6 +29,9 @@ update of your own, until the same command runs with `--scope local` from inside
 
 ### Fixed
 
+- **`walk.md`'s opening comment is one sentence again** (`gate-on-setup/REQ-1`, smoke check 84).
+  It read "The agent It cannot ask the user anything mid-run", an edit `7595cb5` left half done in
+  the comment `/shipkit:ask --walk` hands to `grandfather` whole (`field-notes-5.1.md` §10.1).
 - **Smoke check 30's fifty-spec timing takes the best of up to three runs**, stopping at the
   first under a second; `briefing-and-handoff/REQ-8`'s limit is unchanged. One run under the
   suite's own load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone

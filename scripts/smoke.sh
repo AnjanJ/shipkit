@@ -2824,6 +2824,16 @@ if printf '%s\n' "$sr_sec" | grep -q 'earlier date' && printf '%s\n' "$sr_sec" |
   pass "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
 else failc "superseded-report" "ship/SKILL.md's report section does not name an earlier day's report as superseded and leave it"; fi
 
+# 84. walk-sentence: the comment that opens walk.md, which ask hands to grandfather whole, read
+# "The agent It cannot ask the user anything mid-run", an edit 7595cb5 left half done
+# (field-notes-5.1.md §10.1). Read from the comment only. No claude needed.
+# Cites: gate-on-setup/REQ-1
+ws_head=$(awk '{ print } /-->/ { exit }' "$COPY/skills/ask/walk.md" | tr '\n' ' ' | tr -s ' ')
+if printf '%s\n' "$ws_head" | grep -qF 'The agent cannot ask the user anything mid-run and cannot write files' \
+   && ! printf '%s\n' "$ws_head" | grep -qF 'The agent It'; then
+  pass "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
+else failc "walk-sentence" "walk.md's opening comment still reads: $(printf '%s\n' "$ws_head" | grep -o 'The agent[^.]*\.' | head -1)"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
