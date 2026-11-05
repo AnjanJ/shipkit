@@ -4,6 +4,39 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
+## [Unreleased] — after 5.1.0
+
+**What changed for you.** `/shipkit:ship` run again on a later day names the earlier report it
+replaces, when that one was never committed, and leaves it for you to delete or keep out of the
+commit. The README and the guide say how to update: the marketplace first, then each plugin, in
+each scope it is installed in. An install made for one project keeps its version through the
+update of your own, until the same command runs with `--scope local` from inside that project.
+
+### Changed
+
+- **A gate re-run names the report it supersedes** (`review-and-ship/REQ-20`, smoke check 83). A
+  report's name carries the day the gate ran, so a re-run on a later day writes a second file: at
+  the 5.1.0 release, `fourth-project`'s READY report of 2026-11-05 sat beside its untracked NOT
+  READY report of 2026-11-04, and nothing said so. The gate still changes no file but its report
+  (REQ-14); why it names the file rather than removing it is in `review-and-ship/design.md`.
+
+### Docs
+
+- **How to update, in `README.md` and `GUIDE.md` ("Updating").** Both showed only the install
+  commands. At the 5.1.0 release, `claude plugin update --scope user` moved the owner's user-scope
+  installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
+  `--scope local` ran from inside its project.
+
+### Fixed
+
+- **Smoke check 30's fifty-spec timing takes the best of up to three runs**, stopping at the
+  first under a second; `briefing-and-handoff/REQ-8`'s limit is unchanged. One run under the
+  suite's own load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone
+  it reads 0.72 to 0.75 s. With 1.1 s added to the briefing, the old check failed on a stall in
+  the first run only and the new one passes on its second; with 1.1 s added to every run, both
+  fail. Why the best of three, rather than a higher limit or CPU time, is in
+  `briefing-and-handoff/design.md`.
+
 ## [5.1.0] — 2026-11-05
 
 **What changed for you.** `/shipkit:ship` is stricter. A feature whose code contradicts a live
