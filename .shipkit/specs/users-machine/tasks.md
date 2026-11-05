@@ -35,7 +35,7 @@ after reading (rule 13).
   - Test: `sh plugins/shipkit/scripts/decision-check.sh . --run` reads `0005-evals-home.md` with no FIRED or ERROR line; `bash scripts/lint.sh` → 0/0
   - After: T3
   - Done when: the record has its five parts, cites the loading and plugin-evals pages read at T0, and its reversal condition is an event; the ROADMAP's evals item points to it; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S27-T-MERGE) → the merge steps in `spec.md`
+- [x] **T-MERGE** Merge, untagged (S27-T-MERGE) → the merge steps in `spec.md`
   - Files: .shipkit/specs/users-machine/
   - Test: the sprint exit checklist with `bash scripts/evals.sh --group reviewer -j 4`, and the intake and ask groups if T3 changed those skills, every case that passed before still passing; the full smoke suite (rule 22)
   - After: T4
