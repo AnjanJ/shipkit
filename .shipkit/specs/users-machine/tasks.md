@@ -15,7 +15,7 @@ after reading (rule 13).
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . users-machine --as-open` → 0 gaps; `sh plugins/shipkit/scripts/decision-check.sh . --run` → no FIRED or ERROR; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the requirements, of the elixir and go sections in T1, and of the design, in the thread; stamped at the branch-point commit, `Status: open`; the plan's S27-T1 Files amended and its status line noting it, in the same commit
-- [ ] **T1** A test command for a pinned toolchain (S27-T1, G4) → REQ-1, REQ-2, REQ-3
+- [x] **T1** A test command for a pinned toolchain (S27-T1, G4) → REQ-1, REQ-2, REQ-3
   - Files: plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/stacks/elixir/CLAUDE.md.append, plugins/shipkit/stacks/go/CLAUDE.md.append, scripts/smoke.sh, CHANGELOG.md
   - Test: the Check first, on the owner's yes: in a scratch worktree of `~/code/office_bestie` at its `main`, a headless `claude -p` whose one Bash call runs `MIX_ENV=test MIX_TEST_PARTITION=_shipkit7 mise exec -- mix test`, the suite's last lines and exit status kept; then scripts/smoke.sh, written first and run alone, red: check 90 "pinned-toolchain" (Phase 1 step 4 names `.tool-versions`, `mise.toml`, `.mise.toml`, `mise` on the `PATH`, `mise exec --` after any `VAR=value` words, and the command unchanged otherwise, `users-machine/REQ-1`, `REQ-2`; `install-stack.sh` elixir and go without `TEST_COMMAND` exit 2 naming it, and with `TEST_COMMAND='MIX_ENV=test mise exec -- mix test'` the elixir section holds it on both lines and no bare `mix test`, `REQ-3`)
   - After: T0
