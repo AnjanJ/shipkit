@@ -12,7 +12,7 @@ Every scratch copy is removed after reading (rule 13).
   - Test: `sh plugins/shipkit/scripts/spec-check.sh . gate-on-setup --as-open` → 0 gaps on the draft; `sh plugins/shipkit/scripts/decision-check.sh . --run` → no FIRED or ERROR; `bash scripts/lint.sh` → 0/0
   - After: none
   - Done when: 0 gaps; lint 0/0; the owner's approval of the spec, and the word on the fourth record's change to G2, in the thread; stamped at the branch-point commit, `Status: open`; the plan's approval line, and G2 amended if the owner says yes, in the same commit
-- [ ] **T1** Four small debts (S26-T1, G1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6
+- [x] **T1** Four small debts (S26-T1, G1) → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6
   - Files: plugins/shipkit/skills/ask/walk.md, plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/stacks/elixir/CLAUDE.md.append, plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, scripts/smoke.sh, CHANGELOG.md
   - Test: scripts/smoke.sh, each written first and run alone, red: check 84 "walk-sentence" (no "The agent It" in `walk.md`; cites `gate-on-setup/REQ-1`); check 85 "ship-write-path" (step 4 names `printf` before `Write`, and no line gives `Write` a `${TMPDIR`; cites `gate-on-setup/REQ-2`); check 86 "elixir-app" (an install with no `APP_NAME` exits 2 naming it; one with `APP_NAME=my_app` writes `lib/my_app/` and no `<app>`; cites `gate-on-setup/REQ-3`, `REQ-4`; lint check 9 holds REQ-4's table row); check 87 "stray-status" (a fixture's `design.md` with `> Status: draft` → `STRAY-STATUS`, exit 1; the same spec without it → exit 0; both spec skill lists name it; cites `gate-on-setup/REQ-5`, `REQ-6`)
   - After: T0
