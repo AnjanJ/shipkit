@@ -2834,6 +2834,20 @@ if printf '%s\n' "$ws_head" | grep -qF 'The agent cannot ask the user anything m
   pass "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
 else failc "walk-sentence" "walk.md's opening comment still reads: $(printf '%s\n' "$ws_head" | grep -o 'The agent[^.]*\.' | head -1)"; fi
 
+# 85. ship-write-path: step 4 gave the Write tool "${TMPDIR:-/tmp}/shipkit-ship-review.out", and
+# Write takes a literal path, so the 5.1 gate wrote /tmp/… while every Bash step used $TMPDIR
+# (field-notes-5.1.md §9.4). The gate prints the path first and gives Write what it printed; the
+# table's row 4 names no path for it to copy. Read from step 4 and row 4, lines joined so a wrap
+# cannot hide a phrase. No claude needed. Cites: gate-on-setup/REQ-2
+sw_ship="$COPY/skills/ship/SKILL.md"; sw_fail=""
+sw_step=$(awk '/^- \*\*Step 4 — the reviewer/ { on = 1 } /^- \*\*Step 5 — / { on = 0 } on' "$sw_ship" | tr '\n' ' ' | tr -s ' ')
+printf '%s\n' "$sw_step" | grep -qF "printf '%s\n' \"\${TMPDIR:-/tmp}/shipkit-ship-review.out\"" || sw_fail="$sw_fail [step 4 does not print the path first]"
+printf '%s\n' "$sw_step" | grep -qF 'to the path it printed' || sw_fail="$sw_fail [step 4 does not give Write the printed path]"
+printf '%s\n' "$sw_step" | grep -qF 'unchanged, to `"${TMPDIR' && sw_fail="$sw_fail [step 4 still gives Write \${TMPDIR}]"
+grep -E '^\| 4 \|' "$sw_ship" | grep -qF '${TMPDIR' && sw_fail="$sw_fail [row 4 still names \${TMPDIR} for the reply]"
+if [ -z "$sw_fail" ]; then pass "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
+else failc "ship-write-path" "$sw_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
