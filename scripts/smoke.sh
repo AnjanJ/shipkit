@@ -2890,6 +2890,65 @@ grep -q 'STRAY-STATUS' "$COPY/skills/spec/reference.md" || ss_fail="$ss_fail [sp
 if [ -z "$ss_fail" ]; then pass "stray-status (a Status line in design.md or tasks.md → STRAY-STATUS, exit 1; none → exit 0; both spec skill lists name it)"
 else failc "stray-status" "$ss_fail"; fi
 
+# 88. setup-files: a first spec after setup listed CLAUDE.md and .gitignore as beyond the spec on
+# three real runs in a row, with nothing in them but setup's (field-notes-4.12.md:379,
+# field-notes-5.0.md:203, field-notes-5.1.md §9.1). Setup ends by recording each file's git blob
+# id; a file that still matches is setup's, for brief-verify by code and for the reviewer by its
+# step 4. One more line, or no record, and the file is reported as before. The fixture is
+# linkshort's shape: setup created CLAUDE.md, and wrote five .gitignore lines. No claude needed.
+# Cites: gate-on-setup/REQ-7 gate-on-setup/REQ-8 gate-on-setup/REQ-9 gate-on-setup/REQ-10
+# gate-on-setup/REQ-11 gate-on-setup/REQ-12
+SFS="$COPY/scripts/setup-files.sh"; BV="$COPY/scripts/brief-verify.sh"; SF="$WORK/setup-files"; sf_fail=""
+mkdir -p "$SF/.shipkit/specs/s" "$SF/app"
+printf '# Spec: s\n\n> Status: open\n> Paths: app/\n\n- **REQ-1.** It shall work.\n' > "$SF/.shipkit/specs/s/spec.md"
+printf '# Tasks: s\n\n- [ ] **T1** Build it → REQ-1\n  - Files: app/x.txt\n  - Test: t\n  - After: none\n  - Done when: d\n' > "$SF/.shipkit/specs/s/tasks.md"
+(cd "$SF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m base)
+sf_base=$(cd "$SF" && git rev-parse HEAD)
+sf_setup() {  # what setup leaves: a new CLAUDE.md with a stack section, five .gitignore lines
+  printf '# Project\n\nA demo.\n\n<!-- shipkit:stack:elixir -->\n## Elixir-Specific\n<!-- /shipkit:stack:elixir -->\n' > "$SF/CLAUDE.md"
+  printf '.shipkit-baseline/\n.shipkit-backup-*/\n.shipkit-recovery-*/\n.shipkit/state.md\n.claude/settings.local.json\n' > "$SF/.gitignore"
+  mkdir -p "$SF/.claude/rules/shipkit"
+}
+sf_setup
+if [ ! -f "$SFS" ]; then sf_fail="$sf_fail [scripts/setup-files.sh does not exist]"
+else
+  [ -x "$SFS" ] || sf_fail="$sf_fail [setup-files.sh is not executable]"
+  sh -n "$SFS" 2>/dev/null || sf_fail="$sf_fail [sh -n reports a syntax error]"
+  sf_out=$(sh "$SFS" "$SF" check 2>&1); sf_rc=$?
+  { [ "$sf_rc" -eq 0 ] && [ -z "$sf_out" ]; } || sf_fail="$sf_fail [check with no record: exit $sf_rc: $sf_out]"
+  sh "$SFS" "$SF" record >/dev/null 2>&1 || sf_fail="$sf_fail [record: exit $?]"
+  sf_rec="$SF/.claude/rules/shipkit/.setup-files"
+  { [ "$(grep -cE '^[0-9a-f]{40,64} (CLAUDE\.md|\.gitignore)$' "$sf_rec" 2>/dev/null)" -eq 2 ] \
+    && grep -q " CLAUDE.md$" "$sf_rec" && [ "$(cd "$SF" && git hash-object CLAUDE.md) CLAUDE.md" = "$(grep ' CLAUDE.md$' "$sf_rec")" ]; } \
+    || sf_fail="$sf_fail [record: .setup-files is not two '<blob id> <path>' lines: $(cat "$sf_rec" 2>/dev/null)]"
+  sf_out=$(sh "$SFS" "$SF" check 2>&1)
+  [ "$(printf '%s\n' "$sf_out" | sort | tr '\n' ' ')" = ".gitignore CLAUDE.md " ] || sf_fail="$sf_fail [check after record: $sf_out]"
+fi
+printf 'x\n' > "$SF/app/x.txt"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 0 ] && ! printf '%s\n' "$sf_out" | grep -q '^OUTSIDE'; } || sf_fail="$sf_fail [as setup left them: exit $sf_rc: $sf_out]"
+printf 'mine\n' >> "$SF/CLAUDE.md"; printf 'tmp/\n' >> "$SF/.gitignore"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 1 ] && printf '%s\n' "$sf_out" | grep -qx 'OUTSIDE CLAUDE.md' && printf '%s\n' "$sf_out" | grep -qx 'OUTSIDE .gitignore'; } \
+  || sf_fail="$sf_fail [one more line in each: exit $sf_rc: $sf_out]"
+sf_setup; rm -f "$SF/.claude/rules/shipkit/.setup-files"
+sf_out=$(sh "$BV" "$SF" s T1 "$sf_base" 2>&1); sf_rc=$?
+{ [ "$sf_rc" -eq 1 ] && [ "$(printf '%s\n' "$sf_out" | grep -c '^OUTSIDE')" -eq 2 ]; } || sf_fail="$sf_fail [no record: exit $sf_rc: $sf_out]"
+sf_step4=$(awk '/^4\. \*\*Changes beyond the spec/ { on = 1 } /^5\. / { on = 0 } on' "$COPY/agents/reviewer.md" | tr '\n' ' ')
+{ printf '%s\n' "$sf_step4" | grep -qF '.claude/rules/shipkit/.setup-files' && printf '%s\n' "$sf_step4" | grep -qF 'git hash-object'; } \
+  || sf_fail="$sf_fail [the reviewer's step 4 does not read .setup-files with git hash-object]"
+sf_p7=$(awk '/^## Phase 7/ { on = 1; next } on && /^## / { on = 0 } on' "$COPY/skills/setup/SKILL.md")
+printf '%s\n' "$sf_p7" | grep -qF 'scripts/setup-files.sh" . record' || sf_fail="$sf_fail [setup's Phase 7 does not run setup-files.sh record]"
+SU="$WORK/setup-files-un"; mkdir -p "$SU"
+if sh "$COPY/scripts/install-rules.sh" "$COPY" "$SU" >/dev/null 2>&1 && printf '# p\n' > "$SU/CLAUDE.md" \
+   && sh "$SFS" "$SU" record >/dev/null 2>&1 && [ -f "$SU/.claude/rules/shipkit/.setup-files" ]; then
+  sh "$COPY/scripts/unsetup-remove.sh" "$SU" --yes >/dev/null 2>&1
+  { [ ! -e "$SU/.claude/rules/shipkit/.setup-files" ] && [ ! -d "$SU/.claude/rules/shipkit" ]; } \
+    || sf_fail="$sf_fail [unsetup-remove left .setup-files or the directory]"
+else sf_fail="$sf_fail [could not install and record for the unsetup fixture]"; fi
+if [ -z "$sf_fail" ]; then pass "setup-files (recorded and unchanged → not OUTSIDE; one more line, or no record → OUTSIDE; the reviewer, setup and unsetup follow)"
+else failc "setup-files" "$sf_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

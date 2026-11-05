@@ -19,6 +19,16 @@ update of your own, until the same command runs with `--scope local` from inside
   the 5.1.0 release, `fourth-project`'s READY report of 2026-11-05 sat beside its untracked NOT
   READY report of 2026-11-04, and nothing said so. The gate still changes no file but its report
   (REQ-14); why it names the file rather than removing it is in `review-and-ship/design.md`.
+- **Setup's own `CLAUDE.md` and `.gitignore` no longer count against your first spec**
+  (`gate-on-setup/REQ-7` to `REQ-13`, smoke check 88). On three real runs in a row the gate's
+  reviewer listed both as changes beyond the spec with nothing in them but setup's lines. Setup now
+  ends by recording each file's git blob id in `.claude/rules/shipkit/.setup-files`
+  (`scripts/setup-files.sh`); `brief-verify.sh` and the reviewer leave a file out while it is
+  exactly as setup left it. One more line in it, from you or an agent, and the whole file is
+  listed as before; so is a project set up before this version, until `/shipkit:setup` runs
+  again. `/shipkit:setup remove` deletes the record with the manifest. The `run-debts` record that
+  chose to report them is marked superseded; why a blob id and not shipkit's section markers is in
+  `gate-on-setup/design.md`.
 - **The elixir section names your app** (`gate-on-setup/REQ-3`, `REQ-4`, smoke check 86). Its Key
   Paths wrote `lib/<app>/` into `CLAUDE.md`, beside a LiveView section naming the real
   `test/<your app>_web/live` (`field-notes-5.1.md` §2.2). They now take `APP_NAME`, the `app:` key

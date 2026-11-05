@@ -317,6 +317,10 @@ Ask the user if they want `.claude/settings.json` with safe defaults. See @refer
 
 ## Phase 7: Summary
 
+First, with every write to `CLAUDE.md` and `.gitignore` done, run
+`sh "<root>/scripts/setup-files.sh" . record`. It notes both files as setup left them, so the
+first spec's review does not list setup's own lines as changes beyond the spec.
+
 Report what was installed:
 - Backup location (`.shipkit-backup-<ts>/`), and the baseline (`.shipkit-baseline/`) — say
   whether you captured it this run or found it already there

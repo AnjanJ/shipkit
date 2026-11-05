@@ -49,7 +49,9 @@ If either of the two is missing, say which and stop.
    `.shipkit-baseline/`: only `/shipkit:setup`'s installer writes there. A file under
    `.claude/skills/` is not beyond the spec if `.claude/rules/shipkit/.installed` lists it: setup
    installed those; any other is the project's own skill, and is listed. `CLAUDE.md` and
-   `.gitignore` are listed even when setup changed them — they hold the project's own content.
+   `.gitignore` hold the project's own content: leave one out only while it is exactly as setup
+   left it — `.claude/rules/shipkit/.setup-files` lists it with the blob id that
+   `git hash-object <file>` prints now. Any other change to either, or no such line, is listed.
    No `Paths` line: write "The spec has no Paths line; not checked."
 5. **Decisions not followed.** For each `## Decision:` in `design.md` that is not marked
    superseded, read the alternatives it turned down as well as its choice, then check the code.

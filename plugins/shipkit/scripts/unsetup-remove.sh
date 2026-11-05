@@ -143,6 +143,9 @@ rm_listed "$CLEAN"
 # an incomplete install forever, against files that are deliberately gone.
 if [ "$n_dirty" -eq 0 ] || [ "$FORCE" -eq 1 ]; then
   rm -f "$MF" 2>/dev/null
+  # setup-files.sh's record sits beside the manifest, outside it (it is written after setup's
+  # last write to CLAUDE.md); it goes with the manifest (gate-on-setup/REQ-12)
+  rm -f "$PROJ/.claude/rules/shipkit/.setup-files" 2>/dev/null
   rmdir "$PROJ/.claude/rules/shipkit" 2>/dev/null || true
   rmdir "$PROJ/.claude/rules" 2>/dev/null || true
   echo "unsetup-remove: removed $removed file(s), including the manifest."

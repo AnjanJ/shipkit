@@ -68,9 +68,14 @@ to E8 and E18 (F1, F2); `docs/design/field-notes-4.9.md` §2.1, §2.2, §2.3, §
 - **REQ-6.** `brief-verify.sh` shall treat every path under `.claude/rules/shipkit/` and
   `.shipkit-baseline/` as inside a task's files, and shall still report a changed `CLAUDE.md`
   or `.gitignore` as OUTSIDE.
+  > *Amended 2026-11-05 (`gate-on-setup/REQ-9`, the machine plan's G2, the owner's yes):* a
+  > `CLAUDE.md` or `.gitignore` still exactly as setup left it, by the blob id in
+  > `.claude/rules/shipkit/.setup-files`, is not OUTSIDE; any other change still is.
 - **REQ-7.** The reviewer's "changes beyond the spec" step shall name `.claude/rules/shipkit/`
   and `.shipkit-baseline/` as not beyond the spec, and `CLAUDE.md` and `.gitignore` as
   reported even when setup wrote them.
+  > *Amended 2026-11-05 (`gate-on-setup/REQ-10`, the same):* … unless the file is still exactly
+  > as setup left it, by `.claude/rules/shipkit/.setup-files` and `git hash-object`.
 
 ### The reviewer cites tree lines; the gate pastes its reply (S17-T4)
 
