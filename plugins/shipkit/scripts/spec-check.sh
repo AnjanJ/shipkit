@@ -28,6 +28,10 @@
 #   CONFLICT <slug> <a> <b> <file>        tasks a and b both list the file, and b (the later
 #                                         one) does not come after a
 #   CYCLE <slug> <task>                   the task's After lines lead back to itself
+#   STRAY-STATUS <slug> <file>            design.md or tasks.md carries a "> Status:" line; only
+#                                         spec.md has one, and a second can contradict it (the 5.1
+#                                         run's design.md kept "draft" beside an open spec;
+#                                         gate-on-setup/REQ-5)
 #
 # How a spec is read:
 #   - Status comes from a "> Status: draft|open|shipped|dropped" line in spec.md. A spec with
@@ -50,7 +54,8 @@
 #
 # This checks that a citation EXISTS, not that the cited test passes or proves the requirement.
 #
-# Exit status: 0 no MISSING-, BAD-AFTER, CONFLICT or CYCLE line; 1 at least one; 64 wrong usage.
+# Exit status: 0 no MISSING-, BAD-AFTER, CONFLICT, CYCLE or STRAY-STATUS line; 1 at least one;
+# 64 wrong usage.
 # POSIX sh + awk + git. No bash-only syntax, no python. Spec: .shipkit/specs/spec-contract/.
 
 usage() {
@@ -193,6 +198,12 @@ for spec in "$SPECS"/*/spec.md; do
     draft|dropped) echo "SKIPPED $slug ($status)"; continue ;;
   esac
   checked=$((checked + 1))
+  for f in design.md tasks.md; do
+    if [ -f "$dir/$f" ] && grep -q '^> *Status:' "$dir/$f"; then
+      echo "STRAY-STATUS $slug $f"
+      gaps=$((gaps + 1))
+    fi
+  done
   if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
   while read -r n kind mentioned; do
     [ -n "$n" ] || continue

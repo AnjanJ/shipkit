@@ -24,6 +24,11 @@ update of your own, until the same command runs with `--scope local` from inside
   `test/<your app>_web/live` (`field-notes-5.1.md` §2.2). They now take `APP_NAME`, the `app:` key
   of `mix.exs`, which `/shipkit:setup` reads. A direct call to `install-stack.sh elixir` without
   `APP_NAME=` now exits 2 naming it, as for every placeholder.
+- **A `Status:` line outside `spec.md` is a spec-check gap** (`gate-on-setup/REQ-5`, `REQ-6`, smoke
+  check 87). The 5.1 run's spec skill wrote `> Status: draft` in `design.md` too; the stamp set
+  `spec.md` to `open` and `design.md` kept `draft`, unread by any script (`field-notes-5.1.md`
+  §6.1, §7.3). `spec-check` now prints `STRAY-STATUS <slug> <file>` and exits 1, so the gate's
+  step 1 fails on it; deleting the line clears it.
 
 ### Docs
 

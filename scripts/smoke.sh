@@ -2867,6 +2867,29 @@ grep -qF '<app>' "$EA/CLAUDE.md" && ea_fail="$ea_fail [with APP_NAME: <app> stil
 if [ -z "$ea_fail" ]; then pass "elixir-app (no APP_NAME → exit 2 naming it, nothing written; APP_NAME=my_app → lib/my_app/, no <app>)"
 else failc "elixir-app" "$ea_fail"; fi
 
+# 87. stray-status: the 5.1 spec skill's model wrote `> Status: draft` in design.md as well as in
+# spec.md; the stamp set spec.md to open, design.md kept draft, and no script looked
+# (field-notes-5.1.md §6.1, §7.3). Only spec.md carries a Status line: spec-check names one
+# elsewhere as STRAY-STATUS and exits 1, and the spec skill's two lists of gaps name it. No
+# claude needed. Cites: gate-on-setup/REQ-5 gate-on-setup/REQ-6
+SS="$WORK/stray-status"; ss_fail=""; mkdir -p "$SS/.shipkit/specs/s"
+(cd "$SS" && git init -q)
+printf '# Spec: s\n\n> Status: open\n\n- **REQ-1.** The thing shall work. [untested: a fixture]\n' > "$SS/.shipkit/specs/s/spec.md"
+printf '# Tasks: s\n\n- [ ] **T1** Build it → REQ-1\n  - Files: a.txt\n  - Test: none\n  - After: none\n  - Done when: it works\n' > "$SS/.shipkit/specs/s/tasks.md"
+printf '# Design: s\n\n> Status: draft\n' > "$SS/.shipkit/specs/s/design.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 1 ] && printf '%s\n' "$ss_out" | grep -qx 'STRAY-STATUS s design.md'; } || ss_fail="$ss_fail [design.md: exit $ss_rc: $ss_out]"
+printf '# Design: s\n' > "$SS/.shipkit/specs/s/design.md"; printf '> Status: open\n' >> "$SS/.shipkit/specs/s/tasks.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 1 ] && printf '%s\n' "$ss_out" | grep -qx 'STRAY-STATUS s tasks.md'; } || ss_fail="$ss_fail [tasks.md: exit $ss_rc: $ss_out]"
+sed -i.bak '/^> Status:/d' "$SS/.shipkit/specs/s/tasks.md"
+ss_out=$(sh "$COPY/scripts/spec-check.sh" "$SS" s 2>&1); ss_rc=$?
+{ [ "$ss_rc" -eq 0 ] && ! printf '%s\n' "$ss_out" | grep -q 'STRAY-STATUS'; } || ss_fail="$ss_fail [none: exit $ss_rc: $ss_out]"
+grep -q 'STRAY-STATUS' "$COPY/skills/spec/SKILL.md" || ss_fail="$ss_fail [spec/SKILL.md does not name it]"
+grep -q 'STRAY-STATUS' "$COPY/skills/spec/reference.md" || ss_fail="$ss_fail [spec/reference.md does not name it]"
+if [ -z "$ss_fail" ]; then pass "stray-status (a Status line in design.md or tasks.md → STRAY-STATUS, exit 1; none → exit 0; both spec skill lists name it)"
+else failc "stray-status" "$ss_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
