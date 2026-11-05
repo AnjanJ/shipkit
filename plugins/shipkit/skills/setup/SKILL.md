@@ -109,6 +109,7 @@ must exist.
 | `{{DB_LIBRARY}}` | database/sql / sqlx / GORM / ent, from `go.mod` |
 | `{{ELIXIR_FRAMEWORK}}` | Phoenix (if `:phoenix` in `mix.exs`) / bare Elixir |
 | `{{ELIXIR_FRONTEND}}` | LiveView / API-only / SPA, from `mix.exs` and `lib/*_web/` |
+| `{{APP_NAME}}` | the `app:` key of `project/0` in `mix.exs`, without the colon (e.g. `my_app`) |
 | `{{REACT_PATTERN}}` | Functional components (default) / Class components |
 | `{{STATE_MANAGEMENT}}` | Zustand / Redux / Context / None, from `package.json` |
 | `{{STYLING}}` | Tailwind / CSS Modules / styled-components, from config files and `package.json` |

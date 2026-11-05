@@ -9,10 +9,10 @@
 
 | Path | Purpose |
 |------|---------|
-| `lib/<app>/` | Business logic (contexts) |
-| `lib/<app>_web/` | Web layer (controllers, views, LiveViews) |
-| `lib/<app>_web/live/` | LiveView modules |
-| `lib/<app>/application.ex` | Supervision tree |
+| `lib/{{APP_NAME}}/` | Business logic (contexts) |
+| `lib/{{APP_NAME}}_web/` | Web layer (controllers, views, LiveViews) |
+| `lib/{{APP_NAME}}_web/live/` | LiveView modules |
+| `lib/{{APP_NAME}}/application.ex` | Supervision tree |
 | `priv/repo/migrations/` | Ecto migrations |
 | `test/` | ExUnit tests |
 | `config/` | Environment configs |

@@ -19,6 +19,11 @@ update of your own, until the same command runs with `--scope local` from inside
   the 5.1.0 release, `fourth-project`'s READY report of 2026-11-05 sat beside its untracked NOT
   READY report of 2026-11-04, and nothing said so. The gate still changes no file but its report
   (REQ-14); why it names the file rather than removing it is in `review-and-ship/design.md`.
+- **The elixir section names your app** (`gate-on-setup/REQ-3`, `REQ-4`, smoke check 86). Its Key
+  Paths wrote `lib/<app>/` into `CLAUDE.md`, beside a LiveView section naming the real
+  `test/<your app>_web/live` (`field-notes-5.1.md` §2.2). They now take `APP_NAME`, the `app:` key
+  of `mix.exs`, which `/shipkit:setup` reads. A direct call to `install-stack.sh elixir` without
+  `APP_NAME=` now exits 2 naming it, as for every placeholder.
 
 ### Docs
 

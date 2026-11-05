@@ -2848,6 +2848,25 @@ grep -E '^\| 4 \|' "$sw_ship" | grep -qF '${TMPDIR' && sw_fail="$sw_fail [row 4 
 if [ -z "$sw_fail" ]; then pass "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
 else failc "ship-write-path" "$sw_fail"; fi
 
+# 86. elixir-app: the elixir section's Key Paths wrote `lib/<app>/` into a project's CLAUDE.md,
+# beside a LiveView section naming test/office_bestie_web/live (field-notes-5.1.md §2.2). They
+# take APP_NAME, the app: key of mix.exs: missing, the install fails naming it, as for every
+# placeholder; given, no <app> is left. Lint check 9 holds setup's table row. No claude needed.
+# Cites: gate-on-setup/REQ-3 gate-on-setup/REQ-4
+EA="$WORK/elixir-app"; ea_fail=""; mkdir -p "$EA"; printf '# demo\n' > "$EA/CLAUDE.md"
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$EA" >/dev/null 2>&1 || ea_fail="$ea_fail [install-rules failed]"
+ea_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView 2>&1 >/dev/null); ea_rc=$?
+[ "$ea_rc" -eq 2 ] || ea_fail="$ea_fail [no APP_NAME: exit $ea_rc, not 2]"
+printf '%s\n' "$ea_err" | grep -q 'APP_NAME' || ea_fail="$ea_fail [no APP_NAME: the error does not name it]"
+grep -q 'shipkit:stack:elixir' "$EA/CLAUDE.md" && ea_fail="$ea_fail [no APP_NAME: a section was written anyway]"
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app >/dev/null 2>&1 \
+  || ea_fail="$ea_fail [with APP_NAME: exit $?]"
+grep -qF '`lib/my_app/`' "$EA/CLAUDE.md" && grep -qF '`lib/my_app_web/live/`' "$EA/CLAUDE.md" \
+  || ea_fail="$ea_fail [with APP_NAME: lib/my_app/ not written]"
+grep -qF '<app>' "$EA/CLAUDE.md" && ea_fail="$ea_fail [with APP_NAME: <app> still in CLAUDE.md]"
+if [ -z "$ea_fail" ]; then pass "elixir-app (no APP_NAME → exit 2 naming it, nothing written; APP_NAME=my_app → lib/my_app/, no <app>)"
+else failc "elixir-app" "$ea_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
