@@ -86,6 +86,9 @@ What the plan left watching:
   plugin: 198,837 of the 528,427 bytes of an installed 5.0.0 (52 of those bytes an `.in_use`
   marker), and 202,547 on this branch. Only `scripts/evals.sh`, from a checkout, runs them; no skill,
   agent, hook or rule reads them (`docs/plans/binding-sprint-plan.md` §0, "Evals directory").
+  *Sprint 27 (S27-T4, G8): kept by record. The plugin docs copy a marketplace plugin whole and
+  take an eval directory only below the plugin; the record names the docs change that would move
+  them (`.shipkit/decisions/0005-evals-home.md`).*
 
 Found at the release:
 
