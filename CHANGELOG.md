@@ -29,6 +29,12 @@ update of your own, until the same command runs with `--scope local` from inside
   again. `/shipkit:setup remove` deletes the record with the manifest. The `run-debts` record that
   chose to report them is marked superseded; why a blob id and not shipkit's section markers is in
   `gate-on-setup/design.md`.
+- **The reviewer has a third mark, `partly built`** (`gate-on-setup/REQ-14`, `REQ-15`, smoke check
+  89). The 5.1 gate's reviewer marked a decision `not built` and named, in the same line, the
+  fallback that does exist (`field-notes-5.1.md` §9.2): the code fit neither of its two marks. A
+  decision with some of its code in place is now `partly built`, each part named with `path:line`
+  or the file it would be in; like `not built`, it does not change the verdict. A part that does
+  what the record turned down still makes the decision `contradicted`, and so fails the review.
 - **The elixir section names your app** (`gate-on-setup/REQ-3`, `REQ-4`, smoke check 86). Its Key
   Paths wrote `lib/<app>/` into `CLAUDE.md`, beside a LiveView section naming the real
   `test/<your app>_web/live` (`field-notes-5.1.md` §2.2). They now take `APP_NAME`, the `app:` key

@@ -61,6 +61,10 @@ Source: `docs/plans/binding-sprint-plan.md` (approved 2026-10-31), G1, G2, G3, G
   the record turned down or the opposite of what it chose.
 - **REQ-7.** Under "Decisions not followed", the reviewer shall mark each decision it lists
   `contradicted` or `not built`; a decision whose code does not exist yet shall be `not built`.
+  > *Amended 2026-11-05 (`gate-on-setup/REQ-14`, `REQ-15`, the machine plan's G3, the owner's yes):*
+  > a third mark, `partly built`, where some of the code exists and some does not, each part named;
+  > `not built` is for a decision none of whose code exists. `partly built` does not change the
+  > verdict.
 - **REQ-8.** The reviewer's reply shall end with `VERDICT: PASS` if every requirement is `MET` and
   no live decision is `contradicted`, and with `VERDICT: FAIL` otherwise.
   > *Amends `review-and-ship/REQ-6` in place (G3).*

@@ -22,7 +22,7 @@ Every scratch copy is removed after reading (rule 13).
   - Test: scripts/smoke.sh, written first and run alone, red: check 88 "setup-files" on brief-verify's fixture in the 5.1 shape (a new `CLAUDE.md` and a `.gitignore` with five lines): `record` then `check` prints both (`gate-on-setup/REQ-7`, `REQ-8`); brief-verify gives no `OUTSIDE` for either (`REQ-9`); one more line in each → `OUTSIDE` for each (`REQ-9`, the other side); no record → both `OUTSIDE`, as part c2 still asserts; the reviewer's step 4 names `.setup-files` and `git hash-object` (`REQ-10`); setup's Phase 7 runs `record` before the summary (`REQ-11`); `unsetup-remove.sh` on an installed fixture leaves no `.setup-files` (`REQ-12`)
   - After: T1
   - Done when: check 88 PASS alone, both sides; the `brief-verify` and `shipkit-allowed` checks PASS alone; `run-debts`' fifth record marked `Superseded`, so `brief.sh` leaves it out, and REQ-6 and REQ-7 noted; lint 0/0
-- [ ] **T3** `partly built` (S26-T3, G3) → REQ-14, REQ-15
+- [x] **T3** `partly built` (S26-T3, G3) → REQ-14, REQ-15
   - Files: plugins/shipkit/agents/reviewer.md, scripts/smoke.sh, .shipkit/specs/decisions-bind/spec.md, CHANGELOG.md
   - Test: scripts/smoke.sh, written first and run alone, red: check 89 "reviewer-marks" (step 5 names `contradicted`, `partly built` and `not built`, and a part that does what the record turned down is `contradicted`; the reply's shape lists all three; the verdict paragraph says `partly built` does not change it; cites `gate-on-setup/REQ-14`, `REQ-15`); check 77 still PASS
   - After: T2

@@ -2949,6 +2949,28 @@ else sf_fail="$sf_fail [could not install and record for the unsetup fixture]"; 
 if [ -z "$sf_fail" ]; then pass "setup-files (recorded and unchanged → not OUTSIDE; one more line, or no record → OUTSIDE; the reviewer, setup and unsetup follow)"
 else failc "setup-files" "$sf_fail"; fi
 
+
+# 89. reviewer-marks: the 5.1 reviewer marked a decision `not built` "for the workspace path" and
+# named, in the same line, the fallback that does exist (field-notes-5.1.md §9.2): two marks, and
+# the code fit neither. A third, `partly built`, names each part; it changes no verdict, and a part
+# that does what the record turned down still makes the decision `contradicted`. The text is read
+# with its lines joined, so a rewrap does not break it. No claude needed.
+# Cites: gate-on-setup/REQ-14 gate-on-setup/REQ-15
+rm_flat=$(tr '\n' ' ' < "$COPY/agents/reviewer.md" | tr -s ' ')
+rm_step5=$(printf '%s' "$rm_flat" | sed -n 's/.*5\. \*\*Decisions not followed\.\*\*\(.*\)## What you do not do.*/\1/p')
+rm_fail=""
+[ -n "$rm_step5" ] || rm_fail=" [no step 5]"
+for rm_want in '**`contradicted`**' '**`partly built`**' '**`not built`**' 'the file it would be in' \
+  'A part that does what the record turned down makes the decision `contradicted`'; do
+  case "$rm_step5" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [step 5, no: $rm_want]" ;; esac
+done
+for rm_want in '`contradicted`, `partly built` or `not built`' \
+  'decisions marked `not built` or `partly built` are reported and do not change the verdict'; do
+  case "$rm_flat" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [no: $rm_want]" ;; esac
+done
+if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
+else failc "reviewer-marks" "$rm_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

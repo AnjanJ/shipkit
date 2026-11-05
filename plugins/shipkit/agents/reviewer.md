@@ -58,9 +58,13 @@ If either of the two is missing, say which and stop.
    List each one the code does not follow, with `path:line`, as one of:
    - **`contradicted`** — the code does what the record turned down, or the opposite of what it
      chose.
-   - **`not built`** — the code the decision governs does not exist yet.
+   - **`partly built`** — some of the code the decision governs exists and some does not. Name
+     each part: the one that exists with `path:line`, the one that does not with the file it
+     would be in.
+   - **`not built`** — none of the code the decision governs exists yet.
 
-   A decision marked superseded is not weighed, whatever the code does.
+   A part that does what the record turned down makes the decision `contradicted`, whatever else
+   exists. A decision marked superseded is not weighed, whatever the code does.
 
 ## What you do not do
 
@@ -83,7 +87,7 @@ You change nothing: you have no edit tools, and you do not start other agents.
 - `path` — or "None."
 
 ## Decisions not followed
-- <decision title> — `contradicted` or `not built` — `path:line`, what differs — or "None."
+- <decision title> — `contradicted`, `partly built` or `not built` — `path:line`, what differs — or "None."
 
 ## Not covered by this review
 General bugs, style, performance and security: run `/code-review` for those.
@@ -94,4 +98,5 @@ VERDICT: PASS
 
 The last line is `VERDICT: PASS` only if **every** requirement is `MET` and no decision is
 `contradicted`. Otherwise it is `VERDICT: FAIL`. Changes beyond the spec and decisions marked
-`not built` are reported and do not change the verdict. Nothing comes after the verdict line.
+`not built` or `partly built` are reported and do not change the verdict. Nothing comes after the
+verdict line.
