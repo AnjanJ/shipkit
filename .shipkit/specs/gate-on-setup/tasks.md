@@ -27,7 +27,7 @@ Every scratch copy is removed after reading (rule 13).
   - Test: scripts/smoke.sh, written first and run alone, red: check 89 "reviewer-marks" (step 5 names `contradicted`, `partly built` and `not built`, and a part that does what the record turned down is `contradicted`; the reply's shape lists all three; the verdict paragraph says `partly built` does not change it; cites `gate-on-setup/REQ-14`, `REQ-15`); check 77 still PASS
   - After: T2
   - Done when: checks 77 and 89 PASS alone; `decisions-bind/REQ-7` amended in place with its note; lint 0/0
-- [ ] **T-MERGE** Merge, untagged (S26-T-MERGE) → the merge steps in `spec.md`
+- [x] **T-MERGE** Merge, untagged (S26-T-MERGE) → the merge steps in `spec.md`
   - Files: .shipkit/specs/gate-on-setup/
   - Test: the sprint exit checklist with `bash scripts/evals.sh --group reviewer -j 4`, every case 3 of 3; the full smoke suite (rule 22)
   - After: T3
