@@ -3051,6 +3051,63 @@ done
 if [ -z "$gg_fail" ]; then pass "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
 else failc "git-grep" "$gg_fail"; fi
 
+# 92. wait-probe: the 5.1 intake's file was on disk at 00:19:34 and its session ended at 00:23:52,
+# held open by two Monitor watches on an agent that had already finished; the JSON result's
+# duration_ms said 2,023 (field-notes-5.1.md §4). wait-probe.sh scaffolds a small fixture, and reads
+# the wait from a stored transcript: the last write of intake.md (Write, Edit, or a Bash redirect,
+# as the 5.1 run wrote it) to the transcript's last timestamp; Monitor calls, and `sleep` in a Bash
+# command only (a Monitor's own loop sleeps too); each call once by its id, since a transcript
+# repeats some. A fake claude first on the PATH shows neither mode calls a model.
+# Cites: users-machine/REQ-7 users-machine/REQ-8
+WP="$WORK/wait-probe"; mkdir -p "$WP/bin" "$WP/tx"; wp_fail=""; wp_tab=$(printf '\t')
+wp_sh="$ROOT/scripts/wait-probe.sh"
+printf '#!/bin/sh\ntouch "%s/claude-called"\nexit 1\n' "$WP" > "$WP/bin/claude"; chmod +x "$WP/bin/claude"
+PATH="$WP/bin:$PATH" sh "$wp_sh" --scaffold "$WP/fix" >/dev/null 2>&1; wp_rc=$?
+[ "$wp_rc" -eq 0 ] || wp_fail="$wp_fail [--scaffold: exit $wp_rc]"
+wp_n=$(git -C "$WP/fix" ls-files 2>/dev/null | wc -l | tr -d ' ')
+[ "${wp_n:-0}" -ge 8 ] && [ "${wp_n:-0}" -le 16 ] || wp_fail="$wp_fail [fixture: ${wp_n:-0} tracked files, not 8 to 16]"
+git -C "$WP/fix" rev-parse -q --verify HEAD >/dev/null 2>&1 && [ -z "$(git -C "$WP/fix" status --porcelain 2>/dev/null)" ] \
+  || wp_fail="$wp_fail [fixture: not a clean commit]"
+[ -f "$WP/fix/.shipkit/product.md" ] || wp_fail="$wp_fail [fixture: no .shipkit/product.md]"
+[ -e "$WP/fix/.shipkit/specs" ] && wp_fail="$wp_fail [fixture: already holds a spec]"
+PATH="$WP/bin:$PATH" sh "$wp_sh" --scaffold "$WP/fix" >/dev/null 2>&1; wp_rc=$?
+[ "$wp_rc" -eq 2 ] || wp_fail="$wp_fail [--scaffold into a non-empty directory: exit $wp_rc, not 2]"
+cat > "$WP/tx/waited.jsonl" <<'WPEOF'
+{"type":"user","timestamp":"2026-11-05T10:00:00.000Z","message":{"role":"user","content":"/shipkit:intake demo"}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:05.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"ag1","name":"Agent","input":{"subagent_type":"shipkit:grandfather","run_in_background":true}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:06.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"ag1","content":"started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:07.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"sl1","name":"Bash","input":{"command":"sleep 90"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:08.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"sl1","content":"Blocked: use Monitor"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:09.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"mo1","name":"Monitor","input":{"command":"until [ -s out ]; do sleep 5; done"}}]}}
+{"type":"api-request-blob","hash":"h1","message":{"content":[{"type":"tool_use","id":"mo1","name":"Monitor","input":{"command":"until [ -s out ]; do sleep 5; done"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:10.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"mo1","content":"Monitor started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:11.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"mo2","name":"Monitor","input":{"command":"until grep -q end_turn out; do sleep 5; done"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:12.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"mo2","content":"Monitor started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:50.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"wr1","name":"Write","input":{"file_path":"/tmp/p/.shipkit/specs/demo/intake.md","content":"# Intake"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:01:00.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"wr1","content":"ok"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:01:02.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"rd1","name":"Read","input":{"file_path":"/tmp/p/.shipkit/specs/demo/intake.md"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:01:03.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"rd1","content":"# Intake"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:05:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"The second wait timed out."}]}}
+{"type":"cost-state","totalCostUSD":0.49}
+WPEOF
+cat > "$WP/tx/quick.jsonl" <<'WPEOF'
+{"type":"user","timestamp":"2026-11-05T11:00:00.000Z","message":{"role":"user","content":"/shipkit:intake demo"}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:01.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"b1","name":"Bash","input":{"command":"d=$(date +%F); cat > .shipkit/specs/demo/intake.md <<'EOF'\n# Intake\nEOF"}}]}}
+{"type":"user","timestamp":"2026-11-05T11:00:10.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"b1","content":""}]}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:11.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"b2","name":"Bash","input":{"command":"cat .shipkit/specs/demo/intake.md 2>&1 > /dev/null"}}]}}
+{"type":"user","timestamp":"2026-11-05T11:00:12.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"b2","content":""}]}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:15.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Intake written."}]}}
+WPEOF
+wp_out=$(PATH="$WP/bin:$PATH" sh "$wp_sh" --read "$WP/tx/waited.jsonl" "$WP/tx/quick.jsonl" 2>&1); wp_rc=$?
+[ "$wp_rc" -eq 0 ] || wp_fail="$wp_fail [--read: exit $wp_rc]"
+printf '%s\n' "$wp_out" | grep -qxF "waited.jsonl${wp_tab}240${wp_tab}2${wp_tab}1${wp_tab}yes" \
+  || wp_fail="$wp_fail [--read, the waited run: not 240 s, 2 Monitor, 1 sleep, background yes]"
+printf '%s\n' "$wp_out" | grep -qxF "quick.jsonl${wp_tab}5${wp_tab}0${wp_tab}0${wp_tab}none" \
+  || wp_fail="$wp_fail [--read, the quick run: not 5 s, 0 Monitor, 0 sleep, no agent]"
+[ -e "$WP/claude-called" ] && wp_fail="$wp_fail [a model was called]"
+if [ -z "$wp_fail" ]; then pass "wait-probe (scaffolds a clean fixture with no model call; reads idle seconds, Monitor and sleep calls from a transcript)"
+else failc "wait-probe" "$wp_fail$(printf ' [output: %s]' "$wp_out" | tr '\n\t' '| ')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
