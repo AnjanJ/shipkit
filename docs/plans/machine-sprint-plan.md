@@ -1,7 +1,7 @@
 # Machine plan — what the user's machine does to the loop, and what the gate says about setup
 
 Status: **APPROVED 2026-11-05** by the owner ("approved"), every decision at its default, G10
-`~/code/office_bestie`; G2 amended at S26-T0 on the owner's word · Written after shipkit 5.1.0 (tag `v5.1.0`) and PR #30
+`~/code/office_bestie`; G2 amended at S26-T0 on the owner's word; S27-T1 amended at S27-T0 on the owner's word · Written after shipkit 5.1.0 (tag `v5.1.0`) and PR #30
 (`03e87eb`, untagged) from the ROADMAP's "Still open after Sprint 25", each item read against the
 code at `03e87eb` · Three sprints, **one release: 5.2.0** · Follows
 `docs/plans/binding-sprint-plan.md`, all three of whose sprints shipped in 5.1.0.
@@ -131,7 +131,7 @@ To check first, each in the task that needs it:
 | ~~Setup's `CLAUDE.md` lines can be told from the project's by its markers alone, on the 5.1 run's diff shape~~ Read at S26-T0: false on `linkshort`, where setup created `CLAUDE.md`; G2 amended | S26-T2 | — |
 | `mise exec -- <cmd>` runs the test command in a headless `claude -p` Bash call on `office_bestie` | S27-T1 | G4 prints a hint only |
 | A fixture reproduces the idle wait at least once in five | S27-T3 | No sentence; the ROADMAP line names the platform and the run that showed it |
-| The plugin docs name no way to leave a path out of an install | S27-T0 | G8's move becomes a task of S27, on the owner's word |
+| ~~The plugin docs name no way to leave a path out of an install~~ Read at S27-T0: true; the loading reference copies the plugin whole, and `--eval-dir` takes only a relative directory below the plugin (`.shipkit/specs/users-machine/intake.md`) | S27-T0 | — |
 | `office_bestie` builds and tests in a fresh worktree at today's `main` | S28-T2, first | The owner's word: fix the setup by hand, or G10's other option |
 
 ---
@@ -207,9 +207,15 @@ shell says.
 - As S26-T0, `.shipkit/specs/users-machine/`. The plugin docs read for G8's Check first.
 
 ### S27-T1 — A test command for a pinned toolchain (G4)
-- **Files:** `plugins/shipkit/skills/setup/SKILL.md`, `scripts/smoke.sh`.
+- **Files:** `plugins/shipkit/skills/setup/SKILL.md`, `scripts/smoke.sh`; *(amended at S27-T0,
+  the owner's word)* `plugins/shipkit/stacks/elixir/CLAUDE.md.append`,
+  `plugins/shipkit/stacks/go/CLAUDE.md.append`, `CHANGELOG.md`. The elixir and go sections wrote
+  `mix test` and `go test ./...` with no placeholder, so the prefix would have reached setup's
+  **Test:** line and not the section below it (`.shipkit/specs/users-machine/design.md`, second
+  record).
 - **Steps:** the Check first, by hand, on `office_bestie` in a scratch worktree. Smoke check 90,
-  written first, red: Phase 1 step 4 names the three files and `mise exec --`.
+  written first, red: Phase 1 step 4 names the three files and `mise exec --`, after any
+  `VAR=value` words; the elixir and go sections take the `TEST_COMMAND` placeholder.
 - **Done when:** check 90 PASS; the Check first's command and output in the commit's test plan;
   lint 0/0.
 

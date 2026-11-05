@@ -29,6 +29,22 @@ update of your own, until the same command runs with `--scope local` from inside
   again. `/shipkit:setup remove` deletes the record with the manifest. The `run-debts` record that
   chose to report them is marked superseded; why a blob id and not shipkit's section markers is in
   `gate-on-setup/design.md`.
+- **The test command runs on a pinned toolchain** (`users-machine/REQ-1` to `REQ-3`, smoke check
+  90). On a project that pins its versions with `mise` (`.tool-versions`, `mise.toml` or
+  `.mise.toml`), with `mise` on the `PATH`, `/shipkit:setup` writes the test command with
+  `mise exec --` before the program and after any `VAR=value` words
+  (`MIX_ENV=test mise exec -- mix test`), so a task's Done-when and the gate's tests run it in a
+  headless shell; the 5.1 run typed the prefix by hand at every step. The elixir and go sections
+  of `CLAUDE.md` said `mix test` and `go test ./...` whatever setup detected; they now take
+  `TEST_COMMAND`, as rails, python and react do, and a direct `install-stack.sh` call for either
+  without it exits 2 naming it.
+- **The gate's searches read the same whatever your shell's `grep` is** (`users-machine/REQ-4` to
+  `REQ-6`, smoke check 91). At the 5.1.0 release the `fourth-project` reviewer searched with
+  `\|` and found nothing, twice, on a line that is there: Claude Code's shell held the owner's
+  alias of `grep` to another program (`eval-history.md`, "Release run 5.1.0"). The reviewer and
+  `/shipkit:ship` now search in Bash with `git grep -n`, `-E` for alternation, and never `\|`; the
+  Grep tool stays allowed. Step 3 runs `git grep -n --untracked`, because plain `git grep` skips a
+  `tasks.md` that was never committed and exits 1, which step 3 reads as PASS.
 - **The reviewer has a third mark, `partly built`** (`gate-on-setup/REQ-14`, `REQ-15`, smoke check
   89). The 5.1 gate's reviewer marked a decision `not built` and named, in the same line, the
   fallback that does exist (`field-notes-5.1.md` §9.2): the code fit neither of its two marks. A
@@ -52,6 +68,12 @@ update of your own, until the same command runs with `--scope local` from inside
   commands. At the 5.1.0 release, `claude plugin update --scope user` moved the owner's user-scope
   installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
   `--scope local` ran from inside its project.
+- **The headless intake's wait, measured, and no sentence added** (`users-machine/REQ-7` to
+  `REQ-10`, smoke check 92). The 5.1 intake stayed open 260 s after writing its file, held by two
+  `Monitor` watches on an agent that had already finished. `scripts/wait-probe.sh` scaffolds a small
+  fixture, runs headless intakes on it and reads the wait from each session's transcript. Five runs
+  idled 6 to 24 s and armed no watch, under the bar of 2 runs over 60 s, so the intake and ask skills
+  say nothing about waiting and the ROADMAP watches for it (`docs/design/eval-results-5.2.md` §1).
 
 ### Fixed
 

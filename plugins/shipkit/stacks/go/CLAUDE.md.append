@@ -16,7 +16,7 @@
 
 ### Testing
 - **Framework:** stdlib `testing` package
-- **Run all:** `go test ./...`
+- **Run all:** `{{TEST_COMMAND}}`
 - **Run with race detector:** `go test -race ./...`
 
 ### Style

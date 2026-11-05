@@ -2859,7 +2859,7 @@ ea_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWO
 [ "$ea_rc" -eq 2 ] || ea_fail="$ea_fail [no APP_NAME: exit $ea_rc, not 2]"
 printf '%s\n' "$ea_err" | grep -q 'APP_NAME' || ea_fail="$ea_fail [no APP_NAME: the error does not name it]"
 grep -q 'shipkit:stack:elixir' "$EA/CLAUDE.md" && ea_fail="$ea_fail [no APP_NAME: a section was written anyway]"
-sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app >/dev/null 2>&1 \
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$EA" ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app TEST_COMMAND="mix test" >/dev/null 2>&1 \
   || ea_fail="$ea_fail [with APP_NAME: exit $?]"
 grep -qF '`lib/my_app/`' "$EA/CLAUDE.md" && grep -qF '`lib/my_app_web/live/`' "$EA/CLAUDE.md" \
   || ea_fail="$ea_fail [with APP_NAME: lib/my_app/ not written]"
@@ -2970,6 +2970,143 @@ for rm_want in '`contradicted`, `partly built` or `not built`' \
 done
 if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
 else failc "reviewer-marks" "$rm_fail"; fi
+
+
+# 90. pinned-toolchain: office_bestie pins Elixir and Erlang in .tool-versions, and in a headless
+# shell nothing activates mise, so the 5.1 runner typed `mise exec --` by hand at every step
+# (field-notes-5.1.md). Setup now writes it into the test command when the project pins with mise
+# and mise is on the PATH, after any VAR=value words; otherwise the command as detected. The elixir
+# and go sections said `mix test` and `go test ./...` whatever setup detected, so they take
+# TEST_COMMAND: missing, the install fails naming it; given, each section names it. No claude
+# needed. Cites: users-machine/REQ-1 users-machine/REQ-2 users-machine/REQ-3
+pt_fail=""
+pt_flat=$(tr '\n' ' ' < "$COPY/skills/setup/SKILL.md" | tr -s ' ')
+for pt_want in '`.tool-versions`, `mise.toml` or `.mise.toml`' 'command -v mise' 'mise exec --' \
+  'after any leading `VAR=value` words' '`MIX_ENV=test mise exec -- mix test`' 'Otherwise write the test command as detected'; do
+  case "$pt_flat" in *"$pt_want"*) ;; *) pt_fail="$pt_fail [setup, no: $pt_want]" ;; esac
+done
+PT="$WORK/pinned"; mkdir -p "$PT/ex" "$PT/ex2" "$PT/go" "$PT/go2"
+for pt_d in ex ex2 go go2; do printf '# demo\n' > "$PT/$pt_d/CLAUDE.md"; done
+pt_ex="ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app"
+pt_go="GO_FRAMEWORK=Chi MODULE_PATH=example.com/demo DB_LIBRARY=sqlx API_STYLE=REST"
+# shellcheck disable=SC2086
+pt_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$PT/ex" $pt_ex 2>&1 >/dev/null); pt_rc=$?
+[ "$pt_rc" -eq 2 ] && printf '%s\n' "$pt_err" | grep -q 'TEST_COMMAND' || pt_fail="$pt_fail [elixir, no TEST_COMMAND: exit $pt_rc, not 2 naming it]"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" elixir "$PT/ex2" $pt_ex TEST_COMMAND='MIX_ENV=test mise exec -- mix test' >/dev/null 2>&1 \
+  || pt_fail="$pt_fail [elixir, with TEST_COMMAND: install failed]"
+grep -qF -- '- **Run all:** `MIX_ENV=test mise exec -- mix test`' "$PT/ex2/CLAUDE.md" \
+  && grep -qF -- '- **Run specific:** `MIX_ENV=test mise exec -- mix test <path>`' "$PT/ex2/CLAUDE.md" \
+  || pt_fail="$pt_fail [elixir: the section does not name TEST_COMMAND on both lines]"
+grep -qF '`mix test' "$PT/ex2/CLAUDE.md" && pt_fail="$pt_fail [elixir: a bare mix test is left]"
+# shellcheck disable=SC2086
+pt_err=$(sh "$COPY/scripts/install-stack.sh" "$COPY" go "$PT/go" $pt_go 2>&1 >/dev/null); pt_rc=$?
+[ "$pt_rc" -eq 2 ] && printf '%s\n' "$pt_err" | grep -q 'TEST_COMMAND' || pt_fail="$pt_fail [go, no TEST_COMMAND: exit $pt_rc, not 2 naming it]"
+# shellcheck disable=SC2086
+sh "$COPY/scripts/install-stack.sh" "$COPY" go "$PT/go2" $pt_go TEST_COMMAND='mise exec -- go test ./...' >/dev/null 2>&1 \
+  || pt_fail="$pt_fail [go, with TEST_COMMAND: install failed]"
+grep -qF -- '- **Run all:** `mise exec -- go test ./...`' "$PT/go2/CLAUDE.md" || pt_fail="$pt_fail [go: Run all does not name TEST_COMMAND]"
+if [ -z "$pt_fail" ]; then pass "pinned-toolchain (setup prefixes mise exec -- after VAR=value on a pinned project; elixir and go take TEST_COMMAND)"
+else failc "pinned-toolchain" "$pt_fail"; fi
+
+# 91. git-grep: the fourth-project reviewer's `grep -n "198,837\|198837" ROADMAP.md` printed
+# nothing for a line that is there, twice: Claude Code's shell held the owner's alias of grep to
+# another program (eval-history.md, "Release run 5.1.0"). `git grep` is git's own, so no alias,
+# function or PATH order changes it, and `-E` reads the same on every machine where `\|` does
+# not. Plain git grep reads tracked files only: on an untracked tasks.md with an unticked line it
+# exits 1, which step 3 reads as PASS, so step 3 adds --untracked and is run here on one. A code
+# span is read with fence lines dropped and lines joined. No claude needed.
+# Cites: users-machine/REQ-4 users-machine/REQ-5 users-machine/REQ-6
+gg_fail=""
+gg_rv=$(tr '\n' ' ' < "$COPY/agents/reviewer.md" | tr -s ' ')
+gg_sk=$(tr '\n' ' ' < "$COPY/skills/ship/SKILL.md" | tr -s ' ')
+for gg_want in '`git grep -n`' '`-E` for alternation' 'never write `\|`'; do
+  case "$gg_rv" in *"$gg_want"*) ;; *) gg_fail="$gg_fail [reviewer, no: $gg_want]" ;; esac
+  case "$gg_sk" in *"$gg_want"*) ;; *) gg_fail="$gg_fail [ship, no: $gg_want]" ;; esac
+done
+gg_cmd=$(sed -n 's/^| 3 | Tasks ticked | `\([^`]*\)`.*/\1/p' "$COPY/skills/ship/SKILL.md")
+gg_cmd=${gg_cmd%%; echo*}
+case "$gg_cmd" in "git grep -n --untracked "*) ;; *) gg_fail="$gg_fail [step 3 is not git grep -n --untracked: $gg_cmd]" ;; esac
+gg_run=$(printf '%s' "$gg_cmd" | sed 's/<slug>/demo/g')
+GG="$WORK/gitgrep"; mkdir -p "$GG/.shipkit/specs/demo"
+(cd "$GG" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+printf -- '- [x] **T1** done\n- [ ] **T2** open\n' > "$GG/.shipkit/specs/demo/tasks.md"
+(cd "$GG" && git grep -n '^- \[ \]' .shipkit/specs/demo/tasks.md >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 1 ] || gg_fail="$gg_fail [fixture: plain git grep on the untracked file exits $gg_rc, not 1]"
+(cd "$GG" && sh -c "$gg_run" >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 0 ] || gg_fail="$gg_fail [step 3 on an untracked tasks.md with an unticked line: exit $gg_rc, not 0]"
+printf -- '- [x] **T1** done\n- [x] **T2** done\n' > "$GG/.shipkit/specs/demo/tasks.md"
+(cd "$GG" && sh -c "$gg_run" >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 1 ] || gg_fail="$gg_fail [step 3 on an untracked tasks.md, all ticked: exit $gg_rc, not 1]"
+for gg_f in agents/reviewer.md skills/ship/SKILL.md skills/ship/reference.md; do
+  gg_txt=$(grep -v '^ *```' "$COPY/$gg_f" | tr '\n' ' ' | tr -s ' ')
+  printf '%s' "$gg_txt" | sed 's/git grep//g' | grep -qwE 'grep|egrep|fgrep' \
+    && gg_fail="$gg_fail [$gg_f: names grep without git]"
+  gg_spans=$(printf '%s' "$gg_txt" | grep -oE '`[^`]*`')
+  printf '%s\n' "$gg_spans" | grep -qE '^`[( ]*(rg|ack|ag|find|grep|egrep|fgrep)( |`)' \
+    && gg_fail="$gg_fail [$gg_f: a search command but git grep]"
+  printf '%s\n' "$gg_spans" | grep -vxF '`\|`' | grep -qF '\|' \
+    && gg_fail="$gg_fail [$gg_f: a \\| in a command]"
+done
+if [ -z "$gg_fail" ]; then pass "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
+else failc "git-grep" "$gg_fail"; fi
+
+# 92. wait-probe: the 5.1 intake's file was on disk at 00:19:34 and its session ended at 00:23:52,
+# held open by two Monitor watches on an agent that had already finished; the JSON result's
+# duration_ms said 2,023 (field-notes-5.1.md §4). wait-probe.sh scaffolds a small fixture, and reads
+# the wait from a stored transcript: the last write of intake.md (Write, Edit, or a Bash redirect,
+# as the 5.1 run wrote it) to the transcript's last timestamp; Monitor calls, and `sleep` in a Bash
+# command only (a Monitor's own loop sleeps too); each call once by its id, since a transcript
+# repeats some. A fake claude first on the PATH shows neither mode calls a model.
+# Cites: users-machine/REQ-7 users-machine/REQ-8
+WP="$WORK/wait-probe"; mkdir -p "$WP/bin" "$WP/tx"; wp_fail=""; wp_tab=$(printf '\t')
+wp_sh="$ROOT/scripts/wait-probe.sh"
+printf '#!/bin/sh\ntouch "%s/claude-called"\nexit 1\n' "$WP" > "$WP/bin/claude"; chmod +x "$WP/bin/claude"
+PATH="$WP/bin:$PATH" sh "$wp_sh" --scaffold "$WP/fix" >/dev/null 2>&1; wp_rc=$?
+[ "$wp_rc" -eq 0 ] || wp_fail="$wp_fail [--scaffold: exit $wp_rc]"
+wp_n=$(git -C "$WP/fix" ls-files 2>/dev/null | wc -l | tr -d ' ')
+[ "${wp_n:-0}" -ge 8 ] && [ "${wp_n:-0}" -le 16 ] || wp_fail="$wp_fail [fixture: ${wp_n:-0} tracked files, not 8 to 16]"
+git -C "$WP/fix" rev-parse -q --verify HEAD >/dev/null 2>&1 && [ -z "$(git -C "$WP/fix" status --porcelain 2>/dev/null)" ] \
+  || wp_fail="$wp_fail [fixture: not a clean commit]"
+[ -f "$WP/fix/.shipkit/product.md" ] || wp_fail="$wp_fail [fixture: no .shipkit/product.md]"
+[ -e "$WP/fix/.shipkit/specs" ] && wp_fail="$wp_fail [fixture: already holds a spec]"
+PATH="$WP/bin:$PATH" sh "$wp_sh" --scaffold "$WP/fix" >/dev/null 2>&1; wp_rc=$?
+[ "$wp_rc" -eq 2 ] || wp_fail="$wp_fail [--scaffold into a non-empty directory: exit $wp_rc, not 2]"
+cat > "$WP/tx/waited.jsonl" <<'WPEOF'
+{"type":"user","timestamp":"2026-11-05T10:00:00.000Z","message":{"role":"user","content":"/shipkit:intake demo"}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:05.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"ag1","name":"Agent","input":{"subagent_type":"shipkit:grandfather","run_in_background":true}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:06.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"ag1","content":"started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:07.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"sl1","name":"Bash","input":{"command":"sleep 90"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:08.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"sl1","content":"Blocked: use Monitor"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:09.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"mo1","name":"Monitor","input":{"command":"until [ -s out ]; do sleep 5; done"}}]}}
+{"type":"api-request-blob","hash":"h1","message":{"content":[{"type":"tool_use","id":"mo1","name":"Monitor","input":{"command":"until [ -s out ]; do sleep 5; done"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:10.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"mo1","content":"Monitor started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:11.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"mo2","name":"Monitor","input":{"command":"until grep -q end_turn out; do sleep 5; done"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:00:12.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"mo2","content":"Monitor started"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:00:50.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"wr1","name":"Write","input":{"file_path":"/tmp/p/.shipkit/specs/demo/intake.md","content":"# Intake"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:01:00.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"wr1","content":"ok"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:01:02.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"rd1","name":"Read","input":{"file_path":"/tmp/p/.shipkit/specs/demo/intake.md"}}]}}
+{"type":"user","timestamp":"2026-11-05T10:01:03.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"rd1","content":"# Intake"}]}}
+{"type":"assistant","timestamp":"2026-11-05T10:05:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"The second wait timed out."}]}}
+{"type":"cost-state","totalCostUSD":0.49}
+WPEOF
+cat > "$WP/tx/quick.jsonl" <<'WPEOF'
+{"type":"user","timestamp":"2026-11-05T11:00:00.000Z","message":{"role":"user","content":"/shipkit:intake demo"}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:01.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"b1","name":"Bash","input":{"command":"d=$(date +%F); cat > .shipkit/specs/demo/intake.md <<'EOF'\n# Intake\nEOF"}}]}}
+{"type":"user","timestamp":"2026-11-05T11:00:10.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"b1","content":""}]}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:11.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"b2","name":"Bash","input":{"command":"cat .shipkit/specs/demo/intake.md 2>&1 > /dev/null"}}]}}
+{"type":"user","timestamp":"2026-11-05T11:00:12.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"b2","content":""}]}}
+{"type":"assistant","timestamp":"2026-11-05T11:00:15.000Z","message":{"role":"assistant","content":[{"type":"text","text":"Intake written."}]}}
+WPEOF
+wp_out=$(PATH="$WP/bin:$PATH" sh "$wp_sh" --read "$WP/tx/waited.jsonl" "$WP/tx/quick.jsonl" 2>&1); wp_rc=$?
+[ "$wp_rc" -eq 0 ] || wp_fail="$wp_fail [--read: exit $wp_rc]"
+printf '%s\n' "$wp_out" | grep -qxF "waited.jsonl${wp_tab}240${wp_tab}2${wp_tab}1${wp_tab}yes" \
+  || wp_fail="$wp_fail [--read, the waited run: not 240 s, 2 Monitor, 1 sleep, background yes]"
+printf '%s\n' "$wp_out" | grep -qxF "quick.jsonl${wp_tab}5${wp_tab}0${wp_tab}0${wp_tab}none" \
+  || wp_fail="$wp_fail [--read, the quick run: not 5 s, 0 Monitor, 0 sleep, no agent]"
+[ -e "$WP/claude-called" ] && wp_fail="$wp_fail [a model was called]"
+if [ -z "$wp_fail" ]; then pass "wait-probe (scaffolds a clean fixture with no model call; reads idle seconds, Monitor and sleep calls from a transcript)"
+else failc "wait-probe" "$wp_fail$(printf ' [output: %s]' "$wp_out" | tr '\n\t' '| ')"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

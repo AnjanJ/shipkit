@@ -134,6 +134,14 @@ must exist.
    `grep -oh '{{[A-Z_]*}}' <root>/stacks/<overlay> -r | sort -u` per overlay. A value you
    cannot detect becomes `TODO: <the hint from the HTML comment next to it>`.
 
+   **A pinned toolchain.** If the project has `.tool-versions`, `mise.toml` or `.mise.toml` at
+   its root and `command -v mise` prints a path, write the test command — `TEST_COMMAND` and
+   `CLAUDE.md`'s **Test:** line — with `mise exec --` before the program, after any leading
+   `VAR=value` words: `MIX_ENV=test mise exec -- mix test`. A headless shell need not activate
+   `mise`, and every task's Done-when and the gate's tests run this command; with the prefix it
+   runs on the pinned versions either way. Say so in the Phase 7 summary. Otherwise write the
+   test command as detected.
+
 5. **Ask the user:**
    - One-line project purpose (e.g., "SaaS billing platform for freelancers")
    - **Workflow style** — how strict should the coding workflow be?

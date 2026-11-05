@@ -19,8 +19,8 @@
 
 ### Testing
 - **Framework:** ExUnit
-- **Run all:** `mix test`
-- **Run specific:** `mix test <path>`
+- **Run all:** `{{TEST_COMMAND}}`
+- **Run specific:** `{{TEST_COMMAND}} <path>`
 
 ### Style
 - **Formatter:** `mix format`
