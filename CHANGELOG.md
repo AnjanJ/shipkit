@@ -38,6 +38,13 @@ update of your own, until the same command runs with `--scope local` from inside
   of `CLAUDE.md` said `mix test` and `go test ./...` whatever setup detected; they now take
   `TEST_COMMAND`, as rails, python and react do, and a direct `install-stack.sh` call for either
   without it exits 2 naming it.
+- **The gate's searches read the same whatever your shell's `grep` is** (`users-machine/REQ-4` to
+  `REQ-6`, smoke check 91). At the 5.1.0 release the `fourth-project` reviewer searched with
+  `\|` and found nothing, twice, on a line that is there: Claude Code's shell held the owner's
+  alias of `grep` to another program (`eval-history.md`, "Release run 5.1.0"). The reviewer and
+  `/shipkit:ship` now search in Bash with `git grep -n`, `-E` for alternation, and never `\|`; the
+  Grep tool stays allowed. Step 3 runs `git grep -n --untracked`, because plain `git grep` skips a
+  `tasks.md` that was never committed and exits 1, which step 3 reads as PASS.
 - **The reviewer has a third mark, `partly built`** (`gate-on-setup/REQ-14`, `REQ-15`, smoke check
   89). The 5.1 gate's reviewer marked a decision `not built` and named, in the same line, the
   fallback that does exist (`field-notes-5.1.md` §9.2): the code fit neither of its two marks. A

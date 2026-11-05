@@ -37,7 +37,7 @@ Requirements: 3 (1 waived as `[untested]`).
 <the last 20 lines of shipkit-ship-tests.out, pasted from the file — which is removed once the report holds it>
 
 ### 3. Tasks ticked
-`grep -n '^- \[ \]' .shipkit/specs/refunds/tasks.md` → exit 1
+`git grep -n --untracked '^- \[ \]' .shipkit/specs/refunds/tasks.md` → exit 1
 <the lines found, or "no line found">
 
 ### 4. Independent review

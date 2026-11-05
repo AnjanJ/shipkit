@@ -26,11 +26,13 @@ If either of the two is missing, say which and stop.
 1. Read `.shipkit/specs/<slug>/spec.md`, then `design.md`, then `tasks.md`.
 2. Run `git diff <base>...HEAD --stat`, then read the diff (`git diff <base>...HEAD`) and, where
    the diff is not enough, the files themselves. Read; do not run the tests — the ship gate
-   runs them.
+   runs them. To find a line, use the Grep tool or, in Bash, `git grep -n`, `-E` for alternation
+   (`git grep -n -E 'refund|credit'`), and never write `\|`: a shell's search command can be an
+   alias for another program, and `git grep` reads the same on every machine.
 3. **One verdict for every requirement** (`REQ-N`) in `spec.md`, none skipped:
    - **`MET`** — you found the code that does it **and** the test that proves it. Give both as
-     `path:line`, where the line is the one in the working tree as `grep -n` prints it — never
-     a position inside a diff hunk (a diff's numbering is its own; a reader opens the file).
+     `path:line`, where the line is the one in the working tree as `git grep -n` prints it —
+     never a position inside a diff hunk (a diff's numbering is its own; a reader opens the file).
      The test should cite the requirement as `<slug>/REQ-N`; a test that plainly exercises it
      without the citation still counts, and you say the citation is missing.
    - **`NOT MET`** — say what is missing: the behaviour, the test, or both.

@@ -42,7 +42,7 @@ last lines of its output. **Never record a result for a command you did not run.
 |---|------|-----|-----------|
 | 1 | Spec check, as shipped | `sh "<plugin root>/scripts/spec-check.sh" . <slug> --as-shipped; echo "exit $?"` | exit 0 |
 | 2 | Tests | `( <the project's test command> ) > "${TMPDIR:-/tmp}/shipkit-ship-tests.out" 2>&1; echo "exit $?"`, then read the file's last 20 lines | exit 0 |
-| 3 | Tasks ticked | `grep -n '^- \[ \]' .shipkit/specs/<slug>/tasks.md; echo "exit $?"` | exit 1 (no line found) |
+| 3 | Tasks ticked | `git grep -n --untracked '^- \[ \]' .shipkit/specs/<slug>/tasks.md; echo "exit $?"` | exit 1 (no line found) |
 | 4 | Independent review | Start the **`reviewer`** agent (below); write its reply to `shipkit-ship-review.out` at the path step 4 prints, then read the file | its last line is `VERDICT: PASS` |
 | 5 | Migration rollback | Is there a database migration in `git diff <base>...HEAD --name-only`? If so, is the way to roll it back written down? | no migration, or a written rollback |
 | 6 | Decisions | Every live decision in `design.md` has a concrete reversal condition | none is vague or missing |
@@ -57,6 +57,10 @@ Notes on the steps:
   is `a && b`, or only `b` is captured; read the file (`tail -20`) and paste from it.
   A report that says "exit code not captured" or carries output typed from memory is a defect
   in the run, not a result.
+- **Searches.** Use the Grep tool or, in Bash, `git grep -n`, `-E` for alternation, and never
+  write `\|`: a shell's search command can be an alias for another program, and `git grep` reads
+  the same on every machine. Step 3 adds `--untracked`: plain `git grep` skips a `tasks.md` that
+  was never committed and exits 1, which would read as PASS.
 - **Step 2 — the test command.** Take it from the project's `CLAUDE.md` (its test or commands
   section). If it names none, ask the user once and use the answer. If no user is present and
   none was given in the request, record `FAIL: no test command known` — do not guess one and

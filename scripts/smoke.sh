@@ -3009,6 +3009,48 @@ grep -qF -- '- **Run all:** `mise exec -- go test ./...`' "$PT/go2/CLAUDE.md" ||
 if [ -z "$pt_fail" ]; then pass "pinned-toolchain (setup prefixes mise exec -- after VAR=value on a pinned project; elixir and go take TEST_COMMAND)"
 else failc "pinned-toolchain" "$pt_fail"; fi
 
+# 91. git-grep: the fourth-project reviewer's `grep -n "198,837\|198837" ROADMAP.md` printed
+# nothing for a line that is there, twice: Claude Code's shell held the owner's alias of grep to
+# another program (eval-history.md, "Release run 5.1.0"). `git grep` is git's own, so no alias,
+# function or PATH order changes it, and `-E` reads the same on every machine where `\|` does
+# not. Plain git grep reads tracked files only: on an untracked tasks.md with an unticked line it
+# exits 1, which step 3 reads as PASS, so step 3 adds --untracked and is run here on one. A code
+# span is read with fence lines dropped and lines joined. No claude needed.
+# Cites: users-machine/REQ-4 users-machine/REQ-5 users-machine/REQ-6
+gg_fail=""
+gg_rv=$(tr '\n' ' ' < "$COPY/agents/reviewer.md" | tr -s ' ')
+gg_sk=$(tr '\n' ' ' < "$COPY/skills/ship/SKILL.md" | tr -s ' ')
+for gg_want in '`git grep -n`' '`-E` for alternation' 'never write `\|`'; do
+  case "$gg_rv" in *"$gg_want"*) ;; *) gg_fail="$gg_fail [reviewer, no: $gg_want]" ;; esac
+  case "$gg_sk" in *"$gg_want"*) ;; *) gg_fail="$gg_fail [ship, no: $gg_want]" ;; esac
+done
+gg_cmd=$(sed -n 's/^| 3 | Tasks ticked | `\([^`]*\)`.*/\1/p' "$COPY/skills/ship/SKILL.md")
+gg_cmd=${gg_cmd%%; echo*}
+case "$gg_cmd" in "git grep -n --untracked "*) ;; *) gg_fail="$gg_fail [step 3 is not git grep -n --untracked: $gg_cmd]" ;; esac
+gg_run=$(printf '%s' "$gg_cmd" | sed 's/<slug>/demo/g')
+GG="$WORK/gitgrep"; mkdir -p "$GG/.shipkit/specs/demo"
+(cd "$GG" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
+printf -- '- [x] **T1** done\n- [ ] **T2** open\n' > "$GG/.shipkit/specs/demo/tasks.md"
+(cd "$GG" && git grep -n '^- \[ \]' .shipkit/specs/demo/tasks.md >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 1 ] || gg_fail="$gg_fail [fixture: plain git grep on the untracked file exits $gg_rc, not 1]"
+(cd "$GG" && sh -c "$gg_run" >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 0 ] || gg_fail="$gg_fail [step 3 on an untracked tasks.md with an unticked line: exit $gg_rc, not 0]"
+printf -- '- [x] **T1** done\n- [x] **T2** done\n' > "$GG/.shipkit/specs/demo/tasks.md"
+(cd "$GG" && sh -c "$gg_run" >/dev/null 2>&1); gg_rc=$?
+[ "$gg_rc" -eq 1 ] || gg_fail="$gg_fail [step 3 on an untracked tasks.md, all ticked: exit $gg_rc, not 1]"
+for gg_f in agents/reviewer.md skills/ship/SKILL.md skills/ship/reference.md; do
+  gg_txt=$(grep -v '^ *```' "$COPY/$gg_f" | tr '\n' ' ' | tr -s ' ')
+  printf '%s' "$gg_txt" | sed 's/git grep//g' | grep -qwE 'grep|egrep|fgrep' \
+    && gg_fail="$gg_fail [$gg_f: names grep without git]"
+  gg_spans=$(printf '%s' "$gg_txt" | grep -oE '`[^`]*`')
+  printf '%s\n' "$gg_spans" | grep -qE '^`[( ]*(rg|ack|ag|find|grep|egrep|fgrep)( |`)' \
+    && gg_fail="$gg_fail [$gg_f: a search command but git grep]"
+  printf '%s\n' "$gg_spans" | grep -vxF '`\|`' | grep -qF '\|' \
+    && gg_fail="$gg_fail [$gg_f: a \\| in a command]"
+done
+if [ -z "$gg_fail" ]; then pass "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
+else failc "git-grep" "$gg_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
