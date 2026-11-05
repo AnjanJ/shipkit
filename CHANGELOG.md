@@ -34,7 +34,8 @@ update of your own, until the same command runs with `--scope local` from inside
   suite's own load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone
   it reads 0.72 to 0.75 s. With 1.1 s added to the briefing, the old check failed on a stall in
   the first run only and the new one passes on its second; with 1.1 s added to every run, both
-  fail.
+  fail. Why the best of three, rather than a higher limit or CPU time, is in
+  `briefing-and-handoff/design.md`.
 
 ## [5.1.0] — 2026-11-05
 
