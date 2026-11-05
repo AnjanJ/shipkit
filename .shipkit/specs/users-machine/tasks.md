@@ -25,7 +25,7 @@ after reading (rule 13).
   - Test: scripts/smoke.sh, written first and run alone, red: check 91 "git-grep" (the reviewer's procedure names `git grep -n`, `-E` and "never `\|`", `users-machine/REQ-4`; step 3's command is `git grep -n --untracked`, and run on a scratch repository whose untracked `tasks.md` holds an unticked line it exits 0, `REQ-5`; none of the three files names a search command but `git grep` or holds `\|` in a command, `REQ-6`)
   - After: T1
   - Done when: check 91 PASS alone; checks 74, 76, 77, 83, 85, 88 and 89, which read these files with no claude, PASS alone; lint 0/0
-- [ ] **T3** The headless wait, measured (S27-T3, G7) → REQ-7, REQ-8, REQ-9, REQ-10
+- [x] **T3** The headless wait, measured (S27-T3, G7) → REQ-7, REQ-8, REQ-9, REQ-10
   - Files: scripts/wait-probe.sh, docs/design/eval-results-5.2.md, scripts/smoke.sh, plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/ask/SKILL.md, ROADMAP.md, CHANGELOG.md
   - Test: scripts/smoke.sh, written first and run alone, red: check 92 "wait-probe" (`wait-probe.sh --scaffold <dir>` writes the fixture repository with no model call, `users-machine/REQ-7`; given two stored transcripts, one whose `intake.md` write is followed by two `Monitor` calls, a `sleep` and 240 s to its last entry, one with 5 s and neither, `--read` prints those numbers, `REQ-8`); then the five runs, on the owner's yes. **STOP: the owner sees the table** before any sentence goes in. On G7's bar only: check 93, written first, red, holds the sentence in both skills (`REQ-10`), and five runs again
   - After: T2
