@@ -1,7 +1,7 @@
 # Spec: The owner's project again, and 5.2.0 (Sprint 28)
 
 > Spec accepted at commit `f138e94` on sprint-28/fifth-run (2026-11-06).
-> Status: open
+> Status: shipped
 > Paths: README.md, GUIDE.md, docs/design/field-notes-5.2.md, ROADMAP.md, CHANGELOG.md, docs/design/eval-history.md, .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, docs/plans/machine-sprint-plan.md, .shipkit/specs/gate-on-setup/spec.md, .shipkit/specs/users-machine/spec.md
 
 ## Purpose
