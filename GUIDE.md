@@ -60,8 +60,12 @@ claude plugin update shipkit-workflows@shipkit --scope user
 ```
 
 Each install is updated in its own scope. `claude plugin list` shows the scope of each install,
-and an install for one project (`Scope: local`) keeps its version through the user-scope update:
-run the same two `claude plugin update` lines with `--scope local` from inside that project.
+and an install for one project (`Scope: local` or `Scope: project`) keeps its version through the
+user-scope update: run the same two `claude plugin update` lines with that scope, `--scope local`
+or `--scope project`, from inside that project. Run them from inside each such project in turn.
+From outside, `--scope project` reads only the first project it has an install for: it can print
+`already at the latest version` while another project's install stays behind, and
+`claude plugin list` does not say which project each row belongs to.
 `claude plugin update --help` lists the scopes.
 
 In a project set up with `/shipkit:setup`, the session hook then says when the rules setup copied
