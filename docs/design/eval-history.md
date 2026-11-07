@@ -75,8 +75,13 @@ never wrote the file. The smoke suite was running at the same time, and its chec
 runs `/shipkit:ship` itself on fixtures, writing the same `shipkit-ship-*.out` names in the same
 `$TMPDIR` and ending with the skill's `rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out`
 (`scripts/smoke.sh:1057`, `:2611`). Likely that, not shown: two gates at once share one scratch
-path. The third gate, `fifth-run`, runs after this record, which its REQ-13
-asks for.
+path. The third gate, `fifth-run` against `f138e94`, ran after this record, which its REQ-13 asks
+for: READY at `46f6ebf`, 83 s, $0.33, 15 of 15 MET, the reviewer in the foreground, 7 Bash calls, a
+real handback. Every requirement is `[untested]` and was read; REQ-6's prompts went with the run's
+copies, removed on the owner's yes, so the reviewer read the record's quotes. Step 5's first try
+piped `git diff --name-only` into `grep`, the owner's ripgrep alias, and failed; the gate ran it
+again with `command grep`. Step 5 names no command (`ship/SKILL.md:47`), so G5's `git grep` does
+not reach it.
 
 ## Release run 5.1.0
 

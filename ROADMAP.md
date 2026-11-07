@@ -14,10 +14,9 @@ shipped it in seven sprints.
 
 **Status (as of 2026-11-08, v5.2.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
-second-run plan, 20 to 22 of the thinning plan and 23 to 25 of the binding plan are done. The
-machine plan (`docs/plans/machine-sprint-plan.md`, approved 2026-11-05) has run Sprints 26 and 27,
-merged untagged, and Sprint 28, releasing all three as 5.2.0; see "The machine plan" below.
-Everything in this document is shipped except the items under "Still open after Sprint 28", which
+second-run plan, 20 to 22 of the thinning plan and 23 to 25 of the binding plan are done, and so
+are Sprints 26 to 28 of the machine plan (`docs/plans/machine-sprint-plan.md`, approved
+2026-11-05), one release, 5.2.0; see "The machine plan" below. Everything in this document is shipped except the items under "Still open after Sprint 28", which
 seed the plan after (each item carries a note when a sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
@@ -32,7 +31,7 @@ seed the plan after (each item carries a note when a sprint pays it).
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
 
-## The machine plan — Sprints 26–28 run, releasing as 5.2.0
+## The machine plan — ✅ Sprints 26–28 SHIPPED 2026-11-05 to 2026-11-08 as 5.2.0
 
 Full plan: [`docs/plans/machine-sprint-plan.md`](docs/plans/machine-sprint-plan.md). What the
 user's machine does to the loop, and what the gate says about setup: setup's own lines out of a
@@ -80,6 +79,19 @@ section — the owner's Phoenix project again, over two days; nothing here was f
   count line that corrects itself (§9, "Day two"); one `\|` in a reviewer search, harmless under
   `git grep` (§9). **Seen again:** the hand-written stamp in a headless flow (§7.2); ripgrep in the
   session's shell (§2.3).
+
+Found at the release:
+
+- **Gate step 5 names no command** — "Is there a database migration in `git diff <base>...HEAD
+  --name-only`?" (`plugins/shipkit/skills/ship/SKILL.md:47`), so `fifth-run`'s gate piped the list
+  into `grep`, met the owner's ripgrep alias, failed, and ran it again with `command grep`. G5 gave
+  the reviewer and the gate's own searches `git grep`; this filter it left to the model
+  (`docs/design/eval-history.md`, "Release run 5.2.0").
+- **Two gates at once share one scratch path** — the gate writes fixed names,
+  `${TMPDIR:-/tmp}/shipkit-ship-*.out`, and removes them all when it ends. At the release,
+  `users-machine`'s step 8 file was overwritten while the smoke suite ran beside it, whose check 29
+  runs the gate on fixtures (`scripts/smoke.sh:1057`); the gate saw it and ran the check again.
+  Likely, not shown (`docs/design/eval-history.md`, "Release run 5.2.0").
 
 What the plan's §5 left, each below it in place (`docs/plans/machine-sprint-plan.md` §5): a
 decision's record in the brief, which this run's agent opened on its own (`field-notes-5.2.md` §8);
