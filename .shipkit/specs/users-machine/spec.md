@@ -1,7 +1,7 @@
 # Spec: The user's machine (Sprint 27)
 
 > Spec accepted at commit `9b32e36` on sprint-27/users-machine (2026-11-05).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/stacks/elixir/CLAUDE.md.append, plugins/shipkit/stacks/go/CLAUDE.md.append, plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md, scripts/wait-probe.sh, docs/design/eval-results-5.2.md, plugins/shipkit/skills/intake/SKILL.md, plugins/shipkit/skills/ask/SKILL.md, .shipkit/decisions/0005-evals-home.md, ROADMAP.md, scripts/smoke.sh, docs/plans/machine-sprint-plan.md, CHANGELOG.md
 
 ## Purpose
