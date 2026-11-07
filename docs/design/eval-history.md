@@ -43,6 +43,41 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 5.2.0
+
+`bash scripts/evals.sh -j 4`, 2026-11-07T20:12Z to 20:31Z (2026-11-08 in the owner's zone), at
+`4e2afc2` (the release prep commit; `plugins/` byte-identical through the three gates below),
+Claude Code 2.1.319: 65 cases, 227 runs, 1,145 s, **$21.25, exit 0**, inside the plan's budget.
+Nothing under `plugins/shipkit/evals/`, `rules/`, `stacks/react/` or `stacks/python/` changed
+since `v5.1.0`; the plan added no case (G9). 62 cases at full score; three below it, each at or
+above its threshold:
+
+- `hello`, 2 of 3: one run's last message did not hold the `names-map` pattern, its shape at 5.1.0.
+- `trap2-react`, 4 of 5 (a watch case, threshold 3 of 5): one run's
+  `app/frontend/pages/Orders/Index.tsx` did not hold `no-client-router`'s pattern. Full at 5.1.0.
+- `trap2-testing`, 2 of 3: in one run the grader threw, its focus file `tests/test_regions.py` not
+  written. Full at 5.1.0.
+
+With no file they read changed, the two new ones are the roll, read once. The run kept no traces
+(no `--keep-temp`), so each is named by its grader alone.
+
+The smoke suite ran on `4e2afc2`: **232 of 232**, checks 1 to 92, in parallel with the eval run.
+
+**The gates**, `/shipkit:ship` headless on `sonnet` with `--plugin-dir` at the checkout and the test
+command `bash scripts/lint.sh && sh plugins/shipkit/scripts/spec-check.sh .`, one at a time, the
+handoff note moved out of the tree for each so that step 7 read the tree as committed:
+`gate-on-setup` against `03e87eb`, READY at `4e2afc2`, 105 s, $0.44, 15 MET, the reviewer on
+`claude-sonnet-5-5` in the foreground, 9 Bash calls, a real handback; `users-machine` against
+`9b32e36`, READY at `b60377d`, 92 s, $0.38, 11 MET, the reviewer in the background, 5 Bash calls, a
+real handback. At the second, step 8's `shipkit-ship-decisions.out` was overwritten while the
+reviewer ran, and the gate ran `decision-check` again and pasted the fresh output. The reviewer
+never wrote the file. The smoke suite was running at the same time, and its check 29, `ship-gate`,
+runs `/shipkit:ship` itself on fixtures, writing the same `shipkit-ship-*.out` names in the same
+`$TMPDIR` and ending with the skill's `rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out`
+(`scripts/smoke.sh:1057`, `:2611`). Likely that, not shown: two gates at once share one scratch
+path. The third gate, `fifth-run`, runs after this record, which its REQ-13
+asks for.
+
 ## Release run 5.1.0
 
 `bash scripts/evals.sh -j 4`, 2026-11-04, at `073938c` (the release prep commit; `plugins/`
