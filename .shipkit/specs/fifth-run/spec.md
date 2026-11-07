@@ -54,6 +54,9 @@ Source: `docs/plans/machine-sprint-plan.md` (approved 2026-11-05), G6, G10 to G1
   the item the owner names, each headless on `sonnet` with `--plugin-dir`, except setup, which the
   owner runs and reads in a session of their own; `docs/design/field-notes-5.2.md` shall give
   every step its six parts. [untested: a record, verified by reading]
+  > *Amended 2026-11-06 (S28-T2, before setup ran, the owner's word: "you do all these steps"):*
+  > setup runs headless like the other eight, so no person reads its reply in its own session,
+  > and G6's condition reads not shown again (`design.md`, third record).
 - **REQ-6.** No word the runner writes into a step's prompt shall name `mise` or a test command,
   so that each step takes the test command from what setup wrote (`brief.sh`'s output, passed
   unchanged, carries it from `tasks.md`). [untested: a rule of the run, verified by the prompts

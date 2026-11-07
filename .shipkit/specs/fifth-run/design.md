@@ -110,6 +110,10 @@ one to one, and the session has no `total_cost_usd` to read. It costs the owner'
 keyboard. (2) keeps the runner's numbers whole and still puts the line in front of the owner.
 
 **Decision.** We chose (1), G10's "setup is the owner's to read".
+*Superseded in part at S28-T2, 2026-11-06, the owner's word ("you do all these steps"): setup runs
+as (3), headless with 5.1's words, before anyone ran (1). Its line about the two sections is
+quoted to the owner in the thread afterwards, so the choice it offers is still theirs, and G6 reads
+not shown.*
 **Falsifiability.** We would take (2) for any later step if the owner's session leaves no
 transcript under `~/.claude/projects/-private-tmp-shipkit-real-run-6/` that holds setup's calls and
 its reply.
