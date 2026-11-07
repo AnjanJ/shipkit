@@ -23,7 +23,7 @@ read (rule 13).
   - Test: the Check first, free and before any paid step: the worktree at `/private/tmp/shipkit-real-run-6` on `shipkit/real-run-6` from `179f99d`, `mise exec -- mix deps.get`, compile, `MIX_ENV=test MIX_TEST_PARTITION=_shipkit6 mise exec -- mix test`, the count recorded; then the nine steps of `field-notes-5.1.md`, each but setup by `claude --plugin-dir <checkout>/plugins/shipkit --model sonnet --allowedTools Read Glob Grep Bash Write Edit Skill Agent --output-format json -p`, standard input from `/dev/null`, `MIX_TEST_PARTITION=_shipkit6` exported; setup by the owner in their own session; each step's prompt and output copied to `~/.cache/shipkit-real-run-6/` as it ends; the gate on day one, its report left untracked, and again on a later day
   - After: T1
   - Done when: every step has its six parts; G1 to G7 each read as held or not shown; REQ-20's sentence read on day two; `~/code/office_bestie` holds nothing from the run but the worktree and the branch; those, the run's database and the copies removed on the owner's yes, the notes read first; lint 0/0
-- [ ] **T3** The roadmap for the plan after (S28-T3) → REQ-12
+- [x] **T3** The roadmap for the plan after (S28-T3) → REQ-12
   - Files: ROADMAP.md
   - Test: `bash scripts/lint.sh` → 0/0; every new item read for a file and a section
   - After: T2
