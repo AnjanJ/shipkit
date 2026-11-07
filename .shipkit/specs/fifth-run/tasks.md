@@ -28,7 +28,7 @@ read (rule 13).
   - Test: `bash scripts/lint.sh` → 0/0; every new item read for a file and a section
   - After: T2
   - Done when: the plan's section has its three rows and 5.2.0; "Still open after Sprint 28" holds the run's findings and what §5 left; lint 0/0
-- [ ] **T-REL** Release 5.2.0 (S28-T-REL, G12, G13) → REQ-13, REQ-14, REQ-15, and the release steps in `spec.md`
+- [x] **T-REL** Release 5.2.0 (S28-T-REL, G12, G13) → REQ-13, REQ-14, REQ-15, and the release steps in `spec.md`
   - Files: .claude-plugin/marketplace.json, plugins/shipkit/.claude-plugin/plugin.json, plugins/shipkit-workflows/.claude-plugin/plugin.json, CHANGELOG.md, README.md, ROADMAP.md, docs/design/eval-history.md, .shipkit/releases/, .shipkit/specs/gate-on-setup/spec.md, .shipkit/specs/users-machine/spec.md, .shipkit/specs/fifth-run/spec.md, .shipkit/specs/fifth-run/tasks.md
   - Test: the plan's exit checklist in full, one run at a time: `bash scripts/lint.sh`, `sh scripts/smoke.sh </dev/null`, `bash scripts/evals.sh -j 4` on the release prep commit, `spec-check`, the three rules' bytes, the evals' bytes, the §0 table; then `/shipkit:ship` headless on `gate-on-setup` against `03e87eb`, `users-machine` against `9b32e36`, each recorded and committed, and `fifth-run` against its acceptance commit last
   - After: T3

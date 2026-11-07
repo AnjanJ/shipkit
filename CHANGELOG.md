@@ -4,13 +4,41 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
-## [Unreleased] — after 5.1.0
+## [5.2.0] — 2026-11-08
 
-**What changed for you.** `/shipkit:ship` run again on a later day names the earlier report it
-replaces, when that one was never committed, and leaves it for you to delete or keep out of the
-commit. The README and the guide say how to update: the marketplace first, then each plugin, in
-each scope it is installed in. An install made for one project keeps its version through the
-update of your own, until the same command runs with `--scope local` from inside that project.
+**What changed for you.** Your first spec after `/shipkit:setup` is reviewed on its own work: the
+gate no longer lists setup's `CLAUDE.md` and `.gitignore` as changes beyond the spec while they are
+as setup left them, where three real runs in a row listed both. And on a project that pins its
+toolchain with `mise`, the test command setup writes runs in a headless shell:
+`MIX_ENV=test mise exec -- mix test`, not a command that exits 1 for want of Hex.
+
+**The gate reads the same whatever your shell is.** Its searches are `git grep`, so an alias of
+`grep` to another program cannot hide a line from the reviewer. The reviewer has a third mark,
+`partly built`, for a decision some of whose code is in place; the verdict rule is unchanged. A
+gate run again on a later day names the earlier, uncommitted report it replaces, and leaves it for
+you to delete or keep out of the commit.
+
+**An install made for one project** (`Scope: local` or `Scope: project`) keeps its version through
+the update of your own: run the update lines with its scope from inside that project. From outside,
+`--scope project` reads only the first project it has an install for, and can print `already at
+the latest version` while another stays behind.
+
+**One thing the fifth real run found that this release does not fix.** On a project whose
+`CLAUDE.md` already names its own test command, the spec skill copied that line, not setup's, into
+every task's Done-when, so a brief can still hand an agent a command that fails. On that run the
+agent and the gate found the right one on their own; the plan after takes it up (`ROADMAP.md`,
+"Still open after Sprint 28").
+
+| What | 5.1.0 | 5.2.0 |
+|---|---|---|
+| Setup's files a first spec reports as beyond the spec, with only setup's lines in them | 2, on three real runs running | 0, at both of the fifth run's gates |
+| The reviewer's marks for a decision | 2 | 3, with `partly built`; the verdict rule unchanged |
+| Literal `<app>` in the elixir section setup writes | 4 lines | 0 |
+| A test command setup writes that runs headless on a pinned toolchain | no | yes, `mise exec --` |
+| Gate searches that depend on what `grep` is in your shell | the reviewer's | 0, `git grep` |
+| Idle seconds after a headless intake's work | 260, one run | 6 to 24 on five runs; 8 on the fifth run |
+| A decision record whose reversal condition is met and not marked | 1 | 1: `run-debts`' first, met on the fifth run and left by `fifth-run/REQ-10` |
+| Smoke checks | 1 to 83 | 1 to 92 |
 
 ### Changed
 
@@ -67,7 +95,9 @@ update of your own, until the same command runs with `--scope local` from inside
 - **How to update, in `README.md` and `GUIDE.md` ("Updating").** Both showed only the install
   commands. At the 5.1.0 release, `claude plugin update --scope user` moved the owner's user-scope
   installs to 5.1.0 and left the two local-scope installs on 5.0.0; each moved only when
-  `--scope local` ran from inside its project.
+  `--scope local` ran from inside its project. A `Scope: project` install moves the same way, from
+  inside its project; from outside, with three, `--scope project` read the first, printed
+  `already at the latest version` and left another on 5.0.0 (`docs/design/field-notes-5.2.md` §0).
 - **The headless intake's wait, measured, and no sentence added** (`users-machine/REQ-7` to
   `REQ-10`, smoke check 92). The 5.1 intake stayed open 260 s after writing its file, held by two
   `Monitor` watches on an agent that had already finished. `scripts/wait-probe.sh` scaffolds a small
@@ -92,6 +122,23 @@ update of your own, until the same command runs with `--scope local` from inside
   the first run only and the new one passes on its second; with 1.1 s added to every run, both
   fail. Why the best of three, rather than a higher limit or CPU time, is in
   `briefing-and-handoff/design.md`.
+
+### What using it for real showed
+
+**On the owner's project again, setup's lines stayed out of the review.** The loop ran on
+`~/code/office_bestie` over two days: eight headless sessions, 517 s and $2.01
+(`docs/design/field-notes-5.2.md`). Both gates listed no change beyond the spec. The second marked
+a half-built decision `partly built`, and named the first day's report as superseded and left it
+where it was.
+
+**The test command reached what setup writes, and stopped there.** Setup wrote
+`MIX_ENV=test mise exec -- mix test`; the spec skill copied the project's own `MIX_ENV=test mix
+test` into every Done-when, and it exits 1 there. The agent found the prefix after one failure; the
+gate ran the failing line first, on both days.
+
+**A reboot took the run's tree overnight.** Each step's output had been copied out of
+`/private/tmp` as it ended, so the tree was rebuilt from its branch and the second gate ran on the
+same commit and the same report. The next real run keeps its tree outside `/private/tmp`.
 
 ## [5.1.0] — 2026-11-05
 

@@ -12,7 +12,7 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-11-08, v5.1.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+**Status (as of 2026-11-08, v5.2.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
 second-run plan, 20 to 22 of the thinning plan and 23 to 25 of the binding plan are done. The
 machine plan (`docs/plans/machine-sprint-plan.md`, approved 2026-11-05) has run Sprints 26 and 27,
