@@ -19,6 +19,7 @@ promise is that the knowledge lives in **files you can read and correct**, not i
 memory.
 
 **[User Guide](GUIDE.md)** — every skill, agent and script, with four playbooks. &nbsp;·&nbsp;
+**[Engineer's Guide](docs/engineers-guide.md)** — day-to-day work, task by task. &nbsp;·&nbsp;
 **[Changelog](CHANGELOG.md)** — what changed in each release. &nbsp;·&nbsp;
 **[Roadmap](ROADMAP.md)** — where this is going.
 
