@@ -3193,6 +3193,44 @@ printf '%s\n' "$sg_tpl" | grep -qF "Goldfish: skipped on the owner's word" || sg
 if [ -z "$sg_fail" ]; then pass "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
 else failc "spec-goldfish-step" "$sg_fail"; fi
 
+# 96. goldfish-fixture: the two goldfish eval cases share evals/goldfish/spec-fixture.sh. `gap` writes
+# a refunds spec and design on the sample app (no tasks.md, no code) whose one requirement says "the
+# grace window" and nothing in the tree defines it; `clean` writes the same requirement with the
+# days stated. Each grader's pattern takes a reply of its kind and refuses the other; the agent's
+# own file never says the planted term; evals.sh cites both cases. No claude needed.
+# Cites: spec-goldfish/REQ-18 spec-goldfish/REQ-19
+GX="$WORK/goldfish-fixture"; gx_fail=""; gx_dir="$COPY/evals/goldfish"
+for gx_v in gap clean; do
+  mkdir -p "$GX/$gx_v"
+  (cd "$GX/$gx_v" && bash "$gx_dir/spec-fixture.sh" "$gx_v" >/dev/null 2>&1) || gx_fail="$gx_fail [$gx_v: the fixture failed]"
+  gx_s="$GX/$gx_v/.shipkit/specs/refunds"
+  [ -f "$gx_s/spec.md" ] && [ -f "$gx_s/design.md" ] || gx_fail="$gx_fail [$gx_v: no spec.md or design.md]"
+  [ -e "$gx_s/tasks.md" ] || [ -e "$GX/$gx_v/app/refunds.py" ] && gx_fail="$gx_fail [$gx_v: tasks.md or code present]"
+  for gx_f in case.yaml fixture.sh prompt.md; do [ -f "$gx_dir/$gx_v/$gx_f" ] || gx_fail="$gx_fail [$gx_v: no $gx_f]"; done
+done
+gx_n=$(grep -ril 'grace window' "$GX/gap" 2>/dev/null | wc -l | tr -d ' ')
+gx_l=$(grep -i 'grace window' "$GX/gap/.shipkit/specs/refunds/spec.md" 2>/dev/null | grep -c 'REQ-')
+[ "$gx_n" = "1" ] && [ "$gx_l" = "1" ] || gx_fail="$gx_fail [gap: 'grace window' in $gx_n file(s), $gx_l requirement line(s); want 1 and 1]"
+grep -rqi 'grace window' "$GX/clean" && gx_fail="$gx_fail [clean: says 'grace window']"
+grep -q '30 days' "$GX/clean/.shipkit/specs/refunds/spec.md" 2>/dev/null || gx_fail="$gx_fail [clean: no '30 days']"
+grep -qi 'grace window' "$COPY/agents/goldfish.md" && gx_fail="$gx_fail [agents/goldfish.md names the planted term]"
+gx_gaps=$(printf '| REQ-3 | UNCLEAR | the grace window has no length |\n\nVERDICT: GAPS')
+gx_selfc=$(printf '| REQ-3 | TESTABLE | 31 days late raises |\n\nVERDICT: SELF-CONTAINED')
+gx_re() { python3 -c 'import re,sys; p=re.search(r"^pattern: '"'"'(.*)'"'"'$", open(sys.argv[1]).read(), re.M).group(1); sys.exit(0 if re.search(p, sys.argv[2]) else 1)' "$1" "$2" 2>/dev/null; }
+for gx_g in "$gx_dir"/gap/graders/*.md; do
+  gx_re "$gx_g" "$gx_gaps" || gx_fail="$gx_fail [gap grader refuses a GAPS reply naming the term]"
+  gx_re "$gx_g" "$gx_selfc" && gx_fail="$gx_fail [gap grader takes a SELF-CONTAINED reply]"
+done
+for gx_g in "$gx_dir"/clean/graders/*.md; do
+  gx_re "$gx_g" "$gx_selfc" || gx_fail="$gx_fail [clean grader refuses a SELF-CONTAINED reply]"
+  gx_re "$gx_g" "$gx_gaps" && gx_fail="$gx_fail [clean grader takes a GAPS reply]"
+done
+ls "$gx_dir"/gap/graders/*.md "$gx_dir"/clean/graders/*.md >/dev/null 2>&1 || gx_fail="$gx_fail [a case has no grader]"
+grep -q 'spec-goldfish/REQ-18' "$ROOT/scripts/evals.sh" && grep -q 'spec-goldfish/REQ-19' "$ROOT/scripts/evals.sh" \
+  || gx_fail="$gx_fail [evals.sh does not cite spec-goldfish/REQ-18 and REQ-19]"
+if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term in one requirement, clean states 30 days; no tasks or code; each grader takes its reply and refuses the other)"
+else failc "goldfish-fixture" "$gx_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
