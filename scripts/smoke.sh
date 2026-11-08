@@ -1063,10 +1063,17 @@ fi
 # the report file and `git status`, read here — not the model's summary.
 SG="$WORK/ship"; mkdir -p "$SG"
 (cd "$SG" && bash "$COPY/evals/reviewer/all-met/fixture.sh" >/dev/null 2>&1)
+# The gate ends with rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out. Run in the caller's TMPDIR, the
+# nested gate deleted the scratch files of a gate running at the same time: the spec-goldfish
+# gate lost its test output, review and status capture that way (2026-11-08). A scratch file of
+# that name in the caller's TMPDIR must still be there after the runs, so the nested gate gets
+# its own TMPDIR, and its own scratch files are looked for there.
+SG_SENT="${TMPDIR:-/tmp}/shipkit-ship-smoke-sentinel-$$.out"; : > "$SG_SENT"
+SG_TMP="$WORK/ship-tmp"; mkdir -p "$SG_TMP"
 # No .gitignore on purpose: the gate's own test run leaves __pycache__/ behind, and a gate that
 # then called the tree dirty would fail every Python project on its own step 2.
 shiprun() {
-  (cd "$SG" && claude --plugin-dir "$COPY" --model sonnet \
+  (cd "$SG" && TMPDIR="$SG_TMP" claude --plugin-dir "$COPY" --model sonnet \
     --allowedTools Read Glob Grep Bash Write Skill Agent \
     -p "/shipkit:ship refunds base
 This run is not interactive and you cannot ask me anything. The project's test command is: python3 -m unittest discover -s tests
@@ -1093,7 +1100,8 @@ for r in 1 2 3; do printf '%s\n' "$sg_rev" | grep -Eq "^\| *REQ-$r( \(waived\))?
 printf '%s\n' "$sg_rev" | grep -q '^Requirements: [0-9]* MET' || sg_miss="$sg_miss [Requirements: count line]"
 printf '%s\n' "$sg_rev" | grep -q '^VERDICT: PASS$' || sg_miss="$sg_miss [VERDICT line]"
 grep -q 'shipkit-ship-review.out' "$COPY/skills/ship/SKILL.md" || sg_miss="$sg_miss [SKILL.md names no review file]"
-[ -z "$(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out 2>/dev/null)" ] || sg_miss="$sg_miss [scratch files left: $(ls "${TMPDIR:-/tmp}"/shipkit-ship-*.out | tr '\n' ' ')]"
+[ -z "$(ls "$SG_TMP"/shipkit-ship-*.out 2>/dev/null)" ] || sg_miss="$sg_miss [scratch files left: $(ls "$SG_TMP"/shipkit-ship-*.out | tr '\n' ' ')]"
+[ -f "$SG_SENT" ] || sg_miss="$sg_miss [the nested gate deleted a scratch file in the caller's TMPDIR]"
 if [ -z "$sg_miss" ]; then
   pass "ship-gate (step 4 pastes the reviewer's reply from shipkit-ship-review.out: heading, three REQ rows, count line and verdict line verbatim; no scratch file left)"
 else failc "ship-gate" "the review block is condensed or the file is not named:$sg_miss"; fi
@@ -1110,6 +1118,7 @@ if [ "$sg_first" = "NOT READY" ] && grep -Eq '^\| *3 *\|.*\| *FAIL *\|' "$sg_rep
 else
   failc "ship-gate" "first line [$sg_first]; step 3 row: $(grep -E '^\| *3 *\|' "$sg_report" 2>/dev/null) — model said: $(tail -6 "$WORK/ship.out")"
 fi
+rm -f "$SG_SENT"
 
 # 30. briefing: a few lines at session start saying where things stand
 # (spec: .shipkit/specs/briefing-and-handoff/). No claude needed. Cites: briefing-and-handoff/REQ-1
