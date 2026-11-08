@@ -124,7 +124,7 @@ session stays thin:
 /shipkit:map --register                           # optional: a PROJECT_MAP.md index, and a row in eve's registry
 ```
 
-**Everything else in `shipkit`** (10 skills, 3 agents):
+**Everything else in `shipkit`** (10 skills, 4 agents):
 
 | Skill | What it does |
 |-------|--------------|
@@ -139,6 +139,7 @@ session stays thin:
 | `grandfather` | One project: architecture, where things live, why — source as proof, a map as index when there is one; in trace mode, one feature end to end (`/shipkit:ask --walk`) |
 | `eve` | Every registered project: sweeps, matrices, consolidation, the weekly digest |
 | `reviewer` | Checks a branch against its spec with fresh eyes — behind `/shipkit:ship` |
+| `goldfish` | Reads a spec cold, as its implementer will, and names what a test author would have to guess — behind `/shipkit:spec`'s design gate |
 
 Until 5.0.0 three more agents were listed every session: `archivist` is now `/shipkit:map`'s own
 forked body, `tracer` is `grandfather`'s trace mode (behind `/shipkit:ask --walk`), and

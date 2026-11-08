@@ -2395,7 +2395,8 @@ sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/
 if [ "$sm_n" = "10" ] && [ "${sm_b:-99999}" -le 2950 ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes, ceiling 2950)"
 else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes, ceiling 2950)"; fi
 
-# 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
+# 66. agents-four: four agents across the two plugins (thinning plan W4), five since spec-goldfish
+# added `goldfish` (four core + test-analyzer, at most 1,075 bytes; Cites: spec-goldfish/REQ-16). tracer is
 # grandfather's trace mode; the archivist's body is the map skill's forked body
 # (skills/map/archivist.md, map runs with context: fork); codebase-explorer is dropped for
 # Claude Code's built-in Explore agent (the check-first showed Explore callable from a session
@@ -2415,13 +2416,15 @@ else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map
 af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
 if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
 else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
-# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's three;
-# test-analyzer's description is added from the checkout for the ≤ 1,000 ceiling (plan §0)
+# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's four;
+# test-analyzer's description is added from the checkout for the ≤ 1,075 ceiling (plan §0's 1,000,
+# raised by spec-goldfish for the goldfish's one line; docs/design/context-cost.md says so)
 af_row=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk -F'\t' '$1 == "agents" { print $2 " " $3 }')
 af_b=${af_row%% *}; af_n=$(printf '%s' "$af_row" | awk '{print $2}')
 af_wf=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$ROOT/plugins/shipkit-workflows/agents/test-analyzer.md" | wc -c | tr -d ' ')
-if [ "$af_n" = "3" ] && [ $((af_b + af_wf)) -le 1000 ]; then pass "agents-four (three core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,000)"
-else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"; fi
+af_doc=$(grep '^| `agents`' "$ROOT/docs/design/context-cost.md" | grep -c '1,075')
+if [ "$af_n" = "4" ] && [ $((af_b + af_wf)) -le 1075 ] && [ "$af_doc" -ge 1 ]; then pass "agents-four (four core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,075, the ceiling context-cost.md gives)"
+else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf); context-cost.md agents row names 1,075: $af_doc"; fi
 
 # 67. skills-flag: an overlay's skills install only on --with-skills (thinning plan W6). A Rails
 # install without the flag writes the rules and the CLAUDE.md section, copies no skill, records
@@ -3132,6 +3135,35 @@ printf '%s\n' "$sn_out" | grep 'ERROR' | grep 'map/SKILL.md' | grep -q '0006' \
   || sn_fail="$sn_fail [doctored copy: no error on map/SKILL.md naming 0006]"
 if [ -z "$sn_fail" ]; then pass "stale-nesting (no file says a subagent cannot start one; each cites 0006; lint fails a forked skill that starts an agent, naming 0006)"
 else failc "stale-nesting" "$sn_fail $(printf '%s' "$sn_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
+# 94. goldfish-agent: the agent /shipkit:spec starts before its design gate reads a spec as the
+# implementer will, from the files alone. Its file fixes what no prompt can change: sonnet, read
+# tools only, no Edit, Write or Agent; a one-line description naming /shipkit:spec. The body names
+# what it reads and what it does not (intake.md, tasks.md), ignores anything but the slug, stops on
+# a missing slug or spec, gives one TESTABLE or UNCLEAR row per requirement, lists undefined terms
+# and unstated assumptions ("None." when empty) under the test-author rule, and ends on one of two
+# verdict lines. No claude needed; the behaviour is the evals' (goldfish-gap, goldfish-clean).
+# Cites: spec-goldfish/REQ-1 spec-goldfish/REQ-2 spec-goldfish/REQ-3 spec-goldfish/REQ-4
+# spec-goldfish/REQ-5 spec-goldfish/REQ-6 spec-goldfish/REQ-7
+gf="$COPY/agents/goldfish.md"; gf_fail=""
+if [ ! -f "$gf" ]; then gf_fail=" [agents/goldfish.md does not exist]"
+else
+  for gf_line in 'name: goldfish' 'model: sonnet' 'tools: Read, Glob, Grep, Bash' 'disallowedTools: Edit, Write, Agent'; do
+    awk 'NR > 1 && /^---$/ { exit } { print }' "$gf" | grep -qxF "$gf_line" || gf_fail="$gf_fail [frontmatter lacks: $gf_line]"
+  done
+  gf_desc=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$gf")
+  [ "$(printf '%s\n' "$gf_desc" | wc -c | tr -d ' ')" -le 100 ] || gf_fail="$gf_fail [description over 100 bytes]"
+  printf '%s' "$gf_desc" | grep -qF '/shipkit:spec' || gf_fail="$gf_fail [description does not name /shipkit:spec]"
+  gf_flat=$(awk 'NR > 1 && /^---$/ { on = 1; next } on' "$gf" | tr '\n' ' ' | tr -s ' ')
+  for gf_want in '.shipkit/specs/<slug>/spec.md' '.shipkit/specs/<slug>/design.md' 'No other file under `.shipkit/specs/<slug>/`' \
+                 '`intake.md`' '`tasks.md`' 'ignore it' 'say which and stop' '`TESTABLE`' '`UNCLEAR`' \
+                 '## Undefined terms' '## Unstated assumptions' '"None."' 'without guessing' \
+                 'VERDICT: SELF-CONTAINED' 'VERDICT: GAPS' 'Nothing comes after the verdict line.'; do
+    printf '%s' "$gf_flat" | grep -qF -- "$gf_want" || gf_fail="$gf_fail [body lacks: $gf_want]"
+  done
+fi
+if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
+else failc "goldfish-agent" "$gf_fail"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

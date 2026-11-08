@@ -12,7 +12,7 @@ version bump and `CHANGELOG.md` belong to the release, not to this spec.
   - Test: smoke check 93 `stale-nesting`. `git grep -n -i -E 'cannot spawn subagents|an agent cannot start an agent'` finds nothing in the three files. `lint.py`'s forked-skill message names decision 0006. `lint.py` fails a scratch forked skill whose body says "start the `shipkit:reviewer` agent", and passes one that does not.
   - After: none
   - Done when: `bash scripts/smoke.sh` → check 93 passes and no check fails; `bash scripts/lint.sh` → 0 errors, 0 warnings
-- [ ] **T2** The goldfish agent and the agents ceiling → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-16
+- [x] **T2** The goldfish agent and the agents ceiling → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-16
   - Files: plugins/shipkit/agents/goldfish.md, docs/design/context-cost.md, scripts/smoke.sh, .claude-plugin/marketplace.json, README.md
   - Test: smoke check 94 `goldfish-agent`. It checks the frontmatter (`model: sonnet`, the tools, `disallowedTools: Edit, Write, Agent`), and that the body names the files it reads and does not read, the ignore-everything-but-the-slug rule, the stop on a missing slug or spec, the `TESTABLE`/`UNCLEAR` rows, the terms and assumptions lists with "None.", the test-author rule, and the two verdict lines as the last line. Check `agents-four` is amended to four core agents and at most 1,075 bytes with `test-analyzer`, and `context-cost.md`'s agents row reads 1,075. `marketplace.json` says 4 agents (lint compares it with `agents/*.md`), and the README's agent table lists `goldfish`.
   - After: T1
