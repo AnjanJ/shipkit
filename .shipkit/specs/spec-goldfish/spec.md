@@ -90,10 +90,6 @@ Source: `.shipkit/specs/spec-goldfish/intake.md` (2026-11-08); Google's Elephant
 - **REQ-20.** The eval run that first runs REQ-18 and REQ-19 shall record each case's result and
   cost in `docs/design/eval-history.md`. [untested: a paid run, read from its record]
 
-## Goldfish
-
-(Filled at the design gate.)
-
 ## Out of scope
 
 - EGM's five stages, its personas (zoom-out, critic, style, implementation readiness) and its

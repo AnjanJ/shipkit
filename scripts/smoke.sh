@@ -3165,6 +3165,34 @@ fi
 if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
 else failc "goldfish-agent" "$gf_fail"; fi
 
+# 95. spec-goldfish-step: /shipkit:spec has the main session start the goldfish after design.md and
+# before the Plan Mode gate, with the slug alone; the reply goes to a file and is pasted whole; a
+# reply with no verdict gets one more start; every finding is fixed, contested with a path:line, or
+# escalated, and knowledge outside the files is never contested; an accepted gap and a skip are
+# written under ## Goldfish in spec.md, in the forms reference.md's template shows; two reads at
+# most; GAPS does not stop the gate. No claude needed. Cites: spec-goldfish/REQ-8
+# spec-goldfish/REQ-9 spec-goldfish/REQ-10 spec-goldfish/REQ-11 spec-goldfish/REQ-12
+# spec-goldfish/REQ-13 spec-goldfish/REQ-14 spec-goldfish/REQ-15
+sg_fail=""; sg_sk="$COPY/skills/spec/SKILL.md"; sg_ref="$COPY/skills/spec/reference.md"
+sg_q2=$(awk '/^### Q2/ { on = 1 } /^### Q3/ { on = 0 } on' "$sg_sk" | tr '\n' ' ' | tr -s ' ')
+for sg_want in 'shipkit:goldfish' 'only the slug' 'shipkit-spec-goldfish.out' 'whole and unchanged' \
+               'no `VERDICT:` line' 'once more' 'the read failed' '`fixed`' '`contested`' '`escalated`' \
+               'path:line' 'never `contested`' 'Goldfish: GAPS accepted by owner — ' 'never more than two' \
+               '`GAPS` does not stop' '"no goldfish"' "Goldfish: skipped on the owner's word"; do
+  printf '%s' "$sg_q2" | grep -qF -- "$sg_want" || sg_fail="$sg_fail [Q2 lacks: $sg_want]"
+done
+sg_at_gf=$(printf '%s' "$sg_q2" | awk '{ print index($0, "shipkit:goldfish") }')
+sg_at_gate=$(printf '%s' "$sg_q2" | awk '{ print index($0, "native Plan Mode") }')
+sg_at_des=$(printf '%s' "$sg_q2" | awk '{ print index($0, "references the requirement(s)") }')
+[ "${sg_at_gf:-0}" -gt "${sg_at_des:-0}" ] && [ "${sg_at_gf:-0}" -lt "${sg_at_gate:-0}" ] \
+  || sg_fail="$sg_fail [the goldfish step is not between the design records and the Plan Mode gate: $sg_at_des/$sg_at_gf/$sg_at_gate]"
+sg_tpl=$(awk '/^### `spec.md`/ { on = 1 } /^### `design.md`/ { on = 0 } on' "$sg_ref")
+printf '%s\n' "$sg_tpl" | grep -qx '## Goldfish' || sg_fail="$sg_fail [reference.md's spec.md template has no ## Goldfish]"
+printf '%s\n' "$sg_tpl" | grep -qF 'Goldfish: GAPS accepted by owner — ' || sg_fail="$sg_fail [template lacks the accepted-gap line]"
+printf '%s\n' "$sg_tpl" | grep -qF "Goldfish: skipped on the owner's word" || sg_fail="$sg_fail [template lacks the skip line]"
+if [ -z "$sg_fail" ]; then pass "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
+else failc "spec-goldfish-step" "$sg_fail"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail
