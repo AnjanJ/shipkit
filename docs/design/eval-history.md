@@ -43,6 +43,36 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## The goldfish's first run (spec-goldfish T5, 2026-11-08)
+
+`bash scripts/evals.sh --case goldfish-gap`, then `--case goldfish-clean`, at `33f8e1a`, Claude
+Code 2.1.319, on the owner's yes. Each case's output went to its own folder,
+`~/.cache/shipkit-goldfish-t5/`. Cites spec-goldfish/REQ-18, REQ-19 and REQ-20.
+
+| Case | Runs passed | Cost | Time |
+|------|-------------|------|------|
+| `goldfish-gap` | 3 of 3 | $0.30 ($0.11, $0.10, $0.09) | 58 s |
+| `goldfish-clean` | 3 of 3 | $0.26 ($0.09, $0.09, $0.08) | 46 s |
+
+Each run took 2 or 3 turns. That count fits one Agent call followed by the reply, but a summary is
+not evidence, and the run kept no traces. So each case ran once more with `--runs 1 --keep-temp`
+($0.09 each, both passed). In both kept traces the main session made exactly one tool call:
+`Agent`, with `subagent_type: shipkit:goldfish` and the prompt `refunds`, the slug and nothing
+else. The goldfish read `spec.md` and `design.md` and globbed `app/**`. In `gap` it also grepped
+for `grace|GRACE|window|RefundRejected`. `trace-tools.sh`: `gap` 6 tools (1 in the main session),
+1 agent call, $0.0945; `clean` 5 tools (1), 1 agent call, $0.0887. **Total cost of T5: $0.74.**
+
+The `gap` reply with traces kept marked REQ-1 and REQ-2 `TESTABLE`, each with a test sketch, and
+REQ-3 `UNCLEAR`: "'The grace window' has no length, no unit, and no start date". It listed the term
+under Undefined terms and ended `VERDICT: GAPS`. Its five unstated assumptions include two that the
+test-author rule would leave out: zero or negative amounts, and the order of the two checks when
+both hold. The verdict did not depend on them. The clean case came back `SELF-CONTAINED` in all 4
+of its runs, so the rule is not too strict. Noise in a `GAPS` reply is for the main session to
+contest or fix at the gate. The condition on design.md's "A gap is what a test author would have
+to guess" (either case failing 2 of its first 3 runs) did not fire.
+
+---
+
 ## Release run 5.2.0
 
 `bash scripts/evals.sh -j 4`, 2026-11-07T20:12Z to 20:31Z (2026-11-08 in the owner's zone), at

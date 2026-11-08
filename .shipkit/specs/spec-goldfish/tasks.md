@@ -27,7 +27,7 @@ version bump and `CHANGELOG.md` belong to the release, not to this spec.
   - Test: smoke check 96 `goldfish-fixture`, run offline in a scratch directory. `spec-fixture.sh gap` writes a `refunds` `spec.md` and `design.md` (no `tasks.md`, no code) in which "grace window" appears and is defined nowhere in the scratch tree. `spec-fixture.sh clean` writes the same requirement with the number of days stated. Each grader's regex matches a sample reply of its kind and rejects one of the other kind. `scripts/evals.sh`'s header cites `spec-goldfish/REQ-18` and `spec-goldfish/REQ-19` for the two cases.
   - After: T3
   - Done when: `bash scripts/smoke.sh` → check 96 passes and no check fails; `bash scripts/lint.sh` → 0/0
-- [ ] **T5** The first paid run of both cases, recorded → REQ-18, REQ-19, REQ-20
+- [x] **T5** The first paid run of both cases, recorded → REQ-18, REQ-19, REQ-20
   - Files: docs/design/eval-history.md
   - Test: `bash scripts/evals.sh --case goldfish-gap` and `bash scripts/evals.sh --case goldfish-clean`, on the owner's yes
   - After: T4
