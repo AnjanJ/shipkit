@@ -7,7 +7,7 @@ case file cannot carry one that `spec-check.sh` counts). Four tasks share `scrip
 run is T5** (two eval cases at about 3 runs each, on sonnet), and it needs the owner's yes. The
 version bump and `CHANGELOG.md` belong to the release, not to this spec.
 
-- [ ] **T1** Correct the stale "subagents cannot spawn subagents" claim → REQ-17
+- [x] **T1** Correct the stale "subagents cannot spawn subagents" claim → REQ-17
   - Files: scripts/lint.py, ROADMAP.md, plugins/shipkit/skills/ship/SKILL.md, scripts/smoke.sh
   - Test: smoke check 93 `stale-nesting`. `git grep -n -i -E 'cannot spawn subagents|an agent cannot start an agent'` finds nothing in the three files. `lint.py`'s forked-skill message names decision 0006. `lint.py` fails a scratch forked skill whose body says "start the `shipkit:reviewer` agent", and passes one that does not.
   - After: none

@@ -167,12 +167,15 @@ for path in skill_files:
                     if re.search(pattern, line):
                         err(md, f"forked skill {label} (line ~{i}: {line.strip()[:80]!r}) "
                                 "— forked skills are non-interactive")
-        # A fork cannot spawn subagents either.
+        # A fork is a subagent, and only the main session starts agents (decision 0006,
+        # .shipkit/decisions/0006-main-session-starts-every-agent.md). The platform allows
+        # nesting since Claude Code 2.1.x; the rule is shipkit's, so the check stays.
         clean = strip_html_comments(body)
         for i, line in enumerate(clean.splitlines(), 1):
-            if re.search(r"(via|use|delegate to|launch) (the )?`?codebase-explorer`? agent", line):
-                err(path, f"forked skill tries to delegate to a subagent (line ~{i}) — "
-                          "subagents cannot spawn subagents; the fork must read directly")
+            if re.search(r"\b(via|use|start|launch|spawn|delegate to|have) (the )?`?[\w:-]+`? (sub)?agent\b",
+                         line, re.IGNORECASE):
+                err(path, f"forked skill tries to start an agent (line ~{i}) — only the main "
+                          "session starts agents (decision 0006); the fork must read directly")
 
 # --- 4. agents/ purity (RECURSIVE) ------------------------------------------
 # Claude Code scans agents/ recursively: every .md under it, at any depth,

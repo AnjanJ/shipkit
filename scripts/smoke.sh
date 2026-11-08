@@ -3108,6 +3108,31 @@ printf '%s\n' "$wp_out" | grep -qxF "quick.jsonl${wp_tab}5${wp_tab}0${wp_tab}0${
 if [ -z "$wp_fail" ]; then pass "wait-probe (scaffolds a clean fixture with no model call; reads idle seconds, Monitor and sleep calls from a transcript)"
 else failc "wait-probe" "$wp_fail$(printf ' [output: %s]' "$wp_out" | tr '\n\t' '| ')"; fi
 
+# 93. stale-nesting: ROADMAP.md, lint.py and the ship skill said a subagent cannot start a
+# subagent; on Claude Code 2.1.319 it can (a nonce probe, 2026-11-08), and decision 0006 keeps the
+# rule that the main session starts every agent. None of the three says the platform forbids it,
+# each cites 0006 where it gave the reason, and lint still fails a forked skill that starts an
+# agent by name: a copy of the tree whose forked map skill gains one such line → exactly one
+# error, naming 0006; the clean copy → 0. Cites: spec-goldfish/REQ-17
+SN="$WORK/stale-nesting"; mkdir -p "$SN"; sn_fail=""
+sn_files="ROADMAP.md scripts/lint.py plugins/shipkit/skills/ship/SKILL.md"
+for f in $sn_files; do
+  grep -n -i -E 'cannot spawn subagents|subagent cannot spawn|an agent cannot start an agent' "$ROOT/$f" >/dev/null 2>&1 \
+    && sn_fail="$sn_fail [$f still says the platform forbids it]"
+  grep -q '0006' "$ROOT/$f" 2>/dev/null || sn_fail="$sn_fail [$f does not cite decision 0006]"
+done
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$SN/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$SN" && tar xf -); fi
+sn_clean=$(python3 "$SN/scripts/lint.py" 2>&1 | tail -1)
+printf '%s\n' "$sn_clean" | grep -q '^lint: 0 error(s)' || sn_fail="$sn_fail [clean copy: $sn_clean]"
+printf '\nFor the hard part, start the `shipkit:reviewer` agent on the slug.\n' >> "$SN/plugins/shipkit/skills/map/SKILL.md"
+sn_out=$(python3 "$SN/scripts/lint.py" 2>&1)
+printf '%s\n' "$sn_out" | grep -q '^lint: 1 error(s)' || sn_fail="$sn_fail [doctored copy: not exactly 1 error]"
+printf '%s\n' "$sn_out" | grep 'ERROR' | grep 'map/SKILL.md' | grep -q '0006' \
+  || sn_fail="$sn_fail [doctored copy: no error on map/SKILL.md naming 0006]"
+if [ -z "$sn_fail" ]; then pass "stale-nesting (no file says a subagent cannot start one; each cites 0006; lint fails a forked skill that starts an agent, naming 0006)"
+else failc "stale-nesting" "$sn_fail $(printf '%s' "$sn_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
 exit $fail

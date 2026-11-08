@@ -4,9 +4,9 @@ user-invocable: true
 argument-hint: "<feature-slug> [base-ref]"
 ---
 
-<!-- Runs INLINE (no context: fork) on purpose: it starts the `reviewer` agent, which only the
-     main session can do (an agent cannot start an agent), and it may ask the user for the
-     test command and for permission to mark the spec shipped. -->
+<!-- Runs INLINE (no context: fork) on purpose: it starts the `reviewer` agent, and only the
+     main session starts agents (decision 0006). It may also ask the user for the test command
+     and for permission to mark the spec shipped. -->
 
 # /shipkit:ship — Is It Ready? With Evidence
 
