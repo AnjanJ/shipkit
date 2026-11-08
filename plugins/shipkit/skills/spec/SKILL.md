@@ -69,8 +69,29 @@ agent so the main context stays thin. Ask the user only what the code cannot tel
    five parts: Context, Alternatives, Case-for, Case-against, Decision + a **concrete
    falsifiability clause**. See @reference.md and `rules/decisions.md`. A vague clause is a bug.
 3. Each design decision references the requirement(s) it serves (`→ REQ-2`).
-4. **Gate:** use **native Plan Mode** to present the design for approval before breaking it into
-   tasks. This is the review gate — don't write `tasks.md` until the design is accepted.
+4. **The goldfish reads it cold.** Start the `goldfish` agent (`shipkit:goldfish`) from the main
+   session and give it only the slug, for example "Read the spec `refunds`." Do not tell it what
+   the feature is for or what you meant, because the implementer will not hear that either. When
+   the reply arrives, run `printf '%s\n' "${TMPDIR:-/tmp}/shipkit-spec-goldfish.out"`, `Write` the
+   reply to the path it printed, whole and unchanged, and paste it to the owner from that file. If
+   the reply has no `VERDICT:` line, start the goldfish once more with the same slug. If the second
+   reply has none either, tell the owner the read failed and go on to the gate.
+   If the owner has said "no goldfish", skip this step and step 5, and write
+   `Goldfish: skipped on the owner's word (<date>)` under `## Goldfish` in `spec.md`.
+5. **Every finding gets a disposition** before the gate, exactly one of:
+   - `fixed`: you edited `spec.md` or `design.md` so the files answer it. Name at the gate any
+     accepted requirement you edited.
+   - `contested`: cite the `path:line` the goldfish could have read that answers it.
+   - `escalated`: put it to the owner.
+   A finding that only knowledge outside the files can answer is never `contested`. That knowledge
+   goes into the spec, because the implementer is a goldfish too. If the owner accepts an escalated
+   finding without a fix, write it under `## Goldfish` in `spec.md`, one line per gap:
+   `Goldfish: GAPS accepted by owner — <REQ-N or term>`. If any finding was `fixed`, start the
+   goldfish a second time, the same way. There are never more than two reads for one gate.
+   `GAPS` does not stop the spec: once every finding has a disposition, go to the gate.
+6. **Gate:** use **native Plan Mode** to present the design for approval before breaking it into
+   tasks, together with the goldfish's reply and each finding's disposition. This is the review
+   gate — don't write `tasks.md` until the design is accepted.
 
 ### Q3 — How will we know it's done? → tests + `tasks.md`
 

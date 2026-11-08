@@ -776,8 +776,10 @@ since 2.8, by a nonce test in a fresh session (docs and behaviour have disagreed
    rule is its own hook command.
    ✅ Realized: the map-freshness hook shipped in 1.3.0, gained spec-drift nudges in 2.5.0, and
    in 2.8.0 became the carrier for the always-on rules and the plugin-root line.
-2. **Forked skills cannot use AskUserQuestion** — it is explicitly blocked in subagents, and a
-   subagent cannot spawn subagents either.
+2. **Forked skills cannot use AskUserQuestion** — it is explicitly blocked in subagents.
+   (This item also said a subagent could not start a subagent. On Claude Code 2.1.319 it can, up
+   to three levels down: a nonce probe on 2026-11-08. Shipkit keeps the main session starting
+   every agent by its own rule, decision 0006.)
    ✅ Realized: the fork-interactivity audit (1.3.0) fixed the affected skills; new interactive
    skills (`/shipkit:spec`, `/shipkit:decide`, `/shipkit:connect-memory`) all run inline for this
    reason; 2.8.0 removed the last fork-delegates-to-subagent instruction.

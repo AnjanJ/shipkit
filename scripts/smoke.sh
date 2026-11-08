@@ -2404,7 +2404,8 @@ sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/
 if [ "$sm_n" = "10" ] && [ "${sm_b:-99999}" -le 2950 ]; then pass "skills-merged (context-cost counts 10 core skills; descriptions $sm_b bytes, ceiling 2950)"
 else failc "skills-merged" "context-cost counts $sm_n core skills ($sm_b bytes, ceiling 2950)"; fi
 
-# 66. agents-four: four agents across the two plugins (thinning plan W4). tracer is
+# 66. agents-four: four agents across the two plugins (thinning plan W4), five since spec-goldfish
+# added `goldfish` (four core + test-analyzer, at most 1,075 bytes; Cites: spec-goldfish/REQ-16). tracer is
 # grandfather's trace mode; the archivist's body is the map skill's forked body
 # (skills/map/archivist.md, map runs with context: fork); codebase-explorer is dropped for
 # Claude Code's built-in Explore agent (the check-first showed Explore callable from a session
@@ -2424,13 +2425,15 @@ else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map
 af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
 if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
 else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
-# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's three;
-# test-analyzer's description is added from the checkout for the ≤ 1,000 ceiling (plan §0)
+# the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's four;
+# test-analyzer's description is added from the checkout for the ≤ 1,075 ceiling (plan §0's 1,000,
+# raised by spec-goldfish for the goldfish's one line; docs/design/context-cost.md says so)
 af_row=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk -F'\t' '$1 == "agents" { print $2 " " $3 }')
 af_b=${af_row%% *}; af_n=$(printf '%s' "$af_row" | awk '{print $2}')
 af_wf=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$ROOT/plugins/shipkit-workflows/agents/test-analyzer.md" | wc -c | tr -d ' ')
-if [ "$af_n" = "3" ] && [ $((af_b + af_wf)) -le 1000 ]; then pass "agents-four (three core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,000)"
-else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf)"; fi
+af_doc=$(grep '^| `agents`' "$ROOT/docs/design/context-cost.md" | grep -c '1,075')
+if [ "$af_n" = "4" ] && [ $((af_b + af_wf)) -le 1075 ] && [ "$af_doc" -ge 1 ]; then pass "agents-four (four core agents + test-analyzer: $((af_b + af_wf)) bytes of descriptions, at most 1,075, the ceiling context-cost.md gives)"
+else failc "agents-four" "context-cost agents: $af_row (+ test-analyzer $af_wf); context-cost.md agents row names 1,075: $af_doc"; fi
 
 # 67. skills-flag: an overlay's skills install only on --with-skills (thinning plan W6). A Rails
 # install without the flag writes the rules and the CLAUDE.md section, copies no skill, records
@@ -3116,6 +3119,157 @@ printf '%s\n' "$wp_out" | grep -qxF "quick.jsonl${wp_tab}5${wp_tab}0${wp_tab}0${
 [ -e "$WP/claude-called" ] && wp_fail="$wp_fail [a model was called]"
 if [ -z "$wp_fail" ]; then pass "wait-probe (scaffolds a clean fixture with no model call; reads idle seconds, Monitor and sleep calls from a transcript)"
 else failc "wait-probe" "$wp_fail$(printf ' [output: %s]' "$wp_out" | tr '\n\t' '| ')"; fi
+
+# 93. stale-nesting: ROADMAP.md, lint.py and the ship skill said a subagent cannot start a
+# subagent; on Claude Code 2.1.319 it can (a nonce probe, 2026-11-08), and decision 0006 keeps the
+# rule that the main session starts every agent. None of the three says the platform forbids it,
+# each cites 0006 where it gave the reason, and lint still fails a forked skill that starts an
+# agent by name: a copy of the tree whose forked map skill gains one such line → exactly one
+# error, naming 0006; the clean copy → 0. Cites: spec-goldfish/REQ-17
+SN="$WORK/stale-nesting"; mkdir -p "$SN"; sn_fail=""
+sn_files="ROADMAP.md scripts/lint.py plugins/shipkit/skills/ship/SKILL.md"
+for f in $sn_files; do
+  grep -n -i -E 'cannot spawn subagents|subagent cannot spawn|an agent cannot start an agent' "$ROOT/$f" >/dev/null 2>&1 \
+    && sn_fail="$sn_fail [$f still says the platform forbids it]"
+  grep -q '0006' "$ROOT/$f" 2>/dev/null || sn_fail="$sn_fail [$f does not cite decision 0006]"
+done
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$SN/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$SN" && tar xf -); fi
+sn_clean=$(python3 "$SN/scripts/lint.py" 2>&1 | tail -1)
+printf '%s\n' "$sn_clean" | grep -q '^lint: 0 error(s)' || sn_fail="$sn_fail [clean copy: $sn_clean]"
+printf '\nFor the hard part, start the `shipkit:reviewer` agent on the slug.\n' >> "$SN/plugins/shipkit/skills/map/SKILL.md"
+sn_out=$(python3 "$SN/scripts/lint.py" 2>&1)
+printf '%s\n' "$sn_out" | grep -q '^lint: 1 error(s)' || sn_fail="$sn_fail [doctored copy: not exactly 1 error]"
+printf '%s\n' "$sn_out" | grep 'ERROR' | grep 'map/SKILL.md' | grep -q '0006' \
+  || sn_fail="$sn_fail [doctored copy: no error on map/SKILL.md naming 0006]"
+if [ -z "$sn_fail" ]; then pass "stale-nesting (no file says a subagent cannot start one; each cites 0006; lint fails a forked skill that starts an agent, naming 0006)"
+else failc "stale-nesting" "$sn_fail $(printf '%s' "$sn_out" | grep 'ERROR\|^lint:' | tr '\n' '|')"; fi
+
+# 94. goldfish-agent: the agent /shipkit:spec starts before its design gate reads a spec as the
+# implementer will, from the files alone. Its file fixes what no prompt can change: sonnet, read
+# tools only, no Edit, Write or Agent; a one-line description naming /shipkit:spec. The body names
+# what it reads and what it does not (intake.md, tasks.md), ignores anything but the slug, stops on
+# a missing slug or spec, gives one TESTABLE or UNCLEAR row per requirement, lists undefined terms
+# and unstated assumptions ("None." when empty) under the test-author rule, and ends on one of two
+# verdict lines. No claude needed; the behaviour is the evals' (goldfish-gap, goldfish-clean).
+# Cites: spec-goldfish/REQ-1 spec-goldfish/REQ-2 spec-goldfish/REQ-3 spec-goldfish/REQ-4
+# spec-goldfish/REQ-5 spec-goldfish/REQ-6 spec-goldfish/REQ-7. REQ-21: the test-author rule comes
+# before the procedure, names an input the requirement does not mention and behaviour beyond what
+# it asks as not counting, and every assumption says what its test must guess.
+# Cites: spec-goldfish/REQ-21
+gf="$COPY/agents/goldfish.md"; gf_fail=""
+if [ ! -f "$gf" ]; then gf_fail=" [agents/goldfish.md does not exist]"
+else
+  for gf_line in 'name: goldfish' 'model: sonnet' 'tools: Read, Glob, Grep, Bash' 'disallowedTools: Edit, Write, Agent'; do
+    awk 'NR > 1 && /^---$/ { exit } { print }' "$gf" | grep -qxF "$gf_line" || gf_fail="$gf_fail [frontmatter lacks: $gf_line]"
+  done
+  gf_desc=$(awk '/^description:/ { sub(/^description:[ \t]*/, ""); print; exit }' "$gf")
+  [ "$(printf '%s\n' "$gf_desc" | wc -c | tr -d ' ')" -le 100 ] || gf_fail="$gf_fail [description over 100 bytes]"
+  printf '%s' "$gf_desc" | grep -qF '/shipkit:spec' || gf_fail="$gf_fail [description does not name /shipkit:spec]"
+  gf_flat=$(awk 'NR > 1 && /^---$/ { on = 1; next } on' "$gf" | tr '\n' ' ' | tr -s ' ')
+  for gf_want in '.shipkit/specs/<slug>/spec.md' '.shipkit/specs/<slug>/design.md' 'No other file under `.shipkit/specs/<slug>/`' \
+                 '`intake.md`' '`tasks.md`' 'ignore it' 'say which and stop' '`TESTABLE`' '`UNCLEAR`' \
+                 '## Undefined terms' '## Unstated assumptions' '"None."' 'without guessing' \
+                 'VERDICT: SELF-CONTAINED' 'VERDICT: GAPS' 'Nothing comes after the verdict line.'; do
+    printf '%s' "$gf_flat" | grep -qF -- "$gf_want" || gf_fail="$gf_fail [body lacks: $gf_want]"
+  done
+  for gf_want in 'An input the requirement does not mention.' 'checking more than the requirement asks' \
+                 'cannot be written without' 'the test must guess: <what>'; do
+    printf '%s' "$gf_flat" | grep -qF -- "$gf_want" || gf_fail="$gf_fail [body lacks: $gf_want]"
+  done
+  gf_rule=$(grep -n '^## What counts' "$gf" | cut -d: -f1 | sed -n 1p); gf_proc=$(grep -n '^## Procedure' "$gf" | cut -d: -f1 | sed -n 1p)
+  [ -n "$gf_rule" ] && [ -n "$gf_proc" ] && [ "$gf_rule" -lt "$gf_proc" ] \
+    || gf_fail="$gf_fail [the test-author rule does not come before ## Procedure]"
+fi
+if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
+else failc "goldfish-agent" "$gf_fail"; fi
+
+# 95. spec-goldfish-step: /shipkit:spec has the main session start the goldfish after design.md and
+# before the Plan Mode gate, with the slug alone; the reply goes to a file and is pasted whole; a
+# reply with no verdict gets one more start; every finding is fixed, contested with a path:line, or
+# escalated, and knowledge outside the files is never contested; an accepted gap and a skip are
+# written under ## Goldfish in spec.md, in the forms reference.md's template shows; two reads at
+# most; GAPS does not stop the gate. No claude needed. Cites: spec-goldfish/REQ-8
+# spec-goldfish/REQ-9 spec-goldfish/REQ-10 spec-goldfish/REQ-11 spec-goldfish/REQ-12
+# spec-goldfish/REQ-13 spec-goldfish/REQ-14 spec-goldfish/REQ-15
+sg_fail=""; sg_sk="$COPY/skills/spec/SKILL.md"; sg_ref="$COPY/skills/spec/reference.md"
+sg_q2=$(awk '/^### Q2/ { on = 1 } /^### Q3/ { on = 0 } on' "$sg_sk" | tr '\n' ' ' | tr -s ' ')
+for sg_want in 'shipkit:goldfish' 'only the slug' 'shipkit-spec-goldfish.out' 'whole and unchanged' \
+               'no `VERDICT:` line' 'once more' 'the read failed' '`fixed`' '`contested`' '`escalated`' \
+               'path:line' 'never `contested`' 'Goldfish: GAPS accepted by owner — ' 'never more than two' \
+               '`GAPS` does not stop' '"no goldfish"' "Goldfish: skipped on the owner's word"; do
+  printf '%s' "$sg_q2" | grep -qF -- "$sg_want" || sg_fail="$sg_fail [Q2 lacks: $sg_want]"
+done
+sg_at_gf=$(printf '%s' "$sg_q2" | awk '{ print index($0, "shipkit:goldfish") }')
+sg_at_gate=$(printf '%s' "$sg_q2" | awk '{ print index($0, "native Plan Mode") }')
+sg_at_des=$(printf '%s' "$sg_q2" | awk '{ print index($0, "references the requirement(s)") }')
+[ "${sg_at_gf:-0}" -gt "${sg_at_des:-0}" ] && [ "${sg_at_gf:-0}" -lt "${sg_at_gate:-0}" ] \
+  || sg_fail="$sg_fail [the goldfish step is not between the design records and the Plan Mode gate: $sg_at_des/$sg_at_gf/$sg_at_gate]"
+sg_tpl=$(awk '/^### `spec.md`/ { on = 1 } /^### `design.md`/ { on = 0 } on' "$sg_ref")
+printf '%s\n' "$sg_tpl" | grep -qx '## Goldfish' || sg_fail="$sg_fail [reference.md's spec.md template has no ## Goldfish]"
+printf '%s\n' "$sg_tpl" | grep -qF 'Goldfish: GAPS accepted by owner — ' || sg_fail="$sg_fail [template lacks the accepted-gap line]"
+printf '%s\n' "$sg_tpl" | grep -qF "Goldfish: skipped on the owner's word" || sg_fail="$sg_fail [template lacks the skip line]"
+if [ -z "$sg_fail" ]; then pass "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
+else failc "spec-goldfish-step" "$sg_fail"; fi
+
+# 96. goldfish-fixture: the two goldfish eval cases share evals/goldfish/spec-fixture.sh. `gap` writes
+# a refunds spec and design on the sample app (no tasks.md, no code) whose one requirement says "the
+# grace window" and nothing in the tree defines it; `clean` writes the same requirement with the
+# days stated. Each grader's pattern takes a reply of its kind and refuses the other; the agent's
+# own file never says the planted term; evals.sh cites both cases. No claude needed.
+# Cites: spec-goldfish/REQ-18 spec-goldfish/REQ-19 spec-goldfish/REQ-22
+GX="$WORK/goldfish-fixture"; gx_fail=""; gx_dir="$COPY/evals/goldfish"
+for gx_v in gap clean; do
+  mkdir -p "$GX/$gx_v"
+  (cd "$GX/$gx_v" && bash "$gx_dir/spec-fixture.sh" "$gx_v" >/dev/null 2>&1) || gx_fail="$gx_fail [$gx_v: the fixture failed]"
+  gx_s="$GX/$gx_v/.shipkit/specs/refunds"
+  [ -f "$gx_s/spec.md" ] && [ -f "$gx_s/design.md" ] || gx_fail="$gx_fail [$gx_v: no spec.md or design.md]"
+  [ -e "$gx_s/tasks.md" ] || [ -e "$GX/$gx_v/app/refunds.py" ] && gx_fail="$gx_fail [$gx_v: tasks.md or code present]"
+  for gx_f in case.yaml fixture.sh prompt.md; do [ -f "$gx_dir/$gx_v/$gx_f" ] || gx_fail="$gx_fail [$gx_v: no $gx_f]"; done
+done
+gx_n=$(grep -ril 'grace window' "$GX/gap" 2>/dev/null | wc -l | tr -d ' ')
+gx_l=$(grep -i 'grace window' "$GX/gap/.shipkit/specs/refunds/spec.md" 2>/dev/null | grep -c 'REQ-')
+[ "$gx_n" = "1" ] && [ "$gx_l" = "1" ] || gx_fail="$gx_fail [gap: 'grace window' in $gx_n file(s), $gx_l requirement line(s); want 1 and 1]"
+grep -rqi 'grace window' "$GX/clean" && gx_fail="$gx_fail [clean: says 'grace window']"
+grep -q '30 days' "$GX/clean/.shipkit/specs/refunds/spec.md" 2>/dev/null || gx_fail="$gx_fail [clean: no '30 days']"
+grep -qi 'grace window' "$COPY/agents/goldfish.md" && gx_fail="$gx_fail [agents/goldfish.md names the planted term]"
+gx_tail='
+Requirements: 2 TESTABLE, 1 UNCLEAR.
+VERDICT: GAPS'
+gx_rows='| REQ-1 | TESTABLE | first call returns it |
+| REQ-3 | UNCLEAR | the grace window has no length |
+
+## Unstated assumptions'
+gx_gaps="$gx_rows
+- None.
+$gx_tail"
+gx_ok="$gx_rows
+- the window is counted in days — REQ-3 — the test must guess: the unit
+$gx_tail"
+gx_selfc=$(printf '| REQ-3 | TESTABLE | 31 days late raises |\n\nVERDICT: SELF-CONTAINED')
+gx_re() { python3 -c 'import re,sys; p=re.search(r"^pattern: '"'"'(.*)'"'"'$", open(sys.argv[1]).read(), re.M).group(1); sys.exit(0 if re.search(p, sys.argv[2]) else 1)' "$1" "$2" 2>/dev/null; }
+gx_g="$gx_dir/gap/graders/names-term-and-gaps.md"
+gx_re "$gx_g" "$gx_gaps" || gx_fail="$gx_fail [gap grader refuses a GAPS reply naming the term]"
+gx_re "$gx_g" "$gx_ok" || gx_fail="$gx_fail [gap grader refuses an assumptions list naming only the unit]"
+gx_re "$gx_g" "$gx_selfc" && gx_fail="$gx_fail [gap grader takes a SELF-CONTAINED reply]"
+# REQ-22: the same grader refuses an assumptions list naming a zero or negative amount or which
+# check runs first (a row above the list may say "first")
+for gx_bad in '- A zero `amount_cents` is allowed — REQ-2' '- Negative amounts are rejected — REQ-1' \
+              '- Which check runs first when REQ-2 and REQ-3 both hold — REQ-2, REQ-3'; do
+  gx_re "$gx_g" "$gx_rows
+$gx_bad
+$gx_tail" && gx_fail="$gx_fail [gap grader takes: $gx_bad]"
+done
+for gx_g in "$gx_dir"/clean/graders/*.md; do
+  gx_re "$gx_g" "$gx_selfc" || gx_fail="$gx_fail [clean grader refuses a SELF-CONTAINED reply]"
+  gx_re "$gx_g" "$gx_gaps" && gx_fail="$gx_fail [clean grader takes a GAPS reply]"
+done
+ls "$gx_dir"/gap/graders/*.md "$gx_dir"/clean/graders/*.md >/dev/null 2>&1 || gx_fail="$gx_fail [a case has no grader]"
+grep -q 'spec-goldfish/REQ-18' "$ROOT/scripts/evals.sh" && grep -q 'spec-goldfish/REQ-19' "$ROOT/scripts/evals.sh" \
+  && grep -q 'spec-goldfish/REQ-22' "$ROOT/scripts/evals.sh" \
+  || gx_fail="$gx_fail [evals.sh does not cite spec-goldfish/REQ-18, REQ-19 and REQ-22]"
+if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term in one requirement, clean states 30 days; no tasks or code; each grader takes its reply and refuses the other)"
+else failc "goldfish-fixture" "$gx_fail"; fi
 
 echo
 if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi

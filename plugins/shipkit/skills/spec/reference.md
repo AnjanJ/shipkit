@@ -145,6 +145,10 @@ them before using `--run` in one you do not trust. Nothing runs them from a hook
 - **REQ-3.** If <trigger>, then the <system> shall <response>.
 - **REQ-4.** The README shall describe <thing>. [untested: prose, verified by reading]
 
+## Goldfish
+Goldfish: GAPS accepted by owner — <REQ-N or term>
+Goldfish: skipped on the owner's word (<date>)
+
 ## Out of scope
 <what this deliberately does NOT do>
 ```
@@ -168,6 +172,12 @@ under `.shipkit/` does not count.
 
 **How a requirement is excused from having a test.** End it with `[untested: <reason>]`, as
 `REQ-4` does above. Use it for requirements that are prose only, and give a real reason.
+
+**The `## Goldfish` section** is written at the design gate (SKILL.md, Q2 steps 4–5), and only
+when there is something to record. Write one line for each gap the owner accepted without a fix,
+or the one skip line if the owner said "no goldfish". Leave the section out when every finding
+was fixed or contested. `/shipkit:escape` and the ship reviewer read these lines, so a guess an
+implementer made later can be traced to the gap it filled.
 
 ### `design.md` (Q2 — how, as decision records)
 
@@ -264,5 +274,6 @@ carries one) — and exits 1 if there is any. `WAIVED` and `SKIPPED` lines are i
 
 - Delegate heavy codebase reading to the built-in `Explore` agent — keep the interview cheap.
 - Don't let the *how* leak into `spec.md`, or requirements get restated in `design.md`.
-- Approval gates: requirements (Q1) before design; design (Q2, via native Plan Mode) before tasks.
+- Approval gates: requirements (Q1) before design; design (Q2, via native Plan Mode, after the
+  goldfish's cold read) before tasks.
 - Project-wide decisions also go standalone in `.shipkit/decisions/NNNN-<slug>.md`.

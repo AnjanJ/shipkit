@@ -43,6 +43,76 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## The goldfish's first run (spec-goldfish T5, 2026-11-08)
+
+`bash scripts/evals.sh --case goldfish-gap`, then `--case goldfish-clean`, at `33f8e1a`, Claude
+Code 2.1.319, on the owner's yes. Each case's output went to its own folder,
+`~/.cache/shipkit-goldfish-t5/`. Cites spec-goldfish/REQ-18, REQ-19 and REQ-20.
+
+| Case | Runs passed | Cost | Time |
+|------|-------------|------|------|
+| `goldfish-gap` | 3 of 3 | $0.30 ($0.11, $0.10, $0.09) | 58 s |
+| `goldfish-clean` | 3 of 3 | $0.26 ($0.09, $0.09, $0.08) | 46 s |
+
+Each run took 2 or 3 turns. That count fits one Agent call followed by the reply, but a summary is
+not evidence, and the run kept no traces. So each case ran once more with `--runs 1 --keep-temp`
+($0.09 each, both passed). In both kept traces the main session made exactly one tool call:
+`Agent`, with `subagent_type: shipkit:goldfish` and the prompt `refunds`, the slug and nothing
+else. The goldfish read `spec.md` and `design.md` and globbed `app/**`. In `gap` it also grepped
+for `grace|GRACE|window|RefundRejected`. `trace-tools.sh`: `gap` 6 tools (1 in the main session),
+1 agent call, $0.0945; `clean` 5 tools (1), 1 agent call, $0.0887. **Total cost of T5: $0.74.**
+
+The `gap` reply with traces kept marked REQ-1 and REQ-2 `TESTABLE`, each with a test sketch, and
+REQ-3 `UNCLEAR`: "'The grace window' has no length, no unit, and no start date". It listed the term
+under Undefined terms and ended `VERDICT: GAPS`. Its five unstated assumptions include two that the
+test-author rule would leave out: zero or negative amounts, and the order of the two checks when
+both hold. The verdict did not depend on them. The clean case came back `SELF-CONTAINED` in all 4
+of its runs, so the rule is not too strict. Noise in a `GAPS` reply is for the main session to
+contest or fix at the gate. The condition on design.md's "A gap is what a test author would have
+to guess" (either case failing 2 of its first 3 runs) did not fire.
+
+### The noise, before the fix (spec-goldfish T6, 2026-11-08)
+
+The owner asked for the two extra assumptions to be fixed (REQ-21, REQ-22). `goldfish-gap`'s
+grader now also fails when the reply's `## Unstated assumptions` names a zero or negative amount
+or which check runs first. To make room, that check joined the existing grader, and
+`spec-fixture.sh` lost its comment line and its `git init`; the evals now total 204,747 bytes.
+Baseline on the agent text unchanged since T2: `bash scripts/evals.sh --case goldfish-gap --runs 5
+--keep-temp`, at `087385d` with T6's grader and fixture in the working tree, Claude Code 2.1.319.
+**0 of 5, $0.48.** Each trace read: one Agent call, `VERDICT: GAPS` and the grace window named in
+every run. Each run failed on the noise alone:
+
+| Run | Assumptions listed | Noise in the list |
+|-----|--------------------|-------------------|
+| 1 | 5 | zero, negative amounts |
+| 2 | 4 | zero, negative amounts |
+| 3 | 6 | zero, negative amounts; which check runs first |
+| 4 | 4 | zero, negative amounts |
+| 5 | 6 | zero, negative amounts; which check runs first |
+
+So the noise was not one reply in four but every reply: zero or negative amounts in 5 of 5, the
+order of the checks in 2 of 5.
+
+### After the fix (spec-goldfish T8, 2026-11-08)
+
+T7 (`8c02f1d`) moved the test-author rule before the procedure, named the two kinds that do not
+count, and made each assumption say what its test must guess. The runs read exactly that tree
+(`agents/goldfish.md` sha1 `331b426c`), Claude Code 2.1.319, traces kept. The bar was set in
+`tasks.md` before the run: gap at least 4 of 5, clean 3 of 3.
+
+| Case | Runs passed | Cost | Assumptions per reply | Noise |
+|------|-------------|------|-----------------------|-------|
+| `goldfish-gap` | **5 of 5** (was 0 of 5) | $0.45 | 1 or 2 (was 4 to 6) | none in any run |
+| `goldfish-clean` | **3 of 3** | $0.25 | "None." in every run | — |
+
+Every trace: one Agent call (`shipkit:goldfish`, the slug alone). Every `gap` reply still ended
+`VERDICT: GAPS` with REQ-3 `UNCLEAR` and the grace window named. Every assumption it kept is about
+that window (where it starts, how long it lasts, whether its last day counts), each in the form
+"the test must guess: …". One run also tied REQ-1 to it, since that test needs a `today` inside
+the window. **T6 and T8 together cost $1.18**, inside the $1.30 the owner approved.
+
+---
+
 ## Release run 5.2.0
 
 `bash scripts/evals.sh -j 4`, 2026-11-07T20:12Z to 20:31Z (2026-11-08 in the owner's zone), at

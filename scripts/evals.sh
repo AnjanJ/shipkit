@@ -38,6 +38,10 @@
 # readable-numbers/REQ-4 (trap2-experiments: log.info(… device …) is logging it; a silent fallback fails)
 # readable-numbers/REQ-5 (trap2-package-json: a run-time detector and a pnpm-only script pass; an
 # install of another manager at the start of a line fails)
+# spec-goldfish/REQ-18 spec-goldfish/REQ-19 (goldfish-gap: REQ-3's "grace window" is defined nowhere,
+# the reply must say GAPS and name it; goldfish-clean: the same spec with 30 days, SELF-CONTAINED;
+# both scaffold evals/goldfish/spec-fixture.sh); spec-goldfish/REQ-22 (goldfish-gap's grader also fails a
+# reply whose Unstated assumptions name a zero or negative amount or which check runs first)
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
 exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
