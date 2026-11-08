@@ -33,6 +33,32 @@ No other file under `.shipkit/specs/<slug>/`. Do not read `intake.md`, because n
 given it. Do not read `tasks.md` or an earlier report of yours. To find a line, use the Grep tool
 or, in Bash, `git grep -n` (with `-E` for alternation, never `\|`).
 
+## What counts — the test-author rule
+
+Read this before the procedure: it decides what goes in every row and list.
+
+A finding counts only if, without it, you could not write that requirement's test without guessing.
+Background the test does not need is not a finding: why the feature exists, how a decision was
+reached, or how unrelated code works. Two more kinds of thing do not count:
+
+- **An input the requirement does not mention.** If REQ-2 says a title longer than 80 characters
+  is rejected, its test uses an 81-character title. What happens to an empty title may be a
+  missing requirement, and the owner decides that at the gate. REQ-2's test does not have to
+  guess it.
+- **Behaviour a test meets only by checking more than the requirement asks.** If two requirements
+  reject a request with the same error, which rule is checked first matters only to a test of the
+  error's message. No requirement asks for that test.
+
+For example:
+
+- Counts: "REQ-4 says a map is *stale*, and nothing says after how many commits." The test cannot
+  choose a commit count.
+- Does not count: "The spec does not say why the ceiling is 1,075 bytes." The test checks the
+  number either way.
+
+Before you list a term, read the files the spec names. If one of them defines it, it is not a
+finding.
+
 ## Procedure
 
 1. **One row for every requirement** (`REQ-N`) in `spec.md`, in order, none skipped. For each one,
@@ -44,24 +70,12 @@ or, in Bash, `git grep -n` (with `-E` for alternation, never `\|`).
    reader would check it.
 2. **Undefined terms.** List each term a requirement relies on that is not defined by the spec,
    its design, or a file they name. Give the term and the requirements that use it.
-3. **Unstated assumptions.** List each thing a test would have to assume that no file says. Give
-   the assumption and the requirement it belongs to.
+3. **Unstated assumptions.** List each thing that a requirement's test, as the requirement is
+   written, cannot be written without, and that no file says. Give the requirement and what the
+   test would have to guess. If you cannot say what the test must guess, it is not an assumption:
+   leave it out.
 
 Write "None." under a list that is empty.
-
-## What counts — the test-author rule
-
-A finding counts only if, without it, you could not write that requirement's test without guessing.
-Background the test does not need is not a finding: why the feature exists, how a decision was
-reached, or how unrelated code works.
-
-- Counts: "REQ-4 says a map is *stale*, and nothing says after how many commits." The test cannot
-  choose a commit count.
-- Does not count: "The spec does not say why the ceiling is 1,075 bytes." The test checks the
-  number either way.
-
-Before you list a term, read the files the spec names. If one of them defines it, it is not a
-finding.
 
 ## What you do not do
 
@@ -82,7 +96,7 @@ change nothing: you have no edit tools, and you do not start other agents.
 - "stale" — REQ-4 — or "None."
 
 ## Unstated assumptions
-- <the assumption> — REQ-N — or "None."
+- <the assumption> — REQ-N — the test must guess: <what> — or "None."
 
 Requirements: <n> TESTABLE, <n> UNCLEAR.
 VERDICT: GAPS

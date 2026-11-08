@@ -3144,7 +3144,10 @@ else failc "stale-nesting" "$sn_fail $(printf '%s' "$sn_out" | grep 'ERROR\|^lin
 # and unstated assumptions ("None." when empty) under the test-author rule, and ends on one of two
 # verdict lines. No claude needed; the behaviour is the evals' (goldfish-gap, goldfish-clean).
 # Cites: spec-goldfish/REQ-1 spec-goldfish/REQ-2 spec-goldfish/REQ-3 spec-goldfish/REQ-4
-# spec-goldfish/REQ-5 spec-goldfish/REQ-6 spec-goldfish/REQ-7
+# spec-goldfish/REQ-5 spec-goldfish/REQ-6 spec-goldfish/REQ-7. REQ-21: the test-author rule comes
+# before the procedure, names an input the requirement does not mention and behaviour beyond what
+# it asks as not counting, and every assumption says what its test must guess.
+# Cites: spec-goldfish/REQ-21
 gf="$COPY/agents/goldfish.md"; gf_fail=""
 if [ ! -f "$gf" ]; then gf_fail=" [agents/goldfish.md does not exist]"
 else
@@ -3161,6 +3164,13 @@ else
                  'VERDICT: SELF-CONTAINED' 'VERDICT: GAPS' 'Nothing comes after the verdict line.'; do
     printf '%s' "$gf_flat" | grep -qF -- "$gf_want" || gf_fail="$gf_fail [body lacks: $gf_want]"
   done
+  for gf_want in 'An input the requirement does not mention.' 'checking more than the requirement asks' \
+                 'cannot be written without' 'the test must guess: <what>'; do
+    printf '%s' "$gf_flat" | grep -qF -- "$gf_want" || gf_fail="$gf_fail [body lacks: $gf_want]"
+  done
+  gf_rule=$(grep -n '^## What counts' "$gf" | cut -d: -f1 | sed -n 1p); gf_proc=$(grep -n '^## Procedure' "$gf" | cut -d: -f1 | sed -n 1p)
+  [ -n "$gf_rule" ] && [ -n "$gf_proc" ] && [ "$gf_rule" -lt "$gf_proc" ] \
+    || gf_fail="$gf_fail [the test-author rule does not come before ## Procedure]"
 fi
 if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
 else failc "goldfish-agent" "$gf_fail"; fi
