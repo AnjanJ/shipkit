@@ -93,6 +93,24 @@ every run. Each run failed on the noise alone:
 So the noise was not one reply in four but every reply: zero or negative amounts in 5 of 5, the
 order of the checks in 2 of 5.
 
+### After the fix (spec-goldfish T8, 2026-11-08)
+
+T7 (`8c02f1d`) moved the test-author rule before the procedure, named the two kinds that do not
+count, and made each assumption say what its test must guess. The runs read exactly that tree
+(`agents/goldfish.md` sha1 `331b426c`), Claude Code 2.1.319, traces kept. The bar was set in
+`tasks.md` before the run: gap at least 4 of 5, clean 3 of 3.
+
+| Case | Runs passed | Cost | Assumptions per reply | Noise |
+|------|-------------|------|-----------------------|-------|
+| `goldfish-gap` | **5 of 5** (was 0 of 5) | $0.45 | 1 or 2 (was 4 to 6) | none in any run |
+| `goldfish-clean` | **3 of 3** | $0.25 | "None." in every run | — |
+
+Every trace: one Agent call (`shipkit:goldfish`, the slug alone). Every `gap` reply still ended
+`VERDICT: GAPS` with REQ-3 `UNCLEAR` and the grace window named. Every assumption it kept is about
+that window (where it starts, how long it lasts, whether its last day counts), each in the form
+"the test must guess: …". One run also tied REQ-1 to it, since that test needs a `today` inside
+the window. **T6 and T8 together cost $1.18**, inside the $1.30 the owner approved.
+
 ---
 
 ## Release run 5.2.0

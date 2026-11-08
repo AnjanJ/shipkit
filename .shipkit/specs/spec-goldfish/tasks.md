@@ -42,7 +42,7 @@ version bump and `CHANGELOG.md` belong to the release, not to this spec.
   - Test: smoke check 94 gains: the test-author rule comes before `## Procedure`; step 3 says an assumption counts only if the test cannot be written without it; the reply shape has `the test must guess:`; the two "does not count" kinds (an input the requirement does not mention, behaviour beyond what it asks) are named
   - After: T6
   - Done when: `bash scripts/smoke.sh` → check 94 passes and no check fails; `bash scripts/lint.sh` → 0/0
-- [ ] **T8** The run after the fix, recorded → REQ-21, REQ-22
+- [x] **T8** The run after the fix, recorded → REQ-21, REQ-22
   - Files: docs/design/eval-history.md
   - Test: on the owner's yes, `bash scripts/evals.sh --case goldfish-gap --runs 5 --keep-temp` and `bash scripts/evals.sh --case goldfish-clean --keep-temp`
   - After: T7
