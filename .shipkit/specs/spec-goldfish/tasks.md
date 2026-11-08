@@ -32,7 +32,7 @@ version bump and `CHANGELOG.md` belong to the release, not to this spec.
   - Test: `bash scripts/evals.sh --case goldfish-gap` and `bash scripts/evals.sh --case goldfish-clean`, on the owner's yes
   - After: T4
   - Done when: both commands exit 0; `eval-history.md` has a dated section with each case's pass count, cost and Claude Code version, and the commit it ran at; if either case fails 2 of its 3 runs, the record says so and the owner is told that the "A gap is what a test author would have to guess" decision's condition has fired
-- [ ] **T6** Room, the noise grader, and the baseline → REQ-22
+- [x] **T6** Room, the noise grader, and the baseline → REQ-22
   - Files: plugins/shipkit/evals/goldfish/gap/graders/names-term-and-gaps.md, plugins/shipkit/evals/goldfish/spec-fixture.sh, docs/design/eval-history.md, scripts/smoke.sh, scripts/evals.sh
   - Test: smoke check 96 gains: `names-term-and-gaps` refuses a GAPS reply whose `## Unstated assumptions` names a zero or negative amount or which check runs first, and takes one that names only the grace window's unit; `scripts/evals.sh`'s header cites `spec-goldfish/REQ-22`. Room, on the owner's choice of 2026-11-08 (option 1): the noise check joins the existing grader, and `spec-fixture.sh` loses its comment line and its `git init` (the T5 traces show no git use); the README and the ceiling stay. Then the baseline, on the owner's yes: `bash scripts/evals.sh --case goldfish-gap --runs 5 --keep-temp` on today's agent text
   - After: T5

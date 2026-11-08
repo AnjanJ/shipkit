@@ -71,6 +71,28 @@ of its runs, so the rule is not too strict. Noise in a `GAPS` reply is for the m
 contest or fix at the gate. The condition on design.md's "A gap is what a test author would have
 to guess" (either case failing 2 of its first 3 runs) did not fire.
 
+### The noise, before the fix (spec-goldfish T6, 2026-11-08)
+
+The owner asked for the two extra assumptions to be fixed (REQ-21, REQ-22). `goldfish-gap`'s
+grader now also fails when the reply's `## Unstated assumptions` names a zero or negative amount
+or which check runs first. To make room, that check joined the existing grader, and
+`spec-fixture.sh` lost its comment line and its `git init`; the evals now total 204,747 bytes.
+Baseline on the agent text unchanged since T2: `bash scripts/evals.sh --case goldfish-gap --runs 5
+--keep-temp`, at `087385d` with T6's grader and fixture in the working tree, Claude Code 2.1.319.
+**0 of 5, $0.48.** Each trace read: one Agent call, `VERDICT: GAPS` and the grace window named in
+every run. Each run failed on the noise alone:
+
+| Run | Assumptions listed | Noise in the list |
+|-----|--------------------|-------------------|
+| 1 | 5 | zero, negative amounts |
+| 2 | 4 | zero, negative amounts |
+| 3 | 6 | zero, negative amounts; which check runs first |
+| 4 | 4 | zero, negative amounts |
+| 5 | 6 | zero, negative amounts; which check runs first |
+
+So the noise was not one reply in four but every reply: zero or negative amounts in 5 of 5, the
+order of the checks in 2 of 5.
+
 ---
 
 ## Release run 5.2.0

@@ -3198,7 +3198,7 @@ else failc "spec-goldfish-step" "$sg_fail"; fi
 # grace window" and nothing in the tree defines it; `clean` writes the same requirement with the
 # days stated. Each grader's pattern takes a reply of its kind and refuses the other; the agent's
 # own file never says the planted term; evals.sh cites both cases. No claude needed.
-# Cites: spec-goldfish/REQ-18 spec-goldfish/REQ-19
+# Cites: spec-goldfish/REQ-18 spec-goldfish/REQ-19 spec-goldfish/REQ-22
 GX="$WORK/goldfish-fixture"; gx_fail=""; gx_dir="$COPY/evals/goldfish"
 for gx_v in gap clean; do
   mkdir -p "$GX/$gx_v"
@@ -3214,12 +3214,32 @@ gx_l=$(grep -i 'grace window' "$GX/gap/.shipkit/specs/refunds/spec.md" 2>/dev/nu
 grep -rqi 'grace window' "$GX/clean" && gx_fail="$gx_fail [clean: says 'grace window']"
 grep -q '30 days' "$GX/clean/.shipkit/specs/refunds/spec.md" 2>/dev/null || gx_fail="$gx_fail [clean: no '30 days']"
 grep -qi 'grace window' "$COPY/agents/goldfish.md" && gx_fail="$gx_fail [agents/goldfish.md names the planted term]"
-gx_gaps=$(printf '| REQ-3 | UNCLEAR | the grace window has no length |\n\nVERDICT: GAPS')
+gx_tail='
+Requirements: 2 TESTABLE, 1 UNCLEAR.
+VERDICT: GAPS'
+gx_rows='| REQ-1 | TESTABLE | first call returns it |
+| REQ-3 | UNCLEAR | the grace window has no length |
+
+## Unstated assumptions'
+gx_gaps="$gx_rows
+- None.
+$gx_tail"
+gx_ok="$gx_rows
+- the window is counted in days — REQ-3 — the test must guess: the unit
+$gx_tail"
 gx_selfc=$(printf '| REQ-3 | TESTABLE | 31 days late raises |\n\nVERDICT: SELF-CONTAINED')
 gx_re() { python3 -c 'import re,sys; p=re.search(r"^pattern: '"'"'(.*)'"'"'$", open(sys.argv[1]).read(), re.M).group(1); sys.exit(0 if re.search(p, sys.argv[2]) else 1)' "$1" "$2" 2>/dev/null; }
-for gx_g in "$gx_dir"/gap/graders/*.md; do
-  gx_re "$gx_g" "$gx_gaps" || gx_fail="$gx_fail [gap grader refuses a GAPS reply naming the term]"
-  gx_re "$gx_g" "$gx_selfc" && gx_fail="$gx_fail [gap grader takes a SELF-CONTAINED reply]"
+gx_g="$gx_dir/gap/graders/names-term-and-gaps.md"
+gx_re "$gx_g" "$gx_gaps" || gx_fail="$gx_fail [gap grader refuses a GAPS reply naming the term]"
+gx_re "$gx_g" "$gx_ok" || gx_fail="$gx_fail [gap grader refuses an assumptions list naming only the unit]"
+gx_re "$gx_g" "$gx_selfc" && gx_fail="$gx_fail [gap grader takes a SELF-CONTAINED reply]"
+# REQ-22: the same grader refuses an assumptions list naming a zero or negative amount or which
+# check runs first (a row above the list may say "first")
+for gx_bad in '- A zero `amount_cents` is allowed — REQ-2' '- Negative amounts are rejected — REQ-1' \
+              '- Which check runs first when REQ-2 and REQ-3 both hold — REQ-2, REQ-3'; do
+  gx_re "$gx_g" "$gx_rows
+$gx_bad
+$gx_tail" && gx_fail="$gx_fail [gap grader takes: $gx_bad]"
 done
 for gx_g in "$gx_dir"/clean/graders/*.md; do
   gx_re "$gx_g" "$gx_selfc" || gx_fail="$gx_fail [clean grader refuses a SELF-CONTAINED reply]"
@@ -3227,7 +3247,8 @@ for gx_g in "$gx_dir"/clean/graders/*.md; do
 done
 ls "$gx_dir"/gap/graders/*.md "$gx_dir"/clean/graders/*.md >/dev/null 2>&1 || gx_fail="$gx_fail [a case has no grader]"
 grep -q 'spec-goldfish/REQ-18' "$ROOT/scripts/evals.sh" && grep -q 'spec-goldfish/REQ-19' "$ROOT/scripts/evals.sh" \
-  || gx_fail="$gx_fail [evals.sh does not cite spec-goldfish/REQ-18 and REQ-19]"
+  && grep -q 'spec-goldfish/REQ-22' "$ROOT/scripts/evals.sh" \
+  || gx_fail="$gx_fail [evals.sh does not cite spec-goldfish/REQ-18, REQ-19 and REQ-22]"
 if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term in one requirement, clean states 30 days; no tasks or code; each grader takes its reply and refuses the other)"
 else failc "goldfish-fixture" "$gx_fail"; fi
 

@@ -1,5 +1,4 @@
 #!/bin/bash
-# <gap|clean>: a spec, no tasks or code; gap's REQ-3 term is defined nowhere
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 d=.shipkit/specs/refunds; mkdir -p $d
 w='more than 30 days after `order["charged_at"]`'; [ "$1" = gap ] && w='after the grace window'
@@ -20,4 +19,3 @@ exception `RefundRejected`. `today` and `order["charged_at"]` are `datetime.date
 EOF
 sed -i.b "s/@W@/$w/" $d/spec.md && rm $d/spec.md.b
 printf '# Design: Refunds\n\n## Decision: Refunds live in `app/refunds.py`   (→ REQ-1)\n' > $d/design.md
-git init -q . && git add -A && git -c user.email=e@x -c user.name=e commit -qm init
