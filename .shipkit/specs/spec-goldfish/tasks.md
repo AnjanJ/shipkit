@@ -32,3 +32,18 @@ version bump and `CHANGELOG.md` belong to the release, not to this spec.
   - Test: `bash scripts/evals.sh --case goldfish-gap` and `bash scripts/evals.sh --case goldfish-clean`, on the owner's yes
   - After: T4
   - Done when: both commands exit 0; `eval-history.md` has a dated section with each case's pass count, cost and Claude Code version, and the commit it ran at; if either case fails 2 of its 3 runs, the record says so and the owner is told that the "A gap is what a test author would have to guess" decision's condition has fired
+- [ ] **T6** Room, the noise grader, and the baseline → REQ-22
+  - Files: plugins/shipkit/evals/README.md, docs/design/eval-history.md, plugins/shipkit/evals/goldfish/gap/graders/no-assumption-noise.md, scripts/smoke.sh, scripts/evals.sh
+  - Test: smoke check 96 gains: the new grader refuses a reply whose `## Unstated assumptions` names a zero amount or which check runs first, and takes one that names only the grace window's unit; `scripts/evals.sh`'s header cites `spec-goldfish/REQ-22`. The README's "Path-scoped loading, measured (4.6.0)" reading moves, unchanged, to `eval-history.md`. Then the baseline, on the owner's yes: `bash scripts/evals.sh --case goldfish-gap --runs 5 --keep-temp` on today's agent text
+  - After: T5
+  - Done when: `bash scripts/smoke.sh` → check 96 passes and no check fails; `bash scripts/lint.sh` → 0/0 (evals at most 204,800 bytes); the baseline's pass count, per-run noise and cost recorded in `eval-history.md`. If it is 5 of 5, stop and tell the owner the fix has nothing to prove
+- [ ] **T7** The assumptions step follows the test-author rule → REQ-21
+  - Files: plugins/shipkit/agents/goldfish.md, scripts/smoke.sh
+  - Test: smoke check 94 gains: the test-author rule comes before `## Procedure`; step 3 says an assumption counts only if the test cannot be written without it; the reply shape has `the test must guess:`; the two "does not count" kinds (an input the requirement does not mention, behaviour beyond what it asks) are named
+  - After: T6
+  - Done when: `bash scripts/smoke.sh` → check 94 passes and no check fails; `bash scripts/lint.sh` → 0/0
+- [ ] **T8** The run after the fix, recorded → REQ-21, REQ-22
+  - Files: docs/design/eval-history.md
+  - Test: on the owner's yes, `bash scripts/evals.sh --case goldfish-gap --runs 5 --keep-temp` and `bash scripts/evals.sh --case goldfish-clean --keep-temp`
+  - After: T7
+  - Done when: set before the run: `goldfish-gap` at least 4 of 5 with all three graders, `goldfish-clean` 3 of 3; both counts, the noise per run read from the traces, and the cost in `eval-history.md`. Below either, the record says so and the owner is told

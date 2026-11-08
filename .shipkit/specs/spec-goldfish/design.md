@@ -73,6 +73,12 @@ undefined term used in three requirements would come back as three rows instead 
 
 **Decision.** We chose (1). The agent's instructions give the test-author rule and one example of a
 finding that does not count.
+*Amended 2026-11-08, on the owner's yes (→ REQ-21, REQ-22):* T5's traced `gap` reply listed two
+assumptions the rule should have dropped: zero or negative amounts, and the order of two checks.
+The agent's step 3 ("each thing a test would have to assume") was wider than the rule, and the
+rule came after the procedure. Now the rule comes first, each assumption names what its test must
+guess, and two kinds of item are named as not counting. A third grader on `goldfish/gap` watches
+for that noise.
 **Falsifiability.** We would reverse this, loosening it toward (2), if `goldfish/gap` fails 2 of
 its first 3 runs. We would tighten the wording if `goldfish/clean` fails 2 of its first 3.
 **Fired-if.** manual

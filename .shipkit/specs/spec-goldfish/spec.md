@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `3fbf612` on spec-goldfish (2026-11-08).
 > Status: open
-> Paths: plugins/shipkit/agents/goldfish.md, plugins/shipkit/skills/spec/, plugins/shipkit/evals/goldfish/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/eval-history.md, scripts/evals.sh, ROADMAP.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/skills/ship/SKILL.md
+> Paths: plugins/shipkit/agents/goldfish.md, plugins/shipkit/skills/spec/, plugins/shipkit/evals/goldfish/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/eval-history.md, scripts/evals.sh, plugins/shipkit/evals/README.md, ROADMAP.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/skills/ship/SKILL.md
 
 ## Purpose
 
@@ -43,6 +43,11 @@ Source: `.shipkit/specs/spec-goldfish/intake.md` (2026-11-08); Google's Elephant
 - **REQ-6.** The goldfish shall list each term the spec relies on that neither the spec, its
   design nor a file they name defines, and each assumption the spec relies on without stating it,
   or write "None." under each heading.
+- **REQ-21.** The goldfish shall list an unstated assumption only if the requirement's test, as the
+  requirement is written, cannot be written without it, and shall give for each one what the test
+  would have to guess; it shall not list an input the requirement does not mention, nor behaviour
+  a test would meet only by checking more than the requirement asks. (Amended 2026-11-08, on the
+  owner's yes, after T5's `gap` reply listed both kinds.)
 - **REQ-7.** The goldfish's reply shall end with `VERDICT: SELF-CONTAINED` when no row is
   `UNCLEAR` and both lists are empty, and `VERDICT: GAPS` otherwise, with nothing after that line.
 
@@ -87,6 +92,8 @@ Source: `.shipkit/specs/spec-goldfish/intake.md` (2026-11-08); Google's Elephant
   planted undefined term, and pass only when the reply ends `VERDICT: GAPS` and names that term.
 - **REQ-19.** An eval case `goldfish/clean` shall start the goldfish on a fixture spec with no
   gap, and pass only when the reply ends `VERDICT: SELF-CONTAINED`.
+- **REQ-22.** `goldfish/gap` shall also fail when the reply's `## Unstated assumptions` section
+  names a zero or negative amount, or which of two checks runs first. (Amended 2026-11-08.)
 - **REQ-20.** The eval run that first runs REQ-18 and REQ-19 shall record each case's result and
   cost in `docs/design/eval-history.md`. [untested: a paid run, read from its record]
 
