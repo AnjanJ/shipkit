@@ -12,11 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-11-08, v5.2.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+**Status (as of 2026-11-08, v5.3.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
 second-run plan, 20 to 22 of the thinning plan and 23 to 25 of the binding plan are done, and so
 are Sprints 26 to 28 of the machine plan (`docs/plans/machine-sprint-plan.md`, approved
-2026-11-05), one release, 5.2.0; see "The machine plan" below. Everything in this document is shipped except the items under "Still open after Sprint 28", which
+2026-11-05), one release, 5.2.0; see "The machine plan" below. 5.3.0 came after it, outside a plan:
+the `goldfish` agent's cold read of a spec at `/shipkit:spec`'s design gate (spec `spec-goldfish`). Everything in this document is shipped except the items under "Still open after Sprint 28", which
 seed the plan after (each item carries a note when a sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
@@ -92,6 +93,8 @@ Found at the release:
   `users-machine`'s step 8 file was overwritten while the smoke suite ran beside it, whose check 29
   runs the gate on fixtures (`scripts/smoke.sh:1057`); the gate saw it and ran the check again.
   Likely, not shown (`docs/design/eval-history.md`, "Release run 5.2.0").
+  **Paid in 5.3.0 (#34):** shown at the `spec-goldfish` gate, which lost its scratch files to it;
+  check 29's nested gate now runs in its own `TMPDIR`.
 
 What the plan's §5 left, each below it in place (`docs/plans/machine-sprint-plan.md` §5): a
 decision's record in the brief, which this run's agent opened on its own (`field-notes-5.2.md` §8);
