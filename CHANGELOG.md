@@ -4,6 +4,55 @@ All notable changes to Shipkit are documented here. Newest first. Every entry op
 **What changed for you**, in plain words; the ledger — which decision, which number, which
 file — follows it (from 2026-10-22; the three entries before it carry the paragraph too).
 
+## [5.3.0] — 2026-11-08
+
+**What changed for you.** Before `/shipkit:spec` shows you a design, a new agent reads the spec cold.
+The `goldfish` is given only the spec's name, as the agent that later builds each task is given only
+the brief. It reads the spec, the design and the files they name. For each requirement it says
+`TESTABLE`, with the test it would write, or `UNCLEAR` and what is missing. It lists terms nothing
+defines and anything a test would have to guess. It ends `VERDICT: SELF-CONTAINED` or
+`VERDICT: GAPS`. You see its reply whole at the design gate, with what was done about each finding:
+fixed in the spec or design, answered from a file it could have read, or put to you. `GAPS` does not
+stop the spec: a gap you accept is written into the spec, under `## Goldfish`. Say "no goldfish" to
+skip the read; the spec records that you did.
+
+**It counts only what a test would have to guess.** A word the spec never defines counts; an input
+the requirement never mentions does not, and neither does background a test can do without. Its
+first runs listed such inputs ("zero or negative amounts") in every reply; the rule now comes first
+in the agent, and the eval case fails on them.
+
+**The main session starts every agent** (decision 0006). Claude Code now lets an agent start
+another; shipkit keeps one level, as its own choice. The files that said the platform forbade it now
+cite the decision, and lint fails a forked skill that tries to start any agent by name.
+
+| What | 5.2.0 | 5.3.0 |
+|---|---|---|
+| A read of the spec by an agent that saw none of its writing, before its tasks | no | yes, at the design gate |
+| Agents in the `shipkit` plugin | 3 | 4 |
+| Agent descriptions, bytes in every session | 991 of 1,000 | 1,073 of 1,075 |
+| `goldfish-gap`: names the undefined term, ends `GAPS`, no guess the rule leaves out | — | 5 of 5 (0 of 5 before the rule moved first) |
+| `goldfish-clean`: the same spec with the term defined ends `SELF-CONTAINED` | — | 3 of 3, twice |
+| A ship gate run beside the smoke suite keeps its scratch files | no | yes |
+
+**The ledger.**
+
+- `plugins/shipkit/agents/goldfish.md`: sonnet; `Read, Glob, Grep, Bash`; no `Edit`, `Write` or
+  `Agent`. Spec `.shipkit/specs/spec-goldfish/` (REQ-1 to REQ-22), gate READY
+  (`.shipkit/releases/2026-11-08-spec-goldfish.md`), #35.
+- `/shipkit:spec` Q2, steps 4 and 5: the read, the reply written to
+  `${TMPDIR:-/tmp}/shipkit-spec-goldfish.out` and pasted whole, one retry without a verdict line,
+  dispositions (`fixed`, `contested` with a `path:line`, `escalated`), at most two reads per gate.
+  The `spec.md` template gains `## Goldfish`.
+- `.shipkit/decisions/0006-main-session-starts-every-agent.md`; `ROADMAP.md`, `ship/SKILL.md` and
+  `lint.py` cite it. Lint's forked-skill check matches any agent started by name.
+- The agents ceiling, 1,000 → 1,075 bytes, for `goldfish`'s 82-byte line
+  (`docs/design/context-cost.md`).
+- Evals `goldfish-gap` and `goldfish-clean` (`plugins/shipkit/evals/goldfish/`), $1.92 in all;
+  the eval folder at 204,747 of 204,800 bytes (`docs/design/eval-history.md`, "The goldfish's
+  first run").
+- Smoke checks 93 to 96; check 29's nested gate runs in its own `TMPDIR`, since its cleanup deleted
+  the scratch files of a gate running beside it (#34). Smoke 236 of 236.
+
 ## [5.2.0] — 2026-11-08
 
 **What changed for you.** Your first spec after `/shipkit:setup` is reviewed on its own work: the

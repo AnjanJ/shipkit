@@ -43,6 +43,20 @@ Every other case 3 of 3; `digest-attention` 2 of 3 as in 4.2.0.
 
 ---
 
+## Release run 5.3.0
+
+No case was run again for this release, on the owner's word (2026-11-08); $0. What the plugin
+changed since `v5.2.0`, from `git diff --stat v5.2.0..HEAD -- plugins/`:
+
+- `agents/goldfish.md` and `evals/goldfish/`: the two `goldfish-*` cases ran on the agent's final
+  text, `8c02f1d`, and the agent has not changed since: `goldfish-gap` 5 of 5, `goldfish-clean`
+  3 of 3 (the next section).
+- `skills/spec/SKILL.md` and `reference.md`: no other case runs `/shipkit:spec`.
+- `skills/ship/SKILL.md`: the opening HTML comment only.
+- One more agent description in every session, 82 bytes (agents row 991 → 1,073).
+
+The other 64 cases read nothing else that changed; their last reading is 5.2.0's, below.
+
 ## The goldfish's first run (spec-goldfish T5, 2026-11-08)
 
 `bash scripts/evals.sh --case goldfish-gap`, then `--case goldfish-clean`, at `33f8e1a`, Claude
