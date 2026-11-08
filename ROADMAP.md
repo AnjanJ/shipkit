@@ -12,12 +12,12 @@ knowledge layer for Claude Code**: map, elders, registry. That was reached at 3.
 plan (`docs/plans/quality-gate-sprint-plan.md`, approved 2026-10-05) set the one above and
 shipped it in seven sprints.
 
-**Status (as of 2026-11-05, v5.1.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
+**Status (as of 2026-11-08, v5.2.0):** Sprints 1 to 7 of the quality-gate plan, 8 to 10 of the
 evidence plan, 11 to 13 of the field plan, 14 to 16 of the portfolio plan, 17 to 19 of the
-second-run plan and 20 to 22 of the thinning plan are done, and so are Sprints 23 to 25 of the
-binding plan (`docs/plans/binding-sprint-plan.md`, approved 2026-10-31), one release, 5.1.0; see
-"The binding plan" below. Everything in this document is shipped except the items under "Still
-open after Sprint 25", which seed the plan after (each item carries a note when a sprint pays it).
+second-run plan, 20 to 22 of the thinning plan and 23 to 25 of the binding plan are done, and so
+are Sprints 26 to 28 of the machine plan (`docs/plans/machine-sprint-plan.md`, approved
+2026-11-05), one release, 5.2.0; see "The machine plan" below. Everything in this document is shipped except the items under "Still open after Sprint 28", which
+seed the plan after (each item carries a note when a sprint pays it).
 
 ## The quality-gate plan — ✅ Sprints 1–7 SHIPPED 2026-10-05 to 2026-10-06
 
@@ -30,6 +30,78 @@ open after Sprint 25", which seed the plan after (each item carries a note when 
 | 5 | 3.6.0 | A briefing at session start; `/shipkit:handoff` so the next session resumes |
 | 6 | 3.7.0 | `Fired-if` commands on decisions and `decision-check.sh`; `portfolio-digest.sh` and `/shipkit:ask --all digest` |
 | 7 | 4.0.0 | The trim audit (five cuts, sixteen trims), lint-held limits, the README around the loop, Playbook 4, this roadmap |
+
+## The machine plan — ✅ Sprints 26–28 SHIPPED 2026-11-05 to 2026-11-08 as 5.2.0
+
+Full plan: [`docs/plans/machine-sprint-plan.md`](docs/plans/machine-sprint-plan.md). What the
+user's machine does to the loop, and what the gate says about setup: setup's own lines out of a
+first spec's review and a mark for half built (26), a test command that runs on a pinned toolchain,
+searches no alias can bend and the headless wait measured (27), then the owner's project again,
+PR #30's two questions answered, and one release (28). Numbers: `docs/design/eval-results-5.2.md`,
+`docs/design/field-notes-5.2.md`.
+
+| Sprint | Release | What the owner got |
+|--------|---------|--------------------|
+| 26 | 5.2.0 (merged untagged, `9b32e36`) | Setup's own `CLAUDE.md` and `.gitignore` no longer count against a first spec: setup records each file's blob id in `.claude/rules/shipkit/.setup-files`, and the reviewer and `brief-verify.sh` read it (check 88); a third mark, `partly built`, that changes no verdict (check 89); four debts, each with a smoke check (84 to 87): `walk.md`'s opening comment, the review file's path printed before `Write` gets it, `APP_NAME` in the elixir Key Paths, a `Status:` line outside `spec.md` as `STRAY-STATUS`; `--group reviewer` four cases 3 of 3, smoke 229 of 229 |
+| 27 | 5.2.0 (merged untagged, `f138e94`) | Setup puts `mise exec --` before the test command when the project pins its toolchain with mise and mise is on the `PATH`, and the elixir and go sections take the same command (check 90); the gate and the reviewer search with `git grep -n`, `-E` for alternation, never `\|` (check 91); the headless wait measured: five intakes idled 6 to 24 s with no `Monitor`, so no skill says anything about waiting (check 92, `eval-results-5.2.md` §1); the evals stay inside the plugin, by record 0005; smoke 232 of 232 |
+| 28 | 5.2.0 | `--scope project` answered: an update from inside a project moves that project's install; from outside, with three, it read the first, printed "already at the latest version" and left another on 5.0.0; README and GUIDE say to update from inside (`field-notes-5.2.md` §0). The nine steps on `~/code/office_bestie` over two days, 517 s and $2.01: G2, G5 and G7 held, G3 held on the second day, G4 held only where setup writes, and REQ-20's sentence held on the second gate, after a reboot took the tree and the copies outside `/private/tmp` let it be rebuilt; this roadmap |
+
+**Still open after Sprint 28** (the fifth real run's findings, `docs/design/field-notes-5.2.md`, by
+section — the owner's Phoenix project again, over two days; nothing here was fixed in Sprint 28, by
+`fifth-run/REQ-10`):
+
+- **The spec copies the project's test command, not setup's** — setup writes
+  `MIX_ENV=test mise exec -- mix test` in shipkit's section (`CLAUDE.md:159`); the spec skill copied
+  the project's own `MIX_ENV=test mix test` (`CLAUDE.md:10`) into `tasks.md:3` and every Done-when,
+  and it exits 1 here. The brief carried it; the agent and both gates found the prefix on their
+  own. G4 fixed what setup writes and nothing that reads it (§6.1, §7.1, §8.1).
+- **Two test commands in one `CLAUDE.md`** — setup keeps the project's lines and appends its own,
+  so the prefix reaches only shipkit's (§2.1). `users-machine/design.md`'s second record turns on "a
+  real run's `CLAUDE.md` names two different test commands again, from any stack"; read as not
+  fired: shipkit's lines agree with each other, the second command is the project's, and the
+  record's (2), dropping the appends' Testing lines, would leave it where it is.
+- **The gate runs the failing command first** — `( MIX_ENV=test mix test )`, exit 1, then the
+  `mise exec --` form, on both days: one wasted suite start, and an exit 1 quoted in a PASS step
+  (§9.1; §9, "Day two").
+- **One tree, two readings by the reviewer** — REQ-5 and REQ-6 NOT MET on day one and CANNOT TELL
+  on day two; the first decision `followed`, then `partly built`. The verdict held; the marks did
+  not (§9, "Day two").
+- **A run over two days keeps its tree in `/private/tmp`** — a reboot took the worktree, as at 5.1;
+  the copies under `~/.cache/` held and the tree was rebuilt by hand. The next real run keeps its
+  worktree under `~/.cache/` (the owner's yes, 2026-11-08; §9, "Day two").
+- **The second `## Elixir-Specific` stays, now read** — the owner read setup's line in the thread
+  and left both (`CLAUDE.md:76`, `:139`). `run-debts`' first record reverses if a project "ends with
+  both sections after the user read the line": met, by a reading outside setup's own session
+  (§2.2; §9, "G6, read in the thread").
+- **The version line reads 5.1.0 on a `--plugin-dir` checkout two sprints on** — the version moves
+  at the release, so a session cannot tell the branch from the tag (§1). Known.
+- **Small, the model's:** a reply that says "no other changes" and lists three (§5); a reviewer
+  count line that corrects itself (§9, "Day two"); one `\|` in a reviewer search, harmless under
+  `git grep` (§9). **Seen again:** the hand-written stamp in a headless flow (§7.2); ripgrep in the
+  session's shell (§2.3).
+
+Found at the release:
+
+- **Gate step 5 names no command** — "Is there a database migration in `git diff <base>...HEAD
+  --name-only`?" (`plugins/shipkit/skills/ship/SKILL.md:47`), so `fifth-run`'s gate piped the list
+  into `grep`, met the owner's ripgrep alias, failed, and ran it again with `command grep`. G5 gave
+  the reviewer and the gate's own searches `git grep`; this filter it left to the model
+  (`docs/design/eval-history.md`, "Release run 5.2.0").
+- **Two gates at once share one scratch path** — the gate writes fixed names,
+  `${TMPDIR:-/tmp}/shipkit-ship-*.out`, and removes them all when it ends. At the release,
+  `users-machine`'s step 8 file was overwritten while the smoke suite ran beside it, whose check 29
+  runs the gate on fixtures (`scripts/smoke.sh:1057`); the gate saw it and ran the check again.
+  Likely, not shown (`docs/design/eval-history.md`, "Release run 5.2.0").
+
+What the plan's §5 left, each below it in place (`docs/plans/machine-sprint-plan.md` §5): a
+decision's record in the brief, which this run's agent opened on its own (`field-notes-5.2.md` §8);
+the merge of two `## Elixir-Specific` sections, above; the evals' home, kept by record 0005; and the
+binding plan's §5 list as it was: why the model writes `placeholder`, with a real handback at both
+of this run's gates (§9); the singular `Test:` line, the hand-written stamp and setup's two clocks;
+the `agents` and `rules-skip` smoke flakes; the strict `why` number, the map with no shared word, the
+four rule files kept on a number, the smoke header range, the `-rerun` report and the product
+skill's contradiction; the `eve` trim; the `walkthrough` trigger, a rare wakeup and the stack-skill
+lines.
 
 ## The binding plan — ✅ Sprints 23–25 SHIPPED 2026-10-31 to 2026-11-05 as 5.1.0
 
@@ -53,32 +125,49 @@ request; nothing here was fixed in Sprint 25, by `fourth-project/REQ-14`):
   was done in 53 s; refused `sleep 90`, the model armed two five-minute watches, and the session
   stayed open four more minutes for two idle turns. The `result` a headless caller gets is the last
   of those turns, not the report. Mostly the platform's (§4.1, §4.2).
+  *Sprint 27 (S27-T3, G7): measured, not paid. Five intakes idled 6 to 24 s and armed no
+  `Monitor`, so no sentence went in (`eval-results-5.2.md` §1); the fifth run's intake idled 8 s
+  (`field-notes-5.2.md` §4).*
 - **The Done-when copies a test command the project's shell cannot run** — `CLAUDE.md:10` says
   `MIX_ENV=test mix test`, the project pins its toolchain, and nothing setup writes says `mise`, so
   every headless step had to be told the working command (§7.1). 4.9's item, seen again.
+  *Sprint 27 (S27-T1, G4): paid in what setup writes. The fifth run's spec still copied the
+  project's line into every Done-when; open again under Sprint 28 (`field-notes-5.2.md` §6.1).*
 - **A first spec still lists setup's `.gitignore` and `CLAUDE.md` as changes beyond the spec** —
   `.claude/rules/shipkit/` left that list at 4.9; these two did not (§9.1).
+  *Sprint 26 (S26-T2, G2): paid. Both of the fifth run's gates listed none
+  (`field-notes-5.2.md` §9).*
 - **`lib/<app>/` stays literal in the elixir section** — the Key Paths table holds `<app>` as text
   and no placeholder covers it, beside a LiveView half that names `test/office_bestie_web/live`
-  (§2.2).
+  (§2.2). *Sprint 26 (S26-T1, G1): paid, `APP_NAME`; the fifth run's section reads
+  `lib/office_bestie/` (`field-notes-5.2.md` §2).*
 - **A second `## Elixir-Specific` stays, named and not merged** — both sections load in every
   session, and the project's `MIX_ENV=test mix test` and shipkit's `mix test` still disagree.
   `run-debts` chose to name it; this is the second run to see what that leaves (§2.1).
+  *Left by the machine plan (§5, G6); read by the owner at the fifth run, and open again under
+  Sprint 28.*
 - **A `Status: draft` line in `design.md` that no template has and no script reads** — the spec
   skill's model wrote it, and it stayed after the stamp beside a spec reading `open`; the gate's
-  model saw it, no script did (§6.1, §7.3).
+  model saw it, no script did (§6.1, §7.3). *Sprint 26 (S26-T1, G1): paid, `STRAY-STATUS`, smoke
+  check 87; not shown at the fifth run, whose model wrote none (`field-notes-5.2.md` §6).*
 - **The reviewer's two marks have no word for half built** — the third decision's fallback exists
   and nothing reads a workspace's zone yet; the reviewer said both, in words, under `not built`
-  (§9.2).
+  (§9.2). *Sprint 26 (S26-T3, G3): paid, `partly built`; shown at the fifth run's second gate
+  (`field-notes-5.2.md` §9, "Day two").*
 - **An agent gets a decision's title, not its record** — T1's agent never opened `design.md`, so no
   reason reached it. Harmless here, and untested where a turned-down alternative is the easy way
-  (§8.2).
+  (§8.2). *Left by the machine plan (§5); the fifth run's agent opened `design.md` on its own
+  (`field-notes-5.2.md` §8).*
 - **`walk.md:3` reads "The agent It cannot ask the user anything mid-run"** — an edit `7595cb5` left
-  half done, in a comment the skill hands to the agent whole (§10.1).
+  half done, in a comment the skill hands to the agent whole (§10.1). *Sprint 26 (S26-T1, G1):
+  paid, smoke check 84.*
 - **`ship/SKILL.md` names `${TMPDIR:-/tmp}` for a file the `Write` tool writes** — `Write` takes a
   literal path, so the model wrote `/tmp/shipkit-ship-review.out`, and removed it after (§9.4).
-  Small.
+  Small. *Sprint 26 (S26-T1, G1): paid, the path printed first, smoke check 85; held at both of
+  the fifth run's gates (`field-notes-5.2.md` §9).*
 - **Seen again:** the `Test:` line holding a list (§6.3) and the hand-written stamp (§7.2).
+  *Left by the machine plan (§5); the stamp seen again at the fifth run (`field-notes-5.2.md`
+  §7.2).*
 
 What the plan left watching:
 
@@ -92,7 +181,9 @@ What the plan left watching:
 - **A headless session waits on its own watches** — at 5.1 two `Monitor` watches, armed on an
   agent that had already finished, held an intake open 260 s; five runs at Sprint 27 armed none and
   idled 6 to 24 s, so no skill says anything about waiting. Watch it in the next real run
-  (`docs/design/eval-results-5.2.md` §1).
+  (`docs/design/eval-results-5.2.md` §1). *Watched at the fifth run: no `Monitor` in any step;
+  the day-one gate's `sleep 60` was refused and it waited for the notification
+  (`field-notes-5.2.md`, "Did the decisions hold?").*
 
 Found at the release:
 
@@ -106,10 +197,14 @@ Found at the release:
   `$TMPDIR` not `/tmp`, and pasted the handback instead
   (`.shipkit/releases/2026-11-04-readable-numbers.md:116`). The run met the same alias at setup
   (`field-notes-5.1.md` §2; `docs/design/eval-history.md`, "Release run 5.1.0").
+  *Sprint 27 (S27-T2, G5): paid for the searches, `git grep -n`, smoke check 91; the fifth run's
+  reviewers searched with nothing else (`field-notes-5.2.md` §9).*
 - **A release spec can hold requirements its own gate cannot meet** — `fourth-project`'s REQ-18 asks
   for this gate's own READY, and REQ-21 and REQ-22 for the steps after the gate, so its first gate
   read NOT READY on them; `run-again`'s REQ-14 named only the other two specs
   (`docs/design/eval-history.md`, "Release run 5.1.0").
+  *Sprint 28 (S28-T0): `fifth-run`'s spec keeps its own READY and the steps after it out of its
+  requirements (`.shipkit/specs/fifth-run/spec.md`, REQ-14).*
 
 What the plan's §5 left, each below it in place (`docs/plans/binding-sprint-plan.md` §5): why the
 model writes `placeholder`, which 5.1.0's release counts again; the singular `Test:` line, the

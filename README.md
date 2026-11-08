@@ -48,9 +48,9 @@ claude plugin update shipkit@shipkit --scope user
 claude plugin update shipkit-workflows@shipkit --scope user
 ```
 
-An install for one project (`claude plugin list` shows `Scope: local`) is not moved by these:
-run the two update lines with `--scope local` from inside that project. [More in the
-guide](GUIDE.md#updating).
+An install for one project (`claude plugin list` shows `Scope: local` or `Scope: project`) is
+not moved by these: run the two update lines with that scope, `--scope local` or
+`--scope project`, from inside that project. [More in the guide](GUIDE.md#updating).
 
 To run from a checkout instead, point at the two plugin roots:
 `claude --plugin-dir ~/code/shipkit/plugins/shipkit --plugin-dir ~/code/shipkit/plugins/shipkit-workflows`.

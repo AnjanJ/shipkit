@@ -1,7 +1,7 @@
 # Spec: What the gate says about setup (Sprint 26)
 
 > Spec accepted at commit `03e87eb` on sprint-26/gate-on-setup (2026-11-05).
-> Status: open
+> Status: shipped
 > Paths: plugins/shipkit/skills/ask/walk.md, plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/stacks/elixir/CLAUDE.md.append, plugins/shipkit/skills/setup/SKILL.md, plugins/shipkit/scripts/spec-check.sh, plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, plugins/shipkit/scripts/setup-files.sh, plugins/shipkit/scripts/brief-verify.sh, plugins/shipkit/scripts/unsetup-remove.sh, plugins/shipkit/agents/reviewer.md, scripts/smoke.sh, docs/plans/machine-sprint-plan.md, CHANGELOG.md
 
 ## Purpose

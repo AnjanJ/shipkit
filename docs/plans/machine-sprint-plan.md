@@ -1,7 +1,7 @@
 # Machine plan — what the user's machine does to the loop, and what the gate says about setup
 
 Status: **APPROVED 2026-11-05** by the owner ("approved"), every decision at its default, G10
-`~/code/office_bestie`; G2 amended at S26-T0 on the owner's word; S27-T1 amended at S27-T0 on the owner's word · Written after shipkit 5.1.0 (tag `v5.1.0`) and PR #30
+`~/code/office_bestie`; G2 amended at S26-T0 on the owner's word; S27-T1 amended at S27-T0 on the owner's word; S28-T1 and S28-T-REL amended at S28-T0 on the owner's word · Written after shipkit 5.1.0 (tag `v5.1.0`) and PR #30
 (`03e87eb`, untagged) from the ROADMAP's "Still open after Sprint 25", each item read against the
 code at `03e87eb` · Three sprints, **one release: 5.2.0** · Follows
 `docs/plans/binding-sprint-plan.md`, all three of whose sprints shipped in 5.1.0.
@@ -252,7 +252,11 @@ shell says.
   anything after it.
 
 ### S28-T1 — `--scope project` (G11)
-- **Files:** `README.md`, `docs/GUIDE.md` ("Updating"), only if the answer differs from what they say.
+- **Files:** ~~`README.md`, `docs/GUIDE.md` ("Updating"), only if the answer differs from what they say.~~
+  *Amended at S28-T0, the owner's word:* `docs/design/field-notes-5.2.md` (new; T1's record, so the
+  gate reads it), `README.md`, `GUIDE.md` ("Updating"; the file is at the root). Both docs name
+  `Scope: project` whatever the answer, since neither names it now
+  (`.shipkit/specs/fifth-run/design.md`, second record).
 - **Steps:** in a scratch directory, install both plugins with `--scope project`, then
   `claude plugin update … --scope project` from outside it and from inside it. The scratch directory
   removed on the owner's yes.
@@ -276,7 +280,9 @@ shell says.
 
 ### S28-T-REL — Release 5.2.0 (G12, G13)
 - **Files:** the five version lines, `CHANGELOG.md`, `README.md`, `ROADMAP.md`,
-  `docs/design/eval-history.md`, `.shipkit/releases/`.
+  `docs/design/eval-history.md`, `.shipkit/releases/`; *(amended at S28-T0, the owner's word)* the
+  `spec.md` of `gate-on-setup`, `users-machine` and `fifth-run`, and `fifth-run/tasks.md`, for
+  the `Status:` lines and the tick, as `fourth-project`'s T-REL listed them.
 - **Steps:** the exit checklist in full; `/shipkit:ship` on the three specs, one at a time; the pull
   request, the green check, a merge commit; tag `v5.2.0`, annotated. Each of G13 its own yes.
 - **Done when:** all three READY; the run in `eval-history.md`; the tag on the remote.
