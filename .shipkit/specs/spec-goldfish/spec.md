@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `3fbf612` on spec-goldfish (2026-11-08).
 > Status: open
-> Paths: plugins/shipkit/agents/goldfish.md, plugins/shipkit/skills/spec/, plugins/shipkit/evals/goldfish/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/eval-history.md, scripts/evals.sh, ROADMAP.md, plugins/shipkit/skills/ship/SKILL.md
+> Paths: plugins/shipkit/agents/goldfish.md, plugins/shipkit/skills/spec/, plugins/shipkit/evals/goldfish/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/eval-history.md, scripts/evals.sh, ROADMAP.md, README.md, .claude-plugin/marketplace.json, plugins/shipkit/skills/ship/SKILL.md
 
 ## Purpose
 
