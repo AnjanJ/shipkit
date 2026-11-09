@@ -20,6 +20,7 @@ memory.
 
 **[User Guide](GUIDE.md)** — every skill, agent and script, with four playbooks. &nbsp;·&nbsp;
 **[Engineer's Guide](docs/engineers-guide.md)** — day-to-day work, task by task. &nbsp;·&nbsp;
+**[Staff & Architect Guide](docs/staff-guide.md)** — decisions, gates, agents and the portfolio. &nbsp;·&nbsp;
 **[Changelog](CHANGELOG.md)** — what changed in each release. &nbsp;·&nbsp;
 **[Roadmap](ROADMAP.md)** — where this is going.
 
