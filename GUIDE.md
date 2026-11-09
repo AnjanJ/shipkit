@@ -2,6 +2,11 @@
 
 A complete guide to using every skill, agent, and feature in shipkit.
 
+Looking for the order to do things in rather than the parts list? The
+[Engineer's Guide](docs/engineers-guide.md) walks day-to-day work task by task, with one entry
+per command; the [Staff & Architect Guide](docs/staff-guide.md) covers decisions, gates,
+agents and the portfolio.
+
 ---
 
 ## Table of Contents
@@ -99,6 +104,8 @@ loaded (the session hook injects the rules); the path-scoped rules need
 | **`decisions` rule** | You make a real choice (≥2 alternatives) | Prompts a five-part decision record with a falsifiability clause |
 | **Commit discipline** | Any commit | Atomic commits, message scaled to the change, no `git add .`, no `--no-verify` |
 | **Session hook** | Session start | Tells Claude the plugin root and version; injects `shipkit.md` everywhere and the two loop rules where the project has opted in (`.shipkit/` or installed rules), else one line naming the opt-in; prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
+| **Session briefing** | Session start, in a project with `.shipkit/` | At most eight lines: each open spec's progress and next task, spec-check gaps, the top goal, the last handoff's next step, a digest more than a week old. Silent when there is nothing to say |
+| **Commit guard** | Before every Bash call | Blocks a `git commit` when a staged file's name looks like a secret (`.env`, `.env.*` but not `.env.example`, `*.pem`, `*.key`, `id_rsa*`, `credentials*.json`). Names only, never contents; it does not see commits typed in your own terminal |
 
 ### 🔵 Auto-invoked — Claude picks the right skill
 
@@ -108,8 +115,13 @@ exist. You can still invoke any by name to force it.
 
 | Skill | Auto-fires when you… |
 |-------|---------------------|
+| `/shipkit:product` | want to set or revisit the product's goals, non-goals or priorities |
+| `/shipkit:intake` | bring a non-trivial feature request and no spec exists yet |
 | `/shipkit:spec` | ask to build/design a non-trivial feature before coding |
+| `/shipkit:ship` | ask whether a spec'd feature is ready |
+| `/shipkit:escape` | report a bug found in production |
 | `/shipkit:decide` | make a project-wide choice with real alternatives |
+| `/shipkit:handoff` | wrap up with unfinished spec work or uncommitted changes |
 | `/shipkit-workflows:commit` | ask to commit, or reach a natural commit point |
 | `/shipkit-workflows:debug` | hit a failing test or a bug to root-cause |
 | `/shipkit-workflows:tdd` | explicitly ask for strict red-green-refactor |
@@ -155,10 +167,15 @@ Configures shipkit for your specific project. Run it once when you start using s
 3. Detects test framework and package manager
 4. Asks for your project purpose, team conventions, and **workflow style** — `strict-tdd`
    (iron-law red-green-refactor), `test-first` (the default: prefer test-before-implementation,
-   pragmatic exceptions), or `lightweight` (tests where they earn their keep)
+   pragmatic exceptions), or `lightweight` (tests where they earn their keep). The answer is
+   written to `CLAUDE.md` as a `Workflow style:` line, and that line is the switch: change it
+   later by hand or with `/shipkit:setup rules`. No line means `test-first`. Under
+   `lightweight` the three spec questions are answered inline in the conversation and
+   `.shipkit/specs/` is written only when you ask (invoking `/shipkit:spec` always writes it);
+   decision records apply in full under every style
 5. Creates a tailored CLAUDE.md that declares your choices; the workflow itself is defined
    once, in shipkit's always-on rules
-6. Installs all nine shipkit rules as files under `.claude/rules/shipkit/` via
+6. Installs all eight shipkit rules as files under `.claude/rules/shipkit/` via
    the plugin's `scripts/install-rules.sh` — Claude Code only loads rules from a project, so this is what
    makes the path-scoped rules work. The install is stamped with the plugin version; the session
    hook tells you when a plugin upgrade has made the copies stale, and re-running setup refreshes them
@@ -187,8 +204,10 @@ Two artifacts, answering two different questions:
 - An older backup is nested inside the new one as `previous-backup/`. Shipkit **never offers to
   delete one** — freeing a directory is not worth an unrecoverable loss. Delete them yourself
   when you're ready.
-- `/setup` offers to add all three (`.shipkit-baseline/`, `.shipkit-backup-*/`,
-  `.shipkit-recovery-*/`) to your `.gitignore` — they can contain your local settings.
+- `/setup` offers to add the three snapshot folders (`.shipkit-baseline/`, `.shipkit-backup-*/`,
+  `.shipkit-recovery-*/`) to your `.gitignore` — they can contain your local settings — and
+  `.shipkit/state.md`, the handoff note, which describes uncommitted work on this machine.
+  Leave the last one out of `.gitignore` if you want the note to travel between machines.
 
 **Usage:**
 ```
@@ -593,6 +612,45 @@ Plans major upgrades with impact analysis. Plan only — does not execute.
 
 ---
 
+### /shipkit:product — Say What the Product Is For
+
+Write or update `.shipkit/product.md`: the one-line purpose, the users, **at most three goals
+this quarter** (each with a metric, a target and a date), and the **non-goals** — what the
+product deliberately will not do. `/shipkit:intake` checks every request against it.
+
+```
+/shipkit:product                                   # write it, or update it
+/shipkit:product refunds is now the top goal       # say what changed
+/shipkit:product --studio                          # rank priorities across all your products
+```
+
+It reads `README.md`, `CLAUDE.md` and `PROJECT_MAP.md` first and asks only what they leave
+open — at most eight questions. It never invents a metric, target or date: a gap is written as
+`metric: none set`. An existing file is updated, never restarted. Sixty lines at most.
+
+`--studio` writes `~/.claude/shipkit/studio.md` instead: at most five priorities ranked across
+**all** your products, each naming its product (or `(studio)`). `/shipkit:ask --all digest`
+ranks products against it. The ranking is always yours; it is never inferred.
+
+### /shipkit:intake — Ask Before Building
+
+Check one request against what the project already knows, before it becomes a spec.
+
+```
+/shipkit:intake Add refunds: a support agent can refund a charged order
+```
+
+1. **Trivial?** It says so in one line and stops — no file, no questions.
+2. **Conflicts first**, each with its file and line: a non-goal in `product.md`, an open spec
+   that already covers it, a decision record it contradicts. A conflict does not end the intake;
+   going ahead means the non-goal or decision changes first.
+3. **At most four questions**, only ones whose answers change what gets built. What a sensible
+   default can settle is written down as an assumption you can object to.
+4. Writes `.shipkit/specs/<slug>/intake.md`: request, goal served (or `None`), conflicts,
+   answers, assumptions, out of scope.
+
+You rarely type it: `/shipkit:spec` runs intake first when no `intake.md` exists.
+
 ### /shipkit:spec — Spec a Non-Trivial Feature
 
 Turn a feature idea into a durable, verified spec before building it — the **three questions**,
@@ -600,8 +658,10 @@ written to `.shipkit/specs/<feature-slug>/`. This is the forward-looking half of
 layer: `PROJECT_MAP.md` says what exists; a spec says what you're about to build.
 
 ```
-/shipkit:spec checkout-redesign            # run all three questions end-to-end
-/shipkit:spec checkout-redesign design     # regenerate design.md only
+/shipkit:spec checkout-redesign                 # run all three questions end-to-end
+/shipkit:spec checkout-redesign requirements    # regenerate spec.md only
+/shipkit:spec checkout-redesign design          # regenerate design.md only
+/shipkit:spec checkout-redesign tasks           # regenerate tasks.md from the accepted spec and design
 ```
 
 The three questions:
@@ -614,7 +674,73 @@ Runs inline with an approval gate after requirements and native Plan Mode before
 **non-trivial** work only — a typo or one-liner doesn't get a spec. See the *Spec-Driven
 Development* section below for the full picture.
 
+**The goldfish reads it cold (5.3.0).** Before the design gate, the `goldfish` agent is given
+only the spec's folder name — as an implementer will be — and reads `spec.md`, `design.md` and
+the files they cite. It lists what a test author would have to guess. Every finding gets one
+disposition before the gate:
+
+| Disposition | Means |
+|---|---|
+| `fixed` | `spec.md` or `design.md` was edited to answer it; an edited accepted requirement is named at the gate |
+| `contested` | a file the goldfish could have read answers it — cited as `path:line`. Knowledge outside the files is never `contested`; it goes into the spec |
+| `escalated` | put to you. A gap you accept without a fix is written under `## Goldfish` in `spec.md` (`Goldfish: GAPS accepted by owner — <REQ-N or term>`), where the ship reviewer and `/shipkit:escape` read it |
+
+If any finding was `fixed`, the goldfish reads once more; never more than two reads per gate.
+Say "no goldfish" to skip it, and `Goldfish: skipped on the owner's word (<date>)` is recorded.
+The design, the goldfish's reply and each disposition then go to the Plan Mode gate together.
+
 ---
+
+### /shipkit:ship — Is It Ready? With Evidence
+
+The ship gate for one spec'd feature. Eight checks, every one run even after one fails, and a
+report whose first line is exactly `READY` or `NOT READY`.
+
+```
+/shipkit:ship refunds              # base = merge base with main (or master)
+/shipkit:ship refunds 89e540d      # name the commit the work started from
+```
+
+| # | Check | PASS means |
+|---|---|---|
+| 1 | `spec-check.sh <slug> --as-shipped` | exit 0: every requirement has a task and a citing test |
+| 2 | The project's test command (from `CLAUDE.md`, or asked once) | exit 0 |
+| 3 | Tasks ticked | no `- [ ]` left in `tasks.md` |
+| 4 | Independent review | the `reviewer` agent, given only the slug and base ref, ends `VERDICT: PASS` |
+| 5 | Migration rollback | no migration in the diff, or its rollback is written down |
+| 6 | Decisions | every live decision in `design.md` has a concrete reversal condition |
+| 7 | Clean tree | `git status` captured before the gate ran is empty |
+| 8 | Decisions fired | `decision-check.sh --run` prints no `FIRED` line |
+
+The report goes to `.shipkit/releases/<date>-<slug>.md` with the evidence for every step — the
+command, its exit code, the last lines of its output, and the reviewer's whole reply. After a
+`READY` it asks whether to set the spec's status to `shipped`. It **never** deploys, pushes,
+merges, tags or edits code; on `NOT READY` it lists what to fix and stops. Playbook 4 shows a
+real `NOT READY` report.
+
+### /shipkit:escape — A Bug Got Out. Which Link Broke?
+
+For a bug that reached users. It finds the spec that covers the broken code and names exactly
+one cause — the first that is true, reading down:
+
+| Cause | It is this when… |
+|---|---|
+| `no spec` | no spec covers the broken code |
+| `requirement missing` | a spec covers it, and no requirement says what should have happened |
+| `requirement wrong` | a requirement covers it and asks for the wrong behaviour |
+| `requirement right, no test` | the requirement is right and no test cites or exercises it |
+| `test existed but was wrong` | a test cites the requirement and passed anyway |
+| `outside the product (dependency, infrastructure)` | the code did what the spec asks; something else did not |
+
+```
+/shipkit:escape A refund of 25.00 was paid out on an order charged 20.00
+```
+
+It asks at most three questions (what users saw, what should have happened, how it was
+noticed), writes `.shipkit/escapes/NNNN-<slug>.md`, and — where the spec was at fault — adds or
+corrects the requirement, sets the spec back to `open`, and adds a task whose test **fails
+now**. It does not fix the code; that task does. Escapes from the last 30 days appear in the
+portfolio digest, by cause.
 
 ### /shipkit:decide — Capture a Decision Record
 
@@ -657,6 +783,27 @@ Use this for **project-wide** decisions not tied to one feature. Feature-scoped 
 inline in that spec's `design.md` (via `/shipkit:spec`). Capture real forks only — a decision
 with one option isn't a decision.
 
+### /shipkit:handoff — Leave a Note for the Next Session
+
+The next session — tomorrow's, or this one after compaction — starts blank. This writes it a
+note in `.shipkit/state.md`, replacing any earlier one.
+
+```
+/shipkit:handoff
+/shipkit:handoff the staging password rotates on Friday     # something the note must not miss
+```
+
+Five headings, in order, at most 30 lines: **In flight** (with the files), **Done this
+session**, **Next step** (exactly one line), **Open questions**, **Do not forget**. A sixth,
+`## Blocked on`, appears only when the next step cannot start yet. It gathers everything from
+the conversation, `git status`, `git log` and the open tasks, and asks one question only if the
+next step is unclear. It never stages or commits anything.
+
+The session briefing quotes the note at every start —
+`shipkit: last handoff (<date>, N commits ago): <next step>` — and after a compaction the hook
+suggests a handoff if work is in flight. `state.md` is git-ignored by default (setup offers the
+line); leave it out of `.gitignore` to carry the note between machines.
+
 ---
 
 ## Spec-Driven Development
@@ -670,12 +817,19 @@ Everything lives under one root, **`.shipkit/`**, so a human always knows where 
 
 ```
 .shipkit/
+  product.md       # what the product is for: goals, non-goals (/shipkit:product)
+  state.md         # the handoff note (/shipkit:handoff) — git-ignored by default
   specs/<feature-slug>/
+    intake.md    # the request, conflicts, answers (/shipkit:intake)
     spec.md      # WHAT — requirements (EARS), plus a status and the paths it covers
     design.md    # HOW — approach, as decision records
     tasks.md     # STEPS — ordered, each citing its requirement and naming its files
   decisions/
     NNNN-<slug>.md   # project-wide decision records (the "why" log)
+  releases/
+    <date>-<slug>.md # ship reports, first line READY or NOT READY (/shipkit:ship)
+  escapes/
+    NNNN-<slug>.md   # bugs that reached users, and the link that broke (/shipkit:escape)
 ```
 
 ### The three questions (always-on)
@@ -717,12 +871,25 @@ sh "<plugin root>/scripts/spec-check.sh" . refunds    # one spec
 |------|---------|
 | `MISSING-TASK refunds REQ-2` | no task mentions the requirement |
 | `MISSING-TEST refunds REQ-2` | the spec is `shipped` and no test cites `refunds/REQ-2` |
+| `PENDING-TEST refunds REQ-2` | the spec is `open` and no test cites it yet — information, not a gap: the test is owed at ship time |
 | `MISSING-FIELD refunds T3 Test` | a task lacks one of its four lines |
 | `BAD-AFTER refunds T3 T9` | `After` names a task that does not exist |
 | `CONFLICT refunds T1 T2 app/refunds.py` | two tasks share a file and are not ordered |
 | `CYCLE refunds T2` | the task's `After` lines lead back to itself |
+| `STRAY-STATUS refunds design.md` | `design.md` or `tasks.md` carries a `> Status:` line; only `spec.md` has one |
 | `WAIVED refunds REQ-4` | excused with `[untested: …]` — information, not a gap |
 | `SKIPPED refunds (draft)` | drafts and dropped specs are not checked |
+
+Two flags change how a spec is read, and neither changes a file:
+
+```sh
+sh "<plugin root>/scripts/spec-check.sh" . refunds --as-shipped   # ask an open spec what a shipped one owes
+sh "<plugin root>/scripts/spec-check.sh" . refunds --as-open      # check a draft as if accepted
+```
+
+`--as-shipped` turns `PENDING-TEST` into `MISSING-TEST`: it is the ship gate's first step, and
+worth running before the gate. `--as-open` is how `/shipkit:spec` checks a draft before you
+accept it; without it a draft is `SKIPPED`.
 
 It exits 1 when there is a gap, so it can run in CI. It checks that a citation *exists*, not
 that the test passes — running the tests is still your job. `/shipkit:spec` writes specs in
@@ -745,7 +912,12 @@ sh "<plugin root>/scripts/brief-verify.sh" . refunds T3 <sha>   # afterwards: wh
   it, what is out of scope, and a fixed form to report back in. Add context below it if the
   agent needs more; never replace part of it.
 - `brief-verify.sh` prints `OUTSIDE <file>` for anything changed that the task did not list,
-  and exits 1. Then run the task's `Done when` command yourself — the agent's report is a
+  and exits 1. Some paths are allowed without being listed, because shipkit's own loop or
+  installer writes them: everything under `.shipkit/` except another spec's folder, and
+  `.claude/rules/shipkit/` and `.shipkit-baseline/`. `CLAUDE.md` and `.gitignore` are allowed
+  only while each is byte for byte as setup left it — setup records their git blob ids with
+  `setup-files.sh record` — so a task that edits either is reported. Ignored files are not
+  seen: run the task's `Done when` to catch a stray build artefact. Then run the task's `Done when` command yourself — the agent's report is a
   claim, not proof.
 - Tasks with no unfinished predecessor can run at the same time, each in its own git worktree.
 - Match the team to the work: no agent for a trivial change, one for one task, the elders for
@@ -859,6 +1031,24 @@ Cross-project elder (named for the common ancestor of the whole portfolio). Answ
 
 Used by `/shipkit:ask --all`.
 
+### reviewer
+
+Checks a branch against its spec with fresh eyes, for `/shipkit:ship`'s step 4. It is given
+**only** the spec's folder name and a base git ref, and ignores anything else it is told. It
+gives one verdict per requirement — `MET` (with the code's and the test's `path:line`),
+`NOT MET`, or `CANNOT TELL` — then lists **changes beyond the spec** (files outside the spec's
+`Paths:`) and **decisions not followed** (`contradicted`, `partly built`, `not built`). Its
+last line is `VERDICT: PASS` only if every requirement is `MET` and no decision is
+`contradicted`. It does not look for general bugs, style, performance or security, and says so:
+use `/code-review` for those.
+
+### goldfish
+
+Reads a spec cold, for `/shipkit:spec`'s design gate (5.3.0). Given only the folder name, it
+reads `spec.md`, `design.md` and the files they cite — never `intake.md` or `tasks.md`, which
+an implementer is not given — and lists what a test author would have to guess. Started by
+`/shipkit:spec` only. See [/shipkit:spec](#shipkitspec--spec-a-non-trivial-feature).
+
 ### The archivist is `/shipkit:map` now
 
 Until 5.0.0 an `archivist` agent built and refreshed `PROJECT_MAP.md`. The same body now runs as
@@ -934,7 +1124,7 @@ that bites, and the rest was default behaviour.
 | Rule | When It Loads | What It Enforces |
 |------|--------------|-----------------|
 | `testing` | Test files (`*_test.*`, `*_spec.*`) | Use the factories and fixtures that already exist; match the project's framework |
-| `migrations` | Database migrations | Batched backfills on large tables; `CONCURRENTLY` for an index on a busy table |
+| `migrations` | Database migrations | Nothing in the core rule since 4.11: its two lines (batched backfills, `CONCURRENTLY` indexes) were cut once three measurements on two models showed them followed unaided; the file stays installed as the evals' watch. Stack overlays carry their own migration traps (the Django rule, for one) |
 | `dependencies` | Dependency files (Gemfile, package.json, etc.) | No `*` or unpinned version; never a bare `bundle update` / `npm update` |
 | `monorepo` | Workspace manifests (`pnpm-workspace.yaml`, `lerna.json`, `turbo.json`, `nx.json`) | A shared package's change runs its consumers' tests; `--filter` / `--scope` |
 | `ui-ux` | UI files (web + mobile) | The WCAG 2.2 AA baseline: contrast ratios, target size, reduced motion, errors not by colour alone, no layout shift |
