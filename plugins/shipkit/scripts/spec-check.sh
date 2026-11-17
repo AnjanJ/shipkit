@@ -32,6 +32,12 @@
 #                               outside its paths, so it does not count — information; the
 #                               requirement then reads MISSING-TEST or PENDING-TEST unless
 #                               another citation counts (honest-evidence/REQ-16, REQ-18)
+#   SKIPPED-CITE <slug> REQ-N <file>:<line>
+#                               a counted citation, at that file and line, sits on a line with
+#                               a skip marker or within three lines of one (@tag :skip, it.skip,
+#                               xit(, @pytest.mark.skip, xfail, t.Skip(, a line that begins
+#                               "skip" or "pending", and their like) — information, not a gap:
+#                               the test it names may never run (honest-evidence/REQ-19, REQ-20)
 #   SKIPPED <slug> (<status>)   the spec is a draft or was dropped; nothing is checked
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
 #   BAD-AFTER <slug> <task> <name>        a task's After names a task that does not exist
@@ -99,7 +105,7 @@ fi
 TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 CITES="$TMP.cites"
 LOCS="$TMP.locs"
-trap 'rm -f "$TMP" "$CITES" "$LOCS" "$TMP.cnt" "$TMP.else"' EXIT
+trap 'rm -f "$TMP" "$CITES" "$LOCS" "$TMP.cnt" "$TMP.else" "$TMP.skip"' EXIT
 
 # spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)
 spec_status() {
@@ -206,13 +212,10 @@ cited() {
   grep -q -x -F "$1/REQ-$2" "$SPEC_CITES"
 }
 
-# tests_filter <slug> <the Tests paths, one a line> → writes to $TMP.cnt the spec's citations
-# that sit in a listed file or under a listed folder (with or without its last slash), and
-# prints one CITED-ELSEWHERE line for each requirement and file outside them.
-tests_filter() {
-  : > "$TMP.cnt"
-  SC_TESTS="$2" awk -F '\t' -v slug="$1" -v counted="$TMP.cnt" '
-    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
+# under(f): is the file one of the Tests paths, or under one that is a folder (written with or
+# without its last slash)? The paths come in through the environment, one a line: BSD awk
+# rejects a newline in a -v value. Shared by the two awk programs below.
+AWK_UNDER='
     function under(f,   i, q) {
       for (i = 1; i <= np; i++) {
         if (paths[i] == "") continue
@@ -221,7 +224,70 @@ tests_filter() {
         if (index(f, q) == 1) return 1
       }
       return 0
+    }'
+
+# skip_scan → $TMP.skip: "<file><TAB><line><TAB><citation>" for each citation that sits on a
+# line holding a skip marker, or within three lines above or below one (honest-evidence/REQ-19).
+# One awk reads $LOCS and then each citing file once. A marker is a whole word: "exit(" holds
+# "xit(" and "--maxfail" holds "xfail", and neither is one. This is a guess from text: a test
+# left out by configuration (an ExUnit tag excluded in test_helper.exs) has no marker near it
+# and is not seen, and a marker in a comment three lines away is.
+skip_scan() {
+  : > "$TMP.skip"
+  [ -s "$LOCS" ] || return 0
+  (cd "$PROJ" && awk -F '\t' '
+    function word(line, s,   p, rest, off, c) {   # s is in line, not preceded by a letter, a digit or _
+      rest = line; off = 0
+      while ((p = index(rest, s)) > 0) {
+        c = (off + p > 1) ? substr(line, off + p - 1, 1) : ""
+        if (c !~ /[A-Za-z0-9_]/) return 1
+        off += p; rest = substr(rest, p + 1)
+      }
+      return 0
     }
+    function marker(line,   i, t) {
+      for (i = 1; i <= nm; i++) if (word(line, m[i])) return 1
+      t = line; sub(/^[ \t]+/, "", t)
+      return (t ~ /^(skip|pending)([^A-Za-z0-9_]|$)/)
+    }
+    BEGIN { nm = split("@tag :skip|@moduletag :skip|it.skip|test.skip|describe.skip|xit(|xdescribe(|@pytest.mark.skip|@unittest.skip|pytest.skip(|xfail|t.Skip(", m, "|") }
+    { if (!($1 in seen)) { seen[$1] = 1; order[++nf] = $1 }
+      at[$1] = at[$1] " " $2; what[$1, $2] = what[$1, $2] " " $3 }
+    END {
+      for (k = 1; k <= nf; k++) {
+        f = order[k]; n = 0; split("", mark)
+        while ((getline line < f) > 0) { n++; if (marker(line)) mark[n] = 1 }
+        close(f)
+        c = split(at[f], ln, " "); split("", did)
+        for (i = 1; i <= c; i++) {
+          l = ln[i] + 0; if (l in did) continue; did[l] = 1
+          hit = 0; for (d = -3; d <= 3; d++) if ((l + d) in mark) hit = 1
+          if (!hit) continue
+          w = split(what[f, ln[i]], cs, " ")
+          for (j = 1; j <= w; j++) print f "\t" l "\t" cs[j]
+        }
+      }
+    }' "$LOCS") > "$TMP.skip" 2>/dev/null
+}
+skip_scan
+
+# skipped_lines <slug> <1 when the spec has a Tests line> <its paths> → the SKIPPED-CITE lines
+# for the spec's counted citations: all of its citations, or with a Tests line those under it.
+skipped_lines() {
+  SC_TESTS="$3" awk -F '\t' -v slug="$1" -v only="$2" "$AWK_UNDER"'
+    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
+    index($3, pre) == 1 && substr($3, length(pre) + 1) ~ /^[0-9]+$/ && (only == 0 || under($1)) {
+      print "SKIPPED-CITE " slug " REQ-" substr($3, length(pre) + 1) " " $1 ":" $2
+    }' "$TMP.skip" | sort -u
+}
+
+# tests_filter <slug> <the Tests paths, one a line> → writes to $TMP.cnt the spec's citations
+# that sit in a listed file or under a listed folder, and prints one CITED-ELSEWHERE line for
+# each requirement and file outside them.
+tests_filter() {
+  : > "$TMP.cnt"
+  SC_TESTS="$2" awk -F '\t' -v slug="$1" -v counted="$TMP.cnt" "$AWK_UNDER"'
+    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
     index($3, pre) == 1 && substr($3, length(pre) + 1) ~ /^[0-9]+$/ {
       if (under($1)) print $3 > counted
       else print "CITED-ELSEWHERE " slug " REQ-" substr($3, length(pre) + 1) " " $1
@@ -253,7 +319,7 @@ for spec in "$SPECS"/*/spec.md; do
     fi
   done
   # A "> Tests: a/, b/c.sh" line narrows where this spec's citations count; none: as before.
-  SPEC_CITES=$CITES; has_tests=0
+  SPEC_CITES=$CITES; has_tests=0; tests=""
   case "|$TESTS_SPECS" in *"|$spec|"*) has_tests=1 ;; esac
   if [ "$has_tests" -eq 1 ]; then
     tests=$(sed -n 's/^> *Tests: *//p' "$spec" | sed -n 1p | tr ',' '\n' | sed 's/`//g; s/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
@@ -287,6 +353,8 @@ for spec in "$SPECS"/*/spec.md; do
   echo "EVIDENCE $slug tested=$ev_t waived=$ev_w uncited=$ev_u"
   # CITED-ELSEWHERE lines: information, never a gap by themselves (REQ-18)
   [ "$has_tests" -eq 1 ] && cat "$TMP.else"
+  # SKIPPED-CITE lines: information too (REQ-20). No process is spent when nothing was found.
+  [ -s "$TMP.skip" ] && skipped_lines "$slug" "$has_tests" "$tests"
   if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then
     task_findings "$slug" "$dir/tasks.md" > "$TMP"
     if [ -s "$TMP" ]; then

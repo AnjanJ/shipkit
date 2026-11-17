@@ -158,6 +158,7 @@ registry() { cat <<'EOF'
 98 ci-smoke-job
 99 evidence-line
 100 tests-line
+101 skipped-cite
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3640,6 +3641,47 @@ if [ "$rc" -ne 0 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 scripts/other.sh$' 
 fi
 if [ -z "$tl_fail" ]; then pass "tests-line (a citation counts only under the Tests paths, folder or file; one elsewhere is named and its requirement misses its test; no line → as before; the name alone is no gap)"
 else failc "tests-line" "$tl_fail"; fi
+
+# 101. skipped-cite: a citation in a test that never runs proves nothing, so spec-check names it.
+# A counted citation on a line that holds a skip marker, or within three lines above or below
+# one, is printed with the citation's own file and line. Information only: no exit status
+# changes. The markers are whole words, so an exit call or a max-fail option is not one, and
+# the word in a sentence is not one either. No claude needed.
+# Cites: honest-evidence/REQ-19 honest-evidence/REQ-20
+skrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/sk.out" 2>&1; echo $?; }  # → the exit status; output in sk.out
+sk_fail=""
+P="$WORK/sk"; mkdir -p "$P/.shipkit/specs/demo" "$P/tests" "$P/app"; (cd "$P" && git init -q)
+{ printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n\n## Requirements\n\n'
+  for sk_n in 1 2 3 4 5 6 7; do printf -- '- **REQ-%s.** When a%s happens, the system shall do b.\n' "$sk_n" "$sk_n"; done; } > "$P/.shipkit/specs/demo/spec.md"
+printf -- '- [x] **T1** all of it → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7\n' > "$P/.shipkit/specs/demo/tasks.md"
+# line 2 cites, the marker is on line 1
+printf '  @tag :skip\n  test "demo/REQ-1 refunds in full" do\n  end\n' > "$P/tests/a_test.exs"
+# the marker and the citation share line 1
+printf "it.skip('demo/REQ-2 rejects an over-refund', () => {})\n" > "$P/tests/b.test.js"
+# REQ-3 sits three lines below its marker (line 4), REQ-4 four lines below its own (line 10)
+printf '@pytest.mark.skip\ndef test_three():\n    pass\n# demo/REQ-3\n\n@pytest.mark.skip\ndef test_four():\n    x = 1\n    y = 2\n# demo/REQ-4\n' > "$P/tests/test_c.py"
+# three near misses on and around line 3: an exit call, a max-fail option, the word in a sentence
+printf 'import sys\n# we skip nothing here, and nothing is pending\n# demo/REQ-5\nsys.exit(0)  # pytest --maxfail=1\n' > "$P/tests/test_f.py"
+# the marker is one line below the citation (line 1)
+printf '// demo/REQ-6\nfunc TestSix(t *testing.T) {\n\tt.Skip("later")\n}\n' > "$P/tests/d_test.go"
+# the marker is a first word, two lines below the citation (line 1)
+printf '# demo/REQ-7\nit "does seven" do\n  skip "later"\nend\n' > "$P/tests/e_spec.rb"
+rc=$(skrun "$P")
+sk_got=$(grep '^SKIPPED-CITE' "$WORK/sk.out" | sort | tr '\n' ';')
+sk_want="SKIPPED-CITE demo REQ-1 tests/a_test.exs:2;SKIPPED-CITE demo REQ-2 tests/b.test.js:1;SKIPPED-CITE demo REQ-3 tests/test_c.py:4;SKIPPED-CITE demo REQ-6 tests/d_test.go:1;SKIPPED-CITE demo REQ-7 tests/e_spec.rb:1;"
+[ "$sk_got" = "$sk_want" ] || sk_fail="$sk_fail [got: $sk_got]"
+[ "$rc" -eq 0 ] && [ "$(sed -n '$p' "$WORK/sk.out")" = "spec-check: 1 spec(s) checked, 0 gap(s)" ] \
+  || sk_fail="$sk_fail [a shipped spec whose every requirement is cited exits $rc: $(sed -n '$p' "$WORK/sk.out")]"
+# with a Tests line, a skipped citation outside its paths is not a counted one: it is named
+# as elsewhere, and not as skipped
+printf "it.skip('demo/REQ-2 again', () => {})\n" > "$P/app/x.js"
+sed 's|^> Status: shipped$|> Status: shipped\
+> Tests: tests/|' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sk.tmp" && mv "$WORK/sk.tmp" "$P/.shipkit/specs/demo/spec.md"
+rc=$(skrun "$P")
+[ "$(grep '^SKIPPED-CITE' "$WORK/sk.out" | sort | tr '\n' ';')" = "$sk_want" ] && grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.js$' "$WORK/sk.out" && [ "$rc" -eq 0 ] \
+  || sk_fail="$sk_fail [with a Tests line: exit $rc: $(grep -E '^(SKIPPED|CITED)' "$WORK/sk.out" | tr '\n' ';')]"
+if [ -z "$sk_fail" ]; then pass "skipped-cite (five frameworks' markers on, above and below the citation; four lines away, an exit call, a max-fail option and the word in a sentence give none; exit status as before)"
+else failc "skipped-cite" "$sk_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

@@ -31,7 +31,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 100 (`tests-line`), on a fixture cited once under the listed path and once outside it
   - After: T3
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 100 `PASS` and check 30's timing `PASS`, exit 0; `sh plugins/shipkit/scripts/spec-check.sh .` → 0 gap(s)
-- [ ] **T5** `SKIPPED-CITE` names a citation in a skipped test → REQ-19, REQ-20
+- [x] **T5** `SKIPPED-CITE` names a citation in a skipped test → REQ-19, REQ-20
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 101 (`skipped-cite`), with a citation three lines from a skip marker and one four lines away
   - After: T4
@@ -82,3 +82,7 @@ Not fixed here; each goes to the sprint's pull request and to the ROADMAP's "Sti
 - Smoke check 38 (`ledger-gen`) needs Python 3.10 or later (`sys.stdlib_module_names`). On this
   machine `/usr/bin/python3` is 3.9.6; the check passes only because a newer `python3` comes
   first on the `PATH`. CI's new job pins 3.12.
+- The briefing on fifty open specs costs 0.75 to 0.85 s of CPU on this machine, against check
+  30's limit of one second (`briefing-and-handoff/REQ-8`). Measured alone on 2026-11-17, eight
+  runs, with and without this spec's changes to `spec-check.sh`: no difference. Inside the suite
+  on a busy machine it has read up to 0.94 s. The margin is thin whatever is added next.
