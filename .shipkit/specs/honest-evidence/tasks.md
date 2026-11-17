@@ -9,11 +9,13 @@ T1 to T9 are Sprint 29's and start no model. T10 and T11 change what a model rea
 verifier plan's rules 33 and 34 they stay unticked until Sprint 35, and `design.md` holds the
 text each one applies.
 
-- [ ] **T1** The smoke suite runs without a model: `--no-model`, `--only`, `--list`, the registry of checks and the counts → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-40
+- [x] **T1** The smoke suite runs without a model: `--no-model`, `--only`, `--list`, the registry of checks and the counts → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-40
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check 97 (`smoke-args`), which runs the script's own `--list` forms and its usage errors
   - After: none
-  - Done when: `PATH=/usr/bin:/bin sh scripts/smoke.sh --no-model </dev/null` → last line `smoke: all checks run passed; 16 skipped (model)`, exit 0
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → last line `smoke: all checks run passed; 16 skipped (model)`, exit 0
+  - Note (2026-11-17): the Done-when first read `PATH=/usr/bin:/bin sh …`. That takes `claude` off the `PATH` by taking everything else off it too: the system's Python 3.9 then runs check 38, which needs 3.10. A stand-in `claude` first on the `PATH` already keeps the real one out of reach, and check 97 runs `--list --no-model` on a bare `PATH`.
+  - Note (2026-11-17): check 30's fifty-spec time is now the briefing's CPU time, not the wall clock. The verifier plan gives that fix to Sprint 31 (S31-T2, subtask 2); it is done here because the check failed the first model-free run, 1.0 s on three tries with the owner at work in another window, and would fail every free run on a busy machine.
 - [ ] **T2** CI runs the model-free suite on every pull request → REQ-11
   - Files: .github/workflows/lint.yml, scripts/smoke.sh
   - Test: scripts/smoke.sh check 98 (`ci-smoke-job`), which reads the workflow for a pull-request job that runs `scripts/smoke.sh --no-model`

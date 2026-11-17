@@ -20,7 +20,159 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # Since 3.0 the repo is a marketplace of plugins; the smoke test exercises the CORE plugin
 # (it owns the hook, the rules, the stacks and the install scripts).
 CORE="$ROOT/plugins/shipkit"
-command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
+
+# Arguments (spec: .shipkit/specs/honest-evidence/; check 97 holds them):
+#   --no-model          leave out every check that starts a model; `claude` is not needed
+#   --only <n>[,<n>]    of the checks that start a model, run only these and the ones they need;
+#                       every check that needs no model still runs
+#   --list              print RUN or SKIP for each numbered check, as the other arguments decide,
+#                       and run nothing
+# A wrong argument, a number --only does not take, or --no-model with --only: usage, exit 64.
+MODEL_CHECKS="1 2 2b 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
+NEEDS="32:31"   # <check>:<the check whose model session wrote a file it reads>
+usage() { echo "usage: smoke.sh [--no-model | --only <n>[,<n>]] [--list]" >&2; exit 64; }
+NO_MODEL=0; ONLY=""; LIST=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-model) NO_MODEL=1 ;;
+    --only) [ $# -ge 2 ] || usage; ONLY=$2; shift ;;
+    --list) LIST=1 ;;
+    *) usage ;;
+  esac
+  shift
+done
+[ "$NO_MODEL" -eq 1 ] && [ -n "$ONLY" ] && usage
+ONLY_SET=""
+for o in $(printf '%s' "$ONLY" | tr ',' ' '); do
+  case " $MODEL_CHECKS " in
+    *" $o "*) ONLY_SET="$ONLY_SET $o" ;;
+    *) echo "smoke: --only takes the checks that start a model: $MODEL_CHECKS" >&2; exit 64 ;;
+  esac
+  for need in $NEEDS; do [ "${need%%:*}" = "$o" ] && ONLY_SET="$ONLY_SET ${need#*:}"; done
+done
+
+# The registry: every numbered check's label and one short name, in the file's order. --list
+# and the SKIP lines print from it; check 97 fails if a "# <label>. " header has no line here.
+registry() { cat <<'EOF'
+1 rules-inject
+2 rules-skip
+2b rules-fallback
+3 plugin-root
+4 agents
+5 workflows-skills
+5b namespaces
+6 hook-cap
+7 install-scripts
+8 stale-nudge
+8b incomplete-install
+8c reconciliation
+8d legacy-stamp
+8e unstamped
+9 stack-section
+10 freshness
+11 spec-staleness
+9b user-skill
+9c managed-block
+11b staleness-day
+17 unsetup
+18 commit-guard
+19 spec-check-reqs
+20 spec-check-tasks
+21 spec-drift
+22 spec-new-format
+23 product-file
+24 registry-columns
+25 brief
+26 brief-verify
+27 reviewer-tools
+28 as-shipped
+29 ship-gate
+30 briefing
+31 handoff-file
+32 handoff-loop
+33 compact-reminder
+34 fired-if-template
+35 decision-check
+36 portfolio-digest
+37 digest-old
+38 ledger-gen
+39 xl-scaffold
+40 trace-tools
+41 no-map-silent
+42 lint-negative
+43 with-rule
+44 eval-inject
+45 stack-gen
+46 evals-group
+47 rule-cases
+48 pending-test
+49 pre33-specs
+50 headless-questions
+51 version-and-goal
+52 fired-if-early
+53 shipkit-allowed
+54 scoped-loading
+55 spec-check-draft
+56 plugin-root-restore
+57 dotfile-paragraph
+58 cuts-recorded
+59 portfolio-gen
+60 heading-seen
+61 same-named
+62 plugin-root-installed
+63 context-cost
+64 opt-out
+65 skills-merged
+66 agents-four
+67 skills-flag
+68 appends-trimmed
+69 skills-cut
+70 report-shapes
+71 brief-cites
+72 stack-skill-allowed
+73 reviewer-skills
+74 ship-capture
+75 setup-rule-count
+76 ship-retry
+77 reviewer-fixture
+78 map-read-grep
+79 django-only
+80 stamp-dates
+81 section-clean
+82 fired-if-tracked
+83 superseded-report
+84 walk-sentence
+85 ship-write-path
+86 elixir-app
+87 stray-status
+88 setup-files
+89 reviewer-marks
+90 pinned-toolchain
+91 git-grep
+92 wait-probe
+93 stale-nesting
+94 goldfish-agent
+95 spec-goldfish-step
+96 goldfish-fixture
+97 smoke-args
+EOF
+}
+is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
+runs_model() {  # runs_model <label> → 0 when this check that starts a model is to run
+  [ "$NO_MODEL" -eq 1 ] && return 1
+  [ -z "$ONLY_SET" ] && return 0
+  case " $ONLY_SET " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+if [ "$LIST" -eq 1 ]; then
+  registry | while read -r lab name; do
+    if is_model "$lab" && ! runs_model "$lab"; then echo "SKIP $lab $name"; else echo "RUN $lab $name"; fi
+  done
+  exit 0
+fi
+if [ "$NO_MODEL" -eq 0 ]; then
+  command -v claude >/dev/null 2>&1 || { echo "smoke: \`claude\` not on PATH (--no-model runs the checks that need none)" >&2; exit 1; }
+fi
 
 WORK=$(mktemp -d) || exit 1
 # ~/.claude/shipkit/plugin-root: a session below writes it only while it is absent (4.12.0;
@@ -49,8 +201,29 @@ fi
 (cd "$PROJ" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
 
 fail=0
-pass() { echo "PASS  $1"; }
-failc() { echo "FAIL  $1 — $2"; fail=1; }
+# Counts are kept in a file, one letter a line, so a pass inside a subshell is still counted.
+COUNTS="$WORK/.counts"; : > "$COUNTS"
+pass() { echo "PASS  $1"; echo p >> "$COUNTS"; }
+failc() { echo "FAIL  $1 — $2"; fail=1; echo f >> "$COUNTS"; }
+model_check() {  # model_check <label> → 0: run this check's model part; 1: skipped, and said so
+  if runs_model "$1"; then return 0; fi
+  echo "SKIP  [model] $1 $(registry | awk -v l="$1" '$1 == l { print $2 }')"; echo s >> "$COUNTS"
+  return 1
+}
+summary_lines() {  # summary_lines <passed> <text-only> <skipped> <failed> → the suite's last two lines
+  echo "smoke: $1 passed ($2 text-only), $3 skipped (model), $4 failed"
+  if [ "$4" -gt 0 ]; then echo "smoke: FAILURES above"
+  elif [ "$3" -gt 0 ]; then echo "smoke: all checks run passed; $3 skipped (model)"
+  else echo "smoke: all checks passed"; fi
+}
+# Under --no-model a stand-in `claude` goes first on the PATH and writes down every call. The
+# suite's last assertion reads that file: it must be empty (honest-evidence/REQ-1).
+if [ "$NO_MODEL" -eq 1 ]; then
+  mkdir -p "$WORK/stub"
+  printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\nexit 97\n' "$WORK/claude-calls.log" > "$WORK/stub/claude"
+  chmod +x "$WORK/stub/claude"
+  PATH="$WORK/stub:$PATH"; export PATH
+fi
 ask() {  # ask <plugin-dir> <prompt>  → last line of the model's reply, run inside $PROJ
   (cd "$PROJ" && claude --plugin-dir "$1" --model haiku -p "$2 Do not use tools." 2>/dev/null | tail -20)
 }
@@ -62,9 +235,11 @@ CW_Q='Reply with ONLY every codeword of the form ZEBRA-<digits> that appears any
 # other state). Cites: always-on/REQ-5
 printf '\n\nSmoke codeword: ZEBRA-1001.\n' >> "$COPY/rules/decisions.md"
 rm -rf "$PROJ/.claude"; mkdir -p "$PROJ/.shipkit"
+if model_check 1; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh session via the hook)";;
   *) failc "rules-inject" "codeword not seen: $out";; esac
+fi  # /model_check 1
 
 # 2. rules-skip: a rule INSTALLED AS A FILE is not ALSO injected by the hook.
 #
@@ -84,41 +259,51 @@ case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh 
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$PROJ" >/dev/null 2>&1
 sed 's/ZEBRA-1001/ZEBRA-2002/' "$PROJ/.claude/rules/shipkit/decisions.md" > "$PROJ/.dec.tmp" \
   && mv "$PROJ/.dec.tmp" "$PROJ/.claude/rules/shipkit/decisions.md"
+if model_check 2; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in
   *ZEBRA-1001*) failc "rules-skip" "hook injected the plugin's copy although the rule is installed: $out";;
   *ZEBRA-2002*) pass "rules-skip (installed rule loads from disk; hook does not double-inject)";;
   *) failc "rules-skip" "neither codeword reached context — the installed rule did not load: $out";;
 esac
+fi  # /model_check 2
 
 # 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
 # Cites: install-lifecycle/REQ-5
 # always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
 # Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
 rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
+if model_check 2b; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in
   *ZEBRA-1001*) pass "rules-fallback (a rule deleted from disk is re-injected, not lost)";;
   *) failc "rules-fallback" "a rule missing from disk was not injected: $out";;
 esac
+fi  # /model_check 2b
 rm -rf "$PROJ/.claude"
 
 # 3. plugin-root: the root line is in context and names the scratch copy
+if model_check 3; then
 out=$(ask "$COPY" 'If a line of the form "shipkit: plugin root is <path>" is in your context, reply with just the path; else NONE.')
 case "$out" in *"$COPY"*) pass "plugin-root (hook publishes the plugin root)";;
   *) failc "plugin-root" "got: $out";; esac
+fi  # /model_check 3
 
 # 4. agents: exactly the agents defined under agents/*.md, nothing else
 expected=$(ls "$CORE"/agents/*.md | sed 's#.*/##; s/\.md$//' | sort | tr '\n' ' ')
+if model_check 4; then
 out=$(ask "$COPY" 'List the exact names of every agent type available to you that starts with "shipkit:", one per line, nothing else.')
 got=$(printf '%s\n' "$out" | grep -o 'shipkit:[a-z-]*' | sed 's/shipkit://' | sort -u | tr '\n' ' ')
 if [ "$got" = "$expected" ]; then pass "agents (registered set = $expected)"; else failc "agents" "expected [$expected] got [$got]"; fi
+fi  # /model_check 4
 
 # 5. workflows-skills: the workflows plugin's skills register (the knowledge base this check
 # used to look for was cut in 4.0; `humanize` is the skill with the most distinctive name)
+if model_check 5; then
 out=$(ask "$ROOT/plugins/shipkit-workflows" 'List the exact names of every skill available to you whose name contains "humanize", one per line, or NONE.')
 case "$out" in *humanize*) pass "workflows-skills (a shipkit-workflows skill is registered)";;
   *) failc "workflows-skills" "got: $out";; esac
+fi  # /model_check 5
 
 # 5b. namespaces: the two plugins register under distinct prefixes, no collision.
 #
@@ -132,6 +317,7 @@ case "$out" in *humanize*) pass "workflows-skills (a shipkit-workflows skill is 
 # part of this check — it cannot see registration metadata directly. Treat a failure here as
 # "investigate", not "proven broken": confirm against `--plugin-dir` registration before
 # concluding anything, the way the isolated probe did.
+if model_check 5b; then
 ns_ok=1
 for pair in "shipkit:map" "shipkit-workflows:tdd"; do
   out=$(cd "$PROJ" && claude --plugin-dir "$COPY" --plugin-dir "$ROOT/plugins/shipkit-workflows" \
@@ -142,6 +328,7 @@ for pair in "shipkit:map" "shipkit-workflows:tdd"; do
   esac
 done
 [ "$ns_ok" -eq 1 ] && pass "namespaces (both plugins register under distinct prefixes)"
+fi  # /model_check 5b
 
 # 6. hook-cap: 9,500 chars of hook output is seen; 11,000 is not (informational if it now is)
 mkhook() {  # mkhook <dir> <chars> <codeword>
@@ -154,12 +341,14 @@ sys.stdout.write(b+tail)" "$2" "$3" > "$1/scripts/payload.txt"
   printf '#!/bin/sh\ncat "$(dirname "$0")/payload.txt"\n' > "$1/scripts/h.sh"; chmod +x "$1/scripts/h.sh"
 }
 mkhook "$WORK/cap-ok" 9500 ZEBRA-9500; mkhook "$WORK/cap-over" 11000 ZEBRA-11000
+if model_check 6; then
 out=$(ask "$WORK/cap-ok" "$CW_Q")
 case "$out" in *ZEBRA-9500*) pass "hook-cap (9.5K of hook output still reaches context)";;
   *) failc "hook-cap" "9.5K hook output no longer reaches context — the per-hook cap shrank; split the rules further";; esac
 out=$(ask "$WORK/cap-over" "$CW_Q")
 case "$out" in *ZEBRA-11000*) echo "INFO  hook-cap: 11K of hook output now reaches context — the cap was raised; inject-rule.sh could be simplified";;
   *) pass "hook-cap (11K is still cut, as assumed)";; esac
+fi  # /model_check 6
 
 # 7. install-scripts: deterministic installs produce the expected tree with no placeholders
 IP="$WORK/install-proj"; mkdir -p "$IP"; printf '# demo\n' > "$IP/CLAUDE.md"
@@ -753,6 +942,7 @@ esac
 # reliably. Takes a few minutes.
 NF="$WORK/newfmt"; mkdir -p "$NF"; cp -R "$COPY/evals/fixtures/sample-app/." "$NF/"
 (cd "$NF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+if model_check 22; then
 (cd "$NF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
   -p "/shipkit:spec refunds
@@ -768,6 +958,7 @@ if [ "$nf_rc" -eq 0 ] && grep -q '^> Status: open' "$nf_spec" 2>/dev/null \
 else
   failc "spec-new-format" "spec-check exit $nf_rc, tasks with Files: $nf_fields — $nf_out — model said: $(tail -5 "$WORK/newfmt.out")"
 fi
+fi  # /model_check 22
 # the always-on rule tells every session how a test cites a requirement, inside the budget
 # (the same byte assertion is what proves product-intake-brief/REQ-28 after S3-T6's sentence)
 if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
@@ -783,6 +974,7 @@ else failc "spec-new-format" "the citation sentence is missing from the rule, or
 # metric — and the file it writes is then read here, not taken on the model's word.
 PF="$WORK/product"; mkdir -p "$PF"; cp -R "$COPY/evals/fixtures/sample-app/." "$PF/"
 (cd "$PF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+if model_check 23; then
 (cd "$PF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Skill \
   -p "/shipkit:product
@@ -806,6 +998,7 @@ if [ "$heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter
 else
   failc "product-file" "headings=[$heads] goals=$goals lines=$plines — model said: $(tail -4 "$WORK/product.out")"
 fi
+fi  # /model_check 23
 
 # 24. registry-columns: the registry template and eve know the product columns and studio.md
 # (spec: .shipkit/specs/product-intake-brief/). No claude needed — these are the files a
@@ -1072,6 +1265,7 @@ SG_SENT="${TMPDIR:-/tmp}/shipkit-ship-smoke-sentinel-$$.out"; : > "$SG_SENT"
 SG_TMP="$WORK/ship-tmp"; mkdir -p "$SG_TMP"
 # No .gitignore on purpose: the gate's own test run leaves __pycache__/ behind, and a gate that
 # then called the tree dirty would fail every Python project on its own step 2.
+if model_check 29; then
 shiprun() {
   (cd "$SG" && TMPDIR="$SG_TMP" claude --plugin-dir "$COPY" --model sonnet \
     --allowedTools Read Glob Grep Bash Write Skill Agent \
@@ -1118,6 +1312,7 @@ if [ "$sg_first" = "NOT READY" ] && grep -Eq '^\| *3 *\|.*\| *FAIL *\|' "$sg_rep
 else
   failc "ship-gate" "first line [$sg_first]; step 3 row: $(grep -E '^\| *3 *\|' "$sg_report" 2>/dev/null) — model said: $(tail -6 "$WORK/ship.out")"
 fi
+fi  # /model_check 29
 rm -f "$SG_SENT"
 
 # 30. briefing: a few lines at session start saying where things stand
@@ -1182,21 +1377,24 @@ else
     pass "briefing (a spec-check gap → one gap line)"
   else failc "briefing" "no gap line: $out"; fi
   # c. fifty open specs: at most eight lines, at most 800 bytes, under a second. The time is the
-  # best of up to three runs, stopping at the first under a second: one run under the suite's own
-  # load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone it reads
-  # 0.72 to 0.75 s, and a briefing that is really slow is slow on all three.
+  # briefing's own CPU time (user and system, its children's too), not the wall clock: on a busy
+  # machine the wall clock measures the machine. It read 1.02 s at the 5.1.0 release, 1.01 s at
+  # Sprint 23's merge and 1.0 s on all three tries at Sprint 29's first model-free run, with the
+  # owner at work in another window; alone, the same fixture then took 0.81 to 0.90 s on the
+  # clock and 0.72 to 0.82 s of CPU. Still the best of up to three runs, stopping at the first
+  # under a second: a briefing that is really slow is slow on all three.
   BC="$WORK/brief-c"; mkdir -p "$BC"; (cd "$BC" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
   i=1; while [ "$i" -le 50 ]; do bspec "$BC" "spec-$i-with-a-rather-long-name-to-fill-the-line" open 1 4; i=$((i + 1)); done
   bt=9; bt_n=0
   while [ "$bt_n" -lt 3 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -ne 0 ]; do
     bt_n=$((bt_n + 1))
-    bt_one=$(python3 -c "import subprocess,sys,time; a=time.time(); subprocess.run(['sh','$BRF'],cwd='$BC',stdout=open('$WORK/brief50.out','w'),stderr=subprocess.DEVNULL); print(round(time.time()-a,2))")
+    bt_one=$(python3 -c "import os,subprocess; a=os.times(); subprocess.run(['sh','$BRF'],cwd='$BC',stdout=open('$WORK/brief50.out','w'),stderr=subprocess.DEVNULL); b=os.times(); print(round((b.children_user-a.children_user)+(b.children_system-a.children_system),2))")
     bt=$(awk -v a="$bt" -v b="$bt_one" 'BEGIN { m = (b + 0 < a + 0) ? b : a; print m }')
   done
   bl=$(grep -c . "$WORK/brief50.out"); bb=$(wc -c < "$WORK/brief50.out" | tr -d ' ')
   if [ "$bl" -le 8 ] && [ "$bb" -le 800 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -eq 0 ]; then
-    pass "briefing (50 open specs → $bl lines, $bb bytes, ${bt}s, best of $bt_n run(s))"
-  else failc "briefing" "50 specs: $bl lines, $bb bytes, ${bt}s, best of $bt_n run(s) (want ≤8, ≤800, <1)"; fi
+    pass "briefing (50 open specs → $bl lines, $bb bytes, ${bt}s of CPU, best of $bt_n run(s))"
+  else failc "briefing" "50 specs: $bl lines, $bb bytes, ${bt}s of CPU, best of $bt_n run(s) (want ≤8, ≤800, <1)"; fi
   # d. a tasks.md that is not a task list, and a state.md with no Next step: no error, exit 0
   BD="$WORK/brief-d"; mkdir -p "$BD/.shipkit/specs/odd"; (cd "$BD" && git init -q)
   printf '# Spec: odd\n\n- **REQ-1.** x\n' > "$BD/.shipkit/specs/odd/spec.md"
@@ -1227,6 +1425,7 @@ printf '# Spec: Refunds\n\n> Spec accepted at commit `abc1234` on master.\n> Sta
 printf -- '- [x] **T1** Refund through the gateway → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: none\n  - Done when: tests pass\n- [ ] **T2** Reject a refund above the charge → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: T1\n  - Done when: tests pass\n' > "$HF/.shipkit/specs/refunds/tasks.md"
 (cd "$HF" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
 printf '"""Refunds — in progress."""\n' > "$HF/app/refunds.py"
+if model_check 31; then
 (cd "$HF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Bash Write Skill \
   -p "/shipkit:handoff
@@ -1247,10 +1446,12 @@ if [ "$hf_heads" = "In flight|Done this session|Next step|Open questions|Do not 
 else
   failc "handoff-file" "headings=[$hf_heads] next-lines=$hf_next lines=$hf_lines written=$hf_written dirty=[$hf_dirty] — model said: $(tail -4 "$WORK/handoff.out")"
 fi
+fi  # /model_check 31
 
 # 32. handoff-loop: a fresh session in the project from check 31 is asked what to do next,
 # and answers from the note's Next step, which the briefing put in its context
 # (spec: .shipkit/specs/briefing-and-handoff/). Cites: briefing-and-handoff/REQ-14
+if model_check 32; then
 if [ -f "$hf" ]; then
   hl_next=$(awk '/^## /{on=($0 ~ /^## Next step/); next} on && NF{print; exit}' "$hf")
   hl_out=$(cd "$HF" && claude --plugin-dir "$COPY" --model haiku \
@@ -1262,6 +1463,7 @@ if [ -f "$hf" ]; then
 else
   failc "handoff-loop" "no state.md from check 31 to read"
 fi
+fi  # /model_check 32
 
 # 33. compact-reminder: after a compaction the session hook says so; at any other start it
 # does not (spec: .shipkit/specs/briefing-and-handoff/). The hook's JSON comes on stdin.
@@ -1843,6 +2045,7 @@ else failc "pre33-specs" "hook drift lines: $(printf '%s\n' "$hook" | grep 'behi
 # (run-wounds/REQ-11). The files are read here; the model's word is not.
 HQ="$WORK/hq-intake"; mkdir -p "$HQ"
 (cd "$HQ" && bash "$COPY/evals/intake/limit/fixture.sh" >/dev/null 2>&1)
+if model_check 50; then
 (cd "$HQ" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
   -p "/shipkit:intake Add refunds.
@@ -1865,6 +2068,7 @@ if [ -f "$hp" ] && grep -q '^> Open questions for the owner' "$hp" \
    && [ "$hp_heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ]; then
   pass "headless-questions (product with no answers wrote the open-questions block; seven headings kept)"
 else failc "headless-questions" "product.md block missing or shape changed: heads=[$hp_heads] — model said: $(tail -3 "$WORK/hq-product.out")"; fi
+fi  # /model_check 50
 
 # 51. version-and-goal: two lines the real run wanted. (a) Claude Code keeps each installed
 # version at ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a session keeps the root it
@@ -1940,8 +2144,8 @@ else failc "fired-if-early" "spec skill or reference lacks the decision-check se
 # real run brief-verify called the spec's own intake.md/spec.md/design.md OUTSIDE before they
 # were committed and the reviewer called .shipkit/product.md outside the Paths line (field
 # notes §7, §8). Now everything under .shipkit/ is allowed except another spec's folder — for
-# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25 and
-# 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
+# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25
+# and 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
 # gate-blind-spots/REQ-7
 mkdir -p "$BP/.shipkit/releases" "$BP/.shipkit/decisions"
 printf '# Product: x\n' > "$BP/.shipkit/product.md"
@@ -1992,6 +2196,7 @@ sh "$COPY/scripts/install-rules.sh" "$COPY" "$SL" >/dev/null 2>&1
 printf '\n\nSmoke codeword: ZEBRA-5401.\n' >> "$SL/.claude/rules/shipkit/dependencies.md"
 cp "$COPY/stacks/rails/.claude/rules/gemfile.md" "$SL/.claude/rules/shipkit/gemfile.md"
 printf '\n\nSmoke codeword: ZEBRA-5402.\n' >> "$SL/.claude/rules/shipkit/gemfile.md"
+if model_check 54; then
 slask() {  # slask <file> <named|read> → the model's last lines
   if [ "$2" = read ]; then
     (cd "$SL" && claude --plugin-dir "$COPY" --model haiku --allowedTools Read -p "Read the file $1 in this directory. Then: $CW_Q" 2>/dev/null | tail -5)
@@ -2014,6 +2219,7 @@ if [ -n "$sl_form" ]; then
 else
   failc "scoped-loading" "neither form loaded both rules — named: py[$(printf '%s' "$sl_py" | tail -1)] gem[$(printf '%s' "$sl_gem" | tail -1)]"
 fi
+fi  # /model_check 54
 if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -q 'check 54' \
    && sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -qi 'path-scoped'; then
   pass "scoped-loading (the evals README states the measured result and names check 54)"
@@ -2365,12 +2571,14 @@ oo_rules=$(printf '%s\n' "$oo_out" | grep '^## Shipkit always-on rule:' | sed 's
 if [ "$oo_optin" -eq 1 ] && [ "$oo_rules" = "shipkit " ]; then
   pass "opt-out (the hook on a bare project: one opt-in line, shipkit.md injected, the two loop rules not)"
 else failc "opt-out" "bare project: opt-in lines=$oo_optin injected='$oo_rules'"; fi
+if model_check 64; then
 out=$(cd "$OO" && claude --plugin-dir "$COPY" --model haiku -p "$CW_Q Do not use tools." 2>/dev/null | tail -20)
 case "$out" in
   *ZEBRA-4004*) failc "opt-out" "spec-driven.md reached a session on a project that never opted in: $out";;
   *ZEBRA-3003*) pass "opt-out (a fresh session on a bare project sees shipkit.md's codeword and not spec-driven.md's)";;
   *) failc "opt-out" "shipkit.md's codeword did not reach the session: $out";;
 esac
+fi  # /model_check 64
 oo_conf=$(cd "$OO" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'for r in shipkit spec-driven decisions; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null | grep -c '^## Shipkit always-on rule:')
 if [ "$oo_conf" -eq 3 ]; then pass "opt-out (under CLAUDE_CODE_EVAL_CONFINED=1 all three rules are injected in a bare directory)"
 else failc "opt-out" "confined: $oo_conf of 3 rules injected"; fi
@@ -3271,6 +3479,74 @@ grep -q 'spec-goldfish/REQ-18' "$ROOT/scripts/evals.sh" && grep -q 'spec-goldfis
 if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term in one requirement, clean states 30 days; no tasks or code; each grader takes its reply and refuses the other)"
 else failc "goldfish-fixture" "$gx_fail"; fi
 
+# 97. smoke-args: the suite's own arguments. --list prints what would run and runs nothing;
+# --no-model leaves out the sixteen checks that start a model; --only names some of them and
+# takes the ones they need with it; a wrong argument is a usage error. Every form run below
+# stops before the first check, so nothing here starts a model. Then the script reads itself:
+# a numbered check that starts claude is one of MODEL_CHECKS and does it inside its
+# model_check guard, the assertions that need no model sit outside that guard, and every
+# numbered check has a line in the registry. No claude needed.
+# Cites: honest-evidence/REQ-1 honest-evidence/REQ-2 honest-evidence/REQ-3 honest-evidence/REQ-4
+# honest-evidence/REQ-5 honest-evidence/REQ-6 honest-evidence/REQ-7 honest-evidence/REQ-8
+# honest-evidence/REQ-9 honest-evidence/REQ-10 honest-evidence/REQ-40
+SELF="$ROOT/scripts/smoke.sh"
+sa_fail=""
+sa_n=$(registry | grep -c .)
+sa_all=$(sh "$SELF" --list 2>&1); sa_rc=$?
+[ "$sa_rc" -eq 0 ] || sa_fail="$sa_fail [--list exits $sa_rc]"
+[ "$(printf '%s\n' "$sa_all" | grep -c '^RUN ')" -eq "$sa_n" ] || sa_fail="$sa_fail [--list alone: not every check is RUN]"
+[ "$(printf '%s\n' "$sa_all" | grep -c .)" -eq "$sa_n" ] || sa_fail="$sa_fail [--list prints more than one line a check]"
+sa_nm=$(sh "$SELF" --list --no-model 2>&1)
+sa_skip=$(printf '%s\n' "$sa_nm" | sed -n 's/^SKIP \([^ ]*\) .*/\1/p' | tr '\n' ' ')
+[ "$sa_skip" = "$MODEL_CHECKS " ] || sa_fail="$sa_fail [--list --no-model skips: $sa_skip]"
+printf '%s\n' "$sa_nm" | grep -q '^RUN 19 spec-check-reqs$' || sa_fail="$sa_fail [--no-model does not list check 19 as RUN]"
+sa_only=$(sh "$SELF" --list --only 32 2>&1)
+sa_run=$(printf '%s\n' "$sa_only" | sed -n 's/^RUN \([^ ]*\) .*/\1/p' | tr '\n' ' ')
+case " $sa_run" in *" 31 32 "*) ;; *) sa_fail="$sa_fail [--only 32 does not run 31 and 32]";; esac
+[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 14 ] || sa_fail="$sa_fail [--only 32 does not skip the other fourteen]"
+printf '%s\n' "$sa_only" | grep -q '^RUN 19 ' || sa_fail="$sa_fail [--only 32 leaves out a check that needs no model]"
+sa_out=$(sh "$SELF" --only 7 2>&1); sa_rc=$?
+if [ "$sa_rc" -ne 64 ] || ! printf '%s\n' "$sa_out" | grep -qF "$MODEL_CHECKS" || printf '%s\n' "$sa_out" | grep -q '^PASS'; then
+  sa_fail="$sa_fail [--only 7: exit $sa_rc, or the numbers it takes are not printed, or a check ran]"
+fi
+sh "$SELF" --no-model --only 22 >/dev/null 2>&1; [ $? -eq 64 ] || sa_fail="$sa_fail [--no-model with --only is not exit 64]"
+sh "$SELF" --bogus >/dev/null 2>&1; [ $? -eq 64 ] || sa_fail="$sa_fail [an unknown argument is not exit 64]"
+(PATH=/usr/bin:/bin; export PATH; sh "$SELF" --list --no-model >/dev/null 2>&1) \
+  || sa_fail="$sa_fail [--no-model looks for claude on the PATH]"
+sa_sum=$(summary_lines 5 1 16 0)
+[ "$sa_sum" = "smoke: 5 passed (1 text-only), 16 skipped (model), 0 failed
+smoke: all checks run passed; 16 skipped (model)" ] || sa_fail="$sa_fail [the two last lines with skips: $sa_sum]"
+[ "$(summary_lines 5 0 0 0 | sed -n 2p)" = "smoke: all checks passed" ] || sa_fail="$sa_fail [last line of a full clean run]"
+[ "$(summary_lines 5 0 3 2 | sed -n 2p)" = "smoke: FAILURES above" ] || sa_fail="$sa_fail [last line with a failure]"
+if [ -z "$sa_fail" ]; then pass "smoke-args (--list, --no-model, --only with its needs, three usage errors at exit 64, the two last lines)"
+else failc "smoke-args" "$sa_fail"; fi
+sa_scan=$(awk -v models="$MODEL_CHECKS" '
+  BEGIN { n = split(models, m, " "); for (i = 1; i <= n; i++) ism[m[i]] = 1 }
+  /^# [0-9]+[a-z]?\. / { lab = $2; sub(/\.$/, "", lab); g = 0; next }
+  lab == "" || /^[ \t]*#/ { next }
+  $0 == "if model_check " lab "; then" { g = 1; has[lab] = 1; next }
+  $0 == "fi  # /model_check " lab { g = 0; shut[lab] = 1; next }
+  /claude[ ]--/ || /[$][(]ask / {
+    if (!ism[lab]) print "check " lab " starts a model and is not in MODEL_CHECKS (line " NR ")"
+    else if (!g) print "check " lab " starts a model outside its guard (line " NR ")"
+  }
+  shut[lab] && /pass "/ { after[lab] = 1 }
+  END {
+    for (i = 1; i <= n; i++) if (!has[m[i]] || !shut[m[i]]) print "check " m[i] " has no whole model_check guard"
+    if (!after["22"] || !after["54"] || !after["64"]) print "an assertion that needs no model is no longer outside the guard of check 22, 54 or 64"
+  }' "$SELF")
+sa_heads=$(sed -n 's/^# \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$SELF" | tr '\n' ' ')
+sa_reg=$(registry | awk '{ print $1 }' | tr '\n' ' ')
+if [ -z "$sa_scan" ] && [ "$sa_heads" = "$sa_reg" ]; then
+  pass "smoke-args (the script read as text: sixteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
+else failc "smoke-args" "$sa_scan — headers [$sa_heads] registry [$sa_reg]"; fi
+
+# The last assertion of a --no-model run: the stand-in `claude` was never called.
+if [ "$NO_MODEL" -eq 1 ]; then
+  if [ ! -s "$WORK/claude-calls.log" ]; then pass "smoke-args (--no-model started no claude process: the stand-in first on the PATH was never called)"
+  else failc "smoke-args" "claude was called $(grep -c . "$WORK/claude-calls.log") time(s) under --no-model: $(sed -n 1,3p "$WORK/claude-calls.log" | cut -c1-120 | tr '\n' '|')"; fi
+fi
+
 echo
-if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
+summary_lines "$(grep -c p "$COUNTS")" "$(grep -c t "$COUNTS")" "$(grep -c s "$COUNTS")" "$(grep -c f "$COUNTS")"
 exit $fail
