@@ -27,6 +27,15 @@
 # agent leaves in an ignored path shows in the task's Done-when output, which you run yourself
 # (gate-blind-spots/REQ-10, closed by record C6).
 #
+# One more kind of line, which is information and changes no exit status:
+#
+#   SPEC-EDITED <file>
+#
+# The spec's own spec.md or design.md differs from the base ref. They are allowed, as above, but
+# an agent that reworded the requirement it was handed has changed what the task is judged by;
+# spec-diff.sh says which requirements (honest-evidence/REQ-30, REQ-31). A ticked tasks.md is
+# not named.
+#
 # This checks WHICH files changed, not WHAT changed in them. Run the task's Done when command
 # yourself as well: the agent's own claim is not proof.
 #
@@ -84,6 +93,14 @@ OUT=$(printf '%s\n' "$CHANGED" | BV_ALLOWED="$ALLOWED" BV_SKILLS="$SKILLS" BV_SE
     }
     if (!ok) print "OUTSIDE " $0
   }')
+
+# The task's own spec folder is always allowed (above), so a change to the requirement or the
+# design the task was given went unseen. It is named here: information, never an OUTSIDE line,
+# and the exit status below is the OUTSIDE lines' alone (honest-evidence/REQ-30, REQ-31).
+# tasks.md is ticked by shipkit's own loop and is not named.
+EDITED=$(printf '%s\n' "$CHANGED" | awk -v own=".shipkit/specs/$SLUG/" '
+  $0 == own "spec.md" || $0 == own "design.md" { print "SPEC-EDITED " $0 }')
+[ -n "$EDITED" ] && printf '%s\n' "$EDITED"
 
 total=$(printf '%s\n' "$CHANGED" | grep -c .)
 if [ -n "$OUT" ]; then

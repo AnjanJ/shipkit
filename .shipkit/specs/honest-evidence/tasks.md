@@ -41,7 +41,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 102 (`spec-diff`), on git fixtures for each kind of line and both baselines
   - After: T5
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 102 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/spec-diff.sh` → exit 0
-- [ ] **T7** `brief-verify.sh` prints `SPEC-EDITED` when a task's work touched its own spec → REQ-30, REQ-31
+- [x] **T7** `brief-verify.sh` prints `SPEC-EDITED` when a task's work touched its own spec → REQ-30, REQ-31
   - Files: plugins/shipkit/scripts/brief-verify.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 103 (`spec-edited`), which edits a fixture spec's `design.md` and then only its `tasks.md`
   - After: T6

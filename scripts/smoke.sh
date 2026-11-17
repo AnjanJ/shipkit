@@ -160,6 +160,7 @@ registry() { cat <<'EOF'
 100 tests-line
 101 skipped-cite
 102 spec-diff
+103 spec-edited
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3751,6 +3752,40 @@ else
   if [ -z "$sd_fail" ]; then pass "spec-diff (changed, added, removed and waived requirements against the spec at the base ref or its first open commit; a re-wrap is no change; exit 0, 1 and 64; no file touched; sh, awk and git only)"
   else failc "spec-diff" "$sd_fail"; fi
 fi
+
+# 103. spec-edited: brief-verify.sh allows everything under the task's own spec folder, so an
+# agent that rewrote the requirement it was given went unseen. Now a change to that spec's
+# spec.md or design.md since the base ref is named, SPEC-EDITED <file>. Information: the exit
+# status is still decided by OUTSIDE lines alone, and ticking tasks.md prints nothing.
+# No claude needed. Cites: honest-evidence/REQ-30 honest-evidence/REQ-31
+SE="$WORK/spec-edited"; mkdir -p "$SE/.shipkit/specs/refunds" "$SE/app"; (cd "$SE" && git init -q)
+printf '# Spec: refunds\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n## Purpose\nRefund a charge.\n\n## Requirements\n\n- **REQ-1.** When a refund is asked for, the system shall pay it.\n' > "$SE/.shipkit/specs/refunds/spec.md"
+printf '# Design: refunds\n\n## Approach\nOne function.\n' > "$SE/.shipkit/specs/refunds/design.md"
+printf -- '- [ ] **T1** Pay a refund → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: none\n  - Done when: `pytest` → all pass\n' > "$SE/.shipkit/specs/refunds/tasks.md"
+(cd "$SE" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
+se_base=$(cd "$SE" && git rev-parse HEAD)
+serun() { sh "$COPY/scripts/brief-verify.sh" "$SE" refunds T1 "$se_base" > "$WORK/se.out" 2>&1; echo $?; }   # → the exit status; output in se.out
+se_fail=""
+# the task's own file, and its box ticked: nothing to name
+printf 'x\n' > "$SE/app/refunds.py"
+sed 's/- \[ \] \*\*T1\*\*/- [x] **T1**/' "$SE/.shipkit/specs/refunds/tasks.md" > "$WORK/se.tmp" && mv "$WORK/se.tmp" "$SE/.shipkit/specs/refunds/tasks.md"
+rc=$(serun)
+[ "$rc" -eq 0 ] && ! grep -q 'SPEC-EDITED' "$WORK/se.out" || se_fail="$se_fail [only tasks.md ticked: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+# the design rewritten: named, and still exit 0
+printf '\nNow two functions.\n' >> "$SE/.shipkit/specs/refunds/design.md"
+rc=$(serun)
+[ "$rc" -eq 0 ] && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/design\.md$' "$WORK/se.out" && ! grep -q 'SPEC-EDITED .*spec\.md' "$WORK/se.out" \
+  && grep -q '^brief-verify: .* all inside the Files of refunds / T1$' "$WORK/se.out" \
+  || se_fail="$se_fail [design.md edited: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+# the requirement rewritten, and a file outside the task's list: both named, exit 1 for the second
+sed 's/shall pay it\./shall pay it within a week./' "$SE/.shipkit/specs/refunds/spec.md" > "$WORK/se.tmp" && mv "$WORK/se.tmp" "$SE/.shipkit/specs/refunds/spec.md"
+printf 'y\n' > "$SE/app/other.py"
+rc=$(serun)
+[ "$rc" -eq 1 ] && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/spec\.md$' "$WORK/se.out" && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/design\.md$' "$WORK/se.out" \
+  && grep -q '^OUTSIDE app/other\.py$' "$WORK/se.out" && ! grep -q 'OUTSIDE \.shipkit' "$WORK/se.out" \
+  || se_fail="$se_fail [spec.md edited and a file outside: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+if [ -z "$se_fail" ]; then pass "spec-edited (the task's own spec.md and design.md are named when they change; a ticked tasks.md is not; the exit status is the OUTSIDE lines' alone)"
+else failc "spec-edited" "$se_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
