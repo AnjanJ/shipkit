@@ -155,6 +155,7 @@ registry() { cat <<'EOF'
 95 spec-goldfish-step
 96 goldfish-fixture
 97 smoke-args
+98 ci-smoke-job
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3540,6 +3541,18 @@ sa_reg=$(registry | awk '{ print $1 }' | tr '\n' ' ')
 if [ -z "$sa_scan" ] && [ "$sa_heads" = "$sa_reg" ]; then
   pass "smoke-args (the script read as text: sixteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
 else failc "smoke-args" "$sa_scan — headers [$sa_heads] registry [$sa_reg]"; fi
+
+# 98. ci-smoke-job: CI runs this suite without its model checks on every pull request. The
+# runner has no claude, so each pull request shows again that --no-model needs none. The
+# workflow is read as text: it is triggered by pull_request, and a job on a macOS runner (the
+# suite was written against bash 3.2 as sh and BSD tools; honest-evidence/design.md, third
+# record) runs the suite with --no-model. No claude needed. Cites: honest-evidence/REQ-11
+cj="$ROOT/.github/workflows/lint.yml"; cj_fail=""
+grep -q '^  pull_request:' "$cj" || cj_fail="$cj_fail [the workflow is not triggered by pull_request]"
+grep -q '^    runs-on: macos-latest$' "$cj" || cj_fail="$cj_fail [no job runs on macos-latest]"
+grep -q '^        run: sh scripts/smoke\.sh --no-model </dev/null$' "$cj" || cj_fail="$cj_fail [no step runs sh scripts/smoke.sh --no-model]"
+if [ -z "$cj_fail" ]; then pass "ci-smoke-job (lint.yml: on pull_request, a macOS job runs sh scripts/smoke.sh --no-model)"
+else failc "ci-smoke-job" "$cj_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
