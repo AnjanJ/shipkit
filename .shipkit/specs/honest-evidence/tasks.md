@@ -21,7 +21,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 98 (`ci-smoke-job`), which reads the workflow for a pull-request job that runs `scripts/smoke.sh --no-model`
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 98 `PASS`, exit 0
-- [ ] **T3** `spec-check.sh` prints an `EVIDENCE` line for each spec → REQ-12, REQ-13, REQ-14
+- [x] **T3** `spec-check.sh` prints an `EVIDENCE` line for each spec → REQ-12, REQ-13, REQ-14
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 99 (`evidence-line`), on a fixture with one tested, one waived and one uncited requirement
   - After: T2

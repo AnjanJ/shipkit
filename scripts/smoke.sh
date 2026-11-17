@@ -156,6 +156,7 @@ registry() { cat <<'EOF'
 96 goldfish-fixture
 97 smoke-args
 98 ci-smoke-job
+99 evidence-line
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3553,6 +3554,40 @@ grep -q '^    runs-on: macos-latest$' "$cj" || cj_fail="$cj_fail [no job runs on
 grep -q '^        run: sh scripts/smoke\.sh --no-model </dev/null$' "$cj" || cj_fail="$cj_fail [no step runs sh scripts/smoke.sh --no-model]"
 if [ -z "$cj_fail" ]; then pass "ci-smoke-job (lint.yml: on pull_request, a macOS job runs sh scripts/smoke.sh --no-model)"
 else failc "ci-smoke-job" "$cj_fail"; fi
+
+# 99. evidence-line: spec-check says how much of a spec is proven. One EVIDENCE line for each
+# spec it checks: tested (no waiver, a counted citation), waived, uncited (the rest). A
+# requirement that is both cited and waived counts as waived. The lines come before the summary
+# line, whose form the briefing reads, and change no exit status. No claude needed.
+# Cites: honest-evidence/REQ-12 honest-evidence/REQ-13 honest-evidence/REQ-14
+evspec() {  # evspec <proj> <slug> <status> → REQ-1 cited, REQ-2 waived and cited, REQ-3 neither
+  _d="$1/.shipkit/specs/$2"; mkdir -p "$_d" "$1/tests"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n> Status: %s\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** The README shall say c. [untested: prose]\n- **REQ-3.** When d happens, the system shall do e.\n' "$2" "$3" > "$_d/spec.md"
+  printf -- '- [x] **T1** do it all → REQ-1, REQ-2, REQ-3\n  - Files: app/a.py\n  - Test: tests/test_%s.py\n  - After: none\n  - Done when: `pytest` → all pass\n' "$2" > "$_d/tasks.md"
+  printf '# %s/REQ-1\n# %s/REQ-2\n' "$2" "$2" > "$1/tests/test_$2.py"
+}
+evrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/ev.out" 2>&1; echo $?; }  # → the exit status; output in ev.out
+ev_fail=""
+P="$WORK/ev-open"; evspec "$P" demo open
+rc=$(evrun "$P")
+grep -q '^EVIDENCE demo tested=1 waived=1 uncited=1$' "$WORK/ev.out" || ev_fail="$ev_fail [open spec: $(grep '^EVIDENCE' "$WORK/ev.out")]"
+[ "$rc" -eq 0 ] || ev_fail="$ev_fail [open spec with an uncited requirement exits $rc, not 0]"
+[ "$(sed -n '$p' "$WORK/ev.out")" = "spec-check: 1 spec(s) checked, 0 gap(s)" ] || ev_fail="$ev_fail [the summary line changed: $(sed -n '$p' "$WORK/ev.out")]"
+[ "$(grep -n '^EVIDENCE' "$WORK/ev.out" | cut -d: -f1)" -lt "$(grep -n '^spec-check:' "$WORK/ev.out" | cut -d: -f1)" ] 2>/dev/null \
+  || ev_fail="$ev_fail [EVIDENCE is not before the summary line]"
+P="$WORK/ev-shipped"; evspec "$P" demo shipped; evspec "$P" other shipped
+printf '# other/REQ-3\n' >> "$P/tests/test_other.py"
+rc=$(evrun "$P")
+grep -q '^EVIDENCE demo tested=1 waived=1 uncited=1$' "$WORK/ev.out" || ev_fail="$ev_fail [shipped spec: no EVIDENCE line for demo]"
+grep -q '^EVIDENCE other tested=2 waived=1 uncited=0$' "$WORK/ev.out" || ev_fail="$ev_fail [second spec: $(grep '^EVIDENCE other' "$WORK/ev.out")]"
+[ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-3$' "$WORK/ev.out" || ev_fail="$ev_fail [shipped spec with an uncited requirement: exit $rc]"
+[ "$(sed -n '$p' "$WORK/ev.out")" = "spec-check: 2 spec(s) checked, 1 gap(s)" ] || ev_fail="$ev_fail [two specs: $(sed -n '$p' "$WORK/ev.out")]"
+P="$WORK/ev-draft"; evspec "$P" demo draft
+rc=$(evrun "$P")
+grep -q '^EVIDENCE' "$WORK/ev.out" && ev_fail="$ev_fail [a skipped draft got an EVIDENCE line]"
+if [ -z "$ev_fail" ]; then pass "evidence-line (tested, waived and uncited counted for each checked spec, before an unchanged summary line; a draft gets none; exit status as before)"
+else failc "evidence-line" "$ev_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

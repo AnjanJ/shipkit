@@ -22,6 +22,11 @@
 #                               gap: the test is owed at ship time (both 4.0.0 gates failed
 #                               their first run on exactly this, unseen until the gate ran)
 #   WAIVED <slug> REQ-N         the requirement ends with [untested: <reason>]
+#   EVIDENCE <slug> tested=<a> waived=<b> uncited=<c>
+#                               one for each spec checked — information, not a gap: how many of
+#                               its requirements have a waiver (b), have none and are cited (a),
+#                               or neither (c). A ship report can then say how much of READY is
+#                               tests and how much is reading (honest-evidence/REQ-12)
 #   SKIPPED <slug> (<status>)   the spec is a draft or was dropped; nothing is checked
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
 #   BAD-AFTER <slug> <task> <name>        a task's After names a task that does not exist
@@ -205,10 +210,12 @@ for spec in "$SPECS"/*/spec.md; do
     fi
   done
   if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
+  ev_t=0; ev_w=0; ev_u=0   # honest-evidence/REQ-12: tested, waived, uncited
   while read -r n kind mentioned; do
     [ -n "$n" ] || continue
     if [ "$kind" = W ]; then
       echo "WAIVED $slug REQ-$n"
+      ev_w=$((ev_w + 1))
       continue
     fi
     if [ "$mentioned" != T ]; then
@@ -216,14 +223,17 @@ for spec in "$SPECS"/*/spec.md; do
       gaps=$((gaps + 1))
     fi
     if cited "$slug" "$n"; then
-      :
+      ev_t=$((ev_t + 1))
     elif [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; then
       echo "MISSING-TEST $slug REQ-$n"
       gaps=$((gaps + 1))
+      ev_u=$((ev_u + 1))
     else
       echo "PENDING-TEST $slug REQ-$n"   # real-run/REQ-1: open spec, shown not enforced
+      ev_u=$((ev_u + 1))
     fi
   done < "$TMP"
+  echo "EVIDENCE $slug tested=$ev_t waived=$ev_w uncited=$ev_u"
   if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then
     task_findings "$slug" "$dir/tasks.md" > "$TMP"
     if [ -s "$TMP" ]; then
