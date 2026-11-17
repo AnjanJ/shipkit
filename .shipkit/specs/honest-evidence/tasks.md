@@ -36,7 +36,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 101 (`skipped-cite`), with a citation three lines from a skip marker and one four lines away
   - After: T4
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 101 `PASS`, exit 0; `sh plugins/shipkit/scripts/spec-check.sh .` → 0 gap(s)
-- [ ] **T6** `spec-diff.sh` lists the requirements a branch changed, added, removed or waived → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29
+- [x] **T6** `spec-diff.sh` lists the requirements a branch changed, added, removed or waived → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29
   - Files: plugins/shipkit/scripts/spec-diff.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 102 (`spec-diff`), on git fixtures for each kind of line and both baselines
   - After: T5

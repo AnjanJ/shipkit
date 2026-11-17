@@ -159,6 +159,7 @@ registry() { cat <<'EOF'
 99 evidence-line
 100 tests-line
 101 skipped-cite
+102 spec-diff
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3682,6 +3683,74 @@ rc=$(skrun "$P")
   || sk_fail="$sk_fail [with a Tests line: exit $rc: $(grep -E '^(SKIPPED|CITED)' "$WORK/sk.out" | tr '\n' ';')]"
 if [ -z "$sk_fail" ]; then pass "skipped-cite (five frameworks' markers on, above and below the citation; four lines away, an exit call, a max-fail option and the word in a sentence give none; exit status as before)"
 else failc "skipped-cite" "$sk_fail"; fi
+
+# 102. spec-diff: which requirements did a branch change? spec-diff.sh compares the spec in the
+# working tree with a baseline: spec.md at the base ref when it is there, else spec.md at the
+# first commit after the base ref whose Status reads open, else NO-BASELINE. It prints
+# REQ-CHANGED, REQ-ADDED, REQ-REMOVED and, beside REQ-CHANGED, WAIVER-ADDED; the same words
+# wrapped or spaced another way are not a change. Exit 0 with nothing to print, 1 with a
+# finding, 64 on wrong usage. It changes no file and is sh, awk and git. No claude needed.
+# Cites: honest-evidence/REQ-21 honest-evidence/REQ-22 honest-evidence/REQ-23
+# honest-evidence/REQ-24 honest-evidence/REQ-25 honest-evidence/REQ-26 honest-evidence/REQ-27
+# honest-evidence/REQ-28 honest-evidence/REQ-29
+SDF="$COPY/scripts/spec-diff.sh"
+sdc() { (cd "$1" && shift && git -c user.email=s@s -c user.name=s "$@"); }   # sdc <proj> <git arguments>
+sdspec() {  # sdspec <proj> <status> → the spec demo with three requirements, the second on two lines
+  mkdir -p "$1/.shipkit/specs/demo"
+  printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: %s\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** While c holds, the system shall keep d\n  and shall keep e.\n- **REQ-3.** The README shall say f.\n\n## Out of scope\nNothing.\n' "$2" > "$1/.shipkit/specs/demo/spec.md"
+}
+sdrun() { sh "$SDF" "$@" > "$WORK/sd.out" 2>&1; echo $?; }   # → the exit status; output in sd.out
+if [ ! -f "$SDF" ]; then
+  failc "spec-diff" "scripts/spec-diff.sh does not exist (check written first, by design)"
+else
+  sd_fail=""
+  sh -n "$SDF" 2>/dev/null || sd_fail="$sd_fail [sh -n reports a syntax error]"
+  # a. the baseline is the spec at the base ref
+  P="$WORK/sd-a"; mkdir -p "$P"; sdc "$P" init -q -b main; sdspec "$P" open; sdc "$P" add -A; sdc "$P" commit -q -m spec; sdc "$P" tag base
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 0 ] && ! grep -q '^REQ-\|^WAIVER' "$WORK/sd.out" && grep -q '^spec-diff: 0 requirement(s) differ from ' "$WORK/sd.out" \
+    || sd_fail="$sd_fail [an untouched spec: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # REQ-1 reworded, REQ-2 wrapped and spaced another way, REQ-3 given a waiver, REQ-4 new
+  printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b twice.\n- **REQ-2.** While c holds,\n  the system shall   keep d and shall keep e.\n- **REQ-3.** The README shall say f. [untested: prose]\n- **REQ-4.** When g happens, the system shall do h.\n\n## Out of scope\nNothing.\n' > "$P/.shipkit/specs/demo/spec.md"
+  sd_before=$(cd "$P" && git status --porcelain)
+  rc=$(sdrun "$P" demo base)
+  sd_got=$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')
+  [ "$rc" -eq 1 ] && [ "$sd_got" = "REQ-CHANGED demo REQ-1;REQ-CHANGED demo REQ-3;WAIVER-ADDED demo REQ-3;REQ-ADDED demo REQ-4;" ] \
+    && grep -q '^spec-diff: 3 requirement(s) differ from ' "$WORK/sd.out" \
+    || sd_fail="$sd_fail [four edits: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  [ "$sd_before" = "$(cd "$P" && git status --porcelain)" ] || sd_fail="$sd_fail [the script changed the tree]"
+  if command -v dash >/dev/null 2>&1; then
+    [ "$(dash "$SDF" "$P" demo base 2>&1)" = "$(cat "$WORK/sd.out")" ] || sd_fail="$sd_fail [dash prints something else]"
+  fi
+  # the base is the merge base with main when none is given
+  sdc "$P" checkout -q -b work; rc=$(sdrun "$P" demo)
+  [ "$rc" -eq 1 ] && grep -q '^REQ-ADDED demo REQ-4$' "$WORK/sd.out" || sd_fail="$sd_fail [no base ref given: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # REQ-2 taken out
+  sdspec "$P" open; grep -v 'REQ-2\|shall keep e' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sd.tmp" && mv "$WORK/sd.tmp" "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 1 ] && [ "$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')" = "REQ-REMOVED demo REQ-2;" ] \
+    || sd_fail="$sd_fail [a requirement removed: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # b. no spec at the base ref: the baseline is the first commit in which its Status reads open
+  P="$WORK/sd-b"; mkdir -p "$P"; sdc "$P" init -q -b main; sdc "$P" commit -q --allow-empty -m init; sdc "$P" tag base
+  sdspec "$P" draft; sdc "$P" add -A; sdc "$P" commit -q -m draft
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 0 ] && [ "$(cat "$WORK/sd.out")" = "NO-BASELINE demo" ] || sd_fail="$sd_fail [never open: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  sdspec "$P" open; sdc "$P" add -A; sdc "$P" commit -q -m accepted
+  sed 's/shall do b\./shall do b and c./' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sd.tmp" && mv "$WORK/sd.tmp" "$P/.shipkit/specs/demo/spec.md"
+  sdc "$P" add -A; sdc "$P" commit -q -m "edit after acceptance"
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 1 ] && [ "$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')" = "REQ-CHANGED demo REQ-1;" ] \
+    || sd_fail="$sd_fail [first open commit as the baseline: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # c. wrong usage
+  sh "$SDF" >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [no argument is not exit 64]"
+  sh "$SDF" "$P" nosuch base >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [an unknown spec is not exit 64]"
+  sh "$SDF" "$P" demo nosuchref >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [an unknown base ref is not exit 64]"
+  # d. sh, awk and git: no other program is run outside a comment
+  sd_tools=$(awk '!/^[ \t]*#/' "$SDF" | grep -n -E '(^|[|;&(`[:space:]])(sed|grep|sort|cut|tr|head|tail|wc|mktemp|rm|cat|python3?|perl|find|xargs)[[:space:]]' | head -3)
+  [ -z "$sd_tools" ] || sd_fail="$sd_fail [another program is run: $sd_tools]"
+  if [ -z "$sd_fail" ]; then pass "spec-diff (changed, added, removed and waived requirements against the spec at the base ref or its first open commit; a re-wrap is no change; exit 0, 1 and 64; no file touched; sh, awk and git only)"
+  else failc "spec-diff" "$sd_fail"; fi
+fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
