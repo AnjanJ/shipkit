@@ -161,6 +161,7 @@ registry() { cat <<'EOF'
 101 skipped-cite
 102 spec-diff
 103 spec-edited
+104 text-label
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -210,6 +211,9 @@ fail=0
 # Counts are kept in a file, one letter a line, so a pass inside a subshell is still counted.
 COUNTS="$WORK/.counts"; : > "$COUNTS"
 pass() { echo "PASS  $1"; echo p >> "$COUNTS"; }
+# passt: a pass whose assertion only read the wording of a skill, an agent or a rule. It shows
+# the words are there, not that a model follows them (honest-evidence/REQ-32, check 104).
+passt() { echo "PASS  [text] $1"; echo p >> "$COUNTS"; echo t >> "$COUNTS"; }
 failc() { echo "FAIL  $1 — $2"; fail=1; echo f >> "$COUNTS"; }
 model_check() {  # model_check <label> → 0: run this check's model part; 1: skipped, and said so
   if runs_model "$1"; then return 0; fi
@@ -969,7 +973,7 @@ fi  # /model_check 22
 # (the same byte assertion is what proves product-intake-brief/REQ-28 after S3-T6's sentence)
 if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
    && [ "$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')" -le 3000 ]; then
-  pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
+  passt "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
 else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
 
 # 23. product-file: /shipkit:product writes the product file in its fixed shape
@@ -1011,12 +1015,12 @@ fi  # /model_check 23
 # session reads. Cites: product-intake-brief/REQ-8 product-intake-brief/REQ-10
 rc_head=$(grep -m1 '^| Project | Path ' "$COPY/skills/map/SKILL.md")
 case "$rc_head" in
-  *"| Product | Top Goal |"*) pass "registry-columns (registry template has Product and Top Goal)";;
+  *"| Product | Top Goal |"*) passt "registry-columns (registry template has Product and Top Goal)";;
   *) failc "registry-columns" "the template header lacks the two columns: $rc_head";;
 esac
 if grep -q 'studio\.md' "$COPY/agents/eve.md" && grep -q '`Product`' "$COPY/agents/eve.md" \
    && grep -q '`Top Goal`' "$COPY/agents/eve.md"; then
-  pass "registry-columns (eve names studio.md and both columns)"
+  passt "registry-columns (eve names studio.md and both columns)"
 else failc "registry-columns" "agents/eve.md does not name studio.md, Product and Top Goal"; fi
 
 # 25. brief: a task becomes a brief, built by a script from the spec, with no model
@@ -1226,7 +1230,7 @@ rv="$COPY/agents/reviewer.md"
 rv_tools=$(sed -n 's/^tools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
-  pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
+  passt "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
 else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
 # A MET citation's line number is the working tree's, as `grep -n` prints it — never a position
 # inside a diff hunk: the second real run's reviewer cited accounts.ex:18-23 for a function at
@@ -1374,7 +1378,7 @@ else
   # sixth heading (run-wounds/REQ-15), and the briefing's handoff line above did not pick it up
   if grep -q '`## Blocked on`' "$COPY/skills/handoff/SKILL.md" \
      && grep -q 'Only when the next step cannot start' "$COPY/skills/handoff/SKILL.md"; then
-    pass "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
+    passt "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
   else failc "briefing" "handoff/SKILL.md does not document the conditional Blocked on heading"; fi
   # ...and a gap makes the spec-check line appear
   : > "$BB/.shipkit/specs/alpha/tasks.md"
@@ -1492,7 +1496,7 @@ ft_cmd=$(grep -c '^\*\*Fired-if\.\*\* `test ' "$ft_ref")
 ft_man=$(grep -c '^\*\*Fired-if\.\*\* manual$' "$ft_ref")
 ft_after=$(awk '/^\*\*Falsifiability\.\*\*/{f=NR} /^\*\*Fired-if\.\*\* `test /{if (f && NR > f && NR - f <= 3) ok=1} END{print ok+0}' "$ft_ref")
 if [ "$ft_cmd" -ge 1 ] && [ "$ft_man" -ge 1 ] && [ "$ft_after" -eq 1 ]; then
-  pass "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
+  passt "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
 else failc "fired-if-template" "command-form lines: $ft_cmd, manual-form lines: $ft_man, command after a clause: $ft_after"; fi
 # measured on $CORE, not $COPY: check 1 appended a codeword to the copy's decisions.md
 ft_bytes=$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')
@@ -2143,7 +2147,7 @@ else failc "fired-if-early" "after touch: rc=$rc out: $out"; fi
 if grep -q 'decision-check.sh" \. --run' "$COPY/skills/spec/SKILL.md" \
    && grep -qi 'FIRED.*ERROR\|ERROR.*FIRED' "$COPY/skills/spec/SKILL.md" \
    && grep -q 'exit 1 on the tree' "$COPY/skills/spec/reference.md"; then
-  pass "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
+  passt "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
 else failc "fired-if-early" "spec skill or reference lacks the decision-check sentence"; fi
 
 # 53. shipkit-allowed: the files shipkit's own loop writes are never "outside the spec". On the
@@ -2267,7 +2271,7 @@ if [ "$rc1" = "$rc2" ] && [ "$ao_plain" = "$ao_flag" ] && [ "$rc3" -eq 0 ] && gr
 else failc "spec-check-draft" "shipped $rc1/$rc2 [$ao_plain] vs [$ao_flag]; dropped $rc3: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
 # d. the spec skill asks for the flag on a draft and never flips the status (prose, REQ-3)
 if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the status to `open` for one run\|set .*Status.* to .*open.* for one run' "$COPY/skills/spec/SKILL.md"; then
-  pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
+  passt "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
 else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
 
 # 56. plugin-root-restore: until 4.11.0 the session hook rewrote ~/.claude/shipkit/plugin-root
@@ -2335,7 +2339,7 @@ cr_kept rules/monorepo.md "consumes it"; cr_kept rules/monorepo.md -- "--filter"
 cr_kept rules/testing.md "factories, fixtures and helpers"; cr_kept rules/testing.md "second runner"
 cr_kept stacks/react/.claude/rules/package-json.md "frozen-lockfile"; cr_kept stacks/react/.claude/rules/package-json.md "Detect the package manager"
 cr_kept stacks/rails/.claude/rules/rails.md "update_column"
-if [ -z "$cr_fail" ]; then pass "cuts-recorded (the sixteen measured lines are out of their eight files; the four kept files still carry theirs)"
+if [ -z "$cr_fail" ]; then passt "cuts-recorded (the sixteen measured lines are out of their eight files; the four kept files still carry theirs)"
 else failc "cuts-recorded" "$cr_fail"; fi
 cr_sec=$(sed -n '/^## The cuts (4.8.0)/,/^## /p' "$COPY/evals/README.md")
 if [ -n "$cr_sec" ] && for f in ui-ux hotwire liveview mix-deps notebooks pyproject react; do printf '%s\n' "$cr_sec" | grep -q "\`$f\`" || exit 1; done \
@@ -2346,7 +2350,7 @@ else failc "cuts-recorded" "evals/README.md has no 'The cuts (4.8.0)' section na
 # and line; a question with several parts counts as several. Prose, as check 15 reads the README.
 in4=$(sed -n '/^## 4\. Ask at most four questions/,/^## 5\./p' "$COPY/skills/intake/SKILL.md")
 if printf '%s\n' "$in4" | grep -q 'file and line that answers' && printf '%s\n' "$in4" | grep -q 'several parts'; then
-  pass "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
+  passt "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
 else failc "cuts-recorded" "skills/intake/SKILL.md step 4 lacks 'file and line that answers' or 'several parts'"; fi
 
 # 59. portfolio-gen: the portfolio fixture is GENERATED, never committed (spec: .shipkit/specs/
@@ -2454,7 +2458,7 @@ if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'setup rules' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
-  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
+  passt "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
 else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
 
 # 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
@@ -2489,7 +2493,7 @@ else failc "same-named" "a line with no match: $sn2_out / $sn2_re"; fi
 if grep -q 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" \
    && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'tracked' \
    && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'leave it\|left in place\|left as is\|left where it is'; then
-  pass "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
+  passt "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
 else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git before nesting the old backup"; fi
 
 # 62. plugin-root-installed: the session hook writes ~/.claude/shipkit/plugin-root only from a
@@ -2611,7 +2615,7 @@ for pair in "ask:--walk:walk.md:# /shipkit:ask --walk" "ask:--system:system.md:#
   [ -f "$COPY/skills/$sk/$ref" ] || { sm_ok=0; sm_why="$sm_why $ref-missing"; }
   [ -f "$COPY/skills/$sk/$ref" ] && ! grep -q -- "^$head1" "$COPY/skills/$sk/$ref" && { sm_ok=0; sm_why="$sm_why $ref-heading"; }
 done
-if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
+if [ "$sm_ok" -eq 1 ]; then passt "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
 else failc "skills-merged" "dispatch:$sm_why"; fi
 sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
 sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
@@ -2630,14 +2634,14 @@ af_left=""; for a in tracer archivist codebase-explorer; do [ -e "$COPY/agents/$
 if [ -z "$af_left" ]; then pass "agents-four (no tracer.md, archivist.md or codebase-explorer.md under agents/)"
 else failc "agents-four" "agent files left:$af_left"; fi
 if grep -q '^## Trace mode' "$COPY/agents/grandfather.md" && grep -q 'grandfather' "$COPY/skills/ask/SKILL.md"; then
-  pass "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
+  passt "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
 else failc "agents-four" "grandfather.md lacks '## Trace mode' or ask does not name grandfather for --walk"; fi
 if grep -q '^context: fork' "$COPY/skills/map/SKILL.md" && grep -q 'archivist.md' "$COPY/skills/map/SKILL.md" \
    && [ -f "$COPY/skills/map/archivist.md" ] && grep -q '^# The archivist' "$COPY/skills/map/archivist.md"; then
-  pass "agents-four (map runs forked and carries the archivist's body as archivist.md)"
+  passt "agents-four (map runs forked and carries the archivist's body as archivist.md)"
 else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map/SKILL.md") names-archivist.md=$(grep -c 'archivist.md' "$COPY/skills/map/SKILL.md") file=$([ -f "$COPY/skills/map/archivist.md" ] && echo yes || echo no)"; fi
 af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
-if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
+if [ -z "$af_names" ]; then passt "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
 else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
 # the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's four;
 # test-analyzer's description is added from the checkout for the ≤ 1,075 ceiling (plan §0's 1,000,
@@ -2680,7 +2684,7 @@ if [ ! -d "$SF/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/rules/shipkit" ]
 else failc "skills-flag (unsetup)" "off: rules=$([ -d "$SF/.claude/rules/shipkit" ] && echo left || echo gone); on: rules=$([ -d "$SF2/.claude/rules/shipkit" ] && echo left || echo gone) skills=$([ -d "$SF2/.claude/skills/new-feature" ] && echo left || echo gone)"; fi
 if grep -q -- '--with-skills' "$COPY/skills/setup/SKILL.md" && grep -qi 'listed in every session' "$COPY/skills/setup/SKILL.md" \
    && grep -qi 'non-interactive' "$COPY/skills/setup/SKILL.md"; then
-  pass "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
+  passt "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
 else failc "skills-flag" "skills/setup/SKILL.md does not describe the --with-skills question"; fi
 
 # 68. appends-trimmed: the overlay CLAUDE.md appends carry only the lines the W7 audit kept
@@ -2698,15 +2702,15 @@ for pair in python:1100 rails:1420 react:900 elixir:1220 go:1270 static:420; do
   st=${pair%%:*}; cap=${pair#*:}; b=$(wc -c < "$COPY/stacks/$st/CLAUDE.md.append" | tr -d ' ')
   [ "$b" -le "$cap" ] || at_fail="$at_fail [$st append $b bytes, cap $cap]"
 done
-if [ -z "$at_fail" ]; then pass "appends-trimmed (the six big appends carry only the kept lines, each at or under its post-trim size)"
+if [ -z "$at_fail" ]; then passt "appends-trimmed (the six big appends carry only the kept lines, each at or under its post-trim size)"
 else failc "appends-trimmed" "$at_fail"; fi
 if [ -f "$COPY/stacks/python/.claude/rules/django.md" ] && sed -n '1,8p' "$COPY/stacks/python/.claude/rules/django.md" | grep -q '^paths:' \
    && grep -q 'select_related' "$COPY/stacks/python/.claude/rules/django.md" && grep -q 'post_save' "$COPY/stacks/python/.claude/rules/django.md"; then
-  pass "appends-trimmed (the five Django lines live in a path-scoped stacks/python/.claude/rules/django.md)"
+  passt "appends-trimmed (the five Django lines live in a path-scoped stacks/python/.claude/rules/django.md)"
 else failc "appends-trimmed" "stacks/python/.claude/rules/django.md missing, unscoped, or without the Django lines"; fi
 if sed -n '1,8p' "$COPY/stacks/rails/.claude/rules/rails.md" | grep -q '^paths:' && grep -q 'app/\*\*/\*.rb' "$COPY/stacks/rails/.claude/rules/rails.md" \
    && sed -n '1,8p' "$COPY/stacks/react/.claude/rules/react.md" | grep -q '^paths:' && grep -q 'app/frontend' "$COPY/stacks/react/.claude/rules/react.md"; then
-  pass "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
+  passt "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
 else failc "appends-trimmed" "rails.md or react.md lacks paths: (rails: $(sed -n '1,3p' "$COPY/stacks/rails/.claude/rules/rails.md" | tr '\n' '|'))"; fi
 
 # 69. skills-cut: two Rails overlay skills the W8 audit found said by the loop or the rules are
@@ -2753,7 +2757,7 @@ for rs_t in 'Good questions for you' 'cheat-sheet'; do grep -qF "$rs_t" "$rs_e" 
 for rs_t in '### 0. Triage' 'offer no motives of your own' '### Attention digest'; do grep -qF "$rs_t" "$rs_e" || rs_fail="$rs_fail [eve.md lost: $rs_t]"; done
 rs_b=$(wc -c < "$rs_e" | tr -d ' ')
 [ "$rs_b" -le 12067 ] || rs_fail="$rs_fail [eve.md is $rs_b bytes, ceiling 12067]"
-if [ -z "$rs_fail" ]; then pass "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
+if [ -z "$rs_fail" ]; then passt "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
 else failc "report-shapes" "$rs_fail"; fi
 
 # 71. brief-cites: the brief says how a test cites its requirement, with the spec's own slug. The
@@ -2824,7 +2828,7 @@ rv_fail=""
 printf '%s\n' "$rv_step" | grep -qF '.claude/rules/shipkit/.installed' || rv_fail="$rv_fail [step 4 does not name the manifest]"
 printf '%s\n' "$rv_step" | grep -qF '.claude/skills/' || rv_fail="$rv_fail [step 4 does not name .claude/skills/]"
 printf '%s\n' "$rv_step" | grep -qiF "project's own" || rv_fail="$rv_fail [step 4 does not say the project's own skill is listed]"
-if [ -z "$rv_fail" ]; then pass "reviewer-skills (step 4 reads a stack skill by the manifest; a project's own skill is still listed)"
+if [ -z "$rv_fail" ]; then passt "reviewer-skills (step 4 reads a stack skill by the manifest; a project's own skill is still listed)"
 else failc "reviewer-skills" "$rv_fail"; fi
 
 # 74. ship-capture: the gate's pre-step capture has a named home inside its own cleanup. The 4.12
@@ -2836,7 +2840,7 @@ grep -qF 'git status --porcelain > "${TMPDIR:-/tmp}/shipkit-ship-status.out"' "$
 grep -E '^\| 7 \|' "$sc_ship" | grep -qF 'shipkit-ship-status.out' || sc_fail="$sc_fail [step 7 does not read it]"
 grep -qF 'rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out' "$sc_ship" || sc_fail="$sc_fail [the cleanup no longer covers *.out]"
 grep -qF 'and keep its output' "$sc_ship" && sc_fail="$sc_fail [the old unnamed capture is still there]"
-if [ -z "$sc_fail" ]; then pass "ship-capture (the pre-step writes shipkit-ship-status.out, step 7 reads it, the cleanup's pattern covers it)"
+if [ -z "$sc_fail" ]; then passt "ship-capture (the pre-step writes shipkit-ship-status.out, step 7 reads it, the cleanup's pattern covers it)"
 else failc "ship-capture" "$sc_fail"; fi
 
 # 75. setup-rule-count: setup's word for how many rules it copies matches the files it copies, so
@@ -2844,7 +2848,7 @@ else failc "ship-capture" "$sc_fail"; fi
 # Cites: run-again/REQ-5
 sr_n=$(ls "$COPY"/rules/*.md | wc -l | tr -d ' ')
 case "$sr_n" in 6) sr_w=six ;; 7) sr_w=seven ;; 8) sr_w=eight ;; 9) sr_w=nine ;; 10) sr_w=ten ;; *) sr_w="$sr_n" ;; esac
-if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then pass "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
+if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then passt "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
 else failc "setup-rule-count" "$sr_n files under rules/, setup says: $(grep -oE 'copies all [a-z0-9]+ rules' "$COPY/skills/setup/SKILL.md")"; fi
 
 # 76. ship-retry: a reply with no verdict line is not a review. The reviewer's last call can be
@@ -2858,7 +2862,7 @@ sy_fail=""
 printf '%s\n' "$sy_step" | grep -qF 'no `VERDICT:` line' || sy_fail="$sy_fail [step 4 does not name a reply with no verdict line]"
 printf '%s\n' "$sy_step" | grep -qF 'start the reviewer once more' || sy_fail="$sy_fail [step 4 does not start it once more]"
 printf '%s\n' "$sy_step" | grep -qF 'a second reply with no verdict line' || sy_fail="$sy_fail [step 4 does not say a second miss is FAIL]"
-if [ -z "$sy_fail" ]; then pass "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
+if [ -z "$sy_fail" ]; then passt "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
 else failc "ship-retry" "$sy_fail"; fi
 
 # 77. reviewer-fixture: every reviewer case builds its workspace from one script, so a new case
@@ -2878,7 +2882,7 @@ for rd_want in '`contradicted`. Otherwise it is' '`not built`' 'turned down'; do
   grep -qF "$rd_want" "$COPY/agents/reviewer.md" || rd_fail="$rd_fail [no: $rd_want]"
 done
 grep -q 'gate weighs' "$COPY/agents/reviewer.md" && rd_fail="$rd_fail [still says the gate weighs them]"
-if [ -z "$rd_fail" ]; then pass "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
+if [ -z "$rd_fail" ]; then passt "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
 else failc "reviewer-decisions" "$rd_fail"; fi
 
 # 78. map-read-grep: map_read used to read a tool's input path only, so a repo-wide Grep landing on
@@ -2958,7 +2962,7 @@ product/reference.md|> Product reviewed on <YYYY-MM-DD>.
 intake/SKILL.md|> Intake taken on <YYYY-MM-DD>.
 ship/reference.md|> Checked on <YYYY-MM-DD> at commit
 SDEOF
-if [ -z "$sd_fail" ]; then pass "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
+if [ -z "$sd_fail" ]; then passt "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
 else failc "stamp-dates" "$sd_fail"; fi
 
 # 81. section-clean: a filled section kept every template comment, the alternatives the project did
@@ -3035,7 +3039,7 @@ else failc "section-clean" "$sc2_fail"; fi
 # No claude needed. Cites: fourth-project/REQ-10
 fi_sec=$(awk '/^### The `Fired-if` line/ { on = 1; next } on && /^##/ { on = 0 } on' "$COPY/skills/spec/reference.md")
 if printf '%s\n' "$fi_sec" | grep -q 'tracked files' && printf '%s\n' "$fi_sec" | grep -q 'git grep'; then
-  pass "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
+  passt "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
 else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say tracked files and git grep"; fi
 
 # 83. superseded-report: a report's name carries the gate's date, so a re-run on a later day wrote
@@ -3047,7 +3051,7 @@ else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say
 sr_sec=$(awk '/^## The report/ { on = 1; next } on && /^## / { on = 0 } on' "$COPY/skills/ship/SKILL.md" | tr '\n' ' ')
 if printf '%s\n' "$sr_sec" | grep -q 'earlier date' && printf '%s\n' "$sr_sec" | grep -q 'supersede' \
    && printf '%s\n' "$sr_sec" | grep -q 'leave it'; then
-  pass "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
+  passt "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
 else failc "superseded-report" "ship/SKILL.md's report section does not name an earlier day's report as superseded and leave it"; fi
 
 # 84. walk-sentence: the comment that opens walk.md, which ask hands to grandfather whole, read
@@ -3057,7 +3061,7 @@ else failc "superseded-report" "ship/SKILL.md's report section does not name an 
 ws_head=$(awk '{ print } /-->/ { exit }' "$COPY/skills/ask/walk.md" | tr '\n' ' ' | tr -s ' ')
 if printf '%s\n' "$ws_head" | grep -qF 'The agent cannot ask the user anything mid-run and cannot write files' \
    && ! printf '%s\n' "$ws_head" | grep -qF 'The agent It'; then
-  pass "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
+  passt "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
 else failc "walk-sentence" "walk.md's opening comment still reads: $(printf '%s\n' "$ws_head" | grep -o 'The agent[^.]*\.' | head -1)"; fi
 
 # 85. ship-write-path: step 4 gave the Write tool "${TMPDIR:-/tmp}/shipkit-ship-review.out", and
@@ -3071,7 +3075,7 @@ printf '%s\n' "$sw_step" | grep -qF "printf '%s\n' \"\${TMPDIR:-/tmp}/shipkit-sh
 printf '%s\n' "$sw_step" | grep -qF 'to the path it printed' || sw_fail="$sw_fail [step 4 does not give Write the printed path]"
 printf '%s\n' "$sw_step" | grep -qF 'unchanged, to `"${TMPDIR' && sw_fail="$sw_fail [step 4 still gives Write \${TMPDIR}]"
 grep -E '^\| 4 \|' "$sw_ship" | grep -qF '${TMPDIR' && sw_fail="$sw_fail [row 4 still names \${TMPDIR} for the reply]"
-if [ -z "$sw_fail" ]; then pass "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
+if [ -z "$sw_fail" ]; then passt "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
 else failc "ship-write-path" "$sw_fail"; fi
 
 # 86. elixir-app: the elixir section's Key Paths wrote `lib/<app>/` into a project's CLAUDE.md,
@@ -3194,7 +3198,7 @@ for rm_want in '`contradicted`, `partly built` or `not built`' \
   'decisions marked `not built` or `partly built` are reported and do not change the verdict'; do
   case "$rm_flat" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [no: $rm_want]" ;; esac
 done
-if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
+if [ -z "$rm_fail" ]; then passt "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
 else failc "reviewer-marks" "$rm_fail"; fi
 
 
@@ -3274,7 +3278,7 @@ for gg_f in agents/reviewer.md skills/ship/SKILL.md skills/ship/reference.md; do
   printf '%s\n' "$gg_spans" | grep -vxF '`\|`' | grep -qF '\|' \
     && gg_fail="$gg_fail [$gg_f: a \\| in a command]"
 done
-if [ -z "$gg_fail" ]; then pass "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
+if [ -z "$gg_fail" ]; then passt "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
 else failc "git-grep" "$gg_fail"; fi
 
 # 92. wait-probe: the 5.1 intake's file was on disk at 00:19:34 and its session ended at 00:23:52,
@@ -3395,7 +3399,7 @@ else
   [ -n "$gf_rule" ] && [ -n "$gf_proc" ] && [ "$gf_rule" -lt "$gf_proc" ] \
     || gf_fail="$gf_fail [the test-author rule does not come before ## Procedure]"
 fi
-if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
+if [ -z "$gf_fail" ]; then passt "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
 else failc "goldfish-agent" "$gf_fail"; fi
 
 # 95. spec-goldfish-step: /shipkit:spec has the main session start the goldfish after design.md and
@@ -3423,7 +3427,7 @@ sg_tpl=$(awk '/^### `spec.md`/ { on = 1 } /^### `design.md`/ { on = 0 } on' "$sg
 printf '%s\n' "$sg_tpl" | grep -qx '## Goldfish' || sg_fail="$sg_fail [reference.md's spec.md template has no ## Goldfish]"
 printf '%s\n' "$sg_tpl" | grep -qF 'Goldfish: GAPS accepted by owner — ' || sg_fail="$sg_fail [template lacks the accepted-gap line]"
 printf '%s\n' "$sg_tpl" | grep -qF "Goldfish: skipped on the owner's word" || sg_fail="$sg_fail [template lacks the skip line]"
-if [ -z "$sg_fail" ]; then pass "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
+if [ -z "$sg_fail" ]; then passt "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
 else failc "spec-goldfish-step" "$sg_fail"; fi
 
 # 96. goldfish-fixture: the two goldfish eval cases share evals/goldfish/spec-fixture.sh. `gap` writes
@@ -3536,7 +3540,7 @@ sa_scan=$(awk -v models="$MODEL_CHECKS" '
     if (!ism[lab]) print "check " lab " starts a model and is not in MODEL_CHECKS (line " NR ")"
     else if (!g) print "check " lab " starts a model outside its guard (line " NR ")"
   }
-  shut[lab] && /pass "/ { after[lab] = 1 }
+  shut[lab] && /passt? "/ { after[lab] = 1 }
   END {
     for (i = 1; i <= n; i++) if (!has[m[i]] || !shut[m[i]]) print "check " m[i] " has no whole model_check guard"
     if (!after["22"] || !after["54"] || !after["64"]) print "an assertion that needs no model is no longer outside the guard of check 22, 54 or 64"
@@ -3786,6 +3790,24 @@ rc=$(serun)
   || se_fail="$se_fail [spec.md edited and a file outside: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
 if [ -z "$se_fail" ]; then pass "spec-edited (the task's own spec.md and design.md are named when they change; a ticked tasks.md is not; the exit status is the OUTSIDE lines' alone)"
 else failc "spec-edited" "$se_fail"; fi
+
+# 104. text-label: an assertion that only reads the wording of a skill, an agent or a rule
+# shows that the words are there, not that a model follows them. Those assertions pass through
+# passt and print as "PASS  [text]", the count line says how many there were, and
+# docs/design/smoke-audit-5.4.md lists each one with the requirement its check cites and what
+# else cites that requirement. Check 76, ship-retry, is one of them. No claude needed.
+# Cites: honest-evidence/REQ-32
+tx_fail=""
+tx_out=$( (COUNTS=/dev/null; passt "probe") 2>/dev/null )
+[ "$tx_out" = "PASS  [text] probe" ] || tx_fail="$tx_fail [passt prints: $tx_out]"
+# the two searches below must not find their own lines: the first is anchored on the line's
+# start, the second leaves this check out
+grep -q '^if \[ -z "\$sy_fail" \]; then passt "ship-retry (' "$SELF" || tx_fail="$tx_fail [check 76's assertion is not a passt call]"
+tx_calls=$(awk '/^# [0-9]+[a-z]?\. / { lab = $2 } lab != "104." && /passt "[a-z0-9-]+ \(/ { n++ } END { print n + 0 }' "$SELF")
+tx_rows=$(grep -c '^| [0-9][0-9]*[a-z]\{0,1\} | ' "$ROOT/docs/design/smoke-audit-5.4.md" 2>/dev/null)
+[ "${tx_calls:-0}" -gt 0 ] && [ "${tx_calls:-0}" -eq "${tx_rows:-0}" ] || tx_fail="$tx_fail [$tx_calls passt calls in this script, ${tx_rows:-0} rows in the audit]"
+if [ -z "$tx_fail" ]; then pass "text-label (passt prints PASS  [text]; check 76 goes through it; $tx_calls text-only assertions, each with its row in the audit)"
+else failc "text-label" "$tx_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

@@ -46,7 +46,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 103 (`spec-edited`), which edits a fixture spec's `design.md` and then only its `tasks.md`
   - After: T6
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 103 `PASS` and check 26 `PASS`, exit 0
-- [ ] **T8** Text-only assertions are printed as `PASS  [text]`, counted, and listed in an audit → REQ-32, REQ-33
+- [x] **T8** Text-only assertions are printed as `PASS  [text]`, counted, and listed in an audit → REQ-32, REQ-33
   - Files: scripts/smoke.sh, docs/design/smoke-audit-5.4.md
   - Test: scripts/smoke.sh check 104 (`text-label`), which finds check 76's line printed as `PASS  [text]` and the audit's rows equal in number to the `passt` calls
   - After: T7
