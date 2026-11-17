@@ -51,7 +51,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 104 (`text-label`), which finds check 76's line printed as `PASS  [text]` and the audit's rows equal in number to the `passt` calls
   - After: T7
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 104 `PASS`, a count line with a text-only number above zero, exit 0
-- [ ] **T9** The guide names the new arguments, the `> Tests:` line, `spec-diff.sh` and the four new kinds of line → REQ-39
+- [x] **T9** The guide names the new arguments, the `> Tests:` line, `spec-diff.sh` and the four new kinds of line → REQ-39
   - Files: GUIDE.md
   - Test: none: REQ-39 is prose, read against the guide
   - After: T8

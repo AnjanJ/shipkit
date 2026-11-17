@@ -856,6 +856,10 @@ Since 3.3 a spec is not only read, it is checked. Three small conventions make t
 - **Tests cite requirements.** A test names the requirement it proves as `<slug>/REQ-N`
   (for example `refunds/REQ-3`) in a comment or its name. A requirement that is prose only is
   excused by ending it with `[untested: <reason>]`.
+- **Where the tests live** (optional). A `> Tests:` line under `> Paths:` names the files or
+  folders a citation counts in, written the same way: `> Tests: tests/billing/, scripts/smoke.sh`.
+  With it, a citation anywhere else, such as a comment in the code itself, does not count and
+  is named. Without it a citation counts in any file outside `.shipkit/`, `docs/` and `*.md`.
 - **Tasks name their files.** Each task lists `Files`, `Test`, `After` and `Done when`. Two
   tasks that list the same file must be ordered by `After` (directly or through a chain), so
   tasks that share nothing can be handed to agents at the same time.
@@ -878,6 +882,9 @@ sh "<plugin root>/scripts/spec-check.sh" . refunds    # one spec
 | `CYCLE refunds T2` | the task's `After` lines lead back to itself |
 | `STRAY-STATUS refunds design.md` | `design.md` or `tasks.md` carries a `> Status:` line; only `spec.md` has one |
 | `WAIVED refunds REQ-4` | excused with `[untested: …]` — information, not a gap |
+| `EVIDENCE refunds tested=2 waived=1 uncited=0` | one for each spec checked — information: how many requirements have a counted citation, how many are excused, how many have neither |
+| `CITED-ELSEWHERE refunds REQ-2 app/billing.py` | the spec has a `> Tests:` line and this citation sits outside it, so it does not count — information; the requirement then reads `MISSING-TEST` or `PENDING-TEST` unless another citation counts |
+| `SKIPPED-CITE refunds REQ-3 tests/test_refunds.py:41` | the citation at that line sits on, or within three lines of, a skip marker (`@tag :skip`, `it.skip`, `@pytest.mark.skip`, `t.Skip(`, a line that begins `skip` or `pending`, and their like) — information: the test it names may never run. A test left out by configuration is not seen |
 | `SKIPPED refunds (draft)` | drafts and dropped specs are not checked |
 
 Two flags change how a spec is read, and neither changes a file:
@@ -895,6 +902,28 @@ It exits 1 when there is a gap, so it can run in CI. It checks that a citation *
 that the test passes — running the tests is still your job. `/shipkit:spec` writes specs in
 this format and runs the check itself. A spec written before 3.3, with none of the new lines,
 is treated as `open` and is not asked for the task format.
+
+### What a branch did to its own spec
+
+A spec is what a branch is judged by, and a branch can edit it: reword a requirement to match
+what was built, or excuse it from having a test. That is often right, and it should be seen.
+
+```sh
+sh "<plugin root>/scripts/spec-diff.sh" . refunds            # against the merge base with main
+sh "<plugin root>/scripts/spec-diff.sh" . refunds <base-ref> # against a commit you name
+```
+
+| Line | Meaning |
+|------|---------|
+| `REQ-CHANGED refunds REQ-2` | the requirement's words differ from the baseline's; the same words wrapped or spaced another way do not count |
+| `WAIVER-ADDED refunds REQ-2` | it is excused with `[untested: …]` now and was not — printed beside its `REQ-CHANGED` line |
+| `REQ-ADDED refunds REQ-5` | it is in the spec now and was not in the baseline |
+| `REQ-REMOVED refunds REQ-3` | it was in the baseline and is gone |
+| `NO-BASELINE refunds` | there is nothing to compare with |
+
+The baseline is `spec.md` at the base ref; for a spec written on its own branch, it is the first
+commit after the base ref in which its `> Status:` reads `open`. The script exits 1 when it
+prints a `REQ-` line, 0 otherwise, and 64 on wrong usage. It blocks nothing and changes no file.
 
 ### Handing a task to an agent
 
@@ -919,6 +948,10 @@ sh "<plugin root>/scripts/brief-verify.sh" . refunds T3 <sha>   # afterwards: wh
   `setup-files.sh record` — so a task that edits either is reported. Ignored files are not
   seen: run the task's `Done when` to catch a stray build artefact. Then run the task's `Done when` command yourself — the agent's report is a
   claim, not proof.
+- It also prints `SPEC-EDITED <file>` when the task's own `spec.md` or `design.md` changed.
+  That is information and does not change the exit status: the files are allowed, but an agent
+  that reworded the requirement it was handed has changed what the task is judged by.
+  `spec-diff.sh` says which requirements moved.
 - Tasks with no unfinished predecessor can run at the same time, each in its own git worktree.
 - Match the team to the work: no agent for a trivial change, one for one task, the elders for
   a research question.
@@ -1573,4 +1606,4 @@ your specs and decisions are yours to keep.)
 
 5. **Stack-specific content needs /setup.** Skills, agents, the hook and the always-on rules work instantly. Path-scoped rules and stack-specific skills (like `/new-feature` for Rails) require running `/shipkit:setup` first.
 
-6. **Releasing shipkit itself** (for contributors): `./scripts/lint.sh` checks the files the plugin ships and runs in CI; `./scripts/smoke.sh` checks that Claude Code still behaves the way the plugin assumes (rules inject, the per-hook cap, the agent set, the install scripts) — it needs a logged-in `claude`, so run it locally before tagging.
+6. **Releasing shipkit itself** (for contributors): `./scripts/lint.sh` checks the files the plugin ships and runs in CI; `./scripts/smoke.sh` checks that Claude Code still behaves the way the plugin assumes (rules inject, the per-hook cap, the agent set, the install scripts) — it needs a logged-in `claude`, so run it locally before tagging. `./scripts/smoke.sh --no-model` leaves out the sixteen checks that start a model and needs no `claude`: it costs nothing, takes about a minute, and runs in CI on every pull request. `--only <n>[,<n>]` runs just the named ones of those sixteen (and every check that needs no model), and `--list` prints what a set of arguments would run without running it. A line printed as `PASS  [text]` is an assertion that only read the wording of a skill, an agent or a rule.
