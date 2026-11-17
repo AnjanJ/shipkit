@@ -27,6 +27,11 @@
 #                               its requirements have a waiver (b), have none and are cited (a),
 #                               or neither (c). A ship report can then say how much of READY is
 #                               tests and how much is reading (honest-evidence/REQ-12)
+#   CITED-ELSEWHERE <slug> REQ-N <file>
+#                               the spec has a "> Tests:" line and this citation sits in a file
+#                               outside its paths, so it does not count — information; the
+#                               requirement then reads MISSING-TEST or PENDING-TEST unless
+#                               another citation counts (honest-evidence/REQ-16, REQ-18)
 #   SKIPPED <slug> (<status>)   the spec is a draft or was dropped; nothing is checked
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
 #   BAD-AFTER <slug> <task> <name>        a task's After names a task that does not exist
@@ -46,6 +51,10 @@
 #   - A test cites a requirement by containing "<slug>/REQ-N" anywhere — a comment or a test
 #     name. The slug is needed because every spec has its own REQ-1. Citations under .shipkit/,
 #     under docs/, or in any *.md file do not count: prose is not a test.
+#   - A spec may narrow that with a "> Tests: tests/billing/, scripts/smoke.sh" line in spec.md:
+#     comma-separated files or folders, written like "> Paths:". Its citations then count only
+#     in a listed file or under a listed folder. No such line: any file that the rule above
+#     allows, as before.
 #   - Only a shipped spec is asked for tests. An open one still owes them, and is told so by a
 #     PENDING-TEST line per uncited requirement (exit status unchanged; --as-shipped turns
 #     them into MISSING-TEST).
@@ -89,7 +98,8 @@ fi
 
 TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 CITES="$TMP.cites"
-trap 'rm -f "$TMP" "$CITES"' EXIT
+LOCS="$TMP.locs"
+trap 'rm -f "$TMP" "$CITES" "$LOCS" "$TMP.cnt" "$TMP.else"' EXIT
 
 # spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)
 spec_status() {
@@ -172,23 +182,56 @@ spec_reqs() {
 # collect_cites → every "<slug>/REQ-N" that appears in a file that counts as a test, one per
 # line, in $CITES. ONE git grep per run: the briefing runs this script at every session start,
 # and a grep per requirement made fifty open specs take 2.7 s (smoke check 30's limit is 1 s).
+# Still one search, now with -n: each hit is "<file>:<line>:<citation>", kept in $LOCS as
+# "<file><TAB><line><TAB><citation>" so that a spec with a "> Tests:" line can ask where a
+# citation sits (honest-evidence/REQ-15). $CITES is as before, every citation once, and is what
+# a spec with no such line is counted from (honest-evidence/REQ-17).
 collect_cites() {
   _pat='[A-Za-z0-9._-]+/REQ-[0-9]+'
   if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$PROJ" grep -h -I -o --untracked -E -e "$_pat" -- . \
+    git -C "$PROJ" grep -n -I -o --untracked -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null
   else
-    (cd "$PROJ" && git grep -h -I -o --no-index -E -e "$_pat" -- . \
+    (cd "$PROJ" && git grep -n -I -o --no-index -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null)
-  fi | sort -u > "$CITES"
+  fi | awk -F: 'NF >= 3 { f = $1; for (i = 2; i <= NF - 2; i++) f = f ":" $i; print f "\t" $(NF - 1) "\t" $NF }' > "$LOCS"
+  cut -f3 "$LOCS" | sort -u > "$CITES"
 }
 collect_cites
 
 # cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N (whole token:
-# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1)
+# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1). $SPEC_CITES is $CITES, or for a
+# spec with a "> Tests:" line the citations found under its paths.
 cited() {
-  grep -q -x -F "$1/REQ-$2" "$CITES"
+  grep -q -x -F "$1/REQ-$2" "$SPEC_CITES"
 }
+
+# tests_filter <slug> <the Tests paths, one a line> → writes to $TMP.cnt the spec's citations
+# that sit in a listed file or under a listed folder (with or without its last slash), and
+# prints one CITED-ELSEWHERE line for each requirement and file outside them.
+tests_filter() {
+  : > "$TMP.cnt"
+  SC_TESTS="$2" awk -F '\t' -v slug="$1" -v counted="$TMP.cnt" '
+    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
+    function under(f,   i, q) {
+      for (i = 1; i <= np; i++) {
+        if (paths[i] == "") continue
+        if (f == paths[i]) return 1
+        q = paths[i]; if (q !~ /\/$/) q = q "/"
+        if (index(f, q) == 1) return 1
+      }
+      return 0
+    }
+    index($3, pre) == 1 && substr($3, length(pre) + 1) ~ /^[0-9]+$/ {
+      if (under($1)) print $3 > counted
+      else print "CITED-ELSEWHERE " slug " REQ-" substr($3, length(pre) + 1) " " $1
+    }' "$LOCS" | sort -u
+}
+
+# One search names the specs that carry a "> Tests:" line, so a spec without one costs no
+# process more than it did: the briefing runs this script at every session start, and fifty
+# specs must come back within a second (smoke check 30 read 1.24 s when each spec was asked).
+TESTS_SPECS=$(grep -l '^> *Tests:' "$SPECS"/*/spec.md 2>/dev/null | tr '\n' '|')
 
 gaps=0
 checked=0
@@ -209,6 +252,14 @@ for spec in "$SPECS"/*/spec.md; do
       gaps=$((gaps + 1))
     fi
   done
+  # A "> Tests: a/, b/c.sh" line narrows where this spec's citations count; none: as before.
+  SPEC_CITES=$CITES; has_tests=0
+  case "|$TESTS_SPECS" in *"|$spec|"*) has_tests=1 ;; esac
+  if [ "$has_tests" -eq 1 ]; then
+    tests=$(sed -n 's/^> *Tests: *//p' "$spec" | sed -n 1p | tr ',' '\n' | sed 's/`//g; s/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
+    tests_filter "$slug" "$tests" > "$TMP.else"
+    SPEC_CITES="$TMP.cnt"
+  fi
   if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
   ev_t=0; ev_w=0; ev_u=0   # honest-evidence/REQ-12: tested, waived, uncited
   while read -r n kind mentioned; do
@@ -234,6 +285,8 @@ for spec in "$SPECS"/*/spec.md; do
     fi
   done < "$TMP"
   echo "EVIDENCE $slug tested=$ev_t waived=$ev_w uncited=$ev_u"
+  # CITED-ELSEWHERE lines: information, never a gap by themselves (REQ-18)
+  [ "$has_tests" -eq 1 ] && cat "$TMP.else"
   if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then
     task_findings "$slug" "$dir/tasks.md" > "$TMP"
     if [ -s "$TMP" ]; then

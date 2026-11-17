@@ -157,6 +157,7 @@ registry() { cat <<'EOF'
 97 smoke-args
 98 ci-smoke-job
 99 evidence-line
+100 tests-line
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3588,6 +3589,57 @@ rc=$(evrun "$P")
 grep -q '^EVIDENCE' "$WORK/ev.out" && ev_fail="$ev_fail [a skipped draft got an EVIDENCE line]"
 if [ -z "$ev_fail" ]; then pass "evidence-line (tested, waived and uncited counted for each checked spec, before an unchanged summary line; a draft gets none; exit status as before)"
 else failc "evidence-line" "$ev_fail"; fi
+
+# 100. tests-line: a spec may say where its tests live. With a "> Tests:" line in spec.md a
+# citation counts only in a file that is one of the paths listed or lies under a folder listed
+# (written with or without its last slash); a citation anywhere else is named, CITED-ELSEWHERE,
+# and the requirement is then missing its test as if it had none. The line by itself is not a
+# gap. A spec with no such line is counted as at 5.3.0. No claude needed.
+# Cites: honest-evidence/REQ-15 honest-evidence/REQ-16 honest-evidence/REQ-17 honest-evidence/REQ-18
+tlspec() {  # tlspec <proj> <the Tests line's value | none> → shipped spec demo: REQ-1 cited under tests/, REQ-2 only under app/
+  _d="$1/.shipkit/specs/demo"; mkdir -p "$_d" "$1/tests" "$1/app" "$1/scripts"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  { printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n'
+    [ "$2" = none ] || printf '> Tests: %s\n' "$2"
+    printf '\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** When c happens, the system shall do d.\n'; } > "$_d/spec.md"
+  printf -- '- [x] **T1** do b → REQ-1\n- [x] **T2** do d → REQ-2\n' > "$_d/tasks.md"
+  printf '# demo/REQ-1\n' > "$1/tests/test_demo.py"
+  printf '# demo/REQ-2 is handled here\n' > "$1/app/x.py"
+}
+tlrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/tl.out" 2>&1; echo $?; }  # → the exit status; output in tl.out
+tl_fail=""; tl_i=0
+for tl_line in 'tests/' 'tests'; do
+  tl_i=$((tl_i + 1)); P="$WORK/tl-$tl_i"; tlspec "$P" "$tl_line"
+  rc=$(tlrun "$P")
+  if [ "$rc" -ne 1 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" || ! grep -q '^MISSING-TEST demo REQ-2$' "$WORK/tl.out" \
+     || grep -q 'MISSING-TEST demo REQ-1' "$WORK/tl.out" || ! grep -q '^EVIDENCE demo tested=1 waived=0 uncited=1$' "$WORK/tl.out"; then
+    tl_fail="$tl_fail [Tests: $tl_line → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+  fi
+done
+P="$WORK/tl-none"; tlspec "$P" none
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || grep -q 'CITED-ELSEWHERE' "$WORK/tl.out" || ! grep -q '^EVIDENCE demo tested=2 waived=0 uncited=0$' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [no Tests line → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+P="$WORK/tl-both"; tlspec "$P" 'tests/'; printf '# demo/REQ-2\n' >> "$P/tests/test_demo.py"
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" || grep -q 'MISSING-TEST' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [cited under tests/ and elsewhere → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+P="$WORK/tl-file"; tlspec "$P" 'scripts/smoke.sh, tests/'
+printf '# demo/REQ-2\n' > "$P/scripts/smoke.sh"; printf '# demo/REQ-2\n' > "$P/scripts/other.sh"
+mkdir -p "$P/.shipkit/specs/other"
+printf '# Spec: other\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n\n## Requirements\n\n- **REQ-1.** When e happens, the system shall do f.\n' > "$P/.shipkit/specs/other/spec.md"
+printf -- '- [x] **T1** do f → REQ-1\n' > "$P/.shipkit/specs/other/tasks.md"
+printf '# other/REQ-1\n' >> "$P/app/x.py"
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 scripts/other.sh$' "$WORK/tl.out" || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" \
+   || grep -q 'CITED-ELSEWHERE other' "$WORK/tl.out" || ! grep -q '^EVIDENCE other tested=1 waived=0 uncited=0$' "$WORK/tl.out" \
+   || ! grep -q '^EVIDENCE demo tested=2 waived=0 uncited=0$' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [a file on the Tests line, and a second spec with none → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+if [ -z "$tl_fail" ]; then pass "tests-line (a citation counts only under the Tests paths, folder or file; one elsewhere is named and its requirement misses its test; no line → as before; the name alone is no gap)"
+else failc "tests-line" "$tl_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

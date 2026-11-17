@@ -26,7 +26,7 @@ text each one applies.
   - Test: scripts/smoke.sh check 99 (`evidence-line`), on a fixture with one tested, one waived and one uncited requirement
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 99 `PASS`, exit 0; `sh plugins/shipkit/scripts/spec-check.sh .` → 0 gap(s)
-- [ ] **T4** A `> Tests:` line narrows where a citation counts, and `CITED-ELSEWHERE` names one outside it → REQ-15, REQ-16, REQ-17, REQ-18
+- [x] **T4** A `> Tests:` line narrows where a citation counts, and `CITED-ELSEWHERE` names one outside it → REQ-15, REQ-16, REQ-17, REQ-18
   - Files: plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 100 (`tests-line`), on a fixture cited once under the listed path and once outside it
   - After: T3
@@ -66,3 +66,19 @@ text each one applies.
   - Test: none: REQ-37 is read from the record of Sprint 35's real run, REQ-38 against the reference file
   - After: T10
   - Done when: the real run's notes show a `> Tests:` line the skill wrote; `bash scripts/lint.sh` → 0 error(s)
+
+## Found on the way
+
+Not fixed here; each goes to the sprint's pull request and to the ROADMAP's "Still open".
+
+- The spec skill writes the goldfish's reply to one fixed temp file name
+  (`shipkit-spec-goldfish.out`). At this spec's design gate that file held another project's
+  reply. This spec's two replies were written beside it under their own names.
+- `plugins/shipkit/scripts/session-start.sh:275` trims a spec's `> Paths:` with
+  `sed 's/^[ \t]*//; s/[ \t]*$//'`. BSD sed reads `[ \t]` as a space, a backslash or the letter
+  t, so a path that starts or ends with "t" loses it: `tests/billing/` becomes `ests/billing/`,
+  and drift is then counted on a path that does not exist. `spec-check.sh` reads its new
+  `> Tests:` line with `[[:space:]]` for that reason.
+- Smoke check 38 (`ledger-gen`) needs Python 3.10 or later (`sys.stdlib_module_names`). On this
+  machine `/usr/bin/python3` is 3.9.6; the check passes only because a newer `python3` comes
+  first on the `PATH`. CI's new job pins 3.12.
