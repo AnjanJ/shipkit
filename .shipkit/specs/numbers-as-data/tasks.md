@@ -71,3 +71,6 @@ Not fixed here; each goes to the sprint's pull request.
 - `second-traps/design.md`, "Sixteen trap-2 cases, with and without", reverses if "the release run
   passes $18". 5.1.0 cost $21.10 and 5.2.0 $21.25 (`eval-history.md`), so the condition has been
   true for two releases. It stays `manual` and is put to the owner (2026-11-18).
+  Decided the same day, on the owner's yes: `.shipkit/decisions/0008-trap2-cases-stay.md` keeps
+  all sixteen and fires on the trap-2 cases' own cost (above $8) or size (above 24 KB); the old
+  record is marked superseded.
