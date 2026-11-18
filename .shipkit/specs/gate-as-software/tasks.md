@@ -33,7 +33,7 @@ holds the text each one applies.
   - Test: scripts/smoke.sh check 109 (`judge`), with a stand-in `claude`: without `--yes` the tag and the command are printed, the stand-in is not called and no worktree is added; with `--yes` the stand-in's `--plugin-dir` is inside a worktree of the last tag; that worktree is gone afterwards, also when the stand-in exits non-zero; a worktree made beforehand survives; the workflow runs the last tag's `spec-check.sh` beside the branch's
   - After: T4
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 109 `PASS`, exit 0; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
-- [ ] **T6** The guide names the four scripts and what each prints → REQ-43
+- [x] **T6** The guide names the four scripts and what each prints → REQ-43
   - Files: GUIDE.md
   - Test: none: REQ-43 is prose, read against the guide
   - After: T5
