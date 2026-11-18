@@ -276,5 +276,49 @@ first runs of a new case, and anything a user or a real run reports.
 ## Text for Sprint 35
 
 Nothing a model reads waits on this spec. Sprint 35 runs the release through `evals.sh`, which
-appends its rows (REQ-31), and runs the kit below (REQ-32). The note on the four cases and the
-kit itself are written into this section by the task for REQ-14.
+appends its rows (REQ-31), and runs the kit below (REQ-32).
+
+### What the records say of the four (REQ-14, read 2026-11-18)
+
+**`hello`.** Below full in both release runs the ledger holds; `evals-ledger.sh --below-full 2`
+names it alone.
+- "Release run 5.1.0": "run 1's last message did not hold the `names-map` pattern."
+- "Release run 5.2.0": "2 of 3: one run's last message did not hold the `names-map` pattern, its
+  shape at 5.1.0."
+- "Baseline 3.1.0": 3 of 3. Neither release run kept a trace, so the failing replies were never
+  read.
+
+**`intake-limit`** (`intake/limit`). 2 of 3 in 4.8.0, 4.9.0, 4.10.0, 4.11.0, 4.12.0, 5.0.0 and
+5.1.0; 3 of 3 in 5.2.0.
+- "Release run 4.7.0": 0 of 3. The trace, read: "the grader counts a sub-part that needs its own
+  answer as a question of its own — three judges in each of the four runs counted five or more."
+- "Release run 4.12.0": "run 1 scored 0.00 on `four-questions-or-fewer` (judge votes FAIL FAIL
+  FAIL: the reply asked more than four questions) … it was not re-run and no grader changed."
+- "Release run 5.1.0": "run 2's judges voted FAIL FAIL PASS on `four-questions-or-fewer`, its
+  shape since 4.9.0."
+- "Release run 5.0.0": "`intake/limit` 2 of 3, its shape since 4.9.0."
+
+**Smoke check 2, `rules-skip` (`haiku`).** `eval-history.md` has no line on it. It is recorded
+in `ROADMAP.md:419-420`: "fails on variance and passes alone with its dependency — the known shape
+in the 4.9.0 release's full run". And in `CHANGELOG.md:808-809`, Sprint 16's release: "160 of
+161 with check 2 (`rules-skip`, haiku) failing on variance and passing alone with its
+dependency".
+
+**Smoke check 4, `agents` (`haiku`).** `eval-history.md` has no line on it. It is recorded in
+`ROADMAP.md:287-288`: "asked for names starting `shipkit:`, the model lists the skills too; 1 of 2
+full runs at Sprint 21's merge, 3 of 3 alone".
+
+### The kit, for Sprint 35 (REQ-32)
+
+Each is run ten times, traces kept, before any text or grader changes (rule 30). Each ends in one
+outcome: a corrected grader (rule 23, a reply it must pass and one it must fail), a changed
+sentence (on the owner's go, rule 6), or the case deleted with its reason on `eval-history.md`.
+
+| Case | The command | What to read in the traces |
+|---|---|---|
+| `hello` | `bash scripts/evals.sh --case hello --runs 10` | Each failing run's last message against `evals/hello/graders/names-map.md`: is the map's name missing, or there in a form the pattern does not take? |
+| `intake-limit` | `bash scripts/evals.sh --case intake-limit --runs 10` | Each failing run's questions, counted as `four-questions-or-fewer` counts them: does a question with parts count as several, as 4.7.0 found? |
+| smoke check 2 | ten runs of `SMOKE_KEEP=1 sh scripts/smoke.sh --only 2 </dev/null` (its fixture is built outside its model guard, so `--only 2` alone is enough) | The kept reply of each failing run: what did `haiku` say about the skipped rule? |
+| smoke check 4 | ten runs of `SMOKE_KEEP=1 sh scripts/smoke.sh --only 4 </dev/null` | The kept list of each failing run: skills named beside the agents, as `ROADMAP.md:287` says? |
+
+`evals.sh --case` rows are marked `partial`, so the kit's runs never count as a release run.

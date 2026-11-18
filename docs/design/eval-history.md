@@ -4,6 +4,13 @@ The evals directory has a byte ceiling (lint check 17) so the plugin stays small
 reading has served its release, it moves here, unchanged, with the date it moved. The README keeps
 the cases and the live baselines.
 
+**No re-run to green** (the verifier plan's rule 30, written here 2026-11-18 for the next release
+run to read first). A failing check or case is read from its kept trace before anything runs
+again. A case or check below full score in two release runs running opens a root-cause task, and
+that task ends in a fix (the plan's rule 23, both sides shown) or in a deletion with the reason
+on this page. "Its shape" is not an outcome. `sh scripts/evals-ledger.sh --below-full 2` names
+the cases; `scripts/evals.sh` keeps traces unless `EVALS_KEEP=0`.
+
 ---
 
 *Moved 2026-10-08 (Sprint 11, S11-T2):*

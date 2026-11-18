@@ -24,11 +24,12 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - Test: scripts/smoke.sh check 112 (`briefing-cost`): `spec-check.sh` and the one at `398d1c9` (`git show`) print the same lines and exit the same on check 30's fixture, on a fixture with every kind of gap line and on this repository, as a whole and for one slug, with `--as-open` and `--as-shipped`; the briefing's gap line matches `spec-check`'s count; on check 30's fixture the briefing takes at most 0.5 s of CPU, best of three, reported and not failed under `SMOKE_TIMING=report`
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 112 `PASS` and check 30 `PASS`, exit 0
-- [ ] **T4** The flake rule in the eval history, and the note and kit for Sprint 35 → REQ-13, REQ-14
+- [x] **T4** The flake rule in the eval history, and the note and kit for Sprint 35 → REQ-13, REQ-14
   - Files: docs/design/eval-history.md, .shipkit/specs/numbers-as-data/design.md
   - Test: none: REQ-13 and REQ-14 are prose, read against the two files
   - After: T3
   - Done when: `eval-history.md` states rule 30 above its first `##`; `design.md`'s last section has an entry for each of the four, each line naming its source section and each with its command; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-18): `eval-history.md` has no line on smoke checks 2 and 4; the note says so and quotes `ROADMAP.md` and `CHANGELOG.md`, where they are recorded.
 - [ ] **T5** The map, `evals-for-diff.sh`, `evals.sh --for-diff`, and lint check 19 → REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25
   - Files: scripts/evals-map.tsv, scripts/evals-for-diff.sh, scripts/evals.sh, scripts/lint.py, scripts/smoke.sh
   - Test: scripts/smoke.sh check 113 (`evals-for-diff`): in a scratch repository with this map, a diff on `agents/reviewer.md` prints the four reviewer cases; one on `rules/shipkit.md` or `session-start.sh` prints every `rules-` case and `hello`; one under `docs/` prints nothing and exits 0; `evals.sh --for-diff` with a stand-in tool passes one `--case` for each and runs nothing when there is none; lint on a copy fails a case with no row, a row with no case and a path that does not exist, and passes the clean copy
