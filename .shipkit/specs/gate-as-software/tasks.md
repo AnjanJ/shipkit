@@ -23,7 +23,7 @@ holds the text each one applies.
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 107 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/ship-check.sh` → no output
   - Note (2026-11-18): `scripts/lint.py` was added to Files. Its rule against a bare `mktemp` read `mktemp -d "<template>"` as bare; `ship-check.sh` is the first shipped script to make a directory. The rule now accepts `-d` before a template and still flags `mktemp -d` alone.
-- [ ] **T4** `release-check.sh` reads shipped specs against their `READY` reports, and CI shows it → REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
+- [x] **T4** `release-check.sh` reads shipped specs against their `READY` reports, and CI shows it → REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
   - Files: plugins/shipkit/scripts/release-check.sh, .github/workflows/lint.yml, scripts/smoke.sh
   - Test: scripts/smoke.sh check 108 (`release-check`): a clean fixture prints the summary line alone; a shipped spec with no report; a report whose commit is on an abandoned branch; a commit under `Paths` after the report and before the shipping commit; a shipped spec with no `Paths` line; exit 0 without `--enforce` and 1 with it; the workflow runs the script on pull requests with the full history
   - After: T3
@@ -62,3 +62,12 @@ holds the text each one applies.
 ## Found on the way
 
 Not fixed here; each goes to the sprint's pull request.
+
+- `release-check.sh .` on this repository, 2026-11-18, at T4: 31 shipped specs, 5 findings, all
+  `NO-REPORT`: `install-lifecycle`, `measure-and-slim`, `product-intake-brief`, `spec-contract`
+  and `unsetup-safety`, which shipped before the gate existed (3.5.0). With the shipping commit
+  counted, as REQ-26 first read, it also printed `CHANGED-AFTER-GATE ... 1` for seven specs
+  (`gate-blind-spots`, `harness-debts`, `measured-cuts`, `portfolio-run`, `review-and-ship`,
+  `run-wounds`, `second-traps`). Each was the shipping commit adding its report or a version bump
+  under the spec's `Paths`, and each counts 0 without it. REQ-26 was amended on the owner's yes;
+  `spec-diff.sh` names it as `REQ-CHANGED`.

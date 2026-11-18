@@ -124,8 +124,11 @@ A `READY` report is tied to a commit:
 - **REQ-25.** Where the commit of a shipped spec's newest `READY` report is not an ancestor of
   `HEAD`, `release-check.sh` shall print `ORPHAN-REPORT <slug>`.
 - **REQ-26.** Where `n` commits, one or more, touch a shipped spec's `Paths` after its newest
-  `READY` report's commit and up to its shipping commit, `release-check.sh` shall print
-  `CHANGED-AFTER-GATE <slug> <n>`.
+  `READY` report's commit and before its shipping commit, `release-check.sh` shall print
+  `CHANGED-AFTER-GATE <slug> <n>`. The shipping commit itself is not counted. (Amended
+  2026-11-18 on the owner's yes: it read "up to its shipping commit", and on this repository's
+  first reading all seven lines it printed were the shipping commit adding its own report or a
+  version bump.)
 - **REQ-27.** While a shipped spec has no `> Paths:` line, `release-check.sh` shall print no
   `CHANGED-AFTER-GATE` line for it.
 - **REQ-28.** `release-check.sh` shall print, as its last line, `release-check: <s> shipped

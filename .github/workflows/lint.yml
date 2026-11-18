@@ -18,7 +18,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
+      # The full history: release-check.sh counts commits between a report and its shipping commit.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -32,6 +35,12 @@ jobs:
       # Proves spec-contract/REQ-23: this repository passes its own check.
       - name: Check specs
         run: sh plugins/shipkit/scripts/spec-check.sh .
+      # Each shipped spec's newest READY report against the commit that shipped it. Observe mode:
+      # it prints NO-REPORT, ORPHAN-REPORT and CHANGED-AFTER-GATE lines and exits 0; --enforce
+      # waits until two releases have read it clean (gate-as-software/design.md, fourth record).
+      # Proves gate-as-software/REQ-31.
+      - name: Release check (observe mode)
+        run: sh plugins/shipkit/scripts/release-check.sh .
 
   # The smoke suite without its sixteen model checks. This runner has no `claude`, so every pull
   # request shows again that --no-model starts none. Proves honest-evidence/REQ-11.

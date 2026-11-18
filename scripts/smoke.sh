@@ -166,6 +166,7 @@ registry() { cat <<'EOF'
 105 timing-switch
 106 test-command
 107 ship-check
+108 release-check
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4015,6 +4016,77 @@ sh "$SKS" --clean "$SK/tmp/shipkit-ship.zzzzzz" >/dev/null 2>&1; sk_rc2=$?
 sh -n "$SKS" 2>/dev/null || sk_fail="$sk_fail [k: sh -n reports a syntax error]"
 if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; no claude)"
 else failc "ship-check" "$sk_fail"; fi
+
+# 108. release-check: a READY report is tied to a commit. For each shipped spec,
+# release-check.sh finds the newest READY report and the commit it names, and prints
+# NO-REPORT when there is none, ORPHAN-REPORT when that commit is not in HEAD's history, and
+# CHANGED-AFTER-GATE <n> when n commits touched the spec's Paths after the report's commit and
+# up to the commit that set "Status: shipped". It only prints unless --enforce is given
+# (gate-as-software/design.md, fourth record). The fixture's history, in order: specs written
+# open; work on each spec's paths (W); a commit on a branch that is then deleted (X); reports;
+# one more commit on late's paths and one elsewhere; every spec set shipped, in a commit that
+# also touches clean's paths; one more commit on clean's paths after shipping. Neither of the
+# last two may count. No claude needed.
+# Cites: gate-as-software/REQ-24 gate-as-software/REQ-25 gate-as-software/REQ-26
+# gate-as-software/REQ-27 gate-as-software/REQ-28 gate-as-software/REQ-29 gate-as-software/REQ-30
+# gate-as-software/REQ-31
+RC="$WORK/rel"; RCS="$COPY/scripts/release-check.sh"; rc_fail=""
+rg() { (cd "$RC" && git -c user.email=s@s -c user.name=s "$@"); }
+rcspec() {  # rcspec <slug> <status> <paths|none>
+  mkdir -p "$RC/.shipkit/specs/$1"
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n> Status: %s\n' "$1" "$2"
+    [ "$3" = none ] || printf '> Paths: %s\n' "$3"
+    printf '\n- **REQ-1.** It shall work.\n'; } > "$RC/.shipkit/specs/$1/spec.md"
+}
+rcrep() {  # rcrep <date> <slug> <first line> <commit>
+  mkdir -p "$RC/.shipkit/releases"
+  printf '%s\n\n# Ship report: %s\n\n> Checked on %s at commit `%s` on `main`, against base `abc1234`.\n' \
+    "$3" "$2" "$1" "$4" > "$RC/.shipkit/releases/$1-$2.md"
+}
+rctouch() { for d in "$@"; do mkdir -p "$RC/$d"; echo x >> "$RC/$d/f"; done; }
+mkdir -p "$RC"; rg init -q; rg commit -q --allow-empty -m init
+rcspec clean open "c/"; rcspec noreport open "n/"; rcspec orphan open "o/"; rcspec late open "l/"
+rcspec nopaths open none; rcspec wip open "w/"; rg add -A; rg commit -q -m specs
+rctouch c n o l; rg add -A; rg commit -q -m work; rc_w=$(rg rev-parse --short HEAD)
+rg checkout -q -b side; rctouch o; rg add -A; rg commit -q -m side; rc_x=$(rg rev-parse --short HEAD)
+rg checkout -q -; rg branch -q -D side
+rcrep 2026-01-01 clean READY "$rc_x"; rcrep 2026-02-01 clean READY "$rc_w"; rcrep 2026-03-01 clean 'NOT READY' "$rc_x"
+rcrep 2026-02-01 orphan READY "$rc_x"; rcrep 2026-02-01 late READY "$rc_w"; rcrep 2026-02-01 nopaths READY "$rc_w"
+rg add -A; rg commit -q -m reports
+rctouch l; rg add -A; rg commit -q -m 'late work'
+rctouch z; rg add -A; rg commit -q -m 'elsewhere'
+for sl in clean noreport orphan late nopaths; do
+  sed 's/^> Status: open$/> Status: shipped/' "$RC/.shipkit/specs/$sl/spec.md" > "$RC/s.tmp" && mv "$RC/s.tmp" "$RC/.shipkit/specs/$sl/spec.md"
+done
+rctouch c   # the shipping commit touches clean's paths itself, as a release's report and version bump do: not counted
+rg add -A; rg commit -q -m ship
+rctouch c; rg add -A; rg commit -q -m 'after shipping'
+rc_out=$(sh "$RCS" "$RC" 2>&1); rc_rc=$?
+rc_want="CHANGED-AFTER-GATE late 1
+NO-REPORT noreport
+ORPHAN-REPORT orphan
+release-check: 5 shipped spec(s), 3 finding(s)"   # one spec at a time, in name order
+[ "$rc_rc" -eq 0 ] && [ "$rc_out" = "$rc_want" ] || rc_fail="$rc_fail [the fixture: exit $rc_rc, printed: $(printf '%s' "$rc_out" | tr '\n' '|')]"
+sh "$RCS" "$RC" --enforce >/dev/null 2>&1; rc_rc=$?
+[ "$rc_rc" -eq 1 ] || rc_fail="$rc_fail [--enforce with findings: exit $rc_rc, want 1]"
+# a project whose one shipped spec is clean: the summary line alone, exit 0 even with --enforce
+RC2="$WORK/rel2"; mkdir -p "$RC2/.shipkit/specs/one" "$RC2/.shipkit/releases"
+(cd "$RC2" && git init -q && printf '# one\n\n> Status: open\n> Paths: a/\n' > .shipkit/specs/one/spec.md \
+  && git add -A && git -c user.email=s@s -c user.name=s commit -q -m one \
+  && printf 'READY\n\n> Checked on 2026-01-01 at commit `%s` on `main`.\n' "$(git rev-parse --short HEAD)" > .shipkit/releases/2026-01-01-one.md \
+  && sed 's/open/shipped/' .shipkit/specs/one/spec.md > s.tmp && mv s.tmp .shipkit/specs/one/spec.md \
+  && git add -A && git -c user.email=s@s -c user.name=s commit -q -m ship)
+rc_out=$(sh "$RCS" "$RC2" --enforce 2>&1); rc_rc=$?
+[ "$rc_rc" -eq 0 ] && [ "$rc_out" = "release-check: 1 shipped spec(s), 0 finding(s)" ] \
+  || rc_fail="$rc_fail [a clean project: exit $rc_rc, printed: $(printf '%s' "$rc_out" | tr '\n' '|')]"
+# CI runs it on every pull request, in a job that fetches the full history
+rc_job=$(awk '/^  lint:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$ROOT/.github/workflows/lint.yml")
+printf '%s\n' "$rc_job" | grep -q '^        run: sh plugins/shipkit/scripts/release-check\.sh \.$' \
+  && printf '%s\n' "$rc_job" | grep -q '^          fetch-depth: 0$' \
+  || rc_fail="$rc_fail [lint.yml: the lint job does not run release-check.sh . with the full history]"
+sh -n "$RCS" 2>/dev/null || rc_fail="$rc_fail [sh -n reports a syntax error]"
+if [ -z "$rc_fail" ]; then pass "release-check (no report, an orphaned report and a commit under Paths after the gate are each named; the newest READY report counts; no Paths, no count; after shipping, no count; exit 0 unless --enforce; CI runs it)"
+else failc "release-check" "$rc_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

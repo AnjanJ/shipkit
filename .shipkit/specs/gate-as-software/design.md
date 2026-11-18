@@ -114,7 +114,7 @@ step 7 reads.
 outside the directory the script printed.
 **Fired-if.** manual
 
-## Decision: `release-check.sh` counts up to the shipping commit, and only prints   (→ REQ-24 to REQ-31)
+## Decision: `release-check.sh` counts until the shipping commit, and only prints   (→ REQ-24 to REQ-31)
 
 **Context.** A `READY` report names the commit it checked and nothing reads that again, so work
 can land after the gate and before the spec is called shipped. This repository has 31 shipped
@@ -122,7 +122,7 @@ specs and 26 reports; the specs that predate the gate (3.5.0) have none. The pla
 a new check starts by printing what it would have failed.
 
 **Alternatives.**
-1. Count the commits that touch the spec's `Paths` after the report's commit and up to the
+1. Count the commits that touch the spec's `Paths` after the report's commit and before the
    shipping commit. Print findings and exit 0; `--enforce` exits 1. CI runs it without
    `--enforce`.
 2. The same count, failing CI from the first day.
@@ -130,11 +130,15 @@ a new check starts by printing what it would have failed.
 
 **Case for (1).** The first run reads 31 specs' history that nobody has read this way; failing
 on it would turn every pull request red for the past. The count stops where the spec was called
-shipped, so a later sprint that touches the same files is not counted against it.
+shipped, so a later sprint that touches the same files is not counted against it. The shipping
+commit itself is left out: it adds the report and bumps versions, which are the release
+routine. On the first reading, 2026-11-18, counting it gave seven lines on this repository and
+leaving it out gave none.
 
 **Case against (1).** A printed line can be ignored, and a finding in CI's log is not red. (2)
 has teeth and no first reading behind it. (3) would grow for ever: `scripts/smoke.sh` is in most
-specs' `Paths`.
+specs' `Paths`. Leaving the shipping commit out means code put into that commit is not counted;
+the owner reads that commit when saying yes to `shipped`.
 
 **Decision.** We chose (1).
 **Falsifiability.** We would pass `--enforce` in CI once the script has run at two releases with
@@ -242,8 +246,9 @@ install that exits non-zero has not reached that line.
   resolved is an `ORPHAN-REPORT`.
 - The shipping commit is the oldest commit that `git log -G'^> Status: shipped'` lists for the
   spec's `spec.md`.
-- The count of REQ-26 is `git rev-list --count <report's commit>..<shipping commit> -- <paths>`.
-  A shipping commit that is not after the report's commit gives 0 and no line.
+- The count of REQ-26 is `git rev-list --count <report's commit>..<shipping commit>^ -- <paths>`:
+  the shipping commit itself is not counted. A shipping commit that is not after the report's
+  commit gives 0 and no line.
 - Findings are printed in the order `NO-REPORT`, `ORPHAN-REPORT`, `CHANGED-AFTER-GATE` for each
   spec, then the summary line of REQ-28.
 
