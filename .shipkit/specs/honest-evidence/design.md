@@ -167,6 +167,37 @@ catch those, but the branch that edits a requirement could rewrite the hash besi
 an edit to a requirement that `spec-diff.sh` did not print.
 **Fired-if.** manual
 
+## Decision: On CI the briefing's time is printed, not enforced   (→ REQ-41, REQ-42, REQ-43)
+
+**Context.** Smoke check 30 holds the briefing on fifty open specs to one second of CPU
+(`briefing-and-handoff/REQ-8`). The owner's Mac reads 0.75 to 0.85 s. The CI job this spec added
+read 0.96 s on its first run and 1.53 s, the best of three tries, on its second. The scripts were
+the same: the commit between the two runs changed one note in `tasks.md`. So the limit was set
+on one machine, and the shared runner is slower and uneven. Of the 0.76 s measured here on
+2026-11-18, `spec-check.sh .` is 0.66 s, about 2,600 shell commands run for one number.
+
+**Alternatives.**
+1. A switch, `SMOKE_TIMING=report`, that the CI job sets. The time is printed in the `PASS` line
+   and not failed; the line and byte limits still fail; without the switch the limit stands.
+2. A higher limit on CI, such as three seconds.
+3. Make the briefing cheap enough to pass on the runner, in this pull request.
+4. Run the job again until it passes.
+
+**Case for (1).** The job goes red only for what a pull request can break. The limit still holds
+where it was measured, at every free run on the owner's machine, and CI prints the number on
+every pull request, so a slow-down can be read in the log.
+
+**Case against (1).** CI no longer fails a briefing that became slow; only a run on the owner's
+machine does. (2) would keep a failure on CI, but any number is a guess from two readings, and a
+slower runner breaks it again. (3) is the real fix, and it reworks `spec-check.sh`, the script
+every gate rests on, inside a pull request that is otherwise finished. (4) is what the verifier
+plan's rule 30 forbids: a pass would say only that the runner was quick that time.
+
+**Decision.** We chose (1), and (3) goes to the verifier plan's S31-T2.
+**Falsifiability.** We would take the switch out of the workflow once, after S31-T2's fix, check
+30 passes five times running on the CI runner without it.
+**Fired-if.** manual
+
 ## Data / interface changes
 
 `scripts/smoke.sh` (REQ-1 to REQ-10, REQ-32):

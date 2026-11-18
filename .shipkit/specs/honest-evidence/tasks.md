@@ -5,7 +5,8 @@ The test command for this spec is the model-free smoke suite: `sh scripts/smoke.
 model, so T1's own checks are first shown red through the new argument parser alone (`--list`),
 which starts nothing.
 
-T1 to T9 are Sprint 29's and start no model. T10 and T11 change what a model reads; by the
+T1 to T9 and T12 are Sprint 29's and start no model. T12 was added on 2026-11-18, after the CI
+job's second run. T10 and T11 change what a model reads; by the
 verifier plan's rules 33 and 34 they stay unticked until Sprint 35, and `design.md` holds the
 text each one applies.
 
@@ -56,10 +57,16 @@ text each one applies.
   - Test: none: REQ-39 is prose, read against the guide
   - After: T8
   - Done when: `git grep -c -E 'no-model|spec-diff\.sh|CITED-ELSEWHERE|SKIPPED-CITE|SPEC-EDITED|EVIDENCE' GUIDE.md` → 6 or more; `bash scripts/lint.sh` → 0 error(s)
+- [x] **T12** On CI the fifty-spec briefing's time is printed and not enforced (`SMOKE_TIMING=report`) → REQ-41, REQ-42, REQ-43
+  - Files: scripts/smoke.sh, .github/workflows/lint.yml, GUIDE.md
+  - Test: scripts/smoke.sh check 105 (`timing-switch`), which runs check 30's verdict on given numbers with and without the switch, and reads the workflow for the job's setting
+  - After: T9
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 105 `PASS`, exit 0
+  - Note (2026-11-18): the CI job's second run failed check 30 at 1.53 s of CPU, best of three; its first read 0.96 s. It was not run again (the verifier plan's rule 30). The owner's yes of the same day covers the three requirements and the design's seventh record.
 - [ ] **T10** Sprint 35: the ship report carries the evidence line and the block of changed requirements, and the gate's reply says when the result rests on reading alone → REQ-34, REQ-35, REQ-36
   - Files: plugins/shipkit/skills/ship/SKILL.md, plugins/shipkit/skills/ship/reference.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 29 (`ship-gate`), extended: the report of a fully waived fixture carries `> Evidence: 0 of` and its reply says the result rests on reading alone
-  - After: T8
+  - After: T8, T12
   - Done when: the baseline of Sprint 35 is read by the owner; `sh scripts/smoke.sh --only 29 </dev/null` → check 29 `PASS`, exit 0
 - [ ] **T11** Sprint 35: the spec skill asks where the tests live, and its reference describes the `> Tests:` line → REQ-37, REQ-38
   - Files: plugins/shipkit/skills/spec/SKILL.md, plugins/shipkit/skills/spec/reference.md, scripts/smoke.sh

@@ -159,6 +159,15 @@ Added after the goldfish's read:
 - **REQ-40.** If `--no-model` and `--only` are given together, then the suite shall run nothing
   and exit 64.
 
+Added after the CI job's first two runs (2026-11-18, on the owner's yes):
+
+- **REQ-41.** Where the environment variable `SMOKE_TIMING` is `report` and the fifty-spec
+  briefing of smoke check 30 takes a second or more of CPU, the suite shall print that time in a
+  `PASS` line that says it was not enforced.
+- **REQ-42.** Where `SMOKE_TIMING` is `report`, the suite shall still fail check 30 when the
+  fifty-spec briefing prints more than eight lines or more than 800 bytes.
+- **REQ-43.** The CI job of REQ-11 shall set `SMOKE_TIMING` to `report`.
+
 ## Out of scope
 
 - Any paid model run in this sprint, and any change to an existing skill, agent or rule file
@@ -172,3 +181,5 @@ Added after the goldfish's read:
 - A `> Tests:` line on any of the 31 specs shipped before this one.
 - Cutting any smoke check. The labels and the audit are this sprint's; the cuts are Sprint 34's.
 - The gate script, the single test command, `release-check.sh` and the judge: Sprint 30.
+- Making the briefing faster. On fifty specs `spec-check.sh` is most of its cost; that fix is the
+  verifier plan's S31-T2. Without `SMOKE_TIMING=report` check 30's limit of one second stands.

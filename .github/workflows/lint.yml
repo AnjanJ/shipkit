@@ -38,10 +38,14 @@ jobs:
   # macOS on purpose: the suite was written against bash 3.2 as `sh` and BSD tools
   # (.shipkit/specs/honest-evidence/design.md, third record). The full history is fetched
   # because some checks read this repository's tags, and git is given a name because some
-  # checks commit in scratch repositories.
+  # checks commit in scratch repositories. SMOKE_TIMING=report: check 30 holds the briefing to
+  # one second of CPU, a limit set on the owner's machine; this runner read 0.96 s and then
+  # 1.53 s on the same scripts, so here the time is printed and not failed
+  # (honest-evidence/design.md, seventh record; honest-evidence/REQ-43).
   smoke-no-model:
     runs-on: macos-latest
     env:
+      SMOKE_TIMING: report
       GIT_AUTHOR_NAME: smoke
       GIT_AUTHOR_EMAIL: smoke@example.invalid
       GIT_COMMITTER_NAME: smoke

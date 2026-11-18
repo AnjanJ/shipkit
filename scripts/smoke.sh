@@ -15,6 +15,7 @@
 # before the first session and restores it on exit, on every exit path; a session
 # started during a run reads the scratch root only through plugin-root.dev (harness-debts/REQ-7).
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
+# Set SMOKE_TIMING=report to print check 30's fifty-spec time without failing on it (CI does).
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # Since 3.0 the repo is a marketplace of plugins; the smoke test exercises the CORE plugin
@@ -162,6 +163,7 @@ registry() { cat <<'EOF'
 102 spec-diff
 103 spec-edited
 104 text-label
+105 timing-switch
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -1332,6 +1334,18 @@ rm -f "$SG_SENT"
 # briefing-and-handoff/REQ-8 briefing-and-handoff/REQ-9
 BRF="$COPY/scripts/briefing.sh"
 brief() { (cd "$1" && sh "$BRF" 2>"$WORK/brief.err"); echo "rc=$?" >> "$WORK/brief.err"; }
+# brief50_verdict <lines> <bytes> <cpu seconds> <runs> → the one PASS or FAIL line of part c
+# below, the fifty-spec briefing. Check 105 runs it on given numbers. With SMOKE_TIMING=report
+# a time of a second or more is printed and not failed: the limit was set on the owner's
+# machine and a shared CI runner is slower (honest-evidence/design.md, seventh record). The
+# line and byte limits are held either way.
+brief50_verdict() {
+  if [ "$1" -le 8 ] && [ "$2" -le 800 ] && [ "$(printf '%s' "$3" | cut -d. -f1)" -eq 0 ]; then
+    pass "briefing (50 open specs → $1 lines, $2 bytes, ${3}s of CPU, best of $4 run(s))"
+  elif [ "$1" -le 8 ] && [ "$2" -le 800 ] && [ "${SMOKE_TIMING:-}" = report ]; then
+    pass "briefing (50 open specs → $1 lines, $2 bytes; ${3}s of CPU, best of $4 run(s), is over the 1 s limit: reported, not enforced, SMOKE_TIMING=report)"
+  else failc "briefing" "50 specs: $1 lines, $2 bytes, ${3}s of CPU, best of $4 run(s) (want ≤8, ≤800, <1)"; fi
+}
 bspec() {  # bspec <proj> <slug> <status|none> <done> <total> → an open spec with N ticked tasks of M
   _d="$1/.shipkit/specs/$2"; mkdir -p "$_d"
   { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n' "$2"; [ "$3" = none ] || printf '> Status: %s\n' "$3"
@@ -1402,9 +1416,7 @@ else
     bt=$(awk -v a="$bt" -v b="$bt_one" 'BEGIN { m = (b + 0 < a + 0) ? b : a; print m }')
   done
   bl=$(grep -c . "$WORK/brief50.out"); bb=$(wc -c < "$WORK/brief50.out" | tr -d ' ')
-  if [ "$bl" -le 8 ] && [ "$bb" -le 800 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -eq 0 ]; then
-    pass "briefing (50 open specs → $bl lines, $bb bytes, ${bt}s of CPU, best of $bt_n run(s))"
-  else failc "briefing" "50 specs: $bl lines, $bb bytes, ${bt}s of CPU, best of $bt_n run(s) (want ≤8, ≤800, <1)"; fi
+  brief50_verdict "$bl" "$bb" "$bt" "$bt_n"
   # d. a tasks.md that is not a task list, and a state.md with no Next step: no error, exit 0
   BD="$WORK/brief-d"; mkdir -p "$BD/.shipkit/specs/odd"; (cd "$BD" && git init -q)
   printf '# Spec: odd\n\n- **REQ-1.** x\n' > "$BD/.shipkit/specs/odd/spec.md"
@@ -3808,6 +3820,36 @@ tx_rows=$(grep -c '^| [0-9][0-9]*[a-z]\{0,1\} | ' "$ROOT/docs/design/smoke-audit
 [ "${tx_calls:-0}" -gt 0 ] && [ "${tx_calls:-0}" -eq "${tx_rows:-0}" ] || tx_fail="$tx_fail [$tx_calls passt calls in this script, ${tx_rows:-0} rows in the audit]"
 if [ -z "$tx_fail" ]; then pass "text-label (passt prints PASS  [text]; check 76 goes through it; $tx_calls text-only assertions, each with its row in the audit)"
 else failc "text-label" "$tx_fail"; fi
+
+# 105. timing-switch: check 30 holds the fifty-spec briefing to one second of CPU. That limit
+# was set on the owner's machine. CI's shared runner read 0.96 s and then 1.53 s on the same
+# scripts (pull request 40), so the workflow sets SMOKE_TIMING=report: a time of a second or
+# more is then printed in a PASS line that says it was not enforced. The line and byte limits
+# still fail, and without the switch nothing changes. Check 30's own verdict function runs here
+# on given numbers, in a subshell, so its lines are read and not counted. No claude needed.
+# Cites: honest-evidence/REQ-41 honest-evidence/REQ-42 honest-evidence/REQ-43
+ts_v() { ( COUNTS=/dev/null; SMOKE_TIMING=$1; brief50_verdict "$2" "$3" "$4" 3 ); }  # ts_v <switch> <lines> <bytes> <seconds>
+ts_fail=""
+ts_out=$(ts_v report 3 299 1.53)
+case "$ts_out" in
+  "PASS  briefing (50 open specs"*"1.53s of CPU"*"not enforced"*) ;;
+  *) ts_fail="$ts_fail [report, 1.53 s: $ts_out]" ;;
+esac
+ts_out=$(ts_v report 3 299 0.80)
+case "$ts_out" in
+  *"not enforced"*) ts_fail="$ts_fail [report, 0.80 s is called not enforced: $ts_out]" ;;
+  "PASS  briefing (50 open specs"*"0.80s of CPU"*) ;;
+  *) ts_fail="$ts_fail [report, 0.80 s: $ts_out]" ;;
+esac
+case "$(ts_v report 9 299 0.80)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [report, nine lines: not a FAIL]" ;; esac
+case "$(ts_v report 3 801 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [report, 801 bytes: not a FAIL]" ;; esac
+case "$(ts_v "" 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [no switch, 1.53 s: not a FAIL]" ;; esac
+case "$(ts_v "" 3 299 0.80)" in "PASS  briefing (50 open specs"*) ;; *) ts_fail="$ts_fail [no switch, 0.80 s: not a PASS]" ;; esac
+case "$(ts_v other 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [a switch value other than report, 1.53 s: not a FAIL]" ;; esac
+ts_job=$(awk '/^  smoke-no-model:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$ROOT/.github/workflows/lint.yml")
+printf '%s\n' "$ts_job" | grep -q '^      SMOKE_TIMING: report$' || ts_fail="$ts_fail [lint.yml: the smoke-no-model job does not set SMOKE_TIMING to report]"
+if [ -z "$ts_fail" ]; then pass "timing-switch (SMOKE_TIMING=report: a slow fifty-spec briefing is printed, not failed; lines and bytes still fail; no switch, no change; CI's smoke job sets it)"
+else failc "timing-switch" "$ts_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
