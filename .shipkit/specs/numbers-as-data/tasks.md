@@ -13,11 +13,12 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - After: none
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 110 `PASS`, exit 0; `sh -n scripts/evals-ledger.sh scripts/evals.sh` → no output
   - Note (2026-11-18): `evals.sh` first told an earlier result file from this run's with `-nt` against a marker; bash 3.2 compares whole seconds, so a fast run's file read as old and no row was added. It now moves an earlier `aggregate-result.json` aside to `aggregate-result.json.prev` before the run.
-- [ ] **T2** The ledger holds 5.1.0 and 5.2.0 → REQ-11, REQ-12
+- [x] **T2** The ledger holds 5.1.0 and 5.2.0 → REQ-11, REQ-12
   - Files: docs/design/eval-ledger.tsv, scripts/smoke.sh
   - Test: scripts/smoke.sh check 111 (`ledger-backfill`): the repository's ledger holds 65 `result-file` rows for 5.2.0 and one `history` row for each 5.1.0 case, whose `runs` add up to 227, with 2 of 3 for exactly `grandfather-xl-drift`, `hello` and `intake-limit`
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 111 `PASS`, exit 0; `sh scripts/evals-ledger.sh --below-full 2` → `hello`
+  - Note (2026-11-18): the tree at `073938c` gives 65 cases, 227 runs and 16 watch cases, the page's totals. `--runs` reads 5.2.0 at $21.23 where the result file and the page say $21.25: each row's cost is rounded to cents (REQ-2) and `--runs` adds the rounded figures, so a run's total can be off by up to half a cent a case. The cost clauses in the table are $10 and $25, far from that.
 - [ ] **T3** The briefing starts fewer processes, and `spec-check.sh` prints what it printed at `398d1c9` → REQ-15, REQ-16, REQ-17
   - Files: plugins/shipkit/scripts/briefing.sh, plugins/shipkit/scripts/spec-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 112 (`briefing-cost`): `spec-check.sh` and the one at `398d1c9` (`git show`) print the same lines and exit the same on check 30's fixture, on a fixture with every kind of gap line and on this repository, as a whole and for one slug, with `--as-open` and `--as-shipped`; the briefing's gap line matches `spec-check`'s count; on check 30's fixture the briefing takes at most 0.5 s of CPU, best of three, reported and not failed under `SMOKE_TIMING=report`

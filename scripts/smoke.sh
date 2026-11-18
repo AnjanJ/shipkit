@@ -169,6 +169,7 @@ registry() { cat <<'EOF'
 108 release-check
 109 judge
 110 eval-ledger
+111 ledger-backfill
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4243,6 +4244,27 @@ STUB_WRITE=0 STUB_EXIT=5 el_evals; el_rc=$?
 sh -n "$ELS" 2>/dev/null && sh -n "$ROOT/scripts/evals.sh" 2>/dev/null || el_fail="$el_fail [sh -n reports a syntax error]"
 if [ -z "$el_fail" ]; then pass "eval-ledger (append writes a row per case, once; three queries read release runs only; evals.sh keeps traces, appends release or partial rows, and exits with the tool's status, with or without a result file)"
 else failc "eval-ledger" "$el_fail"; fi
+
+# 111. ledger-backfill: the ledger starts with two release runs, so the flake rule has two runs
+# to read from the first day. 5.2.0's 65 rows come from its kept result file (source
+# result-file); 5.1.0's from eval-history.md's "Release run 5.1.0" and the tree at 073938c
+# (source history), and must add up to the page's 65 cases and 227 runs, with exactly its three
+# cases at 2 of 3. Read from the repository's ledger. No claude needed.
+# Cites: numbers-as-data/REQ-11 numbers-as-data/REQ-12
+LB="$ROOT/docs/design/eval-ledger.tsv"; lb_fail=""
+[ -f "$LB" ] || lb_fail="$lb_fail [no docs/design/eval-ledger.tsv]"
+lb_52=$(awk -F '\t' '$2 == "5.2.0" && $3 == "4e2afc2" && $12 == "result-file"' "$LB" 2>/dev/null | grep -c .)
+[ "$lb_52" = 65 ] || lb_fail="$lb_fail [5.2.0 result-file rows: $lb_52, want 65]"
+lb_51=$(awk -F '\t' '$12 == "history" && $1 == "2026-11-04" && $2 == "5.1.0" && $3 == "073938c" && $4 == "2.1.318" && $5 == "sonnet" && $10 == "0.6" && $11 == "-"' "$LB" 2>/dev/null)
+lb_n=$(printf '%s\n' "$lb_51" | grep -c .); lb_runs=$(printf '%s\n' "$lb_51" | awk -F '\t' '{ s += $9 } END { print s + 0 }')
+lb_below=$(printf '%s\n' "$lb_51" | awk -F '\t' '$8 != $9 { print $6 " " $8 "/" $9 }' | sort | tr '\n' '|')
+[ "$lb_n" = 65 ] && [ "$lb_runs" = 227 ] && [ "$lb_below" = "grandfather-xl-drift 2/3|hello 2/3|intake-limit 2/3|" ] \
+  && [ "$(awk -F '\t' '$12 == "history"' "$LB" 2>/dev/null | grep -c .)" = 65 ] \
+  || lb_fail="$lb_fail [5.1.0 history rows: $lb_n with the fixed fields, $lb_runs runs, below full: $lb_below]"
+lb_q=$(sh "$ROOT/scripts/evals-ledger.sh" --below-full 2 2>&1 | tr '\n' '|')
+[ "$lb_q" = "hello|" ] || lb_fail="$lb_fail [--below-full 2 on the ledger: $lb_q]"
+if [ -z "$lb_fail" ]; then pass "ledger-backfill (5.2.0: 65 rows from its result file; 5.1.0: 65 cases and 227 runs from its page and 073938c, three at 2 of 3; below full in both: hello)"
+else failc "ledger-backfill" "$lb_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
