@@ -77,6 +77,10 @@ a review than it did.
 
 ## Decision: The gate is a skill, not a script   (→ REQ-10, REQ-11)
 
+**Superseded** on 2026-11-18 by "The gate's command steps are run by a script" in
+`.shipkit/specs/gate-as-software/design.md`, on the owner's word. Its reversal condition had not
+fired. The record below is kept as it was written.
+
 **Context.** Five of the gate's seven steps are mechanical (run a script, run the tests, grep
 for unticked boxes, check `git status`). Two need judgement: the reviewer's verdict, and
 whether each decision's reversal condition is concrete. Sprints 2 and 3 built scripts wherever
