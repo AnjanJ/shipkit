@@ -42,8 +42,31 @@
 # the reply must say GAPS and name it; goldfish-clean: the same spec with 30 days, SELF-CONTAINED;
 # both scaffold evals/goldfish/spec-fixture.sh); spec-goldfish/REQ-22 (goldfish-gap's grader also fails a
 # reply whose Unstated assumptions name a zero or negative amount or which check runs first)
+# After the run, its rows go into the eval ledger (docs/design/eval-ledger.tsv, through
+# scripts/evals-ledger.sh), marked `release`, or `partial` when only some cases ran (--case or
+# --group). Traces are kept (--keep-temp) unless EVALS_KEEP=0: a failing case is read from its
+# trace before anything runs again. The exit status is the eval run's, whatever the ledger does.
+# EVALS_TOOL names the program to run in place of `claude` (the smoke checks give a stand-in).
+# Cites: numbers-as-data/REQ-8 numbers-as-data/REQ-9 numbers-as-data/REQ-10
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
+SOURCE=release
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
-exec claude plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
+for a in "$@"; do case "$a" in --case|--case=*) SOURCE=partial ;; esac; done
+OUT=${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}
+KEEP=--keep-temp; [ "${EVALS_KEEP:-1}" = 0 ] && KEEP=""
+mkdir -p "$OUT" 2>/dev/null
+# A result file left from an earlier run must not be appended as this one's: it is moved aside
+# to aggregate-result.json.prev first, so a result file there afterwards is this run's. (Not a
+# time comparison: bash 3.2's -nt reads whole seconds, and a fast run writes in the same one.)
+[ -f "$OUT/aggregate-result.json" ] && mv -f "$OUT/aggregate-result.json" "$OUT/aggregate-result.json.prev"
+"${EVALS_TOOL:-claude}" plugin eval "$ROOT/plugins/shipkit" --trust-plugin --ablation none --no-publish \
   --model "${EVALS_MODEL:-sonnet}" --threshold 0.6 \
-  --output-dir "${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}" "$@" --scaffold --allow-tools Bash Write Edit
+  --output-dir "$OUT" "$@" --scaffold $KEEP --allow-tools Bash Write Edit
+rc=$?
+if [ -f "$OUT/aggregate-result.json" ]; then
+  sh "$ROOT/scripts/evals-ledger.sh" append "$OUT" --source "$SOURCE" \
+    || echo "evals: warning: the run's rows were not added to the ledger" >&2
+else
+  echo "evals: no result file from this run; nothing added to the ledger" >&2
+fi
+exit $rc

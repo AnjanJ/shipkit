@@ -7,11 +7,12 @@ T1 to T8 are Sprint 31's and start no model; `scripts/evals.sh` is only ever run
 stand-in for `claude plugin eval` (`EVALS_TOOL`). T8 needs five runs of CI's workflow, each on the
 owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
 
-- [ ] **T1** The ledger: `evals-ledger.sh` appends and answers three queries, and `evals.sh` appends after a run → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-33
+- [x] **T1** The ledger: `evals-ledger.sh` appends and answers three queries, and `evals.sh` appends after a run → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-33
   - Files: scripts/evals-ledger.sh, scripts/evals.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 110 (`eval-ledger`): a canned result file with a 3-run and a 5-run case appended to a scratch ledger gives the right rows and summary line; a second append adds none; `--below-full`, `--rate` and `--runs` answer on a seeded ledger that holds a `partial` run; `evals.sh` with a stand-in tool passes `--keep-temp` (not with `EVALS_KEEP=0`), appends with `--source release` or `partial`, and exits with the tool's status, also when it wrote no result file
   - After: none
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 110 `PASS`, exit 0; `sh -n scripts/evals-ledger.sh scripts/evals.sh` → no output
+  - Note (2026-11-18): `evals.sh` first told an earlier result file from this run's with `-nt` against a marker; bash 3.2 compares whole seconds, so a fast run's file read as old and no row was added. It now moves an earlier `aggregate-result.json` aside to `aggregate-result.json.prev` before the run.
 - [ ] **T2** The ledger holds 5.1.0 and 5.2.0 → REQ-11, REQ-12
   - Files: docs/design/eval-ledger.tsv, scripts/smoke.sh
   - Test: scripts/smoke.sh check 111 (`ledger-backfill`): the repository's ledger holds 65 `result-file` rows for 5.2.0 and one `history` row for each 5.1.0 case, whose `runs` add up to 227, with 2 of 3 for exactly `grandfather-xl-drift`, `hello` and `intake-limit`

@@ -168,6 +168,7 @@ registry() { cat <<'EOF'
 107 ship-check
 108 release-check
 109 judge
+110 eval-ledger
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4156,6 +4157,92 @@ printf '%s\n' "$jg_job" | grep -q '^        run: sh plugins/shipkit/scripts/spec
 sh -n "$JGS" 2>/dev/null || jg_fail="$jg_fail [sh -n reports a syntax error]"
 if [ -z "$jg_fail" ]; then pass "judge (without --yes the tag and command, nothing run; with --yes the plugin from a worktree of the last tag, removed after, also on failure; another worktree kept; no tag → exit 2; CI runs the tag's spec-check)"
 else failc "judge" "$jg_fail"; fi
+
+# 110. eval-ledger: an eval result is a row, not a paragraph. scripts/evals-ledger.sh appends
+# one row per case from a run's aggregate-result.json to docs/design/eval-ledger.tsv (here a
+# scratch ledger, through EVALS_LEDGER) and answers three queries over the release runs in it;
+# scripts/evals.sh appends after its run and keeps traces. evals.sh runs a stand-in for claude
+# here (EVALS_TOOL), so nothing is paid for. No claude needed.
+# Cites: numbers-as-data/REQ-1 numbers-as-data/REQ-2 numbers-as-data/REQ-3 numbers-as-data/REQ-4
+# numbers-as-data/REQ-5 numbers-as-data/REQ-6 numbers-as-data/REQ-7 numbers-as-data/REQ-8
+# numbers-as-data/REQ-9 numbers-as-data/REQ-10 numbers-as-data/REQ-33
+EL="$WORK/eledger"; ELS="$ROOT/scripts/evals-ledger.sh"; mkdir -p "$EL/out" "$EL/repo" "$EL/bin"; el_fail=""
+el_result() {  # el_result <file> <startedAt> → a result file with a 3-run case and a 5-run case
+  printf '%s\n' '{"schemaVersion":1,"claudeVersion":"2.1.400","startedAt":"'"$2"'","costUsd":0.85,' \
+    '"suite":{"modelOverride":"sonnet","threshold":0.6,"plugins":[{"name":"shipkit","version":"9.9.9"}]},' \
+    '"cases":[{"name":"alpha","runsPerCase":3,"arms":{"with":[{"passed":true,"costUsd":0.1},{"passed":false,"costUsd":0.2},{"passed":true,"costUsd":0.3}]}},' \
+    '{"name":"beta","runsPerCase":5,"arms":{"with":[{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05}]}}],' \
+    '"aggregates":{"casesTotal":2}}' > "$1"
+}
+el_result "$EL/out/aggregate-result.json" 2026-12-01T10:00:00.000Z
+TAB=$(printf '\t')
+# a. append: one row per case, the fields of REQ-2, the summary line; a second append adds none
+el_out=$(EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --commit abc1234 2>&1)
+[ "$el_out" = "evals-ledger: 2 row(s) added, 0 already held" ] || el_fail="$el_fail [a: first append said: $el_out]"
+el_want="date${TAB}version${TAB}commit${TAB}claude${TAB}model${TAB}case${TAB}set${TAB}passed${TAB}runs${TAB}threshold${TAB}cost${TAB}source
+2026-12-01${TAB}9.9.9${TAB}abc1234${TAB}2.1.400${TAB}sonnet${TAB}alpha${TAB}tune${TAB}2${TAB}3${TAB}0.6${TAB}0.60${TAB}run
+2026-12-01${TAB}9.9.9${TAB}abc1234${TAB}2.1.400${TAB}sonnet${TAB}beta${TAB}watch${TAB}5${TAB}5${TAB}0.6${TAB}0.25${TAB}run"
+[ "$(cat "$EL/l.tsv" 2>/dev/null)" = "$el_want" ] || el_fail="$el_fail [a: the ledger: $(tr '\t\n' ' |' < "$EL/l.tsv" 2>/dev/null)]"
+el_out=$(EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --commit abc1234 2>&1)
+[ "$el_out" = "evals-ledger: 0 row(s) added, 2 already held" ] && [ "$(grep -c . "$EL/l.tsv")" = 3 ] \
+  || el_fail="$el_fail [a: second append said: $el_out, $(grep -c . "$EL/l.tsv") lines]"
+# b. no --commit: HEAD's short sha; --source is written as given
+(cd "$EL/repo" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m one)
+el_head=$(cd "$EL/repo" && git rev-parse --short HEAD)
+(cd "$EL/repo" && EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --source mine >/dev/null 2>&1)
+[ "$(awk -F '\t' -v c="$el_head" '$3 == c && $12 == "mine"' "$EL/l.tsv" | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [b: rows with HEAD's commit $el_head and source mine: $(awk -F '\t' -v c="$el_head" '$3 == c' "$EL/l.tsv" | grep -c .)]"
+# c. no result file: exit 1, a message, nothing added
+mkdir -p "$EL/empty"; el_n=$(grep -c . "$EL/l.tsv")
+EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/empty" >/dev/null 2>"$EL/err"; el_rc=$?
+[ "$el_rc" -eq 1 ] && grep -q 'no result file' "$EL/err" && [ "$(grep -c . "$EL/l.tsv")" = "$el_n" ] \
+  || el_fail="$el_fail [c: no result file: exit $el_rc]"
+# d. the queries, on a seeded ledger: three release runs and a partial run between them
+{ printf 'date\tversion\tcommit\tclaude\tmodel\tcase\tset\tpassed\truns\tthreshold\tcost\tsource\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\ta\ttune\t3\t3\t0.6\t1.00\trelease\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\tb\ttune\t2\t3\t0.6\t1.00\trelease\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\tc\ttune\t3\t3\t0.6\t1.00\trelease\n'
+  printf '2026-02-01\t2\tc2\t-\tsonnet\ta\ttune\t2\t3\t0.6\t1.00\thistory\n'
+  printf '2026-02-01\t2\tc2\t-\tsonnet\tb\ttune\t2\t3\t0.6\t-\thistory\n'
+  printf '2026-02-15\t2\tc3\t-\tsonnet\ta\ttune\t0\t3\t0.6\t0.10\tpartial\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\ta\ttune\t2\t3\t0.6\t0.50\trelease\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\tb\ttune\t1\t3\t0.6\t0.50\trelease\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\tc\ttune\t3\t3\t0.6\t0.50\trelease\n'; } > "$EL/q.tsv"
+elq() { EVALS_LEDGER="$EL/q.tsv" sh "$ELS" "$@" 2>&1 | tr '\n' '|'; }
+[ "$(elq --below-full 2)" = "a|b|" ] || el_fail="$el_fail [d: --below-full 2: $(elq --below-full 2)]"
+[ "$(elq --below-full 3)" = "b|" ] || el_fail="$el_fail [d: --below-full 3: $(elq --below-full 3)]"
+[ "$(elq --below-full 5)" = "" ] || el_fail="$el_fail [d: --below-full 5 with three release runs: $(elq --below-full 5)]"
+[ "$(elq --rate a)" = "a 7/9 over 3 run(s)|" ] || el_fail="$el_fail [d: --rate a: $(elq --rate a)]"
+[ "$(elq --rate a --last 1)" = "a 2/3 over 1 run(s)|" ] || el_fail="$el_fail [d: --rate a --last 1: $(elq --rate a --last 1)]"
+[ "$(elq --rate c --last 2)" = "c 3/3 over 1 run(s)|" ] || el_fail="$el_fail [d: --rate c --last 2: $(elq --rate c --last 2)]"
+[ "$(elq --runs)" = "2026-01-01 c1 3 8/9 3.00|2026-02-01 c2 2 4/6 -|2026-03-01 c4 3 6/9 1.50|" ] || el_fail="$el_fail [d: --runs: $(elq --runs)]"
+[ "$(elq --runs --last 1 --prefix b)" = "2026-03-01 c4 1 1/3 0.50|" ] || el_fail="$el_fail [d: --runs --last 1 --prefix b: $(elq --runs --last 1 --prefix b)]"
+EVALS_LEDGER="$EL/q.tsv" sh "$ELS" --bogus >/dev/null 2>&1; [ $? -eq 2 ] || el_fail="$el_fail [d: an unknown argument is not exit 2]"
+# e. evals.sh with a stand-in tool: traces kept, rows appended as release or partial, the tool's status
+el_result "$EL/tmpl.json" @DATE@
+cat > "$EL/bin/tool" <<STUB
+#!/bin/sh
+printf '%s\n' "\$*" > "$EL/args"
+out=""; prev=""
+for a in "\$@"; do [ "\$prev" = --output-dir ] && out=\$a; prev=\$a; done
+if [ "\${STUB_WRITE:-1}" = 1 ]; then mkdir -p "\$out" && sed "s/@DATE@/\$STUB_DATE/" "$EL/tmpl.json" > "\$out/aggregate-result.json"; fi
+exit \${STUB_EXIT:-0}
+STUB
+chmod +x "$EL/bin/tool"
+el_evals() { EVALS_TOOL="$EL/bin/tool" EVALS_LEDGER="$EL/e.tsv" EVALS_OUT="$EL/eout" sh "$ROOT/scripts/evals.sh" "$@" >/dev/null 2>&1; }
+STUB_DATE=2026-12-02T10:00:00Z STUB_EXIT=3 el_evals; el_rc=$?
+[ "$el_rc" -eq 3 ] && grep -q -- '--keep-temp' "$EL/args" 2>/dev/null && [ "$(awk -F '\t' '$1 == "2026-12-02" && $12 == "release"' "$EL/e.tsv" 2>/dev/null | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [e: a full run: exit $el_rc, args $(cat "$EL/args" 2>/dev/null), release rows $(awk -F '\t' '$12 == "release"' "$EL/e.tsv" 2>/dev/null | grep -c .)]"
+STUB_DATE=2026-12-03T10:00:00Z EVALS_KEEP=0 el_evals --group alpha; el_rc=$?
+! grep -q -- '--keep-temp' "$EL/args" 2>/dev/null && [ "$(awk -F '\t' '$1 == "2026-12-03" && $12 == "partial"' "$EL/e.tsv" 2>/dev/null | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [e: EVALS_KEEP=0 --group: args $(cat "$EL/args" 2>/dev/null), partial rows $(awk -F '\t' '$12 == "partial"' "$EL/e.tsv" 2>/dev/null | grep -c .)]"
+el_n=$(grep -c . "$EL/e.tsv" 2>/dev/null)
+STUB_WRITE=0 STUB_EXIT=5 el_evals; el_rc=$?
+[ "$el_rc" -eq 5 ] && [ "$(grep -c . "$EL/e.tsv" 2>/dev/null)" = "$el_n" ] \
+  || el_fail="$el_fail [e: no result file written (an old one left in the folder): exit $el_rc, $(grep -c . "$EL/e.tsv" 2>/dev/null) lines, want $el_n]"
+sh -n "$ELS" 2>/dev/null && sh -n "$ROOT/scripts/evals.sh" 2>/dev/null || el_fail="$el_fail [sh -n reports a syntax error]"
+if [ -z "$el_fail" ]; then pass "eval-ledger (append writes a row per case, once; three queries read release runs only; evals.sh keeps traces, appends release or partial rows, and exits with the tool's status, with or without a result file)"
+else failc "eval-ledger" "$el_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
