@@ -171,6 +171,7 @@ registry() { cat <<'EOF'
 110 eval-ledger
 111 ledger-backfill
 112 briefing-cost
+113 evals-for-diff
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4342,6 +4343,63 @@ bk_slow=$(awk -v t="$bk_t" 'BEGIN { print (t + 0 > 0.5) ? 1 : 0 }')
 if [ -z "$bk_fail" ] && [ "$bk_slow" -eq 0 ]; then pass "briefing-cost (spec-check.sh prints what it printed at 398d1c9 on fifty specs, every kind of line and this repository; the briefing's gap line is its count; fifty specs in ${bk_t}s of CPU, best of 3)"
 elif [ -z "$bk_fail" ] && [ "${SMOKE_TIMING:-}" = report ]; then pass "briefing-cost (output unchanged, gap line matches; fifty specs in ${bk_t}s of CPU, best of 3, over 0.5 s: reported, not enforced, SMOKE_TIMING=report)"
 else failc "briefing-cost" "$bk_fail [fifty specs: ${bk_t}s of CPU, best of 3, want ≤ 0.5]"; fi
+
+# 113. evals-for-diff: the cases a change needs are chosen by the change. scripts/evals-map.tsv
+# names, for each eval case, the plugin paths whose text reaches it; scripts/evals-for-diff.sh
+# reads `git diff --name-only <base>...HEAD` against it, and `evals.sh --for-diff <base>` runs
+# what it picks. Here the diffs are made in a scratch repository and the map is this one's;
+# evals.sh runs a stand-in for claude. Lint's check 19 holds the map to the case folders, on a
+# copy of this tree. No claude needed.
+# Cites: numbers-as-data/REQ-19 numbers-as-data/REQ-20 numbers-as-data/REQ-21
+# numbers-as-data/REQ-22 numbers-as-data/REQ-23 numbers-as-data/REQ-24 numbers-as-data/REQ-25
+FD="$WORK/fordiff"; FDS="$ROOT/scripts/evals-for-diff.sh"; mkdir -p "$FD/repo" "$FD/bin"; fd_fail=""
+fdg() { (cd "$FD/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$FD/repo" && git init -q && mkdir -p plugins/shipkit/agents plugins/shipkit/rules plugins/shipkit/scripts docs \
+  && echo a > plugins/shipkit/agents/reviewer.md && echo a > plugins/shipkit/rules/shipkit.md \
+  && echo a > plugins/shipkit/scripts/session-start.sh && echo a > docs/x.md)
+fdg add -A; fdg commit -q -m base; fdg tag base
+fd_case() {  # fd_case <branch> <file> → the cases evals-for-diff.sh prints for a diff touching only <file>
+  fdg checkout -q -b "$1" base; echo b >> "$FD/repo/$2"; fdg commit -q -am "$1"
+  (cd "$FD/repo" && sh "$FDS" base 2>&1); echo "exit=$?"
+}
+fd_out=$(fd_case rev plugins/shipkit/agents/reviewer.md | tr '\n' ' ')
+[ "$fd_out" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative exit=0 " ] \
+  || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out]"
+fd_always="hello rules-care rules-decision rules-nontrivial rules-trivial exit=0 "
+fd_out=$(fd_case rul plugins/shipkit/rules/shipkit.md | tr '\n' ' ')
+[ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on rules/shipkit.md: $fd_out]"
+fd_out=$(fd_case hook plugins/shipkit/scripts/session-start.sh | tr '\n' ' ')
+[ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on session-start.sh: $fd_out]"
+fd_out=$(fd_case doc docs/x.md | tr '\n' ' ')
+[ "$fd_out" = "exit=0 " ] || fd_fail="$fd_fail [a diff under docs/: $fd_out]"
+# evals.sh --for-diff: one --case for each case picked, marked partial; none picked, nothing run
+printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "%s"\nexit 0\n' "$FD/args" > "$FD/bin/tool"; chmod +x "$FD/bin/tool"
+fdg checkout -q rev
+(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base >/dev/null 2>&1); fd_rc=$?
+fd_cases=$(tr ' ' '\n' < "$FD/args" 2>/dev/null | grep -A1 -x -- '--case' | grep -v -x -- '--case' | grep -v -x -- '--' | tr '\n' ' ')
+[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative " ] \
+  || fd_fail="$fd_fail [evals.sh --for-diff on reviewer.md: exit $fd_rc, cases $fd_cases]"
+rm -f "$FD/args"; fdg checkout -q doc
+fd_msg=$(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base 2>&1); fd_rc=$?
+[ "$fd_rc" -eq 0 ] && [ ! -e "$FD/args" ] && [ "$fd_msg" = "evals: no case reads the files this diff changed" ] \
+  || fd_fail="$fd_fail [evals.sh --for-diff under docs/: exit $fd_rc, said '$fd_msg', tool run: $([ -e "$FD/args" ] && echo yes || echo no)]"
+# lint: the map against the case folders, on a copy of this tree
+FL="$WORK/fordiff-lint"; mkdir -p "$FL"
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$FL/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$FL" && tar xf -); fi
+fd_clean=$(python3 "$FL/scripts/lint.py" 2>&1 | tail -1)
+case "$fd_clean" in *" 0 error(s)"*) ;; *) fd_fail="$fd_fail [lint on the clean copy: $fd_clean]";; esac
+awk -F '\t' -v OFS='\t' '$1 == "hello" { next } $1 == "intake-limit" { $3 = $3 ",plugins/shipkit/skills/nosuch/" } { print } END { print "nosuch-case", "tune", "plugins/shipkit/rules/shipkit.md" }' \
+  "$FL/scripts/evals-map.tsv" > "$FL/m.tmp" && mv "$FL/m.tmp" "$FL/scripts/evals-map.tsv"
+fd_lint=$(python3 "$FL/scripts/lint.py" 2>&1)
+printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*no row for the eval case hello' \
+  && printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*nosuch-case.*names no eval case' \
+  && printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*intake-limit.*plugins/shipkit/skills/nosuch/.*does not exist' \
+  && [ "$(printf '%s\n' "$fd_lint" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p')" = 3 ] \
+  || fd_fail="$fd_fail [lint on the doctored copy: $(printf '%s' "$fd_lint" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+sh -n "$FDS" 2>/dev/null || fd_fail="$fd_fail [sh -n reports a syntax error]"
+if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the four reviewer cases; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
+else failc "evals-for-diff" "$fd_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

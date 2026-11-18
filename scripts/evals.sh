@@ -51,6 +51,15 @@
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SOURCE=release
 if [ "$1" = "--group" ] && [ -n "$2" ]; then G="$2"; shift 2; set -- --case "$G-*" "$@"; fi
+# --for-diff <base> (first argument, like --group): only the cases scripts/evals-for-diff.sh
+# picks for `git diff <base>...HEAD`, one --case each; none, and nothing runs.
+# Cites: numbers-as-data/REQ-24
+if [ "$1" = "--for-diff" ] && [ -n "$2" ]; then
+  FD_BASE=$2; shift 2
+  FD_CASES=$(sh "$ROOT/scripts/evals-for-diff.sh" "$FD_BASE") || exit 2
+  if [ -z "$FD_CASES" ]; then echo "evals: no case reads the files this diff changed"; exit 0; fi
+  for c in $(printf '%s\n' "$FD_CASES" | sort -r); do set -- --case "$c" "$@"; done
+fi
 for a in "$@"; do case "$a" in --case|--case=*) SOURCE=partial ;; esac; done
 OUT=${EVALS_OUT:-${TMPDIR:-/tmp}/shipkit-evals}
 KEEP=--keep-temp; [ "${EVALS_KEEP:-1}" = 0 ] && KEEP=""

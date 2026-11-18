@@ -30,11 +30,12 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - After: T3
   - Done when: `eval-history.md` states rule 30 above its first `##`; `design.md`'s last section has an entry for each of the four, each line naming its source section and each with its command; `bash scripts/lint.sh` → 0 error(s)
   - Note (2026-11-18): `eval-history.md` has no line on smoke checks 2 and 4; the note says so and quotes `ROADMAP.md` and `CHANGELOG.md`, where they are recorded.
-- [ ] **T5** The map, `evals-for-diff.sh`, `evals.sh --for-diff`, and lint check 19 → REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25
+- [x] **T5** The map, `evals-for-diff.sh`, `evals.sh --for-diff`, and lint check 19 → REQ-19, REQ-20, REQ-21, REQ-22, REQ-23, REQ-24, REQ-25
   - Files: scripts/evals-map.tsv, scripts/evals-for-diff.sh, scripts/evals.sh, scripts/lint.py, scripts/smoke.sh
   - Test: scripts/smoke.sh check 113 (`evals-for-diff`): in a scratch repository with this map, a diff on `agents/reviewer.md` prints the four reviewer cases; one on `rules/shipkit.md` or `session-start.sh` prints every `rules-` case and `hello`; one under `docs/` prints nothing and exits 0; `evals.sh --for-diff` with a stand-in tool passes one `--case` for each and runs nothing when there is none; lint on a copy fails a case with no row, a row with no case and a path that does not exist, and passes the clean copy
   - After: T4
-  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 113 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); `sh scripts/evals-for-diff.sh main` → no case
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 113 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); `sh scripts/evals-for-diff.sh main` → the eleven cases whose fixture holds `.shipkit/`, and no other
+  - Note (2026-11-18): the plan's done-when read "no case", written before the briefing's speed-up joined this sprint. T3 changed `briefing.sh` and `spec-check.sh`, whose lines the session hook prints in a fixture with a `.shipkit/` folder, so the map picks those eleven. None needs a run: check 112 holds `spec-check.sh`'s output byte for byte to `398d1c9`, so the text that reaches them did not change. `digest-attention` makes `.shipkit/` only in sub-projects, where the hook does not run, and is not picked. The rule cases list `inject-rule.sh`, which delivers their rule.
 - [ ] **T6** Two README sections move to `docs/design/eval-cases.md` → REQ-26, REQ-27, REQ-28
   - Files: plugins/shipkit/evals/README.md, docs/design/eval-cases.md, scripts/lint.py, scripts/smoke.sh
   - Test: scripts/smoke.sh check 114 (`eval-room`): the moved text equals the README's at `398d1c9` word for word under its dated line; the README keeps `## Cases` with one line naming the new file; the evals folder is at most 190,800 bytes; checks 54, 57 and 58 still pass
