@@ -22,6 +22,22 @@
 #                               gap: the test is owed at ship time (both 4.0.0 gates failed
 #                               their first run on exactly this, unseen until the gate ran)
 #   WAIVED <slug> REQ-N         the requirement ends with [untested: <reason>]
+#   EVIDENCE <slug> tested=<a> waived=<b> uncited=<c>
+#                               one for each spec checked — information, not a gap: how many of
+#                               its requirements have a waiver (b), have none and are cited (a),
+#                               or neither (c). A ship report can then say how much of READY is
+#                               tests and how much is reading (honest-evidence/REQ-12)
+#   CITED-ELSEWHERE <slug> REQ-N <file>
+#                               the spec has a "> Tests:" line and this citation sits in a file
+#                               outside its paths, so it does not count — information; the
+#                               requirement then reads MISSING-TEST or PENDING-TEST unless
+#                               another citation counts (honest-evidence/REQ-16, REQ-18)
+#   SKIPPED-CITE <slug> REQ-N <file>:<line>
+#                               a counted citation, at that file and line, sits on a line with
+#                               a skip marker or within three lines of one (@tag :skip, it.skip,
+#                               xit(, @pytest.mark.skip, xfail, t.Skip(, a line that begins
+#                               "skip" or "pending", and their like) — information, not a gap:
+#                               the test it names may never run (honest-evidence/REQ-19, REQ-20)
 #   SKIPPED <slug> (<status>)   the spec is a draft or was dropped; nothing is checked
 #   MISSING-FIELD <slug> <task> <field>   a task lacks Files, Test, After or Done-when
 #   BAD-AFTER <slug> <task> <name>        a task's After names a task that does not exist
@@ -41,6 +57,10 @@
 #   - A test cites a requirement by containing "<slug>/REQ-N" anywhere — a comment or a test
 #     name. The slug is needed because every spec has its own REQ-1. Citations under .shipkit/,
 #     under docs/, or in any *.md file do not count: prose is not a test.
+#   - A spec may narrow that with a "> Tests: tests/billing/, scripts/smoke.sh" line in spec.md:
+#     comma-separated files or folders, written like "> Paths:". Its citations then count only
+#     in a listed file or under a listed folder. No such line: any file that the rule above
+#     allows, as before.
 #   - Only a shipped spec is asked for tests. An open one still owes them, and is told so by a
 #     PENDING-TEST line per uncited requirement (exit status unchanged; --as-shipped turns
 #     them into MISSING-TEST).
@@ -84,7 +104,8 @@ fi
 
 TMP=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || exit 1  # a template: bare mktemp ignores TMPDIR on macOS
 CITES="$TMP.cites"
-trap 'rm -f "$TMP" "$CITES"' EXIT
+LOCS="$TMP.locs"
+trap 'rm -f "$TMP" "$CITES" "$LOCS" "$TMP.cnt" "$TMP.else" "$TMP.skip"' EXIT
 
 # spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)
 spec_status() {
@@ -167,23 +188,116 @@ spec_reqs() {
 # collect_cites → every "<slug>/REQ-N" that appears in a file that counts as a test, one per
 # line, in $CITES. ONE git grep per run: the briefing runs this script at every session start,
 # and a grep per requirement made fifty open specs take 2.7 s (smoke check 30's limit is 1 s).
+# Still one search, now with -n: each hit is "<file>:<line>:<citation>", kept in $LOCS as
+# "<file><TAB><line><TAB><citation>" so that a spec with a "> Tests:" line can ask where a
+# citation sits (honest-evidence/REQ-15). $CITES is as before, every citation once, and is what
+# a spec with no such line is counted from (honest-evidence/REQ-17).
 collect_cites() {
   _pat='[A-Za-z0-9._-]+/REQ-[0-9]+'
   if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$PROJ" grep -h -I -o --untracked -E -e "$_pat" -- . \
+    git -C "$PROJ" grep -n -I -o --untracked -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null
   else
-    (cd "$PROJ" && git grep -h -I -o --no-index -E -e "$_pat" -- . \
+    (cd "$PROJ" && git grep -n -I -o --no-index -E -e "$_pat" -- . \
       ':(exclude).shipkit' ':(exclude)docs' ':(exclude)*.md' 2>/dev/null)
-  fi | sort -u > "$CITES"
+  fi | awk -F: 'NF >= 3 { f = $1; for (i = 2; i <= NF - 2; i++) f = f ":" $i; print f "\t" $(NF - 1) "\t" $NF }' > "$LOCS"
+  cut -f3 "$LOCS" | sort -u > "$CITES"
 }
 collect_cites
 
 # cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N (whole token:
-# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1)
+# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1). $SPEC_CITES is $CITES, or for a
+# spec with a "> Tests:" line the citations found under its paths.
 cited() {
-  grep -q -x -F "$1/REQ-$2" "$CITES"
+  grep -q -x -F "$1/REQ-$2" "$SPEC_CITES"
 }
+
+# under(f): is the file one of the Tests paths, or under one that is a folder (written with or
+# without its last slash)? The paths come in through the environment, one a line: BSD awk
+# rejects a newline in a -v value. Shared by the two awk programs below.
+AWK_UNDER='
+    function under(f,   i, q) {
+      for (i = 1; i <= np; i++) {
+        if (paths[i] == "") continue
+        if (f == paths[i]) return 1
+        q = paths[i]; if (q !~ /\/$/) q = q "/"
+        if (index(f, q) == 1) return 1
+      }
+      return 0
+    }'
+
+# skip_scan → $TMP.skip: "<file><TAB><line><TAB><citation>" for each citation that sits on a
+# line holding a skip marker, or within three lines above or below one (honest-evidence/REQ-19).
+# One awk reads $LOCS and then each citing file once. A marker is a whole word: "exit(" holds
+# "xit(" and "--maxfail" holds "xfail", and neither is one. This is a guess from text: a test
+# left out by configuration (an ExUnit tag excluded in test_helper.exs) has no marker near it
+# and is not seen, and a marker in a comment three lines away is.
+skip_scan() {
+  : > "$TMP.skip"
+  [ -s "$LOCS" ] || return 0
+  (cd "$PROJ" && awk -F '\t' '
+    function word(line, s,   p, rest, off, c) {   # s is in line, not preceded by a letter, a digit or _
+      rest = line; off = 0
+      while ((p = index(rest, s)) > 0) {
+        c = (off + p > 1) ? substr(line, off + p - 1, 1) : ""
+        if (c !~ /[A-Za-z0-9_]/) return 1
+        off += p; rest = substr(rest, p + 1)
+      }
+      return 0
+    }
+    function marker(line,   i, t) {
+      for (i = 1; i <= nm; i++) if (word(line, m[i])) return 1
+      t = line; sub(/^[ \t]+/, "", t)
+      return (t ~ /^(skip|pending)([^A-Za-z0-9_]|$)/)
+    }
+    BEGIN { nm = split("@tag :skip|@moduletag :skip|it.skip|test.skip|describe.skip|xit(|xdescribe(|@pytest.mark.skip|@unittest.skip|pytest.skip(|xfail|t.Skip(", m, "|") }
+    { if (!($1 in seen)) { seen[$1] = 1; order[++nf] = $1 }
+      at[$1] = at[$1] " " $2; what[$1, $2] = what[$1, $2] " " $3 }
+    END {
+      for (k = 1; k <= nf; k++) {
+        f = order[k]; n = 0; split("", mark)
+        while ((getline line < f) > 0) { n++; if (marker(line)) mark[n] = 1 }
+        close(f)
+        c = split(at[f], ln, " "); split("", did)
+        for (i = 1; i <= c; i++) {
+          l = ln[i] + 0; if (l in did) continue; did[l] = 1
+          hit = 0; for (d = -3; d <= 3; d++) if ((l + d) in mark) hit = 1
+          if (!hit) continue
+          w = split(what[f, ln[i]], cs, " ")
+          for (j = 1; j <= w; j++) print f "\t" l "\t" cs[j]
+        }
+      }
+    }' "$LOCS") > "$TMP.skip" 2>/dev/null
+}
+skip_scan
+
+# skipped_lines <slug> <1 when the spec has a Tests line> <its paths> → the SKIPPED-CITE lines
+# for the spec's counted citations: all of its citations, or with a Tests line those under it.
+skipped_lines() {
+  SC_TESTS="$3" awk -F '\t' -v slug="$1" -v only="$2" "$AWK_UNDER"'
+    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
+    index($3, pre) == 1 && substr($3, length(pre) + 1) ~ /^[0-9]+$/ && (only == 0 || under($1)) {
+      print "SKIPPED-CITE " slug " REQ-" substr($3, length(pre) + 1) " " $1 ":" $2
+    }' "$TMP.skip" | sort -u
+}
+
+# tests_filter <slug> <the Tests paths, one a line> → writes to $TMP.cnt the spec's citations
+# that sit in a listed file or under a listed folder, and prints one CITED-ELSEWHERE line for
+# each requirement and file outside them.
+tests_filter() {
+  : > "$TMP.cnt"
+  SC_TESTS="$2" awk -F '\t' -v slug="$1" -v counted="$TMP.cnt" "$AWK_UNDER"'
+    BEGIN { np = split(ENVIRON["SC_TESTS"], paths, "\n"); pre = slug "/REQ-" }
+    index($3, pre) == 1 && substr($3, length(pre) + 1) ~ /^[0-9]+$/ {
+      if (under($1)) print $3 > counted
+      else print "CITED-ELSEWHERE " slug " REQ-" substr($3, length(pre) + 1) " " $1
+    }' "$LOCS" | sort -u
+}
+
+# One search names the specs that carry a "> Tests:" line, so a spec without one costs no
+# process more than it did: the briefing runs this script at every session start, and fifty
+# specs must come back within a second (smoke check 30 read 1.24 s when each spec was asked).
+TESTS_SPECS=$(grep -l '^> *Tests:' "$SPECS"/*/spec.md 2>/dev/null | tr '\n' '|')
 
 gaps=0
 checked=0
@@ -204,11 +318,21 @@ for spec in "$SPECS"/*/spec.md; do
       gaps=$((gaps + 1))
     fi
   done
+  # A "> Tests: a/, b/c.sh" line narrows where this spec's citations count; none: as before.
+  SPEC_CITES=$CITES; has_tests=0; tests=""
+  case "|$TESTS_SPECS" in *"|$spec|"*) has_tests=1 ;; esac
+  if [ "$has_tests" -eq 1 ]; then
+    tests=$(sed -n 's/^> *Tests: *//p' "$spec" | sed -n 1p | tr ',' '\n' | sed 's/`//g; s/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
+    tests_filter "$slug" "$tests" > "$TMP.else"
+    SPEC_CITES="$TMP.cnt"
+  fi
   if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
+  ev_t=0; ev_w=0; ev_u=0   # honest-evidence/REQ-12: tested, waived, uncited
   while read -r n kind mentioned; do
     [ -n "$n" ] || continue
     if [ "$kind" = W ]; then
       echo "WAIVED $slug REQ-$n"
+      ev_w=$((ev_w + 1))
       continue
     fi
     if [ "$mentioned" != T ]; then
@@ -216,14 +340,21 @@ for spec in "$SPECS"/*/spec.md; do
       gaps=$((gaps + 1))
     fi
     if cited "$slug" "$n"; then
-      :
+      ev_t=$((ev_t + 1))
     elif [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; then
       echo "MISSING-TEST $slug REQ-$n"
       gaps=$((gaps + 1))
+      ev_u=$((ev_u + 1))
     else
       echo "PENDING-TEST $slug REQ-$n"   # real-run/REQ-1: open spec, shown not enforced
+      ev_u=$((ev_u + 1))
     fi
   done < "$TMP"
+  echo "EVIDENCE $slug tested=$ev_t waived=$ev_w uncited=$ev_u"
+  # CITED-ELSEWHERE lines: information, never a gap by themselves (REQ-18)
+  [ "$has_tests" -eq 1 ] && cat "$TMP.else"
+  # SKIPPED-CITE lines: information too (REQ-20). No process is spent when nothing was found.
+  [ -s "$TMP.skip" ] && skipped_lines "$slug" "$has_tests" "$tests"
   if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then
     task_findings "$slug" "$dir/tasks.md" > "$TMP"
     if [ -s "$TMP" ]; then

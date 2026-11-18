@@ -15,12 +15,173 @@
 # before the first session and restores it on exit, on every exit path; a session
 # started during a run reads the scratch root only through plugin-root.dev (harness-debts/REQ-7).
 # Exit status: 0 if every check passes, 1 otherwise. Set SMOKE_KEEP=1 to keep the scratch dir.
+# Set SMOKE_TIMING=report to print check 30's fifty-spec time without failing on it (CI does).
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 # Since 3.0 the repo is a marketplace of plugins; the smoke test exercises the CORE plugin
 # (it owns the hook, the rules, the stacks and the install scripts).
 CORE="$ROOT/plugins/shipkit"
-command -v claude >/dev/null 2>&1 || { echo "smoke: `claude` not on PATH" >&2; exit 1; }
+
+# Arguments (spec: .shipkit/specs/honest-evidence/; check 97 holds them):
+#   --no-model          leave out every check that starts a model; `claude` is not needed
+#   --only <n>[,<n>]    of the checks that start a model, run only these and the ones they need;
+#                       every check that needs no model still runs
+#   --list              print RUN or SKIP for each numbered check, as the other arguments decide,
+#                       and run nothing
+# A wrong argument, a number --only does not take, or --no-model with --only: usage, exit 64.
+MODEL_CHECKS="1 2 2b 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
+NEEDS="32:31"   # <check>:<the check whose model session wrote a file it reads>
+usage() { echo "usage: smoke.sh [--no-model | --only <n>[,<n>]] [--list]" >&2; exit 64; }
+NO_MODEL=0; ONLY=""; LIST=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --no-model) NO_MODEL=1 ;;
+    --only) [ $# -ge 2 ] || usage; ONLY=$2; shift ;;
+    --list) LIST=1 ;;
+    *) usage ;;
+  esac
+  shift
+done
+[ "$NO_MODEL" -eq 1 ] && [ -n "$ONLY" ] && usage
+ONLY_SET=""
+for o in $(printf '%s' "$ONLY" | tr ',' ' '); do
+  case " $MODEL_CHECKS " in
+    *" $o "*) ONLY_SET="$ONLY_SET $o" ;;
+    *) echo "smoke: --only takes the checks that start a model: $MODEL_CHECKS" >&2; exit 64 ;;
+  esac
+  for need in $NEEDS; do [ "${need%%:*}" = "$o" ] && ONLY_SET="$ONLY_SET ${need#*:}"; done
+done
+
+# The registry: every numbered check's label and one short name, in the file's order. --list
+# and the SKIP lines print from it; check 97 fails if a "# <label>. " header has no line here.
+registry() { cat <<'EOF'
+1 rules-inject
+2 rules-skip
+2b rules-fallback
+3 plugin-root
+4 agents
+5 workflows-skills
+5b namespaces
+6 hook-cap
+7 install-scripts
+8 stale-nudge
+8b incomplete-install
+8c reconciliation
+8d legacy-stamp
+8e unstamped
+9 stack-section
+10 freshness
+11 spec-staleness
+9b user-skill
+9c managed-block
+11b staleness-day
+17 unsetup
+18 commit-guard
+19 spec-check-reqs
+20 spec-check-tasks
+21 spec-drift
+22 spec-new-format
+23 product-file
+24 registry-columns
+25 brief
+26 brief-verify
+27 reviewer-tools
+28 as-shipped
+29 ship-gate
+30 briefing
+31 handoff-file
+32 handoff-loop
+33 compact-reminder
+34 fired-if-template
+35 decision-check
+36 portfolio-digest
+37 digest-old
+38 ledger-gen
+39 xl-scaffold
+40 trace-tools
+41 no-map-silent
+42 lint-negative
+43 with-rule
+44 eval-inject
+45 stack-gen
+46 evals-group
+47 rule-cases
+48 pending-test
+49 pre33-specs
+50 headless-questions
+51 version-and-goal
+52 fired-if-early
+53 shipkit-allowed
+54 scoped-loading
+55 spec-check-draft
+56 plugin-root-restore
+57 dotfile-paragraph
+58 cuts-recorded
+59 portfolio-gen
+60 heading-seen
+61 same-named
+62 plugin-root-installed
+63 context-cost
+64 opt-out
+65 skills-merged
+66 agents-four
+67 skills-flag
+68 appends-trimmed
+69 skills-cut
+70 report-shapes
+71 brief-cites
+72 stack-skill-allowed
+73 reviewer-skills
+74 ship-capture
+75 setup-rule-count
+76 ship-retry
+77 reviewer-fixture
+78 map-read-grep
+79 django-only
+80 stamp-dates
+81 section-clean
+82 fired-if-tracked
+83 superseded-report
+84 walk-sentence
+85 ship-write-path
+86 elixir-app
+87 stray-status
+88 setup-files
+89 reviewer-marks
+90 pinned-toolchain
+91 git-grep
+92 wait-probe
+93 stale-nesting
+94 goldfish-agent
+95 spec-goldfish-step
+96 goldfish-fixture
+97 smoke-args
+98 ci-smoke-job
+99 evidence-line
+100 tests-line
+101 skipped-cite
+102 spec-diff
+103 spec-edited
+104 text-label
+105 timing-switch
+EOF
+}
+is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
+runs_model() {  # runs_model <label> → 0 when this check that starts a model is to run
+  [ "$NO_MODEL" -eq 1 ] && return 1
+  [ -z "$ONLY_SET" ] && return 0
+  case " $ONLY_SET " in *" $1 "*) return 0 ;; esac
+  return 1
+}
+if [ "$LIST" -eq 1 ]; then
+  registry | while read -r lab name; do
+    if is_model "$lab" && ! runs_model "$lab"; then echo "SKIP $lab $name"; else echo "RUN $lab $name"; fi
+  done
+  exit 0
+fi
+if [ "$NO_MODEL" -eq 0 ]; then
+  command -v claude >/dev/null 2>&1 || { echo "smoke: \`claude\` not on PATH (--no-model runs the checks that need none)" >&2; exit 1; }
+fi
 
 WORK=$(mktemp -d) || exit 1
 # ~/.claude/shipkit/plugin-root: a session below writes it only while it is absent (4.12.0;
@@ -49,8 +210,32 @@ fi
 (cd "$PROJ" && git init -q && git -c user.email=s@s -c user.name=smoke commit -q --allow-empty -m init)
 
 fail=0
-pass() { echo "PASS  $1"; }
-failc() { echo "FAIL  $1 — $2"; fail=1; }
+# Counts are kept in a file, one letter a line, so a pass inside a subshell is still counted.
+COUNTS="$WORK/.counts"; : > "$COUNTS"
+pass() { echo "PASS  $1"; echo p >> "$COUNTS"; }
+# passt: a pass whose assertion only read the wording of a skill, an agent or a rule. It shows
+# the words are there, not that a model follows them (honest-evidence/REQ-32, check 104).
+passt() { echo "PASS  [text] $1"; echo p >> "$COUNTS"; echo t >> "$COUNTS"; }
+failc() { echo "FAIL  $1 — $2"; fail=1; echo f >> "$COUNTS"; }
+model_check() {  # model_check <label> → 0: run this check's model part; 1: skipped, and said so
+  if runs_model "$1"; then return 0; fi
+  echo "SKIP  [model] $1 $(registry | awk -v l="$1" '$1 == l { print $2 }')"; echo s >> "$COUNTS"
+  return 1
+}
+summary_lines() {  # summary_lines <passed> <text-only> <skipped> <failed> → the suite's last two lines
+  echo "smoke: $1 passed ($2 text-only), $3 skipped (model), $4 failed"
+  if [ "$4" -gt 0 ]; then echo "smoke: FAILURES above"
+  elif [ "$3" -gt 0 ]; then echo "smoke: all checks run passed; $3 skipped (model)"
+  else echo "smoke: all checks passed"; fi
+}
+# Under --no-model a stand-in `claude` goes first on the PATH and writes down every call. The
+# suite's last assertion reads that file: it must be empty (honest-evidence/REQ-1).
+if [ "$NO_MODEL" -eq 1 ]; then
+  mkdir -p "$WORK/stub"
+  printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\nexit 97\n' "$WORK/claude-calls.log" > "$WORK/stub/claude"
+  chmod +x "$WORK/stub/claude"
+  PATH="$WORK/stub:$PATH"; export PATH
+fi
 ask() {  # ask <plugin-dir> <prompt>  → last line of the model's reply, run inside $PROJ
   (cd "$PROJ" && claude --plugin-dir "$1" --model haiku -p "$2 Do not use tools." 2>/dev/null | tail -20)
 }
@@ -62,9 +247,11 @@ CW_Q='Reply with ONLY every codeword of the form ZEBRA-<digits> that appears any
 # other state). Cites: always-on/REQ-5
 printf '\n\nSmoke codeword: ZEBRA-1001.\n' >> "$COPY/rules/decisions.md"
 rm -rf "$PROJ/.claude"; mkdir -p "$PROJ/.shipkit"
+if model_check 1; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh session via the hook)";;
   *) failc "rules-inject" "codeword not seen: $out";; esac
+fi  # /model_check 1
 
 # 2. rules-skip: a rule INSTALLED AS A FILE is not ALSO injected by the hook.
 #
@@ -84,41 +271,51 @@ case "$out" in *ZEBRA-1001*) pass "rules-inject (always-on rule reaches a fresh 
 sh "$COPY/scripts/install-rules.sh" "$COPY" "$PROJ" >/dev/null 2>&1
 sed 's/ZEBRA-1001/ZEBRA-2002/' "$PROJ/.claude/rules/shipkit/decisions.md" > "$PROJ/.dec.tmp" \
   && mv "$PROJ/.dec.tmp" "$PROJ/.claude/rules/shipkit/decisions.md"
+if model_check 2; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in
   *ZEBRA-1001*) failc "rules-skip" "hook injected the plugin's copy although the rule is installed: $out";;
   *ZEBRA-2002*) pass "rules-skip (installed rule loads from disk; hook does not double-inject)";;
   *) failc "rules-skip" "neither codeword reached context — the installed rule did not load: $out";;
 esac
+fi  # /model_check 2
 
 # 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
 # Cites: install-lifecycle/REQ-5
 # always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
 # Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
 rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
+if model_check 2b; then
 out=$(ask "$COPY" "$CW_Q")
 case "$out" in
   *ZEBRA-1001*) pass "rules-fallback (a rule deleted from disk is re-injected, not lost)";;
   *) failc "rules-fallback" "a rule missing from disk was not injected: $out";;
 esac
+fi  # /model_check 2b
 rm -rf "$PROJ/.claude"
 
 # 3. plugin-root: the root line is in context and names the scratch copy
+if model_check 3; then
 out=$(ask "$COPY" 'If a line of the form "shipkit: plugin root is <path>" is in your context, reply with just the path; else NONE.')
 case "$out" in *"$COPY"*) pass "plugin-root (hook publishes the plugin root)";;
   *) failc "plugin-root" "got: $out";; esac
+fi  # /model_check 3
 
 # 4. agents: exactly the agents defined under agents/*.md, nothing else
 expected=$(ls "$CORE"/agents/*.md | sed 's#.*/##; s/\.md$//' | sort | tr '\n' ' ')
+if model_check 4; then
 out=$(ask "$COPY" 'List the exact names of every agent type available to you that starts with "shipkit:", one per line, nothing else.')
 got=$(printf '%s\n' "$out" | grep -o 'shipkit:[a-z-]*' | sed 's/shipkit://' | sort -u | tr '\n' ' ')
 if [ "$got" = "$expected" ]; then pass "agents (registered set = $expected)"; else failc "agents" "expected [$expected] got [$got]"; fi
+fi  # /model_check 4
 
 # 5. workflows-skills: the workflows plugin's skills register (the knowledge base this check
 # used to look for was cut in 4.0; `humanize` is the skill with the most distinctive name)
+if model_check 5; then
 out=$(ask "$ROOT/plugins/shipkit-workflows" 'List the exact names of every skill available to you whose name contains "humanize", one per line, or NONE.')
 case "$out" in *humanize*) pass "workflows-skills (a shipkit-workflows skill is registered)";;
   *) failc "workflows-skills" "got: $out";; esac
+fi  # /model_check 5
 
 # 5b. namespaces: the two plugins register under distinct prefixes, no collision.
 #
@@ -132,6 +329,7 @@ case "$out" in *humanize*) pass "workflows-skills (a shipkit-workflows skill is 
 # part of this check — it cannot see registration metadata directly. Treat a failure here as
 # "investigate", not "proven broken": confirm against `--plugin-dir` registration before
 # concluding anything, the way the isolated probe did.
+if model_check 5b; then
 ns_ok=1
 for pair in "shipkit:map" "shipkit-workflows:tdd"; do
   out=$(cd "$PROJ" && claude --plugin-dir "$COPY" --plugin-dir "$ROOT/plugins/shipkit-workflows" \
@@ -142,6 +340,7 @@ for pair in "shipkit:map" "shipkit-workflows:tdd"; do
   esac
 done
 [ "$ns_ok" -eq 1 ] && pass "namespaces (both plugins register under distinct prefixes)"
+fi  # /model_check 5b
 
 # 6. hook-cap: 9,500 chars of hook output is seen; 11,000 is not (informational if it now is)
 mkhook() {  # mkhook <dir> <chars> <codeword>
@@ -154,12 +353,14 @@ sys.stdout.write(b+tail)" "$2" "$3" > "$1/scripts/payload.txt"
   printf '#!/bin/sh\ncat "$(dirname "$0")/payload.txt"\n' > "$1/scripts/h.sh"; chmod +x "$1/scripts/h.sh"
 }
 mkhook "$WORK/cap-ok" 9500 ZEBRA-9500; mkhook "$WORK/cap-over" 11000 ZEBRA-11000
+if model_check 6; then
 out=$(ask "$WORK/cap-ok" "$CW_Q")
 case "$out" in *ZEBRA-9500*) pass "hook-cap (9.5K of hook output still reaches context)";;
   *) failc "hook-cap" "9.5K hook output no longer reaches context — the per-hook cap shrank; split the rules further";; esac
 out=$(ask "$WORK/cap-over" "$CW_Q")
 case "$out" in *ZEBRA-11000*) echo "INFO  hook-cap: 11K of hook output now reaches context — the cap was raised; inject-rule.sh could be simplified";;
   *) pass "hook-cap (11K is still cut, as assumed)";; esac
+fi  # /model_check 6
 
 # 7. install-scripts: deterministic installs produce the expected tree with no placeholders
 IP="$WORK/install-proj"; mkdir -p "$IP"; printf '# demo\n' > "$IP/CLAUDE.md"
@@ -753,6 +954,7 @@ esac
 # reliably. Takes a few minutes.
 NF="$WORK/newfmt"; mkdir -p "$NF"; cp -R "$COPY/evals/fixtures/sample-app/." "$NF/"
 (cd "$NF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+if model_check 22; then
 (cd "$NF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
   -p "/shipkit:spec refunds
@@ -768,11 +970,12 @@ if [ "$nf_rc" -eq 0 ] && grep -q '^> Status: open' "$nf_spec" 2>/dev/null \
 else
   failc "spec-new-format" "spec-check exit $nf_rc, tasks with Files: $nf_fields — $nf_out — model said: $(tail -5 "$WORK/newfmt.out")"
 fi
+fi  # /model_check 22
 # the always-on rule tells every session how a test cites a requirement, inside the budget
 # (the same byte assertion is what proves product-intake-brief/REQ-28 after S3-T6's sentence)
 if grep -q 'REQ-N' "$COPY/rules/spec-driven.md" && grep -q '/REQ-N' "$COPY/rules/spec-driven.md" \
    && [ "$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')" -le 3000 ]; then
-  pass "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
+  passt "spec-new-format (the spec-driven rule names the <feature>/REQ-N citation; rules within 3,000 bytes)"
 else failc "spec-new-format" "the citation sentence is missing from the rule, or the always-on rules exceed 3,000 bytes"; fi
 
 # 23. product-file: /shipkit:product writes the product file in its fixed shape
@@ -783,6 +986,7 @@ else failc "spec-new-format" "the citation sentence is missing from the rule, or
 # metric — and the file it writes is then read here, not taken on the model's word.
 PF="$WORK/product"; mkdir -p "$PF"; cp -R "$COPY/evals/fixtures/sample-app/." "$PF/"
 (cd "$PF" && git init -q && git add -A && git -c user.email=s@s -c user.name=s commit -q -m init)
+if model_check 23; then
 (cd "$PF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Skill \
   -p "/shipkit:product
@@ -806,18 +1010,19 @@ if [ "$heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter
 else
   failc "product-file" "headings=[$heads] goals=$goals lines=$plines — model said: $(tail -4 "$WORK/product.out")"
 fi
+fi  # /model_check 23
 
 # 24. registry-columns: the registry template and eve know the product columns and studio.md
 # (spec: .shipkit/specs/product-intake-brief/). No claude needed — these are the files a
 # session reads. Cites: product-intake-brief/REQ-8 product-intake-brief/REQ-10
 rc_head=$(grep -m1 '^| Project | Path ' "$COPY/skills/map/SKILL.md")
 case "$rc_head" in
-  *"| Product | Top Goal |"*) pass "registry-columns (registry template has Product and Top Goal)";;
+  *"| Product | Top Goal |"*) passt "registry-columns (registry template has Product and Top Goal)";;
   *) failc "registry-columns" "the template header lacks the two columns: $rc_head";;
 esac
 if grep -q 'studio\.md' "$COPY/agents/eve.md" && grep -q '`Product`' "$COPY/agents/eve.md" \
    && grep -q '`Top Goal`' "$COPY/agents/eve.md"; then
-  pass "registry-columns (eve names studio.md and both columns)"
+  passt "registry-columns (eve names studio.md and both columns)"
 else failc "registry-columns" "agents/eve.md does not name studio.md, Product and Top Goal"; fi
 
 # 25. brief: a task becomes a brief, built by a script from the spec, with no model
@@ -1027,7 +1232,7 @@ rv="$COPY/agents/reviewer.md"
 rv_tools=$(sed -n 's/^tools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 rv_deny=$(sed -n 's/^disallowedTools: *//p' "$rv" 2>/dev/null | tr -d ' ')
 if [ "$rv_tools" = "Read,Glob,Grep,Bash" ] && [ "$rv_deny" = "Edit,Write,Agent" ]; then
-  pass "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
+  passt "reviewer-tools (tools = Read, Glob, Grep, Bash; Edit, Write and Agent denied)"
 else failc "reviewer-tools" "tools=[$rv_tools] disallowedTools=[$rv_deny]"; fi
 # A MET citation's line number is the working tree's, as `grep -n` prints it — never a position
 # inside a diff hunk: the second real run's reviewer cited accounts.ex:18-23 for a function at
@@ -1072,6 +1277,7 @@ SG_SENT="${TMPDIR:-/tmp}/shipkit-ship-smoke-sentinel-$$.out"; : > "$SG_SENT"
 SG_TMP="$WORK/ship-tmp"; mkdir -p "$SG_TMP"
 # No .gitignore on purpose: the gate's own test run leaves __pycache__/ behind, and a gate that
 # then called the tree dirty would fail every Python project on its own step 2.
+if model_check 29; then
 shiprun() {
   (cd "$SG" && TMPDIR="$SG_TMP" claude --plugin-dir "$COPY" --model sonnet \
     --allowedTools Read Glob Grep Bash Write Skill Agent \
@@ -1118,6 +1324,7 @@ if [ "$sg_first" = "NOT READY" ] && grep -Eq '^\| *3 *\|.*\| *FAIL *\|' "$sg_rep
 else
   failc "ship-gate" "first line [$sg_first]; step 3 row: $(grep -E '^\| *3 *\|' "$sg_report" 2>/dev/null) — model said: $(tail -6 "$WORK/ship.out")"
 fi
+fi  # /model_check 29
 rm -f "$SG_SENT"
 
 # 30. briefing: a few lines at session start saying where things stand
@@ -1127,6 +1334,18 @@ rm -f "$SG_SENT"
 # briefing-and-handoff/REQ-8 briefing-and-handoff/REQ-9
 BRF="$COPY/scripts/briefing.sh"
 brief() { (cd "$1" && sh "$BRF" 2>"$WORK/brief.err"); echo "rc=$?" >> "$WORK/brief.err"; }
+# brief50_verdict <lines> <bytes> <cpu seconds> <runs> → the one PASS or FAIL line of part c
+# below, the fifty-spec briefing. Check 105 runs it on given numbers. With SMOKE_TIMING=report
+# a time of a second or more is printed and not failed: the limit was set on the owner's
+# machine and a shared CI runner is slower (honest-evidence/design.md, seventh record). The
+# line and byte limits are held either way.
+brief50_verdict() {
+  if [ "$1" -le 8 ] && [ "$2" -le 800 ] && [ "$(printf '%s' "$3" | cut -d. -f1)" -eq 0 ]; then
+    pass "briefing (50 open specs → $1 lines, $2 bytes, ${3}s of CPU, best of $4 run(s))"
+  elif [ "$1" -le 8 ] && [ "$2" -le 800 ] && [ "${SMOKE_TIMING:-}" = report ]; then
+    pass "briefing (50 open specs → $1 lines, $2 bytes; ${3}s of CPU, best of $4 run(s), is over the 1 s limit: reported, not enforced, SMOKE_TIMING=report)"
+  else failc "briefing" "50 specs: $1 lines, $2 bytes, ${3}s of CPU, best of $4 run(s) (want ≤8, ≤800, <1)"; fi
+}
 bspec() {  # bspec <proj> <slug> <status|none> <done> <total> → an open spec with N ticked tasks of M
   _d="$1/.shipkit/specs/$2"; mkdir -p "$_d"
   { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n' "$2"; [ "$3" = none ] || printf '> Status: %s\n' "$3"
@@ -1173,7 +1392,7 @@ else
   # sixth heading (run-wounds/REQ-15), and the briefing's handoff line above did not pick it up
   if grep -q '`## Blocked on`' "$COPY/skills/handoff/SKILL.md" \
      && grep -q 'Only when the next step cannot start' "$COPY/skills/handoff/SKILL.md"; then
-    pass "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
+    passt "briefing (handoff skill: a Blocked on heading only when the next step cannot start; the Next step line still stands alone)"
   else failc "briefing" "handoff/SKILL.md does not document the conditional Blocked on heading"; fi
   # ...and a gap makes the spec-check line appear
   : > "$BB/.shipkit/specs/alpha/tasks.md"
@@ -1182,21 +1401,22 @@ else
     pass "briefing (a spec-check gap → one gap line)"
   else failc "briefing" "no gap line: $out"; fi
   # c. fifty open specs: at most eight lines, at most 800 bytes, under a second. The time is the
-  # best of up to three runs, stopping at the first under a second: one run under the suite's own
-  # load read 1.02 s at the 5.1.0 release and 1.01 s at Sprint 23's merge, where alone it reads
-  # 0.72 to 0.75 s, and a briefing that is really slow is slow on all three.
+  # briefing's own CPU time (user and system, its children's too), not the wall clock: on a busy
+  # machine the wall clock measures the machine. It read 1.02 s at the 5.1.0 release, 1.01 s at
+  # Sprint 23's merge and 1.0 s on all three tries at Sprint 29's first model-free run, with the
+  # owner at work in another window; alone, the same fixture then took 0.81 to 0.90 s on the
+  # clock and 0.72 to 0.82 s of CPU. Still the best of up to three runs, stopping at the first
+  # under a second: a briefing that is really slow is slow on all three.
   BC="$WORK/brief-c"; mkdir -p "$BC"; (cd "$BC" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
   i=1; while [ "$i" -le 50 ]; do bspec "$BC" "spec-$i-with-a-rather-long-name-to-fill-the-line" open 1 4; i=$((i + 1)); done
   bt=9; bt_n=0
   while [ "$bt_n" -lt 3 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -ne 0 ]; do
     bt_n=$((bt_n + 1))
-    bt_one=$(python3 -c "import subprocess,sys,time; a=time.time(); subprocess.run(['sh','$BRF'],cwd='$BC',stdout=open('$WORK/brief50.out','w'),stderr=subprocess.DEVNULL); print(round(time.time()-a,2))")
+    bt_one=$(python3 -c "import os,subprocess; a=os.times(); subprocess.run(['sh','$BRF'],cwd='$BC',stdout=open('$WORK/brief50.out','w'),stderr=subprocess.DEVNULL); b=os.times(); print(round((b.children_user-a.children_user)+(b.children_system-a.children_system),2))")
     bt=$(awk -v a="$bt" -v b="$bt_one" 'BEGIN { m = (b + 0 < a + 0) ? b : a; print m }')
   done
   bl=$(grep -c . "$WORK/brief50.out"); bb=$(wc -c < "$WORK/brief50.out" | tr -d ' ')
-  if [ "$bl" -le 8 ] && [ "$bb" -le 800 ] && [ "$(printf '%s' "$bt" | cut -d. -f1)" -eq 0 ]; then
-    pass "briefing (50 open specs → $bl lines, $bb bytes, ${bt}s, best of $bt_n run(s))"
-  else failc "briefing" "50 specs: $bl lines, $bb bytes, ${bt}s, best of $bt_n run(s) (want ≤8, ≤800, <1)"; fi
+  brief50_verdict "$bl" "$bb" "$bt" "$bt_n"
   # d. a tasks.md that is not a task list, and a state.md with no Next step: no error, exit 0
   BD="$WORK/brief-d"; mkdir -p "$BD/.shipkit/specs/odd"; (cd "$BD" && git init -q)
   printf '# Spec: odd\n\n- **REQ-1.** x\n' > "$BD/.shipkit/specs/odd/spec.md"
@@ -1227,6 +1447,7 @@ printf '# Spec: Refunds\n\n> Spec accepted at commit `abc1234` on master.\n> Sta
 printf -- '- [x] **T1** Refund through the gateway → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: none\n  - Done when: tests pass\n- [ ] **T2** Reject a refund above the charge → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: T1\n  - Done when: tests pass\n' > "$HF/.shipkit/specs/refunds/tasks.md"
 (cd "$HF" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
 printf '"""Refunds — in progress."""\n' > "$HF/app/refunds.py"
+if model_check 31; then
 (cd "$HF" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Bash Write Skill \
   -p "/shipkit:handoff
@@ -1247,10 +1468,12 @@ if [ "$hf_heads" = "In flight|Done this session|Next step|Open questions|Do not 
 else
   failc "handoff-file" "headings=[$hf_heads] next-lines=$hf_next lines=$hf_lines written=$hf_written dirty=[$hf_dirty] — model said: $(tail -4 "$WORK/handoff.out")"
 fi
+fi  # /model_check 31
 
 # 32. handoff-loop: a fresh session in the project from check 31 is asked what to do next,
 # and answers from the note's Next step, which the briefing put in its context
 # (spec: .shipkit/specs/briefing-and-handoff/). Cites: briefing-and-handoff/REQ-14
+if model_check 32; then
 if [ -f "$hf" ]; then
   hl_next=$(awk '/^## /{on=($0 ~ /^## Next step/); next} on && NF{print; exit}' "$hf")
   hl_out=$(cd "$HF" && claude --plugin-dir "$COPY" --model haiku \
@@ -1262,6 +1485,7 @@ if [ -f "$hf" ]; then
 else
   failc "handoff-loop" "no state.md from check 31 to read"
 fi
+fi  # /model_check 32
 
 # 33. compact-reminder: after a compaction the session hook says so; at any other start it
 # does not (spec: .shipkit/specs/briefing-and-handoff/). The hook's JSON comes on stdin.
@@ -1284,7 +1508,7 @@ ft_cmd=$(grep -c '^\*\*Fired-if\.\*\* `test ' "$ft_ref")
 ft_man=$(grep -c '^\*\*Fired-if\.\*\* manual$' "$ft_ref")
 ft_after=$(awk '/^\*\*Falsifiability\.\*\*/{f=NR} /^\*\*Fired-if\.\*\* `test /{if (f && NR > f && NR - f <= 3) ok=1} END{print ok+0}' "$ft_ref")
 if [ "$ft_cmd" -ge 1 ] && [ "$ft_man" -ge 1 ] && [ "$ft_after" -eq 1 ]; then
-  pass "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
+  passt "fired-if-template (reference.md shows a command form after a Falsifiability line, and the manual form)"
 else failc "fired-if-template" "command-form lines: $ft_cmd, manual-form lines: $ft_man, command after a clause: $ft_after"; fi
 # measured on $CORE, not $COPY: check 1 appended a codeword to the copy's decisions.md
 ft_bytes=$(cat "$CORE/rules/shipkit.md" "$CORE/rules/spec-driven.md" "$CORE/rules/decisions.md" | wc -c | tr -d ' ')
@@ -1843,6 +2067,7 @@ else failc "pre33-specs" "hook drift lines: $(printf '%s\n' "$hook" | grep 'behi
 # (run-wounds/REQ-11). The files are read here; the model's word is not.
 HQ="$WORK/hq-intake"; mkdir -p "$HQ"
 (cd "$HQ" && bash "$COPY/evals/intake/limit/fixture.sh" >/dev/null 2>&1)
+if model_check 50; then
 (cd "$HQ" && claude --plugin-dir "$COPY" --model sonnet \
   --allowedTools Read Glob Grep Write Edit Bash Skill Agent \
   -p "/shipkit:intake Add refunds.
@@ -1865,6 +2090,7 @@ if [ -f "$hp" ] && grep -q '^> Open questions for the owner' "$hp" \
    && [ "$hp_heads" = "One line|Users|Goals this quarter|Non-goals|Metrics that matter|Constraints|Now / Next / Later|" ]; then
   pass "headless-questions (product with no answers wrote the open-questions block; seven headings kept)"
 else failc "headless-questions" "product.md block missing or shape changed: heads=[$hp_heads] — model said: $(tail -3 "$WORK/hq-product.out")"; fi
+fi  # /model_check 50
 
 # 51. version-and-goal: two lines the real run wanted. (a) Claude Code keeps each installed
 # version at ~/.claude/plugins/cache/shipkit/shipkit/<ver>/ and a session keeps the root it
@@ -1933,15 +2159,15 @@ else failc "fired-if-early" "after touch: rc=$rc out: $out"; fi
 if grep -q 'decision-check.sh" \. --run' "$COPY/skills/spec/SKILL.md" \
    && grep -qi 'FIRED.*ERROR\|ERROR.*FIRED' "$COPY/skills/spec/SKILL.md" \
    && grep -q 'exit 1 on the tree' "$COPY/skills/spec/reference.md"; then
-  pass "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
+  passt "fired-if-early (the spec skill runs decision-check --run on its own design.md and treats FIRED or ERROR as a defect; the reference says a command exits 1 on the tree it is written against)"
 else failc "fired-if-early" "spec skill or reference lacks the decision-check sentence"; fi
 
 # 53. shipkit-allowed: the files shipkit's own loop writes are never "outside the spec". On the
 # real run brief-verify called the spec's own intake.md/spec.md/design.md OUTSIDE before they
 # were committed and the reviewer called .shipkit/product.md outside the Paths line (field
 # notes §7, §8). Now everything under .shipkit/ is allowed except another spec's folder — for
-# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25 and
-# 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
+# brief-verify by code, for the reviewer by its step 4. Reuses BP/BV/bv_base from checks 25
+# and 26. No claude needed. Cites: gate-blind-spots/REQ-5 gate-blind-spots/REQ-6
 # gate-blind-spots/REQ-7
 mkdir -p "$BP/.shipkit/releases" "$BP/.shipkit/decisions"
 printf '# Product: x\n' > "$BP/.shipkit/product.md"
@@ -1992,6 +2218,7 @@ sh "$COPY/scripts/install-rules.sh" "$COPY" "$SL" >/dev/null 2>&1
 printf '\n\nSmoke codeword: ZEBRA-5401.\n' >> "$SL/.claude/rules/shipkit/dependencies.md"
 cp "$COPY/stacks/rails/.claude/rules/gemfile.md" "$SL/.claude/rules/shipkit/gemfile.md"
 printf '\n\nSmoke codeword: ZEBRA-5402.\n' >> "$SL/.claude/rules/shipkit/gemfile.md"
+if model_check 54; then
 slask() {  # slask <file> <named|read> → the model's last lines
   if [ "$2" = read ]; then
     (cd "$SL" && claude --plugin-dir "$COPY" --model haiku --allowedTools Read -p "Read the file $1 in this directory. Then: $CW_Q" 2>/dev/null | tail -5)
@@ -2014,6 +2241,7 @@ if [ -n "$sl_form" ]; then
 else
   failc "scoped-loading" "neither form loaded both rules — named: py[$(printf '%s' "$sl_py" | tail -1)] gem[$(printf '%s' "$sl_gem" | tail -1)]"
 fi
+fi  # /model_check 54
 if sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -q 'check 54' \
    && sed -n '/^## How a case gets the fixture/,/^## Cases/p' "$COPY/evals/README.md" | grep -qi 'path-scoped'; then
   pass "scoped-loading (the evals README states the measured result and names check 54)"
@@ -2055,7 +2283,7 @@ if [ "$rc1" = "$rc2" ] && [ "$ao_plain" = "$ao_flag" ] && [ "$rc3" -eq 0 ] && gr
 else failc "spec-check-draft" "shipped $rc1/$rc2 [$ao_plain] vs [$ao_flag]; dropped $rc3: $(cat "$WORK/sc.out" | tr '\n' '|')"; fi
 # d. the spec skill asks for the flag on a draft and never flips the status (prose, REQ-3)
 if grep -q -- '--as-open' "$COPY/skills/spec/SKILL.md" && ! grep -qi 'set the status to `open` for one run\|set .*Status.* to .*open.* for one run' "$COPY/skills/spec/SKILL.md"; then
-  pass "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
+  passt "spec-check-draft (the spec skill runs spec-check --as-open on the draft; no status flip in its text)"
 else failc "spec-check-draft" "skills/spec/SKILL.md does not name --as-open, or still flips the status"; fi
 
 # 56. plugin-root-restore: until 4.11.0 the session hook rewrote ~/.claude/shipkit/plugin-root
@@ -2123,7 +2351,7 @@ cr_kept rules/monorepo.md "consumes it"; cr_kept rules/monorepo.md -- "--filter"
 cr_kept rules/testing.md "factories, fixtures and helpers"; cr_kept rules/testing.md "second runner"
 cr_kept stacks/react/.claude/rules/package-json.md "frozen-lockfile"; cr_kept stacks/react/.claude/rules/package-json.md "Detect the package manager"
 cr_kept stacks/rails/.claude/rules/rails.md "update_column"
-if [ -z "$cr_fail" ]; then pass "cuts-recorded (the sixteen measured lines are out of their eight files; the four kept files still carry theirs)"
+if [ -z "$cr_fail" ]; then passt "cuts-recorded (the sixteen measured lines are out of their eight files; the four kept files still carry theirs)"
 else failc "cuts-recorded" "$cr_fail"; fi
 cr_sec=$(sed -n '/^## The cuts (4.8.0)/,/^## /p' "$COPY/evals/README.md")
 if [ -n "$cr_sec" ] && for f in ui-ux hotwire liveview mix-deps notebooks pyproject react; do printf '%s\n' "$cr_sec" | grep -q "\`$f\`" || exit 1; done \
@@ -2134,7 +2362,7 @@ else failc "cuts-recorded" "evals/README.md has no 'The cuts (4.8.0)' section na
 # and line; a question with several parts counts as several. Prose, as check 15 reads the README.
 in4=$(sed -n '/^## 4\. Ask at most four questions/,/^## 5\./p' "$COPY/skills/intake/SKILL.md")
 if printf '%s\n' "$in4" | grep -q 'file and line that answers' && printf '%s\n' "$in4" | grep -q 'several parts'; then
-  pass "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
+  passt "cuts-recorded (the intake's step 4: an assumption names its file and line; a question's parts count)"
 else failc "cuts-recorded" "skills/intake/SKILL.md step 4 lacks 'file and line that answers' or 'several parts'"; fi
 
 # 59. portfolio-gen: the portfolio fixture is GENERATED, never committed (spec: .shipkit/specs/
@@ -2242,7 +2470,7 @@ if grep -q 'already has' "$COPY/skills/setup/SKILL.md" \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -q 'setup rules' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'diff' \
    && grep -A4 'already has' "$COPY/skills/setup/SKILL.md" | grep -qi 'neither'; then
-  pass "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
+  passt "heading-seen (the setup skill relays the line, shows the diff, names /shipkit:setup rules and edits neither section)"
 else failc "heading-seen" "skills/setup/SKILL.md does not say what to do with the installer's heading line"; fi
 
 # 61. same-named: setup names a rule file of the same name beside its own directory, and leaves
@@ -2277,7 +2505,7 @@ else failc "same-named" "a line with no match: $sn2_out / $sn2_re"; fi
 if grep -q 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" \
    && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'tracked' \
    && grep -A6 'git ls-files --error-unmatch' "$COPY/skills/setup/SKILL.md" | grep -qi 'leave it\|left in place\|left as is\|left where it is'; then
-  pass "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
+  passt "same-named (the setup skill's backup phase asks git whether the old backup is tracked and leaves a tracked one at the root)"
 else failc "same-named" "skills/setup/SKILL.md's backup phase does not ask git before nesting the old backup"; fi
 
 # 62. plugin-root-installed: the session hook writes ~/.claude/shipkit/plugin-root only from a
@@ -2365,12 +2593,14 @@ oo_rules=$(printf '%s\n' "$oo_out" | grep '^## Shipkit always-on rule:' | sed 's
 if [ "$oo_optin" -eq 1 ] && [ "$oo_rules" = "shipkit " ]; then
   pass "opt-out (the hook on a bare project: one opt-in line, shipkit.md injected, the two loop rules not)"
 else failc "opt-out" "bare project: opt-in lines=$oo_optin injected='$oo_rules'"; fi
+if model_check 64; then
 out=$(cd "$OO" && claude --plugin-dir "$COPY" --model haiku -p "$CW_Q Do not use tools." 2>/dev/null | tail -20)
 case "$out" in
   *ZEBRA-4004*) failc "opt-out" "spec-driven.md reached a session on a project that never opted in: $out";;
   *ZEBRA-3003*) pass "opt-out (a fresh session on a bare project sees shipkit.md's codeword and not spec-driven.md's)";;
   *) failc "opt-out" "shipkit.md's codeword did not reach the session: $out";;
 esac
+fi  # /model_check 64
 oo_conf=$(cd "$OO" && CLAUDE_CODE_EVAL_CONFINED=1 CLAUDE_PLUGIN_ROOT="$COPY" sh -c 'for r in shipkit spec-driven decisions; do sh "$CLAUDE_PLUGIN_ROOT/scripts/inject-rule.sh" $r; done' </dev/null 2>/dev/null | grep -c '^## Shipkit always-on rule:')
 if [ "$oo_conf" -eq 3 ]; then pass "opt-out (under CLAUDE_CODE_EVAL_CONFINED=1 all three rules are injected in a bare directory)"
 else failc "opt-out" "confined: $oo_conf of 3 rules injected"; fi
@@ -2397,7 +2627,7 @@ for pair in "ask:--walk:walk.md:# /shipkit:ask --walk" "ask:--system:system.md:#
   [ -f "$COPY/skills/$sk/$ref" ] || { sm_ok=0; sm_why="$sm_why $ref-missing"; }
   [ -f "$COPY/skills/$sk/$ref" ] && ! grep -q -- "^$head1" "$COPY/skills/$sk/$ref" && { sm_ok=0; sm_why="$sm_why $ref-heading"; }
 done
-if [ "$sm_ok" -eq 1 ]; then pass "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
+if [ "$sm_ok" -eq 1 ]; then passt "skills-merged (ask dispatches --walk and --system, setup dispatches remove/rules/audit/memory, each to a reference file that opens with its heading)"
 else failc "skills-merged" "dispatch:$sm_why"; fi
 sm_n=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $3 }')
 sm_b=$(CLAUDE_PLUGIN_ROOT="$COPY" sh "$ROOT/scripts/context-cost.sh" "$PROJ" 2>/dev/null | awk '$1 == "skills-core" { print $2 }')
@@ -2416,14 +2646,14 @@ af_left=""; for a in tracer archivist codebase-explorer; do [ -e "$COPY/agents/$
 if [ -z "$af_left" ]; then pass "agents-four (no tracer.md, archivist.md or codebase-explorer.md under agents/)"
 else failc "agents-four" "agent files left:$af_left"; fi
 if grep -q '^## Trace mode' "$COPY/agents/grandfather.md" && grep -q 'grandfather' "$COPY/skills/ask/SKILL.md"; then
-  pass "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
+  passt "agents-four (grandfather carries a Trace mode section and ask --walk hands it the brief)"
 else failc "agents-four" "grandfather.md lacks '## Trace mode' or ask does not name grandfather for --walk"; fi
 if grep -q '^context: fork' "$COPY/skills/map/SKILL.md" && grep -q 'archivist.md' "$COPY/skills/map/SKILL.md" \
    && [ -f "$COPY/skills/map/archivist.md" ] && grep -q '^# The archivist' "$COPY/skills/map/archivist.md"; then
-  pass "agents-four (map runs forked and carries the archivist's body as archivist.md)"
+  passt "agents-four (map runs forked and carries the archivist's body as archivist.md)"
 else failc "agents-four" "map: fork=$(grep -c '^context: fork' "$COPY/skills/map/SKILL.md") names-archivist.md=$(grep -c 'archivist.md' "$COPY/skills/map/SKILL.md") file=$([ -f "$COPY/skills/map/archivist.md" ] && echo yes || echo no)"; fi
 af_names=$(grep -rl 'codebase-explorer' "$COPY/skills" "$COPY/agents" "$ROOT/plugins/shipkit-workflows/skills" 2>/dev/null | tr '\n' ' ')
-if [ -z "$af_names" ]; then pass "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
+if [ -z "$af_names" ]; then passt "agents-four (no skill or agent names codebase-explorer; Explore is the built-in)"
 else failc "agents-four" "codebase-explorer still named in: $af_names"; fi
 # the smoke copy has no shipkit-workflows beside it, so context-cost counts the core's four;
 # test-analyzer's description is added from the checkout for the ≤ 1,075 ceiling (plan §0's 1,000,
@@ -2466,7 +2696,7 @@ if [ ! -d "$SF/.claude/rules/shipkit" ] && [ ! -d "$SF2/.claude/rules/shipkit" ]
 else failc "skills-flag (unsetup)" "off: rules=$([ -d "$SF/.claude/rules/shipkit" ] && echo left || echo gone); on: rules=$([ -d "$SF2/.claude/rules/shipkit" ] && echo left || echo gone) skills=$([ -d "$SF2/.claude/skills/new-feature" ] && echo left || echo gone)"; fi
 if grep -q -- '--with-skills' "$COPY/skills/setup/SKILL.md" && grep -qi 'listed in every session' "$COPY/skills/setup/SKILL.md" \
    && grep -qi 'non-interactive' "$COPY/skills/setup/SKILL.md"; then
-  pass "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
+  passt "skills-flag (the setup skill asks once about the overlay's skills, says they are listed every session, and defaults to none when non-interactive)"
 else failc "skills-flag" "skills/setup/SKILL.md does not describe the --with-skills question"; fi
 
 # 68. appends-trimmed: the overlay CLAUDE.md appends carry only the lines the W7 audit kept
@@ -2484,15 +2714,15 @@ for pair in python:1100 rails:1420 react:900 elixir:1220 go:1270 static:420; do
   st=${pair%%:*}; cap=${pair#*:}; b=$(wc -c < "$COPY/stacks/$st/CLAUDE.md.append" | tr -d ' ')
   [ "$b" -le "$cap" ] || at_fail="$at_fail [$st append $b bytes, cap $cap]"
 done
-if [ -z "$at_fail" ]; then pass "appends-trimmed (the six big appends carry only the kept lines, each at or under its post-trim size)"
+if [ -z "$at_fail" ]; then passt "appends-trimmed (the six big appends carry only the kept lines, each at or under its post-trim size)"
 else failc "appends-trimmed" "$at_fail"; fi
 if [ -f "$COPY/stacks/python/.claude/rules/django.md" ] && sed -n '1,8p' "$COPY/stacks/python/.claude/rules/django.md" | grep -q '^paths:' \
    && grep -q 'select_related' "$COPY/stacks/python/.claude/rules/django.md" && grep -q 'post_save' "$COPY/stacks/python/.claude/rules/django.md"; then
-  pass "appends-trimmed (the five Django lines live in a path-scoped stacks/python/.claude/rules/django.md)"
+  passt "appends-trimmed (the five Django lines live in a path-scoped stacks/python/.claude/rules/django.md)"
 else failc "appends-trimmed" "stacks/python/.claude/rules/django.md missing, unscoped, or without the Django lines"; fi
 if sed -n '1,8p' "$COPY/stacks/rails/.claude/rules/rails.md" | grep -q '^paths:' && grep -q 'app/\*\*/\*.rb' "$COPY/stacks/rails/.claude/rules/rails.md" \
    && sed -n '1,8p' "$COPY/stacks/react/.claude/rules/react.md" | grep -q '^paths:' && grep -q 'app/frontend' "$COPY/stacks/react/.claude/rules/react.md"; then
-  pass "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
+  passt "appends-trimmed (rails.md and react.md carry paths: and load only on a matching edit)"
 else failc "appends-trimmed" "rails.md or react.md lacks paths: (rails: $(sed -n '1,3p' "$COPY/stacks/rails/.claude/rules/rails.md" | tr '\n' '|'))"; fi
 
 # 69. skills-cut: two Rails overlay skills the W8 audit found said by the loop or the rules are
@@ -2539,7 +2769,7 @@ for rs_t in 'Good questions for you' 'cheat-sheet'; do grep -qF "$rs_t" "$rs_e" 
 for rs_t in '### 0. Triage' 'offer no motives of your own' '### Attention digest'; do grep -qF "$rs_t" "$rs_e" || rs_fail="$rs_fail [eve.md lost: $rs_t]"; done
 rs_b=$(wc -c < "$rs_e" | tr -d ' ')
 [ "$rs_b" -le 12067 ] || rs_fail="$rs_fail [eve.md is $rs_b bytes, ceiling 12067]"
-if [ -z "$rs_fail" ]; then pass "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
+if [ -z "$rs_fail" ]; then passt "report-shapes (the matrix and consolidation shapes are in ask's reports.md, read on those two routes only; eve.md $rs_b bytes, ceiling 12067)"
 else failc "report-shapes" "$rs_fail"; fi
 
 # 71. brief-cites: the brief says how a test cites its requirement, with the spec's own slug. The
@@ -2610,7 +2840,7 @@ rv_fail=""
 printf '%s\n' "$rv_step" | grep -qF '.claude/rules/shipkit/.installed' || rv_fail="$rv_fail [step 4 does not name the manifest]"
 printf '%s\n' "$rv_step" | grep -qF '.claude/skills/' || rv_fail="$rv_fail [step 4 does not name .claude/skills/]"
 printf '%s\n' "$rv_step" | grep -qiF "project's own" || rv_fail="$rv_fail [step 4 does not say the project's own skill is listed]"
-if [ -z "$rv_fail" ]; then pass "reviewer-skills (step 4 reads a stack skill by the manifest; a project's own skill is still listed)"
+if [ -z "$rv_fail" ]; then passt "reviewer-skills (step 4 reads a stack skill by the manifest; a project's own skill is still listed)"
 else failc "reviewer-skills" "$rv_fail"; fi
 
 # 74. ship-capture: the gate's pre-step capture has a named home inside its own cleanup. The 4.12
@@ -2622,7 +2852,7 @@ grep -qF 'git status --porcelain > "${TMPDIR:-/tmp}/shipkit-ship-status.out"' "$
 grep -E '^\| 7 \|' "$sc_ship" | grep -qF 'shipkit-ship-status.out' || sc_fail="$sc_fail [step 7 does not read it]"
 grep -qF 'rm -f "${TMPDIR:-/tmp}"/shipkit-ship-*.out' "$sc_ship" || sc_fail="$sc_fail [the cleanup no longer covers *.out]"
 grep -qF 'and keep its output' "$sc_ship" && sc_fail="$sc_fail [the old unnamed capture is still there]"
-if [ -z "$sc_fail" ]; then pass "ship-capture (the pre-step writes shipkit-ship-status.out, step 7 reads it, the cleanup's pattern covers it)"
+if [ -z "$sc_fail" ]; then passt "ship-capture (the pre-step writes shipkit-ship-status.out, step 7 reads it, the cleanup's pattern covers it)"
 else failc "ship-capture" "$sc_fail"; fi
 
 # 75. setup-rule-count: setup's word for how many rules it copies matches the files it copies, so
@@ -2630,7 +2860,7 @@ else failc "ship-capture" "$sc_fail"; fi
 # Cites: run-again/REQ-5
 sr_n=$(ls "$COPY"/rules/*.md | wc -l | tr -d ' ')
 case "$sr_n" in 6) sr_w=six ;; 7) sr_w=seven ;; 8) sr_w=eight ;; 9) sr_w=nine ;; 10) sr_w=ten ;; *) sr_w="$sr_n" ;; esac
-if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then pass "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
+if grep -qF "copies all $sr_w rules" "$COPY/skills/setup/SKILL.md"; then passt "setup-rule-count (setup says all $sr_w rules; $sr_n files under rules/)"
 else failc "setup-rule-count" "$sr_n files under rules/, setup says: $(grep -oE 'copies all [a-z0-9]+ rules' "$COPY/skills/setup/SKILL.md")"; fi
 
 # 76. ship-retry: a reply with no verdict line is not a review. The reviewer's last call can be
@@ -2644,7 +2874,7 @@ sy_fail=""
 printf '%s\n' "$sy_step" | grep -qF 'no `VERDICT:` line' || sy_fail="$sy_fail [step 4 does not name a reply with no verdict line]"
 printf '%s\n' "$sy_step" | grep -qF 'start the reviewer once more' || sy_fail="$sy_fail [step 4 does not start it once more]"
 printf '%s\n' "$sy_step" | grep -qF 'a second reply with no verdict line' || sy_fail="$sy_fail [step 4 does not say a second miss is FAIL]"
-if [ -z "$sy_fail" ]; then pass "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
+if [ -z "$sy_fail" ]; then passt "ship-retry (a reply with no verdict line starts the reviewer once more; a second miss is FAIL)"
 else failc "ship-retry" "$sy_fail"; fi
 
 # 77. reviewer-fixture: every reviewer case builds its workspace from one script, so a new case
@@ -2664,7 +2894,7 @@ for rd_want in '`contradicted`. Otherwise it is' '`not built`' 'turned down'; do
   grep -qF "$rd_want" "$COPY/agents/reviewer.md" || rd_fail="$rd_fail [no: $rd_want]"
 done
 grep -q 'gate weighs' "$COPY/agents/reviewer.md" && rd_fail="$rd_fail [still says the gate weighs them]"
-if [ -z "$rd_fail" ]; then pass "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
+if [ -z "$rd_fail" ]; then passt "reviewer-decisions (two states named; a contradicted decision fails the verdict; no claim about the gate)"
 else failc "reviewer-decisions" "$rd_fail"; fi
 
 # 78. map-read-grep: map_read used to read a tool's input path only, so a repo-wide Grep landing on
@@ -2744,7 +2974,7 @@ product/reference.md|> Product reviewed on <YYYY-MM-DD>.
 intake/SKILL.md|> Intake taken on <YYYY-MM-DD>.
 ship/reference.md|> Checked on <YYYY-MM-DD> at commit
 SDEOF
-if [ -z "$sd_fail" ]; then pass "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
+if [ -z "$sd_fail" ]; then passt "stamp-dates (no literal date on a stamp line in any skill; all six hold <YYYY-MM-DD>, and each file names date +%F)"
 else failc "stamp-dates" "$sd_fail"; fi
 
 # 81. section-clean: a filled section kept every template comment, the alternatives the project did
@@ -2821,7 +3051,7 @@ else failc "section-clean" "$sc2_fail"; fi
 # No claude needed. Cites: fourth-project/REQ-10
 fi_sec=$(awk '/^### The `Fired-if` line/ { on = 1; next } on && /^##/ { on = 0 } on' "$COPY/skills/spec/reference.md")
 if printf '%s\n' "$fi_sec" | grep -q 'tracked files' && printf '%s\n' "$fi_sec" | grep -q 'git grep'; then
-  pass "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
+  passt "fired-if-tracked (the Fired-if section says a command reads tracked files, and names git grep)"
 else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say tracked files and git grep"; fi
 
 # 83. superseded-report: a report's name carries the gate's date, so a re-run on a later day wrote
@@ -2833,7 +3063,7 @@ else failc "fired-if-tracked" "spec/reference.md's Fired-if section does not say
 sr_sec=$(awk '/^## The report/ { on = 1; next } on && /^## / { on = 0 } on' "$COPY/skills/ship/SKILL.md" | tr '\n' ' ')
 if printf '%s\n' "$sr_sec" | grep -q 'earlier date' && printf '%s\n' "$sr_sec" | grep -q 'supersede' \
    && printf '%s\n' "$sr_sec" | grep -q 'leave it'; then
-  pass "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
+  passt "superseded-report (the report section names an earlier day's untracked report as superseded and leaves it)"
 else failc "superseded-report" "ship/SKILL.md's report section does not name an earlier day's report as superseded and leave it"; fi
 
 # 84. walk-sentence: the comment that opens walk.md, which ask hands to grandfather whole, read
@@ -2843,7 +3073,7 @@ else failc "superseded-report" "ship/SKILL.md's report section does not name an 
 ws_head=$(awk '{ print } /-->/ { exit }' "$COPY/skills/ask/walk.md" | tr '\n' ' ' | tr -s ' ')
 if printf '%s\n' "$ws_head" | grep -qF 'The agent cannot ask the user anything mid-run and cannot write files' \
    && ! printf '%s\n' "$ws_head" | grep -qF 'The agent It'; then
-  pass "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
+  passt "walk-sentence (walk.md's opening comment says the agent cannot ask or write, in one sentence)"
 else failc "walk-sentence" "walk.md's opening comment still reads: $(printf '%s\n' "$ws_head" | grep -o 'The agent[^.]*\.' | head -1)"; fi
 
 # 85. ship-write-path: step 4 gave the Write tool "${TMPDIR:-/tmp}/shipkit-ship-review.out", and
@@ -2857,7 +3087,7 @@ printf '%s\n' "$sw_step" | grep -qF "printf '%s\n' \"\${TMPDIR:-/tmp}/shipkit-sh
 printf '%s\n' "$sw_step" | grep -qF 'to the path it printed' || sw_fail="$sw_fail [step 4 does not give Write the printed path]"
 printf '%s\n' "$sw_step" | grep -qF 'unchanged, to `"${TMPDIR' && sw_fail="$sw_fail [step 4 still gives Write \${TMPDIR}]"
 grep -E '^\| 4 \|' "$sw_ship" | grep -qF '${TMPDIR' && sw_fail="$sw_fail [row 4 still names \${TMPDIR} for the reply]"
-if [ -z "$sw_fail" ]; then pass "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
+if [ -z "$sw_fail" ]; then passt "ship-write-path (step 4 prints the review file's path, then gives Write the path it printed)"
 else failc "ship-write-path" "$sw_fail"; fi
 
 # 86. elixir-app: the elixir section's Key Paths wrote `lib/<app>/` into a project's CLAUDE.md,
@@ -2980,7 +3210,7 @@ for rm_want in '`contradicted`, `partly built` or `not built`' \
   'decisions marked `not built` or `partly built` are reported and do not change the verdict'; do
   case "$rm_flat" in *"$rm_want"*) ;; *) rm_fail="$rm_fail [no: $rm_want]" ;; esac
 done
-if [ -z "$rm_fail" ]; then pass "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
+if [ -z "$rm_fail" ]; then passt "reviewer-marks (three marks; a turned-down part is contradicted; partly built keeps the verdict)"
 else failc "reviewer-marks" "$rm_fail"; fi
 
 
@@ -3060,7 +3290,7 @@ for gg_f in agents/reviewer.md skills/ship/SKILL.md skills/ship/reference.md; do
   printf '%s\n' "$gg_spans" | grep -vxF '`\|`' | grep -qF '\|' \
     && gg_fail="$gg_fail [$gg_f: a \\| in a command]"
 done
-if [ -z "$gg_fail" ]; then pass "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
+if [ -z "$gg_fail" ]; then passt "git-grep (the gate searches with git grep -n, -E, never \\|; step 3 reads an untracked tasks.md)"
 else failc "git-grep" "$gg_fail"; fi
 
 # 92. wait-probe: the 5.1 intake's file was on disk at 00:19:34 and its session ended at 00:23:52,
@@ -3181,7 +3411,7 @@ else
   [ -n "$gf_rule" ] && [ -n "$gf_proc" ] && [ "$gf_rule" -lt "$gf_proc" ] \
     || gf_fail="$gf_fail [the test-author rule does not come before ## Procedure]"
 fi
-if [ -z "$gf_fail" ]; then pass "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
+if [ -z "$gf_fail" ]; then passt "goldfish-agent (sonnet, read-only, no Agent; reads spec and design only, ignores all but the slug; TESTABLE/UNCLEAR rows, terms, assumptions, two verdicts)"
 else failc "goldfish-agent" "$gf_fail"; fi
 
 # 95. spec-goldfish-step: /shipkit:spec has the main session start the goldfish after design.md and
@@ -3209,7 +3439,7 @@ sg_tpl=$(awk '/^### `spec.md`/ { on = 1 } /^### `design.md`/ { on = 0 } on' "$sg
 printf '%s\n' "$sg_tpl" | grep -qx '## Goldfish' || sg_fail="$sg_fail [reference.md's spec.md template has no ## Goldfish]"
 printf '%s\n' "$sg_tpl" | grep -qF 'Goldfish: GAPS accepted by owner — ' || sg_fail="$sg_fail [template lacks the accepted-gap line]"
 printf '%s\n' "$sg_tpl" | grep -qF "Goldfish: skipped on the owner's word" || sg_fail="$sg_fail [template lacks the skip line]"
-if [ -z "$sg_fail" ]; then pass "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
+if [ -z "$sg_fail" ]; then passt "spec-goldfish-step (Q2 starts shipkit:goldfish with the slug before the Plan Mode gate; reply to a file, whole; dispositions; two reads at most; advisory; template shows ## Goldfish)"
 else failc "spec-goldfish-step" "$sg_fail"; fi
 
 # 96. goldfish-fixture: the two goldfish eval cases share evals/goldfish/spec-fixture.sh. `gap` writes
@@ -3271,6 +3501,362 @@ grep -q 'spec-goldfish/REQ-18' "$ROOT/scripts/evals.sh" && grep -q 'spec-goldfis
 if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term in one requirement, clean states 30 days; no tasks or code; each grader takes its reply and refuses the other)"
 else failc "goldfish-fixture" "$gx_fail"; fi
 
+# 97. smoke-args: the suite's own arguments. --list prints what would run and runs nothing;
+# --no-model leaves out the sixteen checks that start a model; --only names some of them and
+# takes the ones they need with it; a wrong argument is a usage error. Every form run below
+# stops before the first check, so nothing here starts a model. Then the script reads itself:
+# a numbered check that starts claude is one of MODEL_CHECKS and does it inside its
+# model_check guard, the assertions that need no model sit outside that guard, and every
+# numbered check has a line in the registry. No claude needed.
+# Cites: honest-evidence/REQ-1 honest-evidence/REQ-2 honest-evidence/REQ-3 honest-evidence/REQ-4
+# honest-evidence/REQ-5 honest-evidence/REQ-6 honest-evidence/REQ-7 honest-evidence/REQ-8
+# honest-evidence/REQ-9 honest-evidence/REQ-10 honest-evidence/REQ-40
+SELF="$ROOT/scripts/smoke.sh"
+sa_fail=""
+sa_n=$(registry | grep -c .)
+sa_all=$(sh "$SELF" --list 2>&1); sa_rc=$?
+[ "$sa_rc" -eq 0 ] || sa_fail="$sa_fail [--list exits $sa_rc]"
+[ "$(printf '%s\n' "$sa_all" | grep -c '^RUN ')" -eq "$sa_n" ] || sa_fail="$sa_fail [--list alone: not every check is RUN]"
+[ "$(printf '%s\n' "$sa_all" | grep -c .)" -eq "$sa_n" ] || sa_fail="$sa_fail [--list prints more than one line a check]"
+sa_nm=$(sh "$SELF" --list --no-model 2>&1)
+sa_skip=$(printf '%s\n' "$sa_nm" | sed -n 's/^SKIP \([^ ]*\) .*/\1/p' | tr '\n' ' ')
+[ "$sa_skip" = "$MODEL_CHECKS " ] || sa_fail="$sa_fail [--list --no-model skips: $sa_skip]"
+printf '%s\n' "$sa_nm" | grep -q '^RUN 19 spec-check-reqs$' || sa_fail="$sa_fail [--no-model does not list check 19 as RUN]"
+sa_only=$(sh "$SELF" --list --only 32 2>&1)
+sa_run=$(printf '%s\n' "$sa_only" | sed -n 's/^RUN \([^ ]*\) .*/\1/p' | tr '\n' ' ')
+case " $sa_run" in *" 31 32 "*) ;; *) sa_fail="$sa_fail [--only 32 does not run 31 and 32]";; esac
+[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 14 ] || sa_fail="$sa_fail [--only 32 does not skip the other fourteen]"
+printf '%s\n' "$sa_only" | grep -q '^RUN 19 ' || sa_fail="$sa_fail [--only 32 leaves out a check that needs no model]"
+sa_out=$(sh "$SELF" --only 7 2>&1); sa_rc=$?
+if [ "$sa_rc" -ne 64 ] || ! printf '%s\n' "$sa_out" | grep -qF "$MODEL_CHECKS" || printf '%s\n' "$sa_out" | grep -q '^PASS'; then
+  sa_fail="$sa_fail [--only 7: exit $sa_rc, or the numbers it takes are not printed, or a check ran]"
+fi
+sh "$SELF" --no-model --only 22 >/dev/null 2>&1; [ $? -eq 64 ] || sa_fail="$sa_fail [--no-model with --only is not exit 64]"
+sh "$SELF" --bogus >/dev/null 2>&1; [ $? -eq 64 ] || sa_fail="$sa_fail [an unknown argument is not exit 64]"
+(PATH=/usr/bin:/bin; export PATH; sh "$SELF" --list --no-model >/dev/null 2>&1) \
+  || sa_fail="$sa_fail [--no-model looks for claude on the PATH]"
+sa_sum=$(summary_lines 5 1 16 0)
+[ "$sa_sum" = "smoke: 5 passed (1 text-only), 16 skipped (model), 0 failed
+smoke: all checks run passed; 16 skipped (model)" ] || sa_fail="$sa_fail [the two last lines with skips: $sa_sum]"
+[ "$(summary_lines 5 0 0 0 | sed -n 2p)" = "smoke: all checks passed" ] || sa_fail="$sa_fail [last line of a full clean run]"
+[ "$(summary_lines 5 0 3 2 | sed -n 2p)" = "smoke: FAILURES above" ] || sa_fail="$sa_fail [last line with a failure]"
+if [ -z "$sa_fail" ]; then pass "smoke-args (--list, --no-model, --only with its needs, three usage errors at exit 64, the two last lines)"
+else failc "smoke-args" "$sa_fail"; fi
+sa_scan=$(awk -v models="$MODEL_CHECKS" '
+  BEGIN { n = split(models, m, " "); for (i = 1; i <= n; i++) ism[m[i]] = 1 }
+  /^# [0-9]+[a-z]?\. / { lab = $2; sub(/\.$/, "", lab); g = 0; next }
+  lab == "" || /^[ \t]*#/ { next }
+  $0 == "if model_check " lab "; then" { g = 1; has[lab] = 1; next }
+  $0 == "fi  # /model_check " lab { g = 0; shut[lab] = 1; next }
+  /claude[ ]--/ || /[$][(]ask / {
+    if (!ism[lab]) print "check " lab " starts a model and is not in MODEL_CHECKS (line " NR ")"
+    else if (!g) print "check " lab " starts a model outside its guard (line " NR ")"
+  }
+  shut[lab] && /passt? "/ { after[lab] = 1 }
+  END {
+    for (i = 1; i <= n; i++) if (!has[m[i]] || !shut[m[i]]) print "check " m[i] " has no whole model_check guard"
+    if (!after["22"] || !after["54"] || !after["64"]) print "an assertion that needs no model is no longer outside the guard of check 22, 54 or 64"
+  }' "$SELF")
+sa_heads=$(sed -n 's/^# \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$SELF" | tr '\n' ' ')
+sa_reg=$(registry | awk '{ print $1 }' | tr '\n' ' ')
+if [ -z "$sa_scan" ] && [ "$sa_heads" = "$sa_reg" ]; then
+  pass "smoke-args (the script read as text: sixteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
+else failc "smoke-args" "$sa_scan — headers [$sa_heads] registry [$sa_reg]"; fi
+
+# 98. ci-smoke-job: CI runs this suite without its model checks on every pull request. The
+# runner has no claude, so each pull request shows again that --no-model needs none. The
+# workflow is read as text: it is triggered by pull_request, and a job on a macOS runner (the
+# suite was written against bash 3.2 as sh and BSD tools; honest-evidence/design.md, third
+# record) runs the suite with --no-model. No claude needed. Cites: honest-evidence/REQ-11
+cj="$ROOT/.github/workflows/lint.yml"; cj_fail=""
+grep -q '^  pull_request:' "$cj" || cj_fail="$cj_fail [the workflow is not triggered by pull_request]"
+grep -q '^    runs-on: macos-latest$' "$cj" || cj_fail="$cj_fail [no job runs on macos-latest]"
+grep -q '^        run: sh scripts/smoke\.sh --no-model </dev/null$' "$cj" || cj_fail="$cj_fail [no step runs sh scripts/smoke.sh --no-model]"
+if [ -z "$cj_fail" ]; then pass "ci-smoke-job (lint.yml: on pull_request, a macOS job runs sh scripts/smoke.sh --no-model)"
+else failc "ci-smoke-job" "$cj_fail"; fi
+
+# 99. evidence-line: spec-check says how much of a spec is proven. One EVIDENCE line for each
+# spec it checks: tested (no waiver, a counted citation), waived, uncited (the rest). A
+# requirement that is both cited and waived counts as waived. The lines come before the summary
+# line, whose form the briefing reads, and change no exit status. No claude needed.
+# Cites: honest-evidence/REQ-12 honest-evidence/REQ-13 honest-evidence/REQ-14
+evspec() {  # evspec <proj> <slug> <status> → REQ-1 cited, REQ-2 waived and cited, REQ-3 neither
+  _d="$1/.shipkit/specs/$2"; mkdir -p "$_d" "$1/tests"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n> Status: %s\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** The README shall say c. [untested: prose]\n- **REQ-3.** When d happens, the system shall do e.\n' "$2" "$3" > "$_d/spec.md"
+  printf -- '- [x] **T1** do it all → REQ-1, REQ-2, REQ-3\n  - Files: app/a.py\n  - Test: tests/test_%s.py\n  - After: none\n  - Done when: `pytest` → all pass\n' "$2" > "$_d/tasks.md"
+  printf '# %s/REQ-1\n# %s/REQ-2\n' "$2" "$2" > "$1/tests/test_$2.py"
+}
+evrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/ev.out" 2>&1; echo $?; }  # → the exit status; output in ev.out
+ev_fail=""
+P="$WORK/ev-open"; evspec "$P" demo open
+rc=$(evrun "$P")
+grep -q '^EVIDENCE demo tested=1 waived=1 uncited=1$' "$WORK/ev.out" || ev_fail="$ev_fail [open spec: $(grep '^EVIDENCE' "$WORK/ev.out")]"
+[ "$rc" -eq 0 ] || ev_fail="$ev_fail [open spec with an uncited requirement exits $rc, not 0]"
+[ "$(sed -n '$p' "$WORK/ev.out")" = "spec-check: 1 spec(s) checked, 0 gap(s)" ] || ev_fail="$ev_fail [the summary line changed: $(sed -n '$p' "$WORK/ev.out")]"
+[ "$(grep -n '^EVIDENCE' "$WORK/ev.out" | cut -d: -f1)" -lt "$(grep -n '^spec-check:' "$WORK/ev.out" | cut -d: -f1)" ] 2>/dev/null \
+  || ev_fail="$ev_fail [EVIDENCE is not before the summary line]"
+P="$WORK/ev-shipped"; evspec "$P" demo shipped; evspec "$P" other shipped
+printf '# other/REQ-3\n' >> "$P/tests/test_other.py"
+rc=$(evrun "$P")
+grep -q '^EVIDENCE demo tested=1 waived=1 uncited=1$' "$WORK/ev.out" || ev_fail="$ev_fail [shipped spec: no EVIDENCE line for demo]"
+grep -q '^EVIDENCE other tested=2 waived=1 uncited=0$' "$WORK/ev.out" || ev_fail="$ev_fail [second spec: $(grep '^EVIDENCE other' "$WORK/ev.out")]"
+[ "$rc" -eq 1 ] && grep -q '^MISSING-TEST demo REQ-3$' "$WORK/ev.out" || ev_fail="$ev_fail [shipped spec with an uncited requirement: exit $rc]"
+[ "$(sed -n '$p' "$WORK/ev.out")" = "spec-check: 2 spec(s) checked, 1 gap(s)" ] || ev_fail="$ev_fail [two specs: $(sed -n '$p' "$WORK/ev.out")]"
+P="$WORK/ev-draft"; evspec "$P" demo draft
+rc=$(evrun "$P")
+grep -q '^EVIDENCE' "$WORK/ev.out" && ev_fail="$ev_fail [a skipped draft got an EVIDENCE line]"
+if [ -z "$ev_fail" ]; then pass "evidence-line (tested, waived and uncited counted for each checked spec, before an unchanged summary line; a draft gets none; exit status as before)"
+else failc "evidence-line" "$ev_fail"; fi
+
+# 100. tests-line: a spec may say where its tests live. With a "> Tests:" line in spec.md a
+# citation counts only in a file that is one of the paths listed or lies under a folder listed
+# (written with or without its last slash); a citation anywhere else is named, CITED-ELSEWHERE,
+# and the requirement is then missing its test as if it had none. The line by itself is not a
+# gap. A spec with no such line is counted as at 5.3.0. No claude needed.
+# Cites: honest-evidence/REQ-15 honest-evidence/REQ-16 honest-evidence/REQ-17 honest-evidence/REQ-18
+tlspec() {  # tlspec <proj> <the Tests line's value | none> → shipped spec demo: REQ-1 cited under tests/, REQ-2 only under app/
+  _d="$1/.shipkit/specs/demo"; mkdir -p "$_d" "$1/tests" "$1/app" "$1/scripts"
+  [ -d "$1/.git" ] || (cd "$1" && git init -q)
+  { printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n'
+    [ "$2" = none ] || printf '> Tests: %s\n' "$2"
+    printf '\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** When c happens, the system shall do d.\n'; } > "$_d/spec.md"
+  printf -- '- [x] **T1** do b → REQ-1\n- [x] **T2** do d → REQ-2\n' > "$_d/tasks.md"
+  printf '# demo/REQ-1\n' > "$1/tests/test_demo.py"
+  printf '# demo/REQ-2 is handled here\n' > "$1/app/x.py"
+}
+tlrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/tl.out" 2>&1; echo $?; }  # → the exit status; output in tl.out
+tl_fail=""; tl_i=0
+for tl_line in 'tests/' 'tests'; do
+  tl_i=$((tl_i + 1)); P="$WORK/tl-$tl_i"; tlspec "$P" "$tl_line"
+  rc=$(tlrun "$P")
+  if [ "$rc" -ne 1 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" || ! grep -q '^MISSING-TEST demo REQ-2$' "$WORK/tl.out" \
+     || grep -q 'MISSING-TEST demo REQ-1' "$WORK/tl.out" || ! grep -q '^EVIDENCE demo tested=1 waived=0 uncited=1$' "$WORK/tl.out"; then
+    tl_fail="$tl_fail [Tests: $tl_line → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+  fi
+done
+P="$WORK/tl-none"; tlspec "$P" none
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || grep -q 'CITED-ELSEWHERE' "$WORK/tl.out" || ! grep -q '^EVIDENCE demo tested=2 waived=0 uncited=0$' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [no Tests line → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+P="$WORK/tl-both"; tlspec "$P" 'tests/'; printf '# demo/REQ-2\n' >> "$P/tests/test_demo.py"
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" || grep -q 'MISSING-TEST' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [cited under tests/ and elsewhere → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+P="$WORK/tl-file"; tlspec "$P" 'scripts/smoke.sh, tests/'
+printf '# demo/REQ-2\n' > "$P/scripts/smoke.sh"; printf '# demo/REQ-2\n' > "$P/scripts/other.sh"
+mkdir -p "$P/.shipkit/specs/other"
+printf '# Spec: other\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n\n## Requirements\n\n- **REQ-1.** When e happens, the system shall do f.\n' > "$P/.shipkit/specs/other/spec.md"
+printf -- '- [x] **T1** do f → REQ-1\n' > "$P/.shipkit/specs/other/tasks.md"
+printf '# other/REQ-1\n' >> "$P/app/x.py"
+rc=$(tlrun "$P")
+if [ "$rc" -ne 0 ] || ! grep -q '^CITED-ELSEWHERE demo REQ-2 scripts/other.sh$' "$WORK/tl.out" || ! grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.py$' "$WORK/tl.out" \
+   || grep -q 'CITED-ELSEWHERE other' "$WORK/tl.out" || ! grep -q '^EVIDENCE other tested=1 waived=0 uncited=0$' "$WORK/tl.out" \
+   || ! grep -q '^EVIDENCE demo tested=2 waived=0 uncited=0$' "$WORK/tl.out"; then
+  tl_fail="$tl_fail [a file on the Tests line, and a second spec with none → exit $rc: $(grep -E '^(CITED|MISSING|EVIDENCE)' "$WORK/tl.out" | tr '\n' ';')]"
+fi
+if [ -z "$tl_fail" ]; then pass "tests-line (a citation counts only under the Tests paths, folder or file; one elsewhere is named and its requirement misses its test; no line → as before; the name alone is no gap)"
+else failc "tests-line" "$tl_fail"; fi
+
+# 101. skipped-cite: a citation in a test that never runs proves nothing, so spec-check names it.
+# A counted citation on a line that holds a skip marker, or within three lines above or below
+# one, is printed with the citation's own file and line. Information only: no exit status
+# changes. The markers are whole words, so an exit call or a max-fail option is not one, and
+# the word in a sentence is not one either. No claude needed.
+# Cites: honest-evidence/REQ-19 honest-evidence/REQ-20
+skrun() { sh "$COPY/scripts/spec-check.sh" "$@" > "$WORK/sk.out" 2>&1; echo $?; }  # → the exit status; output in sk.out
+sk_fail=""
+P="$WORK/sk"; mkdir -p "$P/.shipkit/specs/demo" "$P/tests" "$P/app"; (cd "$P" && git init -q)
+{ printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: shipped\n\n## Requirements\n\n'
+  for sk_n in 1 2 3 4 5 6 7; do printf -- '- **REQ-%s.** When a%s happens, the system shall do b.\n' "$sk_n" "$sk_n"; done; } > "$P/.shipkit/specs/demo/spec.md"
+printf -- '- [x] **T1** all of it → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7\n' > "$P/.shipkit/specs/demo/tasks.md"
+# line 2 cites, the marker is on line 1
+printf '  @tag :skip\n  test "demo/REQ-1 refunds in full" do\n  end\n' > "$P/tests/a_test.exs"
+# the marker and the citation share line 1
+printf "it.skip('demo/REQ-2 rejects an over-refund', () => {})\n" > "$P/tests/b.test.js"
+# REQ-3 sits three lines below its marker (line 4), REQ-4 four lines below its own (line 10)
+printf '@pytest.mark.skip\ndef test_three():\n    pass\n# demo/REQ-3\n\n@pytest.mark.skip\ndef test_four():\n    x = 1\n    y = 2\n# demo/REQ-4\n' > "$P/tests/test_c.py"
+# three near misses on and around line 3: an exit call, a max-fail option, the word in a sentence
+printf 'import sys\n# we skip nothing here, and nothing is pending\n# demo/REQ-5\nsys.exit(0)  # pytest --maxfail=1\n' > "$P/tests/test_f.py"
+# the marker is one line below the citation (line 1)
+printf '// demo/REQ-6\nfunc TestSix(t *testing.T) {\n\tt.Skip("later")\n}\n' > "$P/tests/d_test.go"
+# the marker is a first word, two lines below the citation (line 1)
+printf '# demo/REQ-7\nit "does seven" do\n  skip "later"\nend\n' > "$P/tests/e_spec.rb"
+rc=$(skrun "$P")
+sk_got=$(grep '^SKIPPED-CITE' "$WORK/sk.out" | sort | tr '\n' ';')
+sk_want="SKIPPED-CITE demo REQ-1 tests/a_test.exs:2;SKIPPED-CITE demo REQ-2 tests/b.test.js:1;SKIPPED-CITE demo REQ-3 tests/test_c.py:4;SKIPPED-CITE demo REQ-6 tests/d_test.go:1;SKIPPED-CITE demo REQ-7 tests/e_spec.rb:1;"
+[ "$sk_got" = "$sk_want" ] || sk_fail="$sk_fail [got: $sk_got]"
+[ "$rc" -eq 0 ] && [ "$(sed -n '$p' "$WORK/sk.out")" = "spec-check: 1 spec(s) checked, 0 gap(s)" ] \
+  || sk_fail="$sk_fail [a shipped spec whose every requirement is cited exits $rc: $(sed -n '$p' "$WORK/sk.out")]"
+# with a Tests line, a skipped citation outside its paths is not a counted one: it is named
+# as elsewhere, and not as skipped
+printf "it.skip('demo/REQ-2 again', () => {})\n" > "$P/app/x.js"
+sed 's|^> Status: shipped$|> Status: shipped\
+> Tests: tests/|' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sk.tmp" && mv "$WORK/sk.tmp" "$P/.shipkit/specs/demo/spec.md"
+rc=$(skrun "$P")
+[ "$(grep '^SKIPPED-CITE' "$WORK/sk.out" | sort | tr '\n' ';')" = "$sk_want" ] && grep -q '^CITED-ELSEWHERE demo REQ-2 app/x.js$' "$WORK/sk.out" && [ "$rc" -eq 0 ] \
+  || sk_fail="$sk_fail [with a Tests line: exit $rc: $(grep -E '^(SKIPPED|CITED)' "$WORK/sk.out" | tr '\n' ';')]"
+if [ -z "$sk_fail" ]; then pass "skipped-cite (five frameworks' markers on, above and below the citation; four lines away, an exit call, a max-fail option and the word in a sentence give none; exit status as before)"
+else failc "skipped-cite" "$sk_fail"; fi
+
+# 102. spec-diff: which requirements did a branch change? spec-diff.sh compares the spec in the
+# working tree with a baseline: spec.md at the base ref when it is there, else spec.md at the
+# first commit after the base ref whose Status reads open, else NO-BASELINE. It prints
+# REQ-CHANGED, REQ-ADDED, REQ-REMOVED and, beside REQ-CHANGED, WAIVER-ADDED; the same words
+# wrapped or spaced another way are not a change. Exit 0 with nothing to print, 1 with a
+# finding, 64 on wrong usage. It changes no file and is sh, awk and git. No claude needed.
+# Cites: honest-evidence/REQ-21 honest-evidence/REQ-22 honest-evidence/REQ-23
+# honest-evidence/REQ-24 honest-evidence/REQ-25 honest-evidence/REQ-26 honest-evidence/REQ-27
+# honest-evidence/REQ-28 honest-evidence/REQ-29
+SDF="$COPY/scripts/spec-diff.sh"
+sdc() { (cd "$1" && shift && git -c user.email=s@s -c user.name=s "$@"); }   # sdc <proj> <git arguments>
+sdspec() {  # sdspec <proj> <status> → the spec demo with three requirements, the second on two lines
+  mkdir -p "$1/.shipkit/specs/demo"
+  printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: %s\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b.\n- **REQ-2.** While c holds, the system shall keep d\n  and shall keep e.\n- **REQ-3.** The README shall say f.\n\n## Out of scope\nNothing.\n' "$2" > "$1/.shipkit/specs/demo/spec.md"
+}
+sdrun() { sh "$SDF" "$@" > "$WORK/sd.out" 2>&1; echo $?; }   # → the exit status; output in sd.out
+if [ ! -f "$SDF" ]; then
+  failc "spec-diff" "scripts/spec-diff.sh does not exist (check written first, by design)"
+else
+  sd_fail=""
+  sh -n "$SDF" 2>/dev/null || sd_fail="$sd_fail [sh -n reports a syntax error]"
+  # a. the baseline is the spec at the base ref
+  P="$WORK/sd-a"; mkdir -p "$P"; sdc "$P" init -q -b main; sdspec "$P" open; sdc "$P" add -A; sdc "$P" commit -q -m spec; sdc "$P" tag base
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 0 ] && ! grep -q '^REQ-\|^WAIVER' "$WORK/sd.out" && grep -q '^spec-diff: 0 requirement(s) differ from ' "$WORK/sd.out" \
+    || sd_fail="$sd_fail [an untouched spec: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # REQ-1 reworded, REQ-2 wrapped and spaced another way, REQ-3 given a waiver, REQ-4 new
+  printf '# Spec: demo\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n## Requirements\n\n- **REQ-1.** When a happens, the system shall do b twice.\n- **REQ-2.** While c holds,\n  the system shall   keep d and shall keep e.\n- **REQ-3.** The README shall say f. [untested: prose]\n- **REQ-4.** When g happens, the system shall do h.\n\n## Out of scope\nNothing.\n' > "$P/.shipkit/specs/demo/spec.md"
+  sd_before=$(cd "$P" && git status --porcelain)
+  rc=$(sdrun "$P" demo base)
+  sd_got=$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')
+  [ "$rc" -eq 1 ] && [ "$sd_got" = "REQ-CHANGED demo REQ-1;REQ-CHANGED demo REQ-3;WAIVER-ADDED demo REQ-3;REQ-ADDED demo REQ-4;" ] \
+    && grep -q '^spec-diff: 3 requirement(s) differ from ' "$WORK/sd.out" \
+    || sd_fail="$sd_fail [four edits: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  [ "$sd_before" = "$(cd "$P" && git status --porcelain)" ] || sd_fail="$sd_fail [the script changed the tree]"
+  if command -v dash >/dev/null 2>&1; then
+    [ "$(dash "$SDF" "$P" demo base 2>&1)" = "$(cat "$WORK/sd.out")" ] || sd_fail="$sd_fail [dash prints something else]"
+  fi
+  # the base is the merge base with main when none is given
+  sdc "$P" checkout -q -b work; rc=$(sdrun "$P" demo)
+  [ "$rc" -eq 1 ] && grep -q '^REQ-ADDED demo REQ-4$' "$WORK/sd.out" || sd_fail="$sd_fail [no base ref given: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # REQ-2 taken out
+  sdspec "$P" open; grep -v 'REQ-2\|shall keep e' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sd.tmp" && mv "$WORK/sd.tmp" "$P/.shipkit/specs/demo/spec.md"
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 1 ] && [ "$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')" = "REQ-REMOVED demo REQ-2;" ] \
+    || sd_fail="$sd_fail [a requirement removed: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # b. no spec at the base ref: the baseline is the first commit in which its Status reads open
+  P="$WORK/sd-b"; mkdir -p "$P"; sdc "$P" init -q -b main; sdc "$P" commit -q --allow-empty -m init; sdc "$P" tag base
+  sdspec "$P" draft; sdc "$P" add -A; sdc "$P" commit -q -m draft
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 0 ] && [ "$(cat "$WORK/sd.out")" = "NO-BASELINE demo" ] || sd_fail="$sd_fail [never open: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  sdspec "$P" open; sdc "$P" add -A; sdc "$P" commit -q -m accepted
+  sed 's/shall do b\./shall do b and c./' "$P/.shipkit/specs/demo/spec.md" > "$WORK/sd.tmp" && mv "$WORK/sd.tmp" "$P/.shipkit/specs/demo/spec.md"
+  sdc "$P" add -A; sdc "$P" commit -q -m "edit after acceptance"
+  rc=$(sdrun "$P" demo base)
+  [ "$rc" -eq 1 ] && [ "$(grep -v '^spec-diff:' "$WORK/sd.out" | tr '\n' ';')" = "REQ-CHANGED demo REQ-1;" ] \
+    || sd_fail="$sd_fail [first open commit as the baseline: exit $rc: $(tr '\n' ';' < "$WORK/sd.out")]"
+  # c. wrong usage
+  sh "$SDF" >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [no argument is not exit 64]"
+  sh "$SDF" "$P" nosuch base >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [an unknown spec is not exit 64]"
+  sh "$SDF" "$P" demo nosuchref >/dev/null 2>&1; [ $? -eq 64 ] || sd_fail="$sd_fail [an unknown base ref is not exit 64]"
+  # d. sh, awk and git: no other program is run outside a comment
+  sd_tools=$(awk '!/^[ \t]*#/' "$SDF" | grep -n -E '(^|[|;&(`[:space:]])(sed|grep|sort|cut|tr|head|tail|wc|mktemp|rm|cat|python3?|perl|find|xargs)[[:space:]]' | head -3)
+  [ -z "$sd_tools" ] || sd_fail="$sd_fail [another program is run: $sd_tools]"
+  if [ -z "$sd_fail" ]; then pass "spec-diff (changed, added, removed and waived requirements against the spec at the base ref or its first open commit; a re-wrap is no change; exit 0, 1 and 64; no file touched; sh, awk and git only)"
+  else failc "spec-diff" "$sd_fail"; fi
+fi
+
+# 103. spec-edited: brief-verify.sh allows everything under the task's own spec folder, so an
+# agent that rewrote the requirement it was given went unseen. Now a change to that spec's
+# spec.md or design.md since the base ref is named, SPEC-EDITED <file>. Information: the exit
+# status is still decided by OUTSIDE lines alone, and ticking tasks.md prints nothing.
+# No claude needed. Cites: honest-evidence/REQ-30 honest-evidence/REQ-31
+SE="$WORK/spec-edited"; mkdir -p "$SE/.shipkit/specs/refunds" "$SE/app"; (cd "$SE" && git init -q)
+printf '# Spec: refunds\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n## Purpose\nRefund a charge.\n\n## Requirements\n\n- **REQ-1.** When a refund is asked for, the system shall pay it.\n' > "$SE/.shipkit/specs/refunds/spec.md"
+printf '# Design: refunds\n\n## Approach\nOne function.\n' > "$SE/.shipkit/specs/refunds/design.md"
+printf -- '- [ ] **T1** Pay a refund → REQ-1\n  - Files: app/refunds.py\n  - Test: tests/test_refunds.py\n  - After: none\n  - Done when: `pytest` → all pass\n' > "$SE/.shipkit/specs/refunds/tasks.md"
+(cd "$SE" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m spec)
+se_base=$(cd "$SE" && git rev-parse HEAD)
+serun() { sh "$COPY/scripts/brief-verify.sh" "$SE" refunds T1 "$se_base" > "$WORK/se.out" 2>&1; echo $?; }   # → the exit status; output in se.out
+se_fail=""
+# the task's own file, and its box ticked: nothing to name
+printf 'x\n' > "$SE/app/refunds.py"
+sed 's/- \[ \] \*\*T1\*\*/- [x] **T1**/' "$SE/.shipkit/specs/refunds/tasks.md" > "$WORK/se.tmp" && mv "$WORK/se.tmp" "$SE/.shipkit/specs/refunds/tasks.md"
+rc=$(serun)
+[ "$rc" -eq 0 ] && ! grep -q 'SPEC-EDITED' "$WORK/se.out" || se_fail="$se_fail [only tasks.md ticked: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+# the design rewritten: named, and still exit 0
+printf '\nNow two functions.\n' >> "$SE/.shipkit/specs/refunds/design.md"
+rc=$(serun)
+[ "$rc" -eq 0 ] && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/design\.md$' "$WORK/se.out" && ! grep -q 'SPEC-EDITED .*spec\.md' "$WORK/se.out" \
+  && grep -q '^brief-verify: .* all inside the Files of refunds / T1$' "$WORK/se.out" \
+  || se_fail="$se_fail [design.md edited: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+# the requirement rewritten, and a file outside the task's list: both named, exit 1 for the second
+sed 's/shall pay it\./shall pay it within a week./' "$SE/.shipkit/specs/refunds/spec.md" > "$WORK/se.tmp" && mv "$WORK/se.tmp" "$SE/.shipkit/specs/refunds/spec.md"
+printf 'y\n' > "$SE/app/other.py"
+rc=$(serun)
+[ "$rc" -eq 1 ] && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/spec\.md$' "$WORK/se.out" && grep -q '^SPEC-EDITED \.shipkit/specs/refunds/design\.md$' "$WORK/se.out" \
+  && grep -q '^OUTSIDE app/other\.py$' "$WORK/se.out" && ! grep -q 'OUTSIDE \.shipkit' "$WORK/se.out" \
+  || se_fail="$se_fail [spec.md edited and a file outside: exit $rc: $(tr '\n' ';' < "$WORK/se.out")]"
+if [ -z "$se_fail" ]; then pass "spec-edited (the task's own spec.md and design.md are named when they change; a ticked tasks.md is not; the exit status is the OUTSIDE lines' alone)"
+else failc "spec-edited" "$se_fail"; fi
+
+# 104. text-label: an assertion that only reads the wording of a skill, an agent or a rule
+# shows that the words are there, not that a model follows them. Those assertions pass through
+# passt and print as "PASS  [text]", the count line says how many there were, and
+# docs/design/smoke-audit-5.4.md lists each one with the requirement its check cites and what
+# else cites that requirement. Check 76, ship-retry, is one of them. No claude needed.
+# Cites: honest-evidence/REQ-32
+tx_fail=""
+tx_out=$( (COUNTS=/dev/null; passt "probe") 2>/dev/null )
+[ "$tx_out" = "PASS  [text] probe" ] || tx_fail="$tx_fail [passt prints: $tx_out]"
+# the two searches below must not find their own lines: the first is anchored on the line's
+# start, the second leaves this check out
+grep -q '^if \[ -z "\$sy_fail" \]; then passt "ship-retry (' "$SELF" || tx_fail="$tx_fail [check 76's assertion is not a passt call]"
+tx_calls=$(awk '/^# [0-9]+[a-z]?\. / { lab = $2 } lab != "104." && /passt "[a-z0-9-]+ \(/ { n++ } END { print n + 0 }' "$SELF")
+tx_rows=$(grep -c '^| [0-9][0-9]*[a-z]\{0,1\} | ' "$ROOT/docs/design/smoke-audit-5.4.md" 2>/dev/null)
+[ "${tx_calls:-0}" -gt 0 ] && [ "${tx_calls:-0}" -eq "${tx_rows:-0}" ] || tx_fail="$tx_fail [$tx_calls passt calls in this script, ${tx_rows:-0} rows in the audit]"
+if [ -z "$tx_fail" ]; then pass "text-label (passt prints PASS  [text]; check 76 goes through it; $tx_calls text-only assertions, each with its row in the audit)"
+else failc "text-label" "$tx_fail"; fi
+
+# 105. timing-switch: check 30 holds the fifty-spec briefing to one second of CPU. That limit
+# was set on the owner's machine. CI's shared runner read 0.96 s and then 1.53 s on the same
+# scripts (pull request 40), so the workflow sets SMOKE_TIMING=report: a time of a second or
+# more is then printed in a PASS line that says it was not enforced. The line and byte limits
+# still fail, and without the switch nothing changes. Check 30's own verdict function runs here
+# on given numbers, in a subshell, so its lines are read and not counted. No claude needed.
+# Cites: honest-evidence/REQ-41 honest-evidence/REQ-42 honest-evidence/REQ-43
+ts_v() { ( COUNTS=/dev/null; SMOKE_TIMING=$1; brief50_verdict "$2" "$3" "$4" 3 ); }  # ts_v <switch> <lines> <bytes> <seconds>
+ts_fail=""
+ts_out=$(ts_v report 3 299 1.53)
+case "$ts_out" in
+  "PASS  briefing (50 open specs"*"1.53s of CPU"*"not enforced"*) ;;
+  *) ts_fail="$ts_fail [report, 1.53 s: $ts_out]" ;;
+esac
+ts_out=$(ts_v report 3 299 0.80)
+case "$ts_out" in
+  *"not enforced"*) ts_fail="$ts_fail [report, 0.80 s is called not enforced: $ts_out]" ;;
+  "PASS  briefing (50 open specs"*"0.80s of CPU"*) ;;
+  *) ts_fail="$ts_fail [report, 0.80 s: $ts_out]" ;;
+esac
+case "$(ts_v report 9 299 0.80)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [report, nine lines: not a FAIL]" ;; esac
+case "$(ts_v report 3 801 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [report, 801 bytes: not a FAIL]" ;; esac
+case "$(ts_v "" 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [no switch, 1.53 s: not a FAIL]" ;; esac
+case "$(ts_v "" 3 299 0.80)" in "PASS  briefing (50 open specs"*) ;; *) ts_fail="$ts_fail [no switch, 0.80 s: not a PASS]" ;; esac
+case "$(ts_v other 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [a switch value other than report, 1.53 s: not a FAIL]" ;; esac
+ts_job=$(awk '/^  smoke-no-model:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$ROOT/.github/workflows/lint.yml")
+printf '%s\n' "$ts_job" | grep -q '^      SMOKE_TIMING: report$' || ts_fail="$ts_fail [lint.yml: the smoke-no-model job does not set SMOKE_TIMING to report]"
+if [ -z "$ts_fail" ]; then pass "timing-switch (SMOKE_TIMING=report: a slow fifty-spec briefing is printed, not failed; lines and bytes still fail; no switch, no change; CI's smoke job sets it)"
+else failc "timing-switch" "$ts_fail"; fi
+
+# The last assertion of a --no-model run: the stand-in `claude` was never called.
+if [ "$NO_MODEL" -eq 1 ]; then
+  if [ ! -s "$WORK/claude-calls.log" ]; then pass "smoke-args (--no-model started no claude process: the stand-in first on the PATH was never called)"
+  else failc "smoke-args" "claude was called $(grep -c . "$WORK/claude-calls.log") time(s) under --no-model: $(sed -n 1,3p "$WORK/claude-calls.log" | cut -c1-120 | tr '\n' '|')"; fi
+fi
+
 echo
-if [ "$fail" -eq 0 ]; then echo "smoke: all checks passed"; else echo "smoke: FAILURES above"; fi
+summary_lines "$(grep -c p "$COUNTS")" "$(grep -c t "$COUNTS")" "$(grep -c s "$COUNTS")" "$(grep -c f "$COUNTS")"
 exit $fail
