@@ -14,6 +14,8 @@ ROADMAP's "Still open after Sprint 28" (`ROADMAP.md:50-107`) · Seven sprints, *
 Amended after approval, each on the owner's yes of 2026-11-18:
 
 - The `briefing` timing fix is recorded where it was done: S29-T1, moved from S31-T2.
+- S30-T0b is new: the briefing's `> Paths:` trim, found in Sprint 29, is Sprint 30's first task
+  after its spec.
 
 Shipkit's gate answers one question well: does this branch match its spec, with evidence? The read
 behind this plan found that the gate is weaker than it looks in four places. A model runs the
@@ -276,7 +278,7 @@ the owner's project, so Sprint 35 reads them.
 | Sprint | Branch | Name | Sizes | Paid | What the owner gets |
 |---|---|---|---|---|---|
 | 29 | `sprint-29/honest-evidence` | What the evidence says | S S S M M S | no | A smoke run that costs nothing; the count of tested requirements; citations that count only in tests; skipped tests and edited requirements named |
-| 30 | `sprint-30/gate-as-software` | The gate as software | M L M M | no | The gate's commands as one script; one test command; reports tied to commits; a judge the change cannot edit |
+| 30 | `sprint-30/gate-as-software` | The gate as software | S M L M M | no | Drift counted on paths that start or end with "t"; the gate's commands as one script; one test command; reports tied to commits; a judge the change cannot edit |
 | 31 | `sprint-31/numbers-as-data` | Numbers a script can read | M M M S S | no | An eval ledger; the flake rule; cases chosen by the diff; room for new cases |
 | 32 | `sprint-32/misses-to-checks` | Misses become checks | L M L M | no | Eleven cases from real misses, two held out; a checks file; the reviewer's and the escape skill's new text, written and waiting |
 | 33 | `sprint-33/tests-worth-having` | Tests worth having | M S M L | no | Probes for test kinds; property tests on shipkit's parsers; a red-at-base script |
@@ -499,6 +501,28 @@ scratch path, and the gate runs the failing test command first.
 
 ### S30-T0 — Write the sprint spec
 - As S29-T0, `.shipkit/specs/gate-as-software/`. Decision 0007 is drafted here for T4.
+
+### S30-T0b — The briefing's `> Paths:` trim keeps the letter "t" (S)
+- **Why:** found in Sprint 29 and added on the owner's yes of 2026-11-18, as the sprint's first
+  task after its spec. `session-start.sh:275` trims each entry of a spec's `> Paths:` line with
+  `sed 's/^[ \t]*//; s/[ \t]*$//'`. BSD sed reads `[ \t]` as a space, a backslash or the letter
+  t, so an entry that starts or ends with "t" loses it: on macOS `tests/billing/` becomes
+  `ests/billing/`. Drift is then counted on a path that does not exist, the count is 0, and the
+  spec never reads as stale, against `spec-contract/REQ-16`. Nothing showed it: no spec in this
+  repository has such an entry, and check 21's fixture uses `a/, docs/`. It is the only `sed`
+  under `plugins/` and `scripts/` with this pattern; the others are `awk`, where `\t` is a tab.
+- **Files:** `plugins/shipkit/scripts/session-start.sh`, `scripts/smoke.sh`.
+- **Subtasks:**
+  1. **A smoke check, written first, red:** beside check 21's cases, an open spec whose
+     `> Paths:` entries start and end with "t" (`tests/`, `notes.txt`), twenty commits that touch
+     only those paths, and the hook's line "20 commits have touched its paths since it was
+     accepted". It cites `spec-contract/REQ-16`, which is already written and which the code does
+     not meet. It is red on macOS before the fix; GNU sed reads `\t` as a tab.
+  2. **The fix:** `[[:space:]]` in place of `[ \t]` in both expressions, as `spec-check.sh`
+     already reads its `> Tests:` line.
+  3. **Rule 34 holds:** the file is a script, and nothing a model reads changes.
+- **Done when:** the new check fails before the fix and passes after it; check 21's other cases
+  and check 30's timing still pass.
 
 ### S30-T1 — One test command (M)
 - **Why:** on the 5.2 run the project's `CLAUDE.md` held two test commands. The spec skill copied
