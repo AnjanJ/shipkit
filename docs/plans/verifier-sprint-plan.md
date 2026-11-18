@@ -16,6 +16,7 @@ Amended after approval, each on the owner's yes of 2026-11-18:
 - The `briefing` timing fix is recorded where it was done: S29-T1, moved from S31-T2.
 - S30-T0b is new: the briefing's `> Paths:` trim, found in Sprint 29, is Sprint 30's first task
   after its spec.
+- S31-T2 gains subtask 5, the briefing's gap count made cheap, after CI's runner failed check 30.
 
 Shipkit's gate answers one question well: does this branch match its spec, with evidence? The read
 behind this plan found that the gate is weaker than it looks in four places. A model runs the
@@ -279,7 +280,7 @@ the owner's project, so Sprint 35 reads them.
 |---|---|---|---|---|---|
 | 29 | `sprint-29/honest-evidence` | What the evidence says | S S S M M S | no | A smoke run that costs nothing; the count of tested requirements; citations that count only in tests; skipped tests and edited requirements named |
 | 30 | `sprint-30/gate-as-software` | The gate as software | S M L M M | no | Drift counted on paths that start or end with "t"; the gate's commands as one script; one test command; reports tied to commits; a judge the change cannot edit |
-| 31 | `sprint-31/numbers-as-data` | Numbers a script can read | M M M S S | no | An eval ledger; the flake rule; cases chosen by the diff; room for new cases |
+| 31 | `sprint-31/numbers-as-data` | Numbers a script can read | M M M S S | no | An eval ledger; the flake rule, and a briefing quick enough for CI's runner; cases chosen by the diff; room for new cases |
 | 32 | `sprint-32/misses-to-checks` | Misses become checks | L M L M | no | Eleven cases from real misses, two held out; a checks file; the reviewer's and the escape skill's new text, written and waiting |
 | 33 | `sprint-33/tests-worth-having` | Tests worth having | M S M L | no | Probes for test kinds; property tests on shipkit's parsers; a red-at-base script |
 | 34 | `sprint-34/running-the-change` | Running the change, and the prune | XL L M | no | A script that starts and checks an application; a commit gate; the checks pruned before anything is paid for |
@@ -673,7 +674,9 @@ change; and there is room for the cases Sprint 32 writes.
   the failing code" (the article). The history shows the habit: `hello` at 2 of 3 in 5.1.0 and
   5.2.0, `intake/limit` at 2 of 3 "its shape since 4.9.0", cases re-run alone until they pass, and
   an exit checklist that says to re-run a failing `haiku` check.
-- **Files:** `docs/design/eval-history.md`, `scripts/smoke.sh`.
+- **Files:** `docs/design/eval-history.md`, `scripts/smoke.sh`, and for subtask 5
+  `plugins/shipkit/scripts/briefing.sh`, `plugins/shipkit/scripts/spec-check.sh` and
+  `.github/workflows/lint.yml`.
 - **Subtasks:**
   1. **Rule 30 is written into `eval-history.md`'s head,** where the next release run reads it.
   2. **The `briefing` timing check: fixed in Sprint 29, not here** (S29-T1, commit `18e0596`;
@@ -691,8 +694,17 @@ change; and there is room for the cases Sprint 32 writes.
   4. **A kit for Sprint 35,** one line per case: the command that runs it ten times with traces
      kept, what to look for in the traces, and the outcomes allowed: a corrected grader (rule 23),
      a changed sentence (on the owner's go, rule 6), or the case deleted with its reason.
-- **Done when:** the timing check passes five times in a row under load; the note and the kit are
-  in the sprint's design.
+  5. **The briefing's gap count made cheap** (added 2026-11-18). The one-second limit is tight
+     because the briefing runs the whole of `spec-check.sh` to print one number. On fifty open
+     specs on the owner's Mac the briefing costs 0.76 s of CPU, of which `spec-check.sh .` is
+     0.66 s, about 2,600 shell commands. CI's macOS runner read 0.96 s and then 1.53 s on the
+     same scripts (pull request 40), so the limit is not enforced there for now: the job sets
+     `SMOKE_TIMING=report` (`honest-evidence` REQ-41 to REQ-43 and its design's seventh record).
+     This subtask cuts what the briefing pays for that number; the sprint's design chooses how,
+     and `spec-check.sh`'s own output does not change. The check is written first.
+- **Done when:** the timing check passes five times in a row under load, and five times running
+  on the CI runner with the switch taken out of the workflow; the note and the kit are in the
+  sprint's design.
 
 ### S31-T3 — The cases for a diff are chosen by the diff (M)
 - **Why:** 5.3.0 ran no case, on a hand reading of which cases read the changed files
