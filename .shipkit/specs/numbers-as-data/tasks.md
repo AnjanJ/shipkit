@@ -53,6 +53,7 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - After: T7
   - Done when: five CI runs in a row on the runner, without the switch, read check 30 `PASS`; `sh scripts/smoke.sh --no-model </dev/null` → exit 0
   - Note (2026-11-18): this reverses `honest-evidence`'s seventh record by its own clause, and `honest-evidence/REQ-43` ("the CI job shall set `SMOKE_TIMING` to `report`") stops being true. That requirement is amended in the same commit, on the owner's word at the time.
+  - Note (2026-11-18): the first CI run that reached a runner read check 30 at 0.69 s (PASS) and failed check 112: 0.77 s of CPU against its half second. Check 112 had read the switch too, and T8's first commit missed it. REQ-16's half second is "on the owner's machine", so check 112 now prints the time on CI (`CI=true`) and still fails on a changed output. The count of five runs starts again after that fix.
 - [ ] **T9** Sprint 35: the release run appends its rows → REQ-31
   - Files: docs/design/eval-ledger.tsv
   - Test: none: REQ-31 is read from Sprint 35's record

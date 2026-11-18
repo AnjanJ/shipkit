@@ -4281,8 +4281,10 @@ else failc "ledger-backfill" "$lb_fail"; fi
 # show), line for line and exit for exit, on check 30's fixture, on a fixture with every kind
 # of line spec-check prints, and on this repository, for the whole project and for one spec,
 # with --as-open and --as-shipped; reads the briefing's gap line against spec-check's count;
-# and times the briefing on fifty specs against half a second of CPU, best of three (printed,
-# not failed, under SMOKE_TIMING=report, as check 30 is). No claude needed.
+# and times the briefing on fifty specs against half a second of CPU, best of three. That limit
+# is the owner's machine's (REQ-16): on CI (CI=true), where the runner read 0.77 s on the first
+# run without the switch, and under SMOKE_TIMING=report, the time is printed and not failed.
+# Check 30's one second is still held on CI. No claude needed.
 # Cites: numbers-as-data/REQ-15 numbers-as-data/REQ-16 numbers-as-data/REQ-17
 BK="$WORK/bcost"; mkdir -p "$BK"; bk_fail=""
 git -C "$ROOT" show 398d1c9:plugins/shipkit/scripts/spec-check.sh > "$BK/old.sh" 2>/dev/null || bk_fail="$bk_fail [git show 398d1c9 failed]"
@@ -4338,6 +4340,21 @@ bk_b=$(cd "$BKG" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-chec
 [ -n "$bk_g" ] && [ "$bk_g" -gt 0 ] && [ "$bk_b" = "shipkit: spec-check: $bk_g gap(s) — run spec-check.sh" ] \
   || bk_fail="$bk_fail [d: spec-check counts '$bk_g', the briefing printed '$bk_b']"
 [ -z "$(cd "$BK50" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-check:')" ] || bk_fail="$bk_fail [d: a gap line on fifty specs with no gap]"
+bk_verdict() {  # bk_verdict <fail text> <cpu seconds> → check 112's one PASS or FAIL line
+  if [ -z "$1" ] && [ "$(awk -v t="$2" 'BEGIN { print (t + 0 > 0.5) ? 1 : 0 }')" -eq 0 ]; then
+    pass "briefing-cost (spec-check.sh prints what it printed at 398d1c9 on fifty specs, every kind of line and this repository; the briefing's gap line is its count; fifty specs in ${2}s of CPU, best of 3)"
+  elif [ -z "$1" ] && { [ "${CI:-}" = true ] || [ "${SMOKE_TIMING:-}" = report ]; }; then
+    pass "briefing-cost (output unchanged, gap line matches; fifty specs in ${2}s of CPU, best of 3, over 0.5 s: reported, not enforced, the limit is the owner's machine's (REQ-16) and this is CI or SMOKE_TIMING=report)"
+  else failc "briefing-cost" "$1 [fifty specs: ${2}s of CPU, best of 3, want ≤ 0.5]"; fi
+}
+# f. the verdict on given numbers, in a subshell so its lines are read and not counted: the
+# half second is the owner's machine's (REQ-16), so on CI (CI=true) a slower time is printed
+# and not failed; a changed output fails everywhere
+bk_v() { ( COUNTS=/dev/null; CI=$1; SMOKE_TIMING=""; bk_verdict "$2" "$3" ); }  # bk_v <CI> <fail text> <seconds>
+case "$(bk_v true "" 0.77)" in "PASS  briefing-cost"*"0.77s of CPU"*"not enforced"*) ;; *) bk_fail="$bk_fail [f: CI, 0.77 s: not a PASS that says not enforced]" ;; esac
+case "$(bk_v "" "" 0.77)" in "FAIL  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: no CI, 0.77 s: not a FAIL]" ;; esac
+case "$(bk_v true "[x]" 0.30)" in "FAIL  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: CI, a changed output: not a FAIL]" ;; esac
+case "$(bk_v "" "" 0.30)" in *"not enforced"*) bk_fail="$bk_fail [f: no CI, 0.30 s is called not enforced]" ;; "PASS  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: no CI, 0.30 s: not a PASS]" ;; esac
 # e. the briefing on fifty specs, best of three, against half a second of CPU
 bk_t=9; bk_i=0
 while [ "$bk_i" -lt 3 ]; do
@@ -4345,10 +4362,7 @@ while [ "$bk_i" -lt 3 ]; do
   bk_one=$(python3 -c "import os,subprocess; a=os.times(); subprocess.run(['sh','$COPY/scripts/briefing.sh'],cwd='$BK50',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); b=os.times(); print(round((b.children_user-a.children_user)+(b.children_system-a.children_system),2))")
   bk_t=$(awk -v a="$bk_t" -v b="$bk_one" 'BEGIN { print (b + 0 < a + 0) ? b : a }')
 done
-bk_slow=$(awk -v t="$bk_t" 'BEGIN { print (t + 0 > 0.5) ? 1 : 0 }')
-if [ -z "$bk_fail" ] && [ "$bk_slow" -eq 0 ]; then pass "briefing-cost (spec-check.sh prints what it printed at 398d1c9 on fifty specs, every kind of line and this repository; the briefing's gap line is its count; fifty specs in ${bk_t}s of CPU, best of 3)"
-elif [ -z "$bk_fail" ] && [ "${SMOKE_TIMING:-}" = report ]; then pass "briefing-cost (output unchanged, gap line matches; fifty specs in ${bk_t}s of CPU, best of 3, over 0.5 s: reported, not enforced, SMOKE_TIMING=report)"
-else failc "briefing-cost" "$bk_fail [fifty specs: ${bk_t}s of CPU, best of 3, want ≤ 0.5]"; fi
+bk_verdict "$bk_fail" "$bk_t"
 
 # 113. evals-for-diff: the cases a change needs are chosen by the change. scripts/evals-map.tsv
 # names, for each eval case, the plugin paths whose text reaches it; scripts/evals-for-diff.sh
