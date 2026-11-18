@@ -86,3 +86,11 @@ Not fixed here; each goes to the sprint's pull request and to the ROADMAP's "Sti
   30's limit of one second (`briefing-and-handoff/REQ-8`). Measured alone on 2026-11-17, eight
   runs, with and without this spec's changes to `spec-check.sh`: no difference. Inside the suite
   on a busy machine it has read up to 0.94 s. The margin is thin whatever is added next.
+- One row of the verifier plan's §0 is not at its target after this sprint. It says the two
+  citations that sit in a comment will each be named by `spec-check`: `spec-contract/REQ-23` in
+  `.github/workflows/lint.yml` and `gate-blind-spots/REQ-10` in
+  `plugins/shipkit/scripts/brief-verify.sh:28`. They are not named. `CITED-ELSEWHERE` speaks only
+  for a spec with a `> Tests:` line (REQ-16, REQ-17), and neither of those two shipped specs has
+  one. Read on 2026-11-18: `spec-check.sh .` prints six `CITED-ELSEWHERE` lines, all for this
+  spec. The row is reached when the two specs gain the line; whether and when is for Sprint 30's
+  spec to settle.
