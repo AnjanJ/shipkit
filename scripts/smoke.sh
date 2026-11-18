@@ -943,6 +943,19 @@ case "$out" in
   *"whole/spec.md is 15 commits behind HEAD"*) pass "spec-drift-paths (open spec with no Paths → counted as before)";;
   *) failc "spec-drift-paths" "open spec with no Paths was not counted on the whole repository: $out";;
 esac
+# ...and an entry that starts or ends with the letter t is read as it is written. BSD sed reads
+# [ \t] as a space, a backslash or the letter t, so the hook trimmed tests/ to ests/ and
+# notes.txt to notes.tx, and counted commits on paths that do not exist (found in Sprint 29).
+# Cites: gate-as-software/REQ-1 spec-contract/REQ-16
+mkdir -p "$DP/tests"; dspec tpaths open "tests/, notes.txt"
+dcommit tests 19
+printf 'n\n' >> "$DP/notes.txt"; (cd "$DP" && git add notes.txt && git -c user.email=s@s -c user.name=s commit -q -m notes)
+out=$(dhook)
+case "$out" in
+  *"tpaths/spec.md: 20 commits have touched its paths since it was accepted"*)
+    pass "spec-drift-paths (Paths entries that start and end with t → counted as written, 20 commits)";;
+  *) failc "spec-drift-paths" "Paths 'tests/, notes.txt': the 20 commits that touch them were not counted: $out";;
+esac
 
 # 22. spec-new-format: a spec that /shipkit:spec writes passes spec-check
 # (spec: .shipkit/specs/spec-contract/). Cites: spec-contract/REQ-21 spec-contract/REQ-22

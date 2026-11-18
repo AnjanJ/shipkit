@@ -7,7 +7,7 @@ T1 to T6 are Sprint 30's and start no model. T7 to T10 change what a model reads
 run; by the verifier plan's rules 33 and 34 they stay unticked until Sprint 35, and `design.md`
 holds the text each one applies.
 
-- [ ] **T1** The session hook reads a `> Paths:` entry as it is written → REQ-1
+- [x] **T1** The session hook reads a `> Paths:` entry as it is written → REQ-1
   - Files: plugins/shipkit/scripts/session-start.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 21 (`spec-drift-paths`), one more case: an open spec whose `> Paths:` is `tests/, notes.txt` and twenty commits that touch only those two paths; the hook's line must count twenty. It also cites `spec-contract/REQ-16`
   - After: none

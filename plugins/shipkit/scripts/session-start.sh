@@ -271,8 +271,10 @@ if [ -d .shipkit/specs ]; then
     # A "> Paths: a/, b/" line narrows the count to commits that touch those paths, so work
     # elsewhere in the repository does not make this spec look stale. No Paths line means
     # the whole repository, as before. (Paths are comma-separated and may not contain spaces.)
+    # [[:space:]], not [ \t]: BSD sed reads the latter as a space, a backslash or the letter t,
+    # and trimmed tests/ to ests/ (gate-as-software/REQ-1).
     s_paths=$(sed -n 's/^> *Paths: *//p' "$spec" | sed -n 1p | tr ',' '\n' \
-      | sed 's/`//g; s/^[ \t]*//; s/[ \t]*$//' | grep -v '^$')
+      | sed 's/`//g; s/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
     if [ -n "$s_paths" ]; then
       s_kind=paths
       s_count=$(printf '%s\n' "$s_paths" | xargs git rev-list --count "$s_sha"..HEAD -- 2>/dev/null) || continue
