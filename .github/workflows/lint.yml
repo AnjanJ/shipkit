@@ -41,6 +41,15 @@ jobs:
       # Proves gate-as-software/REQ-31.
       - name: Release check (observe mode)
         run: sh plugins/shipkit/scripts/release-check.sh .
+      # The last tagged release's spec-check.sh on this tree, beside the branch's own above: a pull
+      # request cannot pass by weakening the script that checks it (decision 0007). Both must
+      # exit 0. Proves gate-as-software/REQ-36.
+      - name: Check specs with the last tag's spec-check
+        run: |
+          tag=$(git describe --tags --abbrev=0)
+          echo "judge: $tag"
+          git show "$tag:plugins/shipkit/scripts/spec-check.sh" > "$RUNNER_TEMP/spec-check-tag.sh"
+          sh "$RUNNER_TEMP/spec-check-tag.sh" .
 
   # The smoke suite without its sixteen model checks. This runner has no `claude`, so every pull
   # request shows again that --no-model starts none. Proves honest-evidence/REQ-11.

@@ -28,7 +28,7 @@ holds the text each one applies.
   - Test: scripts/smoke.sh check 108 (`release-check`): a clean fixture prints the summary line alone; a shipped spec with no report; a report whose commit is on an abandoned branch; a commit under `Paths` after the report and before the shipping commit; a shipped spec with no `Paths` line; exit 0 without `--enforce` and 1 with it; the workflow runs the script on pull requests with the full history
   - After: T3
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 108 `PASS`, exit 0; `sh plugins/shipkit/scripts/release-check.sh .` → exit 0, and its lines for this repository are written under "Found on the way" below
-- [ ] **T5** The judge: `judge.sh`, the last tag's `spec-check.sh` in CI, and decision 0007 → REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37
+- [x] **T5** The judge: `judge.sh`, the last tag's `spec-check.sh` in CI, and decision 0007 → REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37
   - Files: scripts/judge.sh, .github/workflows/lint.yml, .shipkit/decisions/0007-a-change-does-not-judge-itself.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 109 (`judge`), with a stand-in `claude`: without `--yes` the tag and the command are printed, the stand-in is not called and no worktree is added; with `--yes` the stand-in's `--plugin-dir` is inside a worktree of the last tag; that worktree is gone afterwards, also when the stand-in exits non-zero; a worktree made beforehand survives; the workflow runs the last tag's `spec-check.sh` beside the branch's
   - After: T4

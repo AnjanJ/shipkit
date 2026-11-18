@@ -167,6 +167,7 @@ registry() { cat <<'EOF'
 106 test-command
 107 ship-check
 108 release-check
+109 judge
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4087,6 +4088,74 @@ printf '%s\n' "$rc_job" | grep -q '^        run: sh plugins/shipkit/scripts/rele
 sh -n "$RCS" 2>/dev/null || rc_fail="$rc_fail [sh -n reports a syntax error]"
 if [ -z "$rc_fail" ]; then pass "release-check (no report, an orphaned report and a commit under Paths after the gate are each named; the newest READY report counts; no Paths, no count; after shipping, no count; exit 0 unless --enforce; CI runs it)"
 else failc "release-check" "$rc_fail"; fi
+
+# 109. judge: a change does not judge itself. scripts/judge.sh runs this repository's gate with
+# the plugin loaded from a worktree of the last tag, so a branch that weakened the gate is not
+# judged by the weakened gate (decision 0007). Without --yes it prints the tag and the command
+# and runs nothing; with --yes it makes a worktree of the tag, runs the command, and removes
+# that worktree and no other, however the command ends. The fixture is a small repository with
+# a tag; claude is a stand-in that records what it was given, so no model runs here. CI runs
+# the last tag's spec-check.sh beside the branch's. A pattern below spells the command
+# claude[ ]--plugin-dir so that check 97's scan does not read it as a model call. No claude needed.
+# Cites: gate-as-software/REQ-32 gate-as-software/REQ-33 gate-as-software/REQ-34
+# gate-as-software/REQ-35 gate-as-software/REQ-36
+JG="$WORK/judge"; JGS="$ROOT/scripts/judge.sh"; JL="$WORK/judge-log"; mkdir -p "$JG/repo/plugins/shipkit" "$JG/bin" "$JL"; jg_fail=""
+cat > "$JG/bin/claude" <<STUB
+#!/bin/sh
+echo called >> "$JL/calls"
+pd=""; prev=""; last=""
+for a in "\$@"; do [ "\$prev" = --plugin-dir ] && pd=\$a; prev=\$a; last=\$a; done
+printf '%s\n' "\$pd" > "$JL/pd"
+[ -d "\$pd" ] && echo yes > "$JL/existed"
+git -C "\$pd" rev-parse HEAD > "$JL/head" 2>/dev/null
+printf '%s\n' "\$last" > "$JL/prompt"
+exit \${JUDGE_STUB_EXIT:-0}
+STUB
+chmod +x "$JG/bin/claude"
+(cd "$JG/repo" && git init -q && echo v1 > plugins/shipkit/VERSION && git add -A \
+  && git -c user.email=s@s -c user.name=s commit -q -m one && git tag v1.0.0 \
+  && echo v2 > plugins/shipkit/VERSION && git -c user.email=s@s -c user.name=s commit -q -am two)
+jg_tag=$(cd "$JG/repo" && git rev-parse v1.0.0)
+(cd "$JG/repo" && git worktree add -q --detach "$JG/theirs" HEAD 2>/dev/null)   # a worktree judge.sh did not make
+jg_wt() { (cd "$JG/repo" && git worktree list | grep -c .); }
+jg_run() { jg_out=$(cd "$JG/repo" && PATH="$JG/bin:$PATH" sh "$JGS" "$@" 2>&1); jg_rc=$?; }
+# a. without --yes: the tag and the command are printed, nothing runs, no worktree is made
+jg_before=$(jg_wt); jg_run refunds main
+[ "$jg_rc" -eq 0 ] && printf '%s\n' "$jg_out" | grep -qx 'judge: the last tag is v1.0.0' \
+   && printf '%s\n' "$jg_out" | grep -q 'claude[ ]--plugin-dir <worktree>/plugins/shipkit --model sonnet' \
+   && [ ! -e "$JL/calls" ] && [ "$(jg_wt)" = "$jg_before" ] \
+  || jg_fail="$jg_fail [a: without --yes: exit $jg_rc, $(jg_wt) worktree(s), printed: $(printf '%s' "$jg_out" | tr '\n' '|')]"
+# b. with --yes: claude ran once, with the plugin from a worktree of the tag; the worktree is gone after
+jg_run refunds main --test 'make test' --yes
+jg_pd=$(cat "$JL/pd" 2>/dev/null)
+[ "$jg_rc" -eq 0 ] && [ "$(grep -c . "$JL/calls" 2>/dev/null)" = 1 ] && [ -s "$JL/existed" ] \
+   && [ "$(cat "$JL/head" 2>/dev/null)" = "$jg_tag" ] && [ ! -e "$jg_pd" ] && [ "$(jg_wt)" = "$jg_before" ] \
+  || jg_fail="$jg_fail [b: with --yes: exit $jg_rc, plugin dir '$jg_pd', head $(cat "$JL/head" 2>/dev/null) want $jg_tag, $(jg_wt) worktree(s) after]"
+case "$jg_pd" in */plugins/shipkit) ;; *) jg_fail="$jg_fail [b: --plugin-dir is not <worktree>/plugins/shipkit: '$jg_pd']";; esac
+case "$(cat "$JL/prompt" 2>/dev/null)" in "/shipkit:ship refunds main"*"not interactive"*"The project's test command is: make test"*) ;;
+  *) jg_fail="$jg_fail [b: the prompt: $(tr '\n' '|' < "$JL/prompt" 2>/dev/null)]";; esac
+# c. the command fails: judge.sh exits with its status, and the worktree is still removed
+rm -f "$JL/existed" "$JL/pd"
+jg_out=$(cd "$JG/repo" && JUDGE_STUB_EXIT=3 PATH="$JG/bin:$PATH" sh "$JGS" refunds main --yes 2>&1); jg_rc=$?
+jg_pd=$(cat "$JL/pd" 2>/dev/null)
+[ "$jg_rc" -eq 3 ] && [ -s "$JL/existed" ] && [ ! -e "$jg_pd" ] && [ "$(jg_wt)" = "$jg_before" ] \
+  || jg_fail="$jg_fail [c: a failing command: exit $jg_rc, $(jg_wt) worktree(s) after]"
+# d. the worktree made beforehand is still there
+[ -f "$JG/theirs/plugins/shipkit/VERSION" ] || jg_fail="$jg_fail [d: a worktree judge.sh did not make was removed]"
+# e. no tag: exit 2 and nothing run
+mkdir -p "$JG/notag" && (cd "$JG/notag" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m one)
+jg_calls=$(grep -c . "$JL/calls" 2>/dev/null)
+(cd "$JG/notag" && PATH="$JG/bin:$PATH" sh "$JGS" refunds main --yes >/dev/null 2>&1); jg_rc=$?
+[ "$jg_rc" -eq 2 ] && [ "$(grep -c . "$JL/calls" 2>/dev/null)" = "$jg_calls" ] || jg_fail="$jg_fail [e: no tag: exit $jg_rc]"
+# f. CI runs the last tag's spec-check.sh on the tree, beside the branch's own
+jg_job=$(awk '/^  lint:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$ROOT/.github/workflows/lint.yml")
+printf '%s\n' "$jg_job" | grep -q '^        run: sh plugins/shipkit/scripts/spec-check\.sh \.$' \
+  && printf '%s\n' "$jg_job" | grep -q 'git describe --tags --abbrev=0' \
+  && printf '%s\n' "$jg_job" | grep -q 'git show "\$tag:plugins/shipkit/scripts/spec-check\.sh"' \
+  || jg_fail="$jg_fail [f: lint.yml's lint job does not run the last tag's spec-check.sh beside the branch's]"
+sh -n "$JGS" 2>/dev/null || jg_fail="$jg_fail [sh -n reports a syntax error]"
+if [ -z "$jg_fail" ]; then pass "judge (without --yes the tag and command, nothing run; with --yes the plugin from a worktree of the last tag, removed after, also on failure; another worktree kept; no tag → exit 2; CI runs the tag's spec-check)"
+else failc "judge" "$jg_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
