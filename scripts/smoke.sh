@@ -3846,11 +3846,14 @@ else failc "text-label" "$tx_fail"; fi
 
 # 105. timing-switch: check 30 holds the fifty-spec briefing to one second of CPU. That limit
 # was set on the owner's machine. CI's shared runner read 0.96 s and then 1.53 s on the same
-# scripts (pull request 40), so the workflow sets SMOKE_TIMING=report: a time of a second or
+# scripts (pull request 40), so the workflow once set SMOKE_TIMING=report: a time of a second or
 # more is then printed in a PASS line that says it was not enforced. The line and byte limits
-# still fail, and without the switch nothing changes. Check 30's own verdict function runs here
-# on given numbers, in a subshell, so its lines are read and not counted. No claude needed.
+# still fail, and without the switch nothing changes. Sprint 31 made the briefing cheap, so the
+# workflow no longer sets the switch and CI holds the limit again; the switch stays for a run
+# by hand. Check 30's own verdict function runs here on given numbers, in a subshell, so its
+# lines are read and not counted. No claude needed.
 # Cites: honest-evidence/REQ-41 honest-evidence/REQ-42 honest-evidence/REQ-43
+# numbers-as-data/REQ-18
 ts_v() { ( COUNTS=/dev/null; SMOKE_TIMING=$1; brief50_verdict "$2" "$3" "$4" 3 ); }  # ts_v <switch> <lines> <bytes> <seconds>
 ts_fail=""
 ts_out=$(ts_v report 3 299 1.53)
@@ -3870,8 +3873,9 @@ case "$(ts_v "" 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [no s
 case "$(ts_v "" 3 299 0.80)" in "PASS  briefing (50 open specs"*) ;; *) ts_fail="$ts_fail [no switch, 0.80 s: not a PASS]" ;; esac
 case "$(ts_v other 3 299 1.53)" in "FAIL  briefing"*) ;; *) ts_fail="$ts_fail [a switch value other than report, 1.53 s: not a FAIL]" ;; esac
 ts_job=$(awk '/^  smoke-no-model:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$ROOT/.github/workflows/lint.yml")
-printf '%s\n' "$ts_job" | grep -q '^      SMOKE_TIMING: report$' || ts_fail="$ts_fail [lint.yml: the smoke-no-model job does not set SMOKE_TIMING to report]"
-if [ -z "$ts_fail" ]; then pass "timing-switch (SMOKE_TIMING=report: a slow fifty-spec briefing is printed, not failed; lines and bytes still fail; no switch, no change; CI's smoke job sets it)"
+[ -n "$ts_job" ] || ts_fail="$ts_fail [lint.yml: no smoke-no-model job]"
+printf '%s\n' "$ts_job" | grep -q 'SMOKE_TIMING' && ts_fail="$ts_fail [lint.yml: the smoke-no-model job names SMOKE_TIMING]"
+if [ -z "$ts_fail" ]; then pass "timing-switch (SMOKE_TIMING=report: a slow fifty-spec briefing is printed, not failed; lines and bytes still fail; no switch, no change; CI's smoke job does not set it)"
 else failc "timing-switch" "$ts_fail"; fi
 
 # 106. test-command: the project's test command is recorded once, by the installer, in
