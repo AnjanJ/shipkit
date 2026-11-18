@@ -11,6 +11,10 @@ https://claude.dev/blog/how-the-claude-code-team-thinks-about-verification/), re
 ROADMAP's "Still open after Sprint 28" (`ROADMAP.md:50-107`) · Seven sprints, **one release:
 5.4.0** · Follows `docs/plans/machine-sprint-plan.md`, all three of whose sprints shipped in 5.2.0.
 
+Amended after approval, each on the owner's yes of 2026-11-18:
+
+- The `briefing` timing fix is recorded where it was done: S29-T1, moved from S31-T2.
+
 Shipkit's gate answers one question well: does this branch match its spec, with evidence? The read
 behind this plan found that the gate is weaker than it looks in four places. A model runs the
 checklist, including the five steps a script could run. A citation counts as a test wherever it
@@ -370,6 +374,9 @@ Every later sprint's T0 follows these four subtasks, with its own folder.
      on a `PATH` that has no `claude` at all.
   5. **The default run is unchanged.** With no argument every check runs as today; the diff is
      read for that, and Sprint 35's full run confirms it.
+  6. **Added while building (recorded 2026-11-18): check 30's timing reads CPU time.** This was
+     S31-T2's subtask 2. It moved here because the check failed the first model-free run; S31-T2
+     says why and what is left there.
 - **Done when:** `sh scripts/smoke.sh --no-model` passes with `claude` taken off the `PATH`; the
   skipped names are in the commit's test plan; the script is clean under `sh -n`.
 
@@ -645,9 +652,14 @@ change; and there is room for the cases Sprint 32 writes.
 - **Files:** `docs/design/eval-history.md`, `scripts/smoke.sh`.
 - **Subtasks:**
   1. **Rule 30 is written into `eval-history.md`'s head,** where the next release run reads it.
-  2. **The `briefing` timing check, fixed now:** it read 1.02 s on a 1 s limit while the suite's
-     own load was near 3.5 (`eval-history.md`, "Release run 5.1.0"). It measures CPU time, not wall
-     clock, so the machine's load cannot fail it. This needs no model.
+  2. **The `briefing` timing check: fixed in Sprint 29, not here** (S29-T1, commit `18e0596`;
+     recorded 2026-11-18). It read 1.02 s on a 1 s limit while the suite's own load was near 3.5
+     (`eval-history.md`, "Release run 5.1.0"), and it failed the first model-free run of Sprint 29
+     the same way: 1.0 s on three tries on a busy machine. Left for this sprint it would have
+     failed every free run of Sprints 29 and 30. It now measures CPU time, not wall clock, so the
+     machine's load cannot fail it. What stays here is this task's done-when, the five passes
+     under load. The margin is thin: 0.75 to 0.85 s of CPU against the 1 s limit
+     (`.shipkit/specs/honest-evidence/tasks.md`, "Found on the way").
   3. **What the records already say** about the other four is collected in one note: `hello`'s
      failing runs "did not hold the pattern" in the last message; `intake/limit`'s grader counts a
      question with parts as several ("Release run 4.7.0"); and each recorded failure of the
