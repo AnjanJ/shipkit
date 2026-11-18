@@ -107,15 +107,6 @@ CITES="$TMP.cites"
 LOCS="$TMP.locs"
 trap 'rm -f "$TMP" "$CITES" "$LOCS" "$TMP.cnt" "$TMP.else" "$TMP.skip"' EXIT
 
-# spec_status <spec.md> → draft | open | shipped | dropped  (anything else, or no line: open)
-spec_status() {
-  _s=$(sed -n 's/^> *Status: *\([a-z]*\).*/\1/p' "$1" | sed -n 1p)
-  case "$_s" in
-    draft|open|shipped|dropped) echo "$_s" ;;
-    *) echo open ;;
-  esac
-}
-
 # task_findings <slug> <tasks.md> → MISSING-FIELD / BAD-AFTER / CONFLICT / CYCLE lines
 task_findings() {
   awk -v slug="$1" '
@@ -168,20 +159,22 @@ task_findings() {
   ' "$2"
 }
 
-# spec_reqs <spec.md> <tasks.md> → one line per requirement, in order:
-#   "<N> R T"  required, mentioned in tasks.md      "<N> R -"  required, not mentioned
-#   "<N> W T"  waived (and mentioned)               "<N> W -"  waived, not mentioned
-# One awk over both files, rather than a grep per requirement: the briefing runs this on
-# every session start, and fifty specs must come back in well under a second.
+# spec_reqs <spec.md> <tasks.md> <slug> <citations file> → one line per requirement, in order:
+#   "<N> R T C"  required, mentioned in tasks.md, cited   "<N> R - -"  required, not mentioned, not cited
+#   "<N> W T -"  waived (and mentioned)                   (any of the three marks in any mix)
+# One awk over both files, and the citations read inside it, rather than a grep per
+# requirement: the briefing runs this on every session start, and fifty specs must come back
+# in well under a second (numbers-as-data/REQ-16; the output is unchanged, REQ-17).
 spec_reqs() {
-  awk '
+  awk -v slug="$3" -v cf="$4" '
+    BEGIN { pre = slug "/REQ-"; while ((getline l < cf) > 0) if (index(l, pre) == 1) cit[substr(l, length(pre) + 1)] = 1; close(cf) }
     function flush() { if (n != "" && !(n in seen)) { seen[n] = 1; order[++count] = n; kind[n] = (w ? "W" : "R") } n = ""; w = 0 }
     FNR == 1 { file++ }
     file == 1 && (/^[ \t]*$/ || /^#/) { flush(); next }
     file == 1 && /\*\*REQ-[0-9]+/ { flush(); match($0, /\*\*REQ-[0-9]+/); n = substr($0, RSTART + 6, RLENGTH - 6) }
     file == 1 && n != "" && /\[untested:/ { w = 1 }
     file == 2 { t = $0; while (match(t, /REQ-[0-9]+/)) { mentioned[substr(t, RSTART + 4, RLENGTH - 4)] = 1; t = substr(t, RSTART + RLENGTH) } }
-    END { flush(); for (i = 1; i <= count; i++) print order[i], kind[order[i]], (order[i] in mentioned ? "T" : "-") }
+    END { flush(); for (i = 1; i <= count; i++) print order[i], kind[order[i]], (order[i] in mentioned ? "T" : "-"), (order[i] in cit ? "C" : "-") }
   ' "$1" "$2"
 }
 
@@ -204,13 +197,6 @@ collect_cites() {
   cut -f3 "$LOCS" | sort -u > "$CITES"
 }
 collect_cites
-
-# cited <slug> <N> → exit 0 if a file that counts as a test cites <slug>/REQ-N (whole token:
-# alpha/REQ-1 is not satisfied by alpha/REQ-10 or beta/REQ-1). $SPEC_CITES is $CITES, or for a
-# spec with a "> Tests:" line the citations found under its paths.
-cited() {
-  grep -q -x -F "$1/REQ-$2" "$SPEC_CITES"
-}
 
 # under(f): is the file one of the Tests paths, or under one that is a folder (written with or
 # without its last slash)? The paths come in through the environment, one a line: BSD awk
@@ -306,17 +292,26 @@ for spec in "$SPECS"/*/spec.md; do
   dir=${spec%/spec.md}
   slug=${dir##*/}
   [ -z "$ONLY" ] || [ "$slug" = "$ONLY" ] || continue
-  status=$(spec_status "$spec")
+  # One sed for the status and for whether a Status line is there at all ("=word", "=", or
+  # nothing), in place of two sed and a grep (numbers-as-data/REQ-16).
+  st_raw=$(sed -n '/^> *Status:/{s/^> *Status: *\([a-z]*\).*/=\1/p;q;}' "$spec")
+  case "${st_raw#=}" in
+    draft|open|shipped|dropped) status=${st_raw#=} ;;
+    *) status=open ;;
+  esac
   [ "$AS_OPEN" -eq 1 ] && [ "$status" = draft ] && status=open   # harness-debts/REQ-1
   case "$status" in
     draft|dropped) echo "SKIPPED $slug ($status)"; continue ;;
   esac
   checked=$((checked + 1))
+  # design.md, then tasks.md: grep -l prints in the order of its arguments, so one grep does
+  # what one a file did
+  stray=$(grep -l '^> *Status:' "$dir/design.md" "$dir/tasks.md" 2>/dev/null)
   for f in design.md tasks.md; do
-    if [ -f "$dir/$f" ] && grep -q '^> *Status:' "$dir/$f"; then
-      echo "STRAY-STATUS $slug $f"
-      gaps=$((gaps + 1))
-    fi
+    case "
+$stray
+" in *"/$f
+"*) echo "STRAY-STATUS $slug $f"; gaps=$((gaps + 1)) ;; esac
   done
   # A "> Tests: a/, b/c.sh" line narrows where this spec's citations count; none: as before.
   SPEC_CITES=$CITES; has_tests=0; tests=""
@@ -326,9 +321,9 @@ for spec in "$SPECS"/*/spec.md; do
     tests_filter "$slug" "$tests" > "$TMP.else"
     SPEC_CITES="$TMP.cnt"
   fi
-  if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" > "$TMP"; else spec_reqs "$spec" /dev/null > "$TMP"; fi
+  if [ -f "$dir/tasks.md" ]; then spec_reqs "$spec" "$dir/tasks.md" "$slug" "$SPEC_CITES" > "$TMP"; else spec_reqs "$spec" /dev/null "$slug" "$SPEC_CITES" > "$TMP"; fi
   ev_t=0; ev_w=0; ev_u=0   # honest-evidence/REQ-12: tested, waived, uncited
-  while read -r n kind mentioned; do
+  while read -r n kind mentioned cit; do
     [ -n "$n" ] || continue
     if [ "$kind" = W ]; then
       echo "WAIVED $slug REQ-$n"
@@ -339,7 +334,7 @@ for spec in "$SPECS"/*/spec.md; do
       echo "MISSING-TASK $slug REQ-$n"
       gaps=$((gaps + 1))
     fi
-    if cited "$slug" "$n"; then
+    if [ "$cit" = C ]; then
       ev_t=$((ev_t + 1))
     elif [ "$status" = shipped ] || [ "$AS_SHIPPED" -eq 1 ]; then
       echo "MISSING-TEST $slug REQ-$n"
@@ -355,7 +350,7 @@ for spec in "$SPECS"/*/spec.md; do
   [ "$has_tests" -eq 1 ] && cat "$TMP.else"
   # SKIPPED-CITE lines: information too (REQ-20). No process is spent when nothing was found.
   [ -s "$TMP.skip" ] && skipped_lines "$slug" "$has_tests" "$tests"
-  if [ "$status" = open ] && grep -q '^> *Status:' "$spec" && [ -f "$dir/tasks.md" ]; then
+  if [ "$status" = open ] && [ -n "$st_raw" ] && [ -f "$dir/tasks.md" ]; then
     task_findings "$slug" "$dir/tasks.md" > "$TMP"
     if [ -s "$TMP" ]; then
       cat "$TMP"

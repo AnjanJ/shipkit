@@ -170,6 +170,7 @@ registry() { cat <<'EOF'
 109 judge
 110 eval-ledger
 111 ledger-backfill
+112 briefing-cost
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4265,6 +4266,82 @@ lb_q=$(sh "$ROOT/scripts/evals-ledger.sh" --below-full 2 2>&1 | tr '\n' '|')
 [ "$lb_q" = "hello|" ] || lb_fail="$lb_fail [--below-full 2 on the ledger: $lb_q]"
 if [ -z "$lb_fail" ]; then pass "ledger-backfill (5.2.0: 65 rows from its result file; 5.1.0: 65 cases and 227 runs from its page and 073938c, three at 2 of 3; below full in both: hello)"
 else failc "ledger-backfill" "$lb_fail"; fi
+
+# 112. briefing-cost: the briefing starts fewer processes, and spec-check.sh says exactly what
+# it said before. The briefing runs spec-check.sh at every session start for one number, and on
+# fifty open specs that cost 0.82 s of CPU here and up to 1.53 s on CI's runner, against check
+# 30's one second. This check holds spec-check.sh to the script at 398d1c9 (taken with git
+# show), line for line and exit for exit, on check 30's fixture, on a fixture with every kind
+# of line spec-check prints, and on this repository, for the whole project and for one spec,
+# with --as-open and --as-shipped; reads the briefing's gap line against spec-check's count;
+# and times the briefing on fifty specs against half a second of CPU, best of three (printed,
+# not failed, under SMOKE_TIMING=report, as check 30 is). No claude needed.
+# Cites: numbers-as-data/REQ-15 numbers-as-data/REQ-16 numbers-as-data/REQ-17
+BK="$WORK/bcost"; mkdir -p "$BK"; bk_fail=""
+git -C "$ROOT" show 398d1c9:plugins/shipkit/scripts/spec-check.sh > "$BK/old.sh" 2>/dev/null || bk_fail="$bk_fail [git show 398d1c9 failed]"
+BKN="$COPY/scripts/spec-check.sh"
+bk_same() {  # bk_same <project> <label> [args…] → both scripts, same lines and exit
+  _p=$1; _l=$2; shift 2
+  (cd "$_p" && sh "$BK/old.sh" . "$@") > "$BK/o.out" 2>&1; _o=$?
+  (cd "$_p" && sh "$BKN" . "$@") > "$BK/n.out" 2>&1; _n=$?
+  if [ "$_o" -ne "$_n" ] || ! cmp -s "$BK/o.out" "$BK/n.out"; then
+    bk_fail="$bk_fail [$_l $*: exit $_o then $_n; first difference: $(diff "$BK/o.out" "$BK/n.out" | sed -n '2,3p' | tr '\n' '|' | cut -c1-200)]"
+  fi
+}
+# a. check 30's fixture: fifty open specs
+BK50="$BK/fifty"; mkdir -p "$BK50"; (cd "$BK50" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+i=1; while [ "$i" -le 50 ]; do bspec "$BK50" "spec-$i-with-a-rather-long-name-to-fill-the-line" open 1 4; i=$((i + 1)); done
+bk_same "$BK50" fifty
+bk_same "$BK50" fifty spec-7-with-a-rather-long-name-to-fill-the-line
+# b. every kind of line: missing task, missing field, a bad After, a conflict, a cycle, a stray
+# Status, a waiver, a pending and a missing test, a draft and a dropped spec, a spec with no
+# Status line, a Tests line with a citation elsewhere, a citation beside a skip marker
+BKG="$BK/gaps"; mkdir -p "$BKG/t" "$BKG/x"; (cd "$BKG" && git init -q)
+bkspec() {  # bkspec <slug> <status|none> <extra spec lines> <tasks text>
+  mkdir -p "$BKG/.shipkit/specs/$1"
+  { printf '# Spec: %s\n\n' "$1"; [ "$2" = none ] || printf '> Status: %s\n' "$2"; printf '%b' "$3"
+    printf '\n- **REQ-1.** It shall one.\n- **REQ-2.** It shall two. [untested: prose]\n- **REQ-3.** It shall three.\n'; } > "$BKG/.shipkit/specs/$1/spec.md"
+  printf '%b' "$4" > "$BKG/.shipkit/specs/$1/tasks.md"
+}
+BKT='- [x] **T1** One → REQ-1, REQ-2\n  - Files: a.py\n  - Test: t\n  - After: none\n  - Done when: x\n- [ ] **T2** Three → REQ-3\n  - Files: a.py\n  - Test: t\n  - After: T1\n  - Done when: x\n'
+bkspec alpha open '' "$BKT"
+bkspec beta open '' '- [ ] **T1** One → REQ-1\n  - Files: a.py\n  - After: T9\n  - Done when: x\n- [ ] **T2** Two → REQ-2\n  - Files: a.py\n  - Test: t\n  - After: T3\n  - Done when: x\n- [ ] **T3** Three → REQ-2\n  - Files: b.py\n  - Test: t\n  - After: T2\n  - Done when: x\n'
+bkspec gamma shipped '> Paths: x/\n> Tests: t/\n' "$BKT"
+bkspec delta draft '' "$BKT"; bkspec epsilon dropped '' "$BKT"; bkspec zeta none '' "$BKT"
+printf '> Status: open\n' >> "$BKG/.shipkit/specs/alpha/tasks.md"
+printf '# Design\n\n> Status: open\n' > "$BKG/.shipkit/specs/beta/design.md"
+bkspec eta Shipped '' "$BKT"   # a Status word spec-check does not know: read as open, the line is there
+printf '# alpha/REQ-1 gamma/REQ-1\n' > "$BKG/x/elsewhere.py"
+printf 'it.skip("x", () => {\n  // gamma/REQ-3\n})\n' > "$BKG/t/skip.test.js"
+(cd "$BKG" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m fixture)
+bk_same "$BKG" gaps
+bk_same "$BKG" gaps --as-open
+bk_same "$BKG" gaps beta
+bk_same "$BKG" gaps gamma --as-shipped
+bk_same "$BKG" gaps delta --as-open
+bk_same "$BKG" gaps nosuch
+mkdir -p "$BK/with space" && cp -R "$BKG" "$BK/with space/gaps"
+bk_same "$BK/with space/gaps" 'a path with a space'
+# c. this repository
+bk_same "$ROOT" repo
+bk_same "$ROOT" repo numbers-as-data --as-shipped
+# d. the briefing's gap line is spec-check's count
+bk_g=$(cd "$BKG" && sh "$BKN" . 2>/dev/null | sed -n 's/^spec-check: .* checked, \([0-9]*\) gap(s)$/\1/p')
+bk_b=$(cd "$BKG" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-check:')
+[ -n "$bk_g" ] && [ "$bk_g" -gt 0 ] && [ "$bk_b" = "shipkit: spec-check: $bk_g gap(s) — run spec-check.sh" ] \
+  || bk_fail="$bk_fail [d: spec-check counts '$bk_g', the briefing printed '$bk_b']"
+[ -z "$(cd "$BK50" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-check:')" ] || bk_fail="$bk_fail [d: a gap line on fifty specs with no gap]"
+# e. the briefing on fifty specs, best of three, against half a second of CPU
+bk_t=9; bk_i=0
+while [ "$bk_i" -lt 3 ]; do
+  bk_i=$((bk_i + 1))
+  bk_one=$(python3 -c "import os,subprocess; a=os.times(); subprocess.run(['sh','$COPY/scripts/briefing.sh'],cwd='$BK50',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); b=os.times(); print(round((b.children_user-a.children_user)+(b.children_system-a.children_system),2))")
+  bk_t=$(awk -v a="$bk_t" -v b="$bk_one" 'BEGIN { print (b + 0 < a + 0) ? b : a }')
+done
+bk_slow=$(awk -v t="$bk_t" 'BEGIN { print (t + 0 > 0.5) ? 1 : 0 }')
+if [ -z "$bk_fail" ] && [ "$bk_slow" -eq 0 ]; then pass "briefing-cost (spec-check.sh prints what it printed at 398d1c9 on fifty specs, every kind of line and this repository; the briefing's gap line is its count; fifty specs in ${bk_t}s of CPU, best of 3)"
+elif [ -z "$bk_fail" ] && [ "${SMOKE_TIMING:-}" = report ]; then pass "briefing-cost (output unchanged, gap line matches; fifty specs in ${bk_t}s of CPU, best of 3, over 0.5 s: reported, not enforced, SMOKE_TIMING=report)"
+else failc "briefing-cost" "$bk_fail [fifty specs: ${bk_t}s of CPU, best of 3, want ≤ 0.5]"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
