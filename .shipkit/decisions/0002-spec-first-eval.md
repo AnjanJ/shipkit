@@ -73,4 +73,4 @@ drops below three of three in any release run (the gate costing a turn on trivia
 if a user reports being asked for a yes on work they called trivial. We would reopen the
 question — as the plan's clause put it — if a user reports building without a spec after
 asking for one.
-**Fired-if.** manual
+**Fired-if.** `l=$(sh scripts/evals-ledger.sh --rate rules-nontrivial --last 1) && t=$(sh scripts/evals-ledger.sh --rate rules-nontrivial --last 2) && v=$(sh scripts/evals-ledger.sh --rate rules-trivial --last 1) || exit 2; printf '%s\n%s\n%s\n' "$l" "$t" "$v" | awk '{ split($2, a, "/"); p[NR] = a[1]; r[NR] = a[2]; m[NR] = $4 } END { q = p[2] - p[1]; s = r[2] - r[1]; two = (m[2] == 2 && p[1] * 3 < 2 * r[1] && q * 3 < 2 * s); exit !(two || (r[3] > 0 && p[3] < r[3])) }'` <!-- covers: rules-nontrivial below 2 of 3 in the last two release runs, or rules-trivial below full in the last; a user's report is read by a person -->

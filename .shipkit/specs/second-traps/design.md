@@ -117,7 +117,7 @@ may probe this very line, in which case T3 runs it too.
 **Decision.** We chose (1), C10's default.
 **Falsifiability.** We would revert to (2) if `stacks-gemfile` or `trap2/gemfile` drops below
 2 of 3 with the new text.
-**Fired-if.** manual
+**Fired-if.** `o0=$(sh scripts/evals-ledger.sh --rate stacks-gemfile --last 1) && o1=$(sh scripts/evals-ledger.sh --rate trap2-gemfile --last 1) || exit 2; printf '%s\n%s\n' "$o0" "$o1" | awk '{ split($2, a, "/") } a[2] > 0 && a[1] * 3 < 2 * a[2] { f = 1 } END { exit !f }'` <!-- covers: either case below 2 of 3 in the last release run -->
 
 ---
 

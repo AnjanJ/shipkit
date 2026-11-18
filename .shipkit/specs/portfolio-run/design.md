@@ -126,4 +126,4 @@ whose answers the first measurement will already have given; a suite that only g
 **Falsifiability.** We would move to (2) if a release run passes $25 or if two consecutive
 release runs change no count from the run before — then the full run is a receipt, not a
 measurement.
-**Fired-if.** manual
+**Fired-if.** `o=$(sh scripts/evals-ledger.sh --runs --last 1) || exit 2; printf '%s\n' "$o" | awk '$5 != "-" && $5 + 0 > 25 { f = 1 } END { exit !f }'` <!-- covers: the last release run above $25; two runs with every count unchanged is read by a person -->

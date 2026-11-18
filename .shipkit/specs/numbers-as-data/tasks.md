@@ -41,11 +41,12 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - Test: scripts/smoke.sh check 114 (`eval-room`): the moved text equals the README's at `398d1c9` word for word under its dated line; the README keeps `## Cases` with one line naming the new file; the evals folder is at most 190,800 bytes; checks 54, 57 and 58 still pass
   - After: T5
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 54, 57, 58 and 114 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
-- [ ] **T7** Eleven reversal conditions read the ledger → REQ-29, REQ-30
-  - Files: .shipkit/decisions/0002-spec-first-eval.md, .shipkit/specs/always-on/design.md, .shipkit/specs/decisions-bind/design.md, .shipkit/specs/graders-and-eve/design.md, .shipkit/specs/measured-cuts/design.md, .shipkit/specs/overlays-and-eve/design.md, .shipkit/specs/portfolio-run/design.md, .shipkit/specs/rule-evals/design.md, .shipkit/specs/second-traps/design.md, scripts/smoke.sh
+- [x] **T7** Eleven reversal conditions read the ledger → REQ-29, REQ-30
+  - Files: scripts/evals-ledger.sh, .shipkit/decisions/0002-spec-first-eval.md, .shipkit/specs/always-on/design.md, .shipkit/specs/decisions-bind/design.md, .shipkit/specs/graders-and-eve/design.md, .shipkit/specs/measured-cuts/design.md, .shipkit/specs/overlays-and-eve/design.md, .shipkit/specs/portfolio-run/design.md, .shipkit/specs/rule-evals/design.md, .shipkit/specs/second-traps/design.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 115 (`ledger-fired-if`): `decision-check.sh . --run` on this repository prints `HOLDS` for each of the eleven records of `design.md`'s table and no `ERROR`; on a scratch copy whose ledger is seeded past each clause, each reads `FIRED`; on one whose ledger is unreadable, each reads `ERROR`
   - After: T6
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 115 `PASS`, exit 0; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
+  - Note (2026-11-18): `scripts/evals-ledger.sh` was added to Files. Check 115 showed a ledger that cannot be read gave decision 0002 `HOLDS`: the queries ended in a pipe to `sort` or `cat`, whose status hid awk's failure. The queries now exit 2 on a ledger they cannot read and on an awk failure, so a command built on them reads `ERROR`.
 - [ ] **T8** CI enforces the briefing's limit again → REQ-18
   - Files: .github/workflows/lint.yml, scripts/smoke.sh, .shipkit/specs/honest-evidence/spec.md
   - Test: scripts/smoke.sh check 105 (`timing-switch`), changed: the `smoke-no-model` job does not set `SMOKE_TIMING`, and the switch still works when set by hand

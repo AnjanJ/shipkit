@@ -26,7 +26,8 @@
 #
 # EVALS_LEDGER names another ledger (the smoke checks use a scratch one). append needs
 # python3, to read JSON; the queries need sh and awk only, since Fired-if commands run them.
-# Exit status: 0; 1 when append finds no result file or cannot write; 2 on usage.
+# Exit status: 0; 1 when append finds no result file or cannot write; 2 on usage, or when a
+# query cannot read the ledger.
 # Spec: .shipkit/specs/numbers-as-data/ (REQ-1 to REQ-7, REQ-33).
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -118,9 +119,12 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-[ -f "$LEDGER" ] || exit 0
+[ -e "$LEDGER" ] || exit 0   # no ledger yet: nothing to answer
+# A ledger that is there and cannot be read is an error, never an empty answer: a Fired-if
+# command built on these queries must read ERROR then, not HOLDS (numbers-as-data, design).
+[ -f "$LEDGER" ] && [ -r "$LEDGER" ] || { echo "evals-ledger: cannot read $LEDGER" >&2; exit 2; }
 
-awk -F '\t' -v mode="$MODE" -v arg="$ARG" -v last="$LAST" -v prefix="$PREFIX" '
+ans=$(awk -F '\t' -v mode="$MODE" -v arg="$ARG" -v last="$LAST" -v prefix="$PREFIX" '
   NR == 1 || NF != 12 || $12 == "partial" { next }
   {
     id = $1 SUBSEP $3
@@ -158,4 +162,6 @@ awk -F '\t' -v mode="$MODE" -v arg="$ARG" -v last="$LAST" -v prefix="$PREFIX" '
       }
       printf "%s %s %d %d/%d %s\n", rdate[id], rcommit[id], n, sp, sr, (unknown ? "-" : sprintf("%.2f", cost))
     }
-  }' "$LEDGER" | { if [ "$MODE" = --below-full ]; then sort; else cat; fi; }
+  }' "$LEDGER") || { echo "evals-ledger: awk failed on $LEDGER" >&2; exit 2; }
+[ -n "$ans" ] || exit 0
+if [ "$MODE" = --below-full ]; then printf '%s\n' "$ans" | sort; else printf '%s\n' "$ans"; fi

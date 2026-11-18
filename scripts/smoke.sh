@@ -173,6 +173,7 @@ registry() { cat <<'EOF'
 112 briefing-cost
 113 evals-for-diff
 114 eval-room
+115 ledger-fired-if
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4435,6 +4436,44 @@ er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in p
 [ "$er_bytes" -le 190800 ] || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 190,800]"
 if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
 else failc "eval-room" "$er_fail"; fi
+
+# 115. ledger-fired-if: a reversal condition about an eval count is a command. Eleven records
+# (numbers-as-data/design.md, the table) carry a Fired-if command that reads the ledger. On
+# this repository each reads HOLDS. On a scratch copy whose ledger is seeded past every clause
+# each reads FIRED, and on one whose ledger cannot be read each reads ERROR, never HOLDS. No
+# claude needed. Cites: numbers-as-data/REQ-29 numbers-as-data/REQ-30
+LF="$WORK/lfired"; mkdir -p "$LF"; lf_fail=""
+lf_recs=".shipkit/decisions/0002-spec-first-eval.md|.shipkit/specs/always-on/design.md (The Care lines move only by their number)|.shipkit/specs/decisions-bind/design.md (A contradicted decision fails through the reviewer's verdict)|.shipkit/specs/graders-and-eve/design.md (The release run accepts a fifty-ninth case)|.shipkit/specs/measured-cuts/design.md (The intake's assumption names its file; the four-question ceiling counts parts)|.shipkit/specs/overlays-and-eve/design.md (\`eve.md\` ships at the measured size, not the audit's estimate)|.shipkit/specs/portfolio-run/design.md (The release run grows to 58 cases, every case every release)|.shipkit/specs/rule-evals/design.md (One case per rule file, eighteen of them)|.shipkit/specs/rule-evals/design.md (\`--group\` exists; the release run still runs everything)|.shipkit/specs/rule-evals/design.md (The stopping rule for \`rules/nontrivial\`)|.shipkit/specs/second-traps/design.md (The Gemfile line is reworded on the 4.2.0 measurement)"
+lf_read() {  # lf_read <project> <word> → each of the eleven read as <word>, or a note of the first that did not
+  sh "$COPY/scripts/decision-check.sh" "$1" --run > "$LF/dc.out" 2>&1
+  printf '%s\n' "$lf_recs" | tr '|' '\n' | while IFS= read -r r; do
+    grep -q -F "$2 $r:" "$LF/dc.out" 2>/dev/null || grep -q -F "$2  $r:" "$LF/dc.out" 2>/dev/null || grep -q -F "$2 $r (" "$LF/dc.out" 2>/dev/null || { echo "$r"; break; }
+  done
+}
+lf_miss=$(lf_read "$ROOT" HOLDS)
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [this repository: not HOLDS: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-160)]"
+grep -q '^ERROR' "$LF/dc.out" && lf_fail="$lf_fail [this repository: an ERROR line: $(grep '^ERROR' "$LF/dc.out" | head -1 | cut -c1-160)]"
+# a copy with the records, the ledger script and a ledger seeded past every clause
+LFC="$LF/copy"; mkdir -p "$LFC/scripts" "$LFC/docs/design"
+cp -R "$ROOT/.shipkit" "$LFC/.shipkit"; cp "$ROOT/scripts/evals-ledger.sh" "$LFC/scripts/"
+{ printf 'date\tversion\tcommit\tclaude\tmodel\tcase\tset\tpassed\truns\tthreshold\tcost\tsource\n'
+  for r in 2026-01-01:z 2026-02-01:a 2026-03-01:b; do d=${r%%:*}; c=${r#*:}
+    printf '%s\t9\t%s\t-\tsonnet\trules-nontrivial\ttune\t0\t3\t0.6\t0.10\trelease\n' "$d" "$c"
+  done
+  for k in rules-care:1:3:0.10 reviewer-decision-unbuilt:2:3:0.10 intake-limit:1:3:0.10 eve-x:3:3:1.00 scoped-x:3:3:11.00 stacks-gemfile:1:3:0.10 big:3:3:30.00; do
+    IFS=: read -r n p r c <<LFEOF
+$k
+LFEOF
+    printf '2026-03-01\t9\tb\t-\tsonnet\t%s\ttune\t%s\t%s\t0.6\t%s\trelease\n' "$n" "$p" "$r" "$c"
+  done; } > "$LFC/docs/design/eval-ledger.tsv"
+lf_miss=$(lf_read "$LFC" FIRED)
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [seeded past every clause: not FIRED: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
+chmod 000 "$LFC/docs/design/eval-ledger.tsv"
+lf_miss=$(lf_read "$LFC" ERROR)
+chmod 644 "$LFC/docs/design/eval-ledger.tsv"
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [an unreadable ledger: not ERROR: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
+if [ -z "$lf_fail" ]; then pass "ledger-fired-if (eleven reversal conditions read the ledger: HOLDS here, FIRED on a ledger past each clause, ERROR on one that cannot be read)"
+else failc "ledger-fired-if" "$lf_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
