@@ -146,6 +146,9 @@ if [ "$n_dirty" -eq 0 ] || [ "$FORCE" -eq 1 ]; then
   # setup-files.sh's record sits beside the manifest, outside it (it is written after setup's
   # last write to CLAUDE.md); it goes with the manifest (gate-on-setup/REQ-12)
   rm -f "$PROJ/.claude/rules/shipkit/.setup-files" 2>/dev/null
+  # ...and so does the recorded test command, which test-command.sh keeps there for the same
+  # reason: it is rewritten after setup, so the manifest cannot own it (gate-as-software/REQ-4)
+  rm -f "$PROJ/.claude/rules/shipkit/.test-command" 2>/dev/null
   rmdir "$PROJ/.claude/rules/shipkit" 2>/dev/null || true
   rmdir "$PROJ/.claude/rules" 2>/dev/null || true
   echo "unsetup-remove: removed $removed file(s), including the manifest."

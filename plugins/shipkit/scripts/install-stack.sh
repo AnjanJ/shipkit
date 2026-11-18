@@ -56,7 +56,7 @@ NONINTERACTIVE="${SHIPKIT_NONINTERACTIVE:-0}"
 # --- collect substitutions: KEY=value → a sed script -------------------------------------
 SEDSCRIPT=$(mktemp "${TMPDIR:-/tmp}/shipkit.XXXXXX") || die "mktemp failed"
 trap 'rm -f "$SEDSCRIPT"' EXIT
-FRAMEWORK=""; ASYNC=""
+FRAMEWORK=""; ASYNC=""; TESTCMD=""
 for kv in "$@"; do
   case "$kv" in
     *=*) ;;
@@ -75,6 +75,7 @@ for kv in "$@"; do
   esc=$(printf '%s' "$val" | sed 's/[\\&#]/\\&/g')
   printf 's#{{%s}}#%s#g\n' "$key" "$esc" >> "$SEDSCRIPT"
   [ "$key" = PYTHON_FRAMEWORK ] && FRAMEWORK=$val
+  [ "$key" = TEST_COMMAND ] && TESTCMD=$val
   [ "$key" = ASYNC_MODE ] && ASYNC=$val
 done
 
@@ -332,6 +333,15 @@ if [ "$HAVE_MANIFEST" = "1" ] && [ -f "$(manifest_path "$PROJ")" ] && ! manifest
       note "manifest updated ($added file(s) now owned under stack '$STACK')"
     fi
   fi
+fi
+
+# --- record the test command ------------------------------------------------------------
+# Only here, after everything above succeeded: a failed install has exited already and leaves
+# an earlier record alone, and so does an overlay that takes no TEST_COMMAND. The record sits
+# beside the manifest and outside it (gate-as-software/REQ-2, REQ-3; test-command.sh).
+if [ -n "$TESTCMD" ] && [ -f "$ROOT/scripts/test-command.sh" ]; then
+  sh "$ROOT/scripts/test-command.sh" "$PROJ" --record "$TESTCMD" \
+    || echo "install-stack: warning: the test command was not recorded" >&2
 fi
 
 echo "install-stack: installed stack '$STACK' into $PROJ:$WRITTEN"

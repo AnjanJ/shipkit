@@ -718,6 +718,32 @@ command, its exit code, the last lines of its output, and the reviewer's whole r
 merges, tags or edits code; on `NOT READY` it lists what to fix and stops. Playbook 4 shows a
 real `NOT READY` report.
 
+**The gate's commands, as scripts.** Three scripts do what the gate's command steps do, without
+a model. The skill does not call them yet; you can run them yourself.
+
+```sh
+sh "<plugin root>/scripts/test-command.sh" .                     # the test command setup recorded
+sh "<plugin root>/scripts/ship-check.sh" . refunds               # steps 1, 2, 3, 7, 8 and step 5's list
+sh "<plugin root>/scripts/ship-check.sh" --clean <scratch-dir>   # remove the directory it printed
+sh "<plugin root>/scripts/release-check.sh" .                    # shipped specs against their reports
+```
+
+- `test-command.sh` prints the project's test command from `.claude/rules/shipkit/.test-command`,
+  which setup's stack installer writes and `/shipkit:setup remove` deletes. With no record it
+  says `no test command recorded; run /shipkit:setup, or pass one` and exits 1. It never reads
+  `CLAUDE.md`. `--record '<command>'` writes the record by hand.
+- `ship-check.sh <project> <slug> [base] [--test '<command>']` prints a scratch directory of its
+  own first, then one line per step, `<n> PASS`, `<n> FAIL` or `<n> NEEDS-READING`, in the order
+  1 2 3 5 7 8. The evidence, a block per step with the command, its exit code, the last twenty
+  lines of output and a `result:` line, is in `evidence.md` there. Step 5 is `NEEDS-READING` when
+  the diff has a migration: whether each one can be rolled back is still yours to judge. It exits
+  1 when any step is `FAIL`.
+- `release-check.sh <project>` prints, for each shipped spec, `NO-REPORT <slug>` (no `READY`
+  report), `ORPHAN-REPORT <slug>` (the report's commit is not in the history) or
+  `CHANGED-AFTER-GATE <slug> <n>` (n commits touched its `Paths` after the report and before the
+  commit that called it shipped), then `release-check: <s> shipped spec(s), <f> finding(s)`. It
+  exits 0 whatever it prints; `--enforce` exits 1 on a finding.
+
 ### /shipkit:escape — A Bug Got Out. Which Link Broke?
 
 For a bug that reached users. It finds the spec that covers the broken code and names exactly
@@ -1606,4 +1632,4 @@ your specs and decisions are yours to keep.)
 
 5. **Stack-specific content needs /setup.** Skills, agents, the hook and the always-on rules work instantly. Path-scoped rules and stack-specific skills (like `/new-feature` for Rails) require running `/shipkit:setup` first.
 
-6. **Releasing shipkit itself** (for contributors): `./scripts/lint.sh` checks the files the plugin ships and runs in CI; `./scripts/smoke.sh` checks that Claude Code still behaves the way the plugin assumes (rules inject, the per-hook cap, the agent set, the install scripts) — it needs a logged-in `claude`, so run it locally before tagging. `./scripts/smoke.sh --no-model` leaves out the sixteen checks that start a model and needs no `claude`: it costs nothing, takes about a minute, and runs in CI on every pull request. `--only <n>[,<n>]` runs just the named ones of those sixteen (and every check that needs no model), and `--list` prints what a set of arguments would run without running it. A line printed as `PASS  [text]` is an assertion that only read the wording of a skill, an agent or a rule. With `SMOKE_TIMING=report` in the environment, as CI's job has it, the suite prints the briefing's fifty-spec time and does not fail on it: the one-second limit was set on one machine and a shared runner is slower.
+6. **Releasing shipkit itself** (for contributors): `./scripts/lint.sh` checks the files the plugin ships and runs in CI; `./scripts/smoke.sh` checks that Claude Code still behaves the way the plugin assumes (rules inject, the per-hook cap, the agent set, the install scripts) — it needs a logged-in `claude`, so run it locally before tagging. `./scripts/smoke.sh --no-model` leaves out the sixteen checks that start a model and needs no `claude`: it costs nothing, takes about a minute, and runs in CI on every pull request. `--only <n>[,<n>]` runs just the named ones of those sixteen (and every check that needs no model), and `--list` prints what a set of arguments would run without running it. A line printed as `PASS  [text]` is an assertion that only read the wording of a skill, an agent or a rule. `scripts/judge.sh <slug> <base>` prints the last tag and the headless `/shipkit:ship` command that loads the plugin from a worktree of that tag, so a branch that changes the gate is not judged by its own copy (decision 0007); `--yes` runs it, which starts a model, and removes the worktree after. CI also runs the last tag's `spec-check.sh` beside the branch's. With `SMOKE_TIMING=report` in the environment, as CI's job has it, the suite prints the briefing's fifty-spec time and does not fail on it: the one-second limit was set on one machine and a shared runner is slower.
