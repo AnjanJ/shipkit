@@ -164,6 +164,7 @@ registry() { cat <<'EOF'
 103 spec-edited
 104 text-label
 105 timing-switch
+106 test-command
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3863,6 +3864,54 @@ ts_job=$(awk '/^  smoke-no-model:$/ { on = 1; next } on && /^  [a-z]/ { on = 0 }
 printf '%s\n' "$ts_job" | grep -q '^      SMOKE_TIMING: report$' || ts_fail="$ts_fail [lint.yml: the smoke-no-model job does not set SMOKE_TIMING to report]"
 if [ -z "$ts_fail" ]; then pass "timing-switch (SMOKE_TIMING=report: a slow fifty-spec briefing is printed, not failed; lines and bytes still fail; no switch, no change; CI's smoke job sets it)"
 else failc "timing-switch" "$ts_fail"; fi
+
+# 106. test-command: the project's test command is recorded once, by the installer, in
+# .claude/rules/shipkit/.test-command, and test-command.sh prints it. Nothing that needs the
+# command reads CLAUDE.md for it: on the 5.2 run a CLAUDE.md held two, and the one that exits 1
+# was copied into every Done-when. The record sits beside the manifest and outside it, as
+# .setup-files does, so rewriting it is not drift and removal takes it without --force
+# (gate-as-software/design.md, second record). No claude needed.
+# Cites: gate-as-software/REQ-2 gate-as-software/REQ-3 gate-as-software/REQ-4
+# gate-as-software/REQ-5 gate-as-software/REQ-6 gate-as-software/REQ-7 gate-as-software/REQ-8
+TC="$WORK/tc-proj"; mkdir -p "$TC"
+printf '# demo\n\n- **Test:** `mix test`\n\nBefore a commit run `MIX_ENV=test mix test`.\n' > "$TC/CLAUDE.md"
+TCS="$COPY/scripts/test-command.sh"; TCR="$TC/.claude/rules/shipkit/.test-command"; tc_fail=""
+tc_run() { tc_out=$(sh "$TCS" "$@" 2>"$WORK/tc.err"); tc_rc=$?; tc_err=$(cat "$WORK/tc.err"); }
+# no record: exit 1 and the message, though CLAUDE.md names two commands
+tc_run "$TC"
+[ "$tc_rc" -eq 1 ] && [ -z "$tc_out" ] && [ "$tc_err" = "no test command recorded; run /shipkit:setup, or pass one" ] \
+  || tc_fail="$tc_fail [no record: exit $tc_rc, printed '$tc_out', said '$tc_err']"
+# an install that is given TEST_COMMAND writes the record, one line
+sh "$COPY/scripts/install-rules.sh" "$COPY" "$TC" >/dev/null 2>&1
+sh "$COPY/scripts/install-stack.sh" "$COPY" rails "$TC" TEST_COMMAND="bundle exec rspec" TEST_FRAMEWORK=RSpec DATABASE=PostgreSQL RAILS_ARCHITECTURE=MVC API_MODE=no FRONTEND=Hotwire >/dev/null 2>&1 \
+  || tc_fail="$tc_fail [the rails install exited non-zero]"
+[ "$(cat "$TCR" 2>/dev/null)" = "bundle exec rspec" ] && [ "$(grep -c '' "$TCR" 2>/dev/null)" = 1 ] \
+  || tc_fail="$tc_fail [after an install with TEST_COMMAND the record holds '$(cat "$TCR" 2>/dev/null)']"
+# the script prints the record, not either of CLAUDE.md's commands
+tc_run "$TC"
+[ "$tc_rc" -eq 0 ] && [ "$tc_out" = "bundle exec rspec" ] || tc_fail="$tc_fail [with a record: exit $tc_rc, printed '$tc_out']"
+# a second overlay that takes no TEST_COMMAND leaves the record, and so does an install that fails
+sh "$COPY/scripts/install-stack.sh" "$COPY" oban "$TC" OBAN_QUEUES=default >/dev/null 2>&1 \
+  || tc_fail="$tc_fail [the oban install exited non-zero]"
+[ "$(cat "$TCR" 2>/dev/null)" = "bundle exec rspec" ] || tc_fail="$tc_fail [an install with no TEST_COMMAND changed the record to '$(cat "$TCR" 2>/dev/null)']"
+sh "$COPY/scripts/install-stack.sh" "$COPY" python "$TC" TEST_COMMAND=pytest >/dev/null 2>&1 \
+  && tc_fail="$tc_fail [the python install with a placeholder uncovered succeeded]"
+[ "$(cat "$TCR" 2>/dev/null)" = "bundle exec rspec" ] || tc_fail="$tc_fail [a failed install changed the record to '$(cat "$TCR" 2>/dev/null)']"
+# --record writes one line; an empty command is a usage error and writes nothing
+tc_run "$TC" --record 'MIX_ENV=test mise exec -- mix test'
+[ "$tc_rc" -eq 0 ] && [ "$(cat "$TCR" 2>/dev/null)" = "MIX_ENV=test mise exec -- mix test" ] && [ "$(grep -c '' "$TCR" 2>/dev/null)" = 1 ] \
+  || tc_fail="$tc_fail [--record: exit $tc_rc, the record holds '$(cat "$TCR" 2>/dev/null)']"
+tc_run "$TC" --record ''
+[ "$tc_rc" -eq 2 ] && [ "$(cat "$TCR" 2>/dev/null)" = "MIX_ENV=test mise exec -- mix test" ] \
+  || tc_fail="$tc_fail [--record with an empty command: exit $tc_rc, the record holds '$(cat "$TCR" 2>/dev/null)']"
+# the session hook says nothing new about a project that has the record
+tc_hook=$(cd "$TC" && git init -q 2>/dev/null; CLAUDE_PLUGIN_ROOT="$COPY" sh "$COPY/scripts/session-start.sh" 2>&1)
+case "$tc_hook" in *test-command*|*"run /shipkit:setup"*) tc_fail="$tc_fail [the hook speaks of the record or of a stale install: $(printf '%s' "$tc_hook" | grep -E 'test-command|shipkit:setup' | head -2 | tr '\n' '|')]";; esac
+# removal takes the record with the manifest, without --force
+sh "$COPY/scripts/unsetup-remove.sh" "$TC" --yes >/dev/null 2>&1
+[ ! -e "$TCR" ] && [ ! -e "$TC/.claude/rules/shipkit/.installed" ] || tc_fail="$tc_fail [after unsetup-remove --yes the record or the manifest is still there]"
+if [ -z "$tc_fail" ]; then pass "test-command (the installer records TEST_COMMAND; a later or failed install leaves it; the script prints it and never reads CLAUDE.md; no record → exit 1; --record; removal deletes it)"
+else failc "test-command" "$tc_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

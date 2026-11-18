@@ -12,7 +12,7 @@ holds the text each one applies.
   - Test: scripts/smoke.sh check 21 (`spec-drift-paths`), one more case: an open spec whose `> Paths:` is `tests/, notes.txt` and twenty commits that touch only those two paths; the hook's line must count twenty. It also cites `spec-contract/REQ-16`
   - After: none
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 21's new case `PASS`, exit 0
-- [ ] **T2** The test command is recorded once, and `test-command.sh` prints it → REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8
+- [x] **T2** The test command is recorded once, and `test-command.sh` prints it → REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8
   - Files: plugins/shipkit/scripts/test-command.sh, plugins/shipkit/scripts/install-stack.sh, plugins/shipkit/scripts/unsetup-remove.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 106 (`test-command`): an install with `TEST_COMMAND` writes the record; a second overlay without it leaves the record; the script prints the record beside a `CLAUDE.md` that names two other commands; no record is exit 1 with the message; `--record` writes one line; removal deletes the record
   - After: T1
