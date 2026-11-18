@@ -583,7 +583,7 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
-# --- 17. The eval budget: plugins/shipkit/evals/ stays under 192 KB ------------------
+# --- 17. The eval budget: plugins/shipkit/evals/ stays at most 204,800 bytes ------
 # Proves map-on-trial/REQ-7 and rule-evals/REQ-9. Decision A9 of the quality-gate plan set a
 # 100 KB ceiling in 3.2.0 and nothing enforced it; 4.1.0 added this check and generated the XL
 # fixture at scaffold time precisely to stay inside. 4.2.0 raised it to 128 KB with the

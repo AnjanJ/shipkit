@@ -36,7 +36,7 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - After: T4
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 113 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); `sh scripts/evals-for-diff.sh main` → the eleven cases whose fixture holds `.shipkit/`, and no other
   - Note (2026-11-18): the plan's done-when read "no case", written before the briefing's speed-up joined this sprint. T3 changed `briefing.sh` and `spec-check.sh`, whose lines the session hook prints in a fixture with a `.shipkit/` folder, so the map picks those eleven. None needs a run: check 112 holds `spec-check.sh`'s output byte for byte to `398d1c9`, so the text that reaches them did not change. `digest-attention` makes `.shipkit/` only in sub-projects, where the hook does not run, and is not picked. The rule cases list `inject-rule.sh`, which delivers their rule.
-- [ ] **T6** Two README sections move to `docs/design/eval-cases.md` → REQ-26, REQ-27, REQ-28
+- [x] **T6** Two README sections move to `docs/design/eval-cases.md` → REQ-26, REQ-27, REQ-28
   - Files: plugins/shipkit/evals/README.md, docs/design/eval-cases.md, scripts/lint.py, scripts/smoke.sh
   - Test: scripts/smoke.sh check 114 (`eval-room`): the moved text equals the README's at `398d1c9` word for word under its dated line; the README keeps `## Cases` with one line naming the new file; the evals folder is at most 190,800 bytes; checks 54, 57 and 58 still pass
   - After: T5

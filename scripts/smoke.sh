@@ -172,6 +172,7 @@ registry() { cat <<'EOF'
 111 ledger-backfill
 112 briefing-cost
 113 evals-for-diff
+114 eval-room
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4400,6 +4401,40 @@ printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*no row for the eval case hell
 sh -n "$FDS" 2>/dev/null || fd_fail="$fd_fail [sh -n reports a syntax error]"
 if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the four reviewer cases; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
 else failc "evals-for-diff" "$fd_fail"; fi
+
+# 114. eval-room: room for new cases without a raise of the ceiling. The evals README's case
+# table and its section on lib/with-rule.sh moved, word for word, to docs/design/eval-cases.md,
+# as earlier sprints moved readings to eval-history.md; the README keeps its "## Cases" heading,
+# which checks 54 and 57 read up to, with one line naming the new file. The folder is measured
+# as lint's check 17 measures it: the sum of its files' sizes. The moved text is compared with
+# the README at 398d1c9. No claude needed. (Decision 0005 stands: the evals stay in the plugin.)
+# Cites: numbers-as-data/REQ-26 numbers-as-data/REQ-27
+ER="$WORK/evroom"; mkdir -p "$ER"; er_fail=""; ERC="$ROOT/docs/design/eval-cases.md"
+git -C "$ROOT" show 398d1c9:plugins/shipkit/evals/README.md > "$ER/old.md" 2>/dev/null || er_fail="$er_fail [git show 398d1c9 failed]"
+sed -n '/^### A rule under test is installed by `lib\/with-rule.sh`/,/^### Path-scoped loading, measured/p' "$ER/old.md" | sed '$d' > "$ER/withrule.md"
+sed -n '/^## Cases$/,/^## The cuts (4.8.0)$/p' "$ER/old.md" | sed '1d;$d' > "$ER/cases.md"
+[ "$(grep -c . "$ER/withrule.md")" -gt 10 ] && [ "$(grep -c . "$ER/cases.md")" -gt 40 ] || er_fail="$er_fail [the two sections were not found at 398d1c9]"
+python3 - "$ERC" "$ER/withrule.md" "$ER/cases.md" > "$ER/py.out" 2>&1 <<'PY' || er_fail="$er_fail [$(cat "$ER/py.out")]"
+import sys
+doc = open(sys.argv[1]).read() if __import__("os").path.exists(sys.argv[1]) else ""
+for name, path in (("the with-rule.sh section", sys.argv[2]), ("the case table", sys.argv[3])):
+    block = open(path).read().strip("\n")
+    i = doc.find(block)
+    if i < 0:
+        print(f"{name} is not in eval-cases.md word for word"); sys.exit(1)
+    before = doc[:i].rstrip("\n").splitlines()
+    if not any(l.startswith("*Moved 2026-11-18") for l in before[-3:]):
+        print(f"{name} has no dated *Moved …* line above it"); sys.exit(1)
+PY
+er_now="$COPY/evals/README.md"
+er_under=$(sed -n '/^## Cases$/,/^## /p' "$er_now" | sed '1d;$d' | grep -v '^[[:space:]]*$')
+[ "$(printf '%s\n' "$er_under" | grep -c .)" = 1 ] && printf '%s\n' "$er_under" | grep -q 'docs/design/eval-cases\.md' \
+  || er_fail="$er_fail [under ## Cases the README has: $(printf '%s' "$er_under" | head -3 | tr '\n' '|' | cut -c1-200)]"
+grep -q '^### A rule under test is installed by' "$er_now" && er_fail="$er_fail [the with-rule.sh section is still in the README]"
+er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in pathlib.Path(sys.argv[1]).rglob('*') if p.is_file()))" "$ROOT/plugins/shipkit/evals")
+[ "$er_bytes" -le 190800 ] || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 190,800]"
+if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
+else failc "eval-room" "$er_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
