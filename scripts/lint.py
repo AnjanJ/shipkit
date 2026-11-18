@@ -526,7 +526,8 @@ for sp in sorted((CORE / "scripts").glob("*.sh")):
     for i, line in enumerate(sp.read_text(encoding="utf-8").splitlines(), 1):
         code = re.sub(r"(^|\s)#.*$", "", line)   # drop a comment; "$#" and "${#x}" have no space before #
         # command position only: start of a statement or inside $( … ), not the word in a string
-        if re.search(r"(^\s*|\$\(\s*|[;&|]\s*)mktemp\b(?!\s+[\"'$./])", code):
+        # `mktemp -d <template>` makes a directory and passes a template too (ship-check.sh)
+        if re.search(r"(^\s*|\$\(\s*|[;&|]\s*)mktemp\b(?!\s+(?:-d\s+)?[\"'$./])", code):
             err(sp, f"line {i}: bare `mktemp` ignores TMPDIR on macOS — pass a template: "
                     "mktemp \"${TMPDIR:-/tmp}/shipkit.XXXXXX\"")
 

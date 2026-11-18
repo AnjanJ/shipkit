@@ -165,6 +165,7 @@ registry() { cat <<'EOF'
 104 text-label
 105 timing-switch
 106 test-command
+107 ship-check
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3912,6 +3913,108 @@ sh "$COPY/scripts/unsetup-remove.sh" "$TC" --yes >/dev/null 2>&1
 [ ! -e "$TCR" ] && [ ! -e "$TC/.claude/rules/shipkit/.installed" ] || tc_fail="$tc_fail [after unsetup-remove --yes the record or the manifest is still there]"
 if [ -z "$tc_fail" ]; then pass "test-command (the installer records TEST_COMMAND; a later or failed install leaves it; the script prints it and never reads CLAUDE.md; no record → exit 1; --record; removal deletes it)"
 else failc "test-command" "$tc_fail"; fi
+
+# 107. ship-check: the gate's command steps, run by a command. ship-check.sh runs steps 1, 2, 3,
+# 7 and 8 of /shipkit:ship and lists step 5's migration files, and writes a block for each to
+# evidence.md in a scratch directory of its own: the exact command, its exit status, the last
+# twenty lines of its output and a result line. A step that is a command cannot then be
+# skipped or retyped (gate-as-software/design.md, first record). The fixture is the finished
+# feature check 29 gates; every run here has a stand-in claude first on the PATH, and the last
+# assertion is that it was never called. The ship skill does not call the script until
+# Sprint 35. No claude needed.
+# Cites: gate-as-software/REQ-9 gate-as-software/REQ-10 gate-as-software/REQ-11
+# gate-as-software/REQ-12 gate-as-software/REQ-13 gate-as-software/REQ-14 gate-as-software/REQ-15
+# gate-as-software/REQ-16 gate-as-software/REQ-17 gate-as-software/REQ-18 gate-as-software/REQ-19
+# gate-as-software/REQ-20 gate-as-software/REQ-21 gate-as-software/REQ-22 gate-as-software/REQ-23
+SK="$WORK/sck"; mkdir -p "$SK/base" "$SK/tmp" "$SK/tmp-h" "$SK/bin"
+(cd "$SK/base" && bash "$COPY/evals/reviewer/all-met/fixture.sh" >/dev/null 2>&1)
+printf '#!/bin/sh\necho called >> "%s"\n' "$SK/claude.log" > "$SK/bin/claude"; chmod +x "$SK/bin/claude"
+SKS="$COPY/scripts/ship-check.sh"; SK_T='python3 -m unittest discover -s tests'; sk_fail=""
+sk_run() {  # sk_run <project> <args…> → $sk_out, $sk_rc, and the scratch directory in $sk_dir
+  _p=$1; shift
+  sk_out=$(TMPDIR="$SK/tmp" PATH="$SK/bin:$PATH" sh "$SKS" "$_p" "$@" 2>"$SK/err"); sk_rc=$?
+  sk_dir=$(printf '%s\n' "$sk_out" | sed -n 1p); sk_ev="$sk_dir/evidence.md"
+}
+sk_commit() { (cd "$1" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m "$2"); }
+sk_has() { printf '%s\n' "$sk_out" | grep -qx "$1"; }   # sk_has '<n> <result>'
+# a. the finished feature: six blocks in order, every result PASS, exit 0
+cp -R "$SK/base" "$SK/a"; sk_run "$SK/a" refunds base --test "$SK_T"; sk_a=$sk_dir
+case "$sk_dir" in "$SK/tmp"/shipkit-ship.??????) ;; *) sk_fail="$sk_fail [a: the first line is not a scratch directory under TMPDIR: '$sk_dir']";; esac
+[ "$sk_rc" -eq 0 ] && [ -d "$sk_dir" ] && [ "$(printf '%s\n' "$sk_out" | sed 1d | tr '\n' ' ')" = "1 PASS 2 PASS 3 PASS 5 PASS 7 PASS 8 PASS " ] \
+  || sk_fail="$sk_fail [a: exit $sk_rc, printed: $(printf '%s' "$sk_out" | tr '\n' '|') $(sed -n 1,2p "$SK/err")]"
+[ "$(grep '^### ' "$sk_ev" 2>/dev/null | tr '\n' '|')" = "### 1. Spec check, as shipped|### 2. Tests|### 3. Tasks ticked|### 5. Migration rollback|### 7. Clean tree|### 8. Decisions fired|" ] \
+  || sk_fail="$sk_fail [a: the blocks' headings: $(grep '^### ' "$sk_ev" 2>/dev/null | tr '\n' '|')]"
+case "$(sed -n 1p "$sk_ev" 2>/dev/null)" in "shipkit ship-check: refunds at "*" against "*) ;; *) sk_fail="$sk_fail [a: evidence.md's first line: $(sed -n 1p "$sk_ev" 2>/dev/null)]";; esac
+grep -qF '`sh <plugin root>/scripts/spec-check.sh . refunds --as-shipped` → exit 0' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 1's command and exit status are not in its block]"
+grep -q '^evidence: EVIDENCE refunds tested=2 waived=1 uncited=0$' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 1 has no evidence: line with spec-check's EVIDENCE line]"
+grep -q '^Requirements changed on this branch:$' "$sk_ev" 2>/dev/null && grep -q '^spec-diff: ' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 1 does not carry spec-diff's output]"
+grep -qF '`python3 -m unittest discover -s tests` → exit 0' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 2's command and exit status are not in its block]"
+grep -q 'no migration in the diff' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 5 does not say there is no migration]"
+[ "$(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null)" = 6 ] || sk_fail="$sk_fail [a: $(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null) result: PASS lines, want 6]"
+# b. one task unticked: step 3 fails and names the line; exit 1
+cp -R "$SK/base" "$SK/b"
+sed 's/^- \[x\] \*\*T3\*\*/- [ ] **T3**/' "$SK/b/.shipkit/specs/refunds/tasks.md" > "$SK/b.tasks" && cp "$SK/b.tasks" "$SK/b/.shipkit/specs/refunds/tasks.md"
+sk_commit "$SK/b" untick; sk_run "$SK/b" refunds base --test "$SK_T"
+[ "$sk_rc" -eq 1 ] && sk_has '3 FAIL' && grep -q 'tasks\.md:[0-9]*:- \[ \] \*\*T3\*\*' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [b: an unticked task: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# c. step 7 reads the tree as it was before anything ran: uncommitted work fails it; an earlier
+# report for the slug and a file the test command made do not
+cp -R "$SK/base" "$SK/c1"; echo x >> "$SK/c1/README.md"; sk_run "$SK/c1" refunds base --test "$SK_T"
+[ "$sk_rc" -eq 1 ] && sk_has '7 FAIL' && grep -q '^ M README\.md$' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [c: a dirty tree: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+cp -R "$SK/base" "$SK/c2"; mkdir -p "$SK/c2/.shipkit/releases"; echo 'NOT READY' > "$SK/c2/.shipkit/releases/2026-01-01-refunds.md"
+sk_run "$SK/c2" refunds base --test 'echo made > made-by-the-tests.txt'
+[ "$sk_rc" -eq 0 ] && sk_has '7 PASS' && grep -q 'made-by-the-tests\.txt' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [c: an earlier report and a file the tests made: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# d. a failing test command: step 2 fails with its exit status, the command ran once, and the
+# steps after it still ran
+cp -R "$SK/base" "$SK/d"; sk_run "$SK/d" refunds base --test "echo run >> '$SK/count'; exit 3"
+[ "$sk_rc" -eq 1 ] && sk_has '2 FAIL' && grep -q '→ exit 3$' "$sk_ev" 2>/dev/null && [ "$(grep -c . "$SK/count" 2>/dev/null)" = 1 ] \
+   && [ "$(grep -c '^### ' "$sk_ev" 2>/dev/null)" = 6 ] && sk_has '8 PASS' \
+  || sk_fail="$sk_fail [d: a failing test command: exit $sk_rc, ran $(grep -c . "$SK/count" 2>/dev/null) time(s), printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# e. no --test and no record: FAIL — no test command known. With a record, that command runs
+cp -R "$SK/base" "$SK/e"; sk_run "$SK/e" refunds base
+[ "$sk_rc" -eq 1 ] && sk_has '2 FAIL' && grep -q '^result: FAIL — no test command known$' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [e: no test command: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+sh "$COPY/scripts/test-command.sh" "$SK/e" --record "$SK_T" 2>/dev/null; sk_commit "$SK/e" record; sk_run "$SK/e" refunds base
+[ "$sk_rc" -eq 0 ] && sk_has '2 PASS' && grep -qF '`python3 -m unittest discover -s tests` → exit 0' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [e: the recorded command: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# f. migration files in the diff are listed for a person to read; that is not a failure
+cp -R "$SK/base" "$SK/f"; mkdir -p "$SK/f/db/migrate" "$SK/f/schema"
+echo '-- add' > "$SK/f/db/migrate/20240101_add_refunds.rb"; echo '-- sql' > "$SK/f/schema/change.sql"
+sk_commit "$SK/f" migrate; sk_run "$SK/f" refunds base --test "$SK_T"
+[ "$sk_rc" -eq 0 ] && sk_has '5 NEEDS-READING' && grep -q '^db/migrate/20240101_add_refunds\.rb$' "$sk_ev" 2>/dev/null && grep -q '^schema/change\.sql$' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [f: two migration files: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# g. a decision whose Fired-if command exits 0 fails step 8
+cp -R "$SK/base" "$SK/g"
+printf '\n## Decision: A switch that is already on   (→ REQ-1)\n\n**Decision.** On.\n**Falsifiability.** We would reverse this if the README exists.\n**Fired-if.** `test -f README.md`\n' >> "$SK/g/.shipkit/specs/refunds/design.md"
+sk_commit "$SK/g" fired; sk_run "$SK/g" refunds base --test "$SK_T"
+[ "$sk_rc" -eq 1 ] && sk_has '8 FAIL' && grep -q '^FIRED ' "$sk_ev" 2>/dev/null \
+  || sk_fail="$sk_fail [g: a fired decision: exit $sk_rc, printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+# h. no such spec: exit 2, a message, and no scratch directory made
+TMPDIR="$SK/tmp-h" sh "$SKS" "$SK/a" nosuch base >/dev/null 2>"$SK/err"; sk_rc=$?
+[ "$sk_rc" -eq 2 ] && [ -s "$SK/err" ] && [ -z "$(ls -A "$SK/tmp-h")" ] || sk_fail="$sk_fail [h: an unknown slug: exit $sk_rc, $(ls -A "$SK/tmp-h" | wc -l | tr -d ' ') entr(ies) made in TMPDIR]"
+# i. two runs at once in one project: a scratch directory each, both whole
+cp -R "$SK/base" "$SK/i"
+(TMPDIR="$SK/tmp" PATH="$SK/bin:$PATH" sh "$SKS" "$SK/i" refunds base --test "$SK_T" > "$SK/i1.out" 2>/dev/null) & sk_p1=$!
+(TMPDIR="$SK/tmp" PATH="$SK/bin:$PATH" sh "$SKS" "$SK/i" refunds base --test "$SK_T" > "$SK/i2.out" 2>/dev/null) & sk_p2=$!
+wait "$sk_p1" "$sk_p2"
+sk_d1=$(sed -n 1p "$SK/i1.out"); sk_d2=$(sed -n 1p "$SK/i2.out")
+[ -n "$sk_d1" ] && [ "$sk_d1" != "$sk_d2" ] && [ "$(grep -c '^### ' "$sk_d1/evidence.md" 2>/dev/null)" = 6 ] && [ "$(grep -c '^### ' "$sk_d2/evidence.md" 2>/dev/null)" = 6 ] \
+  || sk_fail="$sk_fail [i: two runs at once: '$sk_d1' and '$sk_d2']"
+# j. --clean removes a directory the script made, and nothing else
+sh "$SKS" --clean "$sk_a" >/dev/null 2>&1; sk_rc=$?
+[ "$sk_rc" -eq 0 ] && [ ! -e "$sk_a" ] || sk_fail="$sk_fail [j: --clean on its own directory: exit $sk_rc]"
+mkdir -p "$SK/other" "$SK/tmp/shipkit-ship.zzzzzz"; echo keep > "$SK/other/evidence.md"; echo 'not ours' > "$SK/tmp/shipkit-ship.zzzzzz/evidence.md"
+sh "$SKS" --clean "$SK/other" >/dev/null 2>&1; sk_rc=$?
+sh "$SKS" --clean "$SK/tmp/shipkit-ship.zzzzzz" >/dev/null 2>&1; sk_rc2=$?
+[ "$sk_rc" -eq 1 ] && [ "$sk_rc2" -eq 1 ] && [ -f "$SK/other/evidence.md" ] && [ -f "$SK/tmp/shipkit-ship.zzzzzz/evidence.md" ] \
+  || sk_fail="$sk_fail [j: --clean on a directory it did not make: exit $sk_rc and $sk_rc2]"
+# k. no model was started, and the script is clean under sh -n
+[ ! -s "$SK/claude.log" ] || sk_fail="$sk_fail [k: claude was called $(grep -c . "$SK/claude.log") time(s)]"
+sh -n "$SKS" 2>/dev/null || sk_fail="$sk_fail [k: sh -n reports a syntax error]"
+if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; no claude)"
+else failc "ship-check" "$sk_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

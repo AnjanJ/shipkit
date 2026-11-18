@@ -17,11 +17,12 @@ holds the text each one applies.
   - Test: scripts/smoke.sh check 106 (`test-command`): an install with `TEST_COMMAND` writes the record; a second overlay without it leaves the record; the script prints the record beside a `CLAUDE.md` that names two other commands; no record is exit 1 with the message; `--record` writes one line; removal deletes the record
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 106 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/test-command.sh` → no output
-- [ ] **T3** `ship-check.sh` runs the gate's command steps and writes their evidence → REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23
-  - Files: plugins/shipkit/scripts/ship-check.sh, scripts/smoke.sh
+- [x] **T3** `ship-check.sh` runs the gate's command steps and writes their evidence → REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14, REQ-15, REQ-16, REQ-17, REQ-18, REQ-19, REQ-20, REQ-21, REQ-22, REQ-23
+  - Files: plugins/shipkit/scripts/ship-check.sh, scripts/smoke.sh, scripts/lint.py
   - Test: scripts/smoke.sh check 107 (`ship-check`): a complete fixture gives six blocks in order and exit 0; an unticked task fails step 3; a dirty tree fails step 7 and a file the test command made does not; a failing test command fails step 2 with its exit status, run once; no test command known; a migration file is listed as `NEEDS-READING`; a fired decision fails step 8; an unknown slug is exit 2 with no directory made; two runs at once keep two directories; `--clean` removes its own and refuses another; a stand-in `claude` is never called
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 107 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/ship-check.sh` → no output
+  - Note (2026-11-18): `scripts/lint.py` was added to Files. Its rule against a bare `mktemp` read `mktemp -d "<template>"` as bare; `ship-check.sh` is the first shipped script to make a directory. The rule now accepts `-d` before a template and still flags `mktemp -d` alone.
 - [ ] **T4** `release-check.sh` reads shipped specs against their `READY` reports, and CI shows it → REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
   - Files: plugins/shipkit/scripts/release-check.sh, .github/workflows/lint.yml, scripts/smoke.sh
   - Test: scripts/smoke.sh check 108 (`release-check`): a clean fixture prints the summary line alone; a shipped spec with no report; a report whose commit is on an abandoned branch; a commit under `Paths` after the report and before the shipping commit; a shipped spec with no `Paths` line; exit 0 without `--enforce` and 1 with it; the workflow runs the script on pull requests with the full history
