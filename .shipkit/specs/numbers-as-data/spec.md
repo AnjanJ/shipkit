@@ -126,9 +126,12 @@ The cases for a diff:
   name order, each case whose row has a path that meets a file in `git diff --name-only
   <base>...HEAD`.
 - **REQ-21.** When the diff touches only `plugins/shipkit/agents/reviewer.md`, `evals-for-diff.sh`
-  shall print the four cases whose prompt starts the `reviewer` agent, `reviewer-all-met`,
-  `reviewer-decision-unbuilt`, `reviewer-missing-req` and `reviewer-rejected-alternative`, and no
-  other.
+  shall print every case the map names `reviewer-*`, and no other.
+  > *Amended 2026-11-19 (`misses-to-checks` T1, the owner's yes):* this named the four cases
+  > whose prompt starts the `reviewer` agent, `reviewer-all-met`, `reviewer-decision-unbuilt`,
+  > `reviewer-missing-req` and `reviewer-rejected-alternative`, "and no other". Sprint 32 adds
+  > reviewer cases, so the list is read from the map; `misses-to-checks/REQ-18` holds their
+  > number, twelve, once they are all in.
 - **REQ-22.** When the diff touches `plugins/shipkit/rules/shipkit.md` or
   `plugins/shipkit/scripts/session-start.sh`, `evals-for-diff.sh` shall print every case whose
   name starts `rules-`, and `hello`.
@@ -145,8 +148,11 @@ Room for new cases:
 - **REQ-26.** `plugins/shipkit/evals/README.md`'s case table and its section on `with-rule.sh`
   shall be in `docs/design/eval-cases.md`, word for word, under a line that gives the date they
   moved; the README shall keep its `## Cases` heading with one line under it naming that file.
-- **REQ-27.** `plugins/shipkit/evals/` shall be at most 190,800 bytes, measured as `lint.py`'s
+- **REQ-27.** `plugins/shipkit/evals/` shall be at most 204,800 bytes, measured as `lint.py`'s
   check 17 measures it: the sum of the sizes of every file under the folder.
+  > *Amended 2026-11-19 (`misses-to-checks` T1, the owner's yes):* this said 190,800 bytes, the
+  > room Sprint 31 made for Sprint 32's cases: 14,244 bytes under check 17's ceiling. Those
+  > cases now use that room, so the folder is held at the ceiling itself.
 - **REQ-28.** `scripts/lint.py`'s check 17 shall name the limit it enforces, 204,800 bytes.
   [untested: prose, verified by reading]
 

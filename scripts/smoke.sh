@@ -4372,6 +4372,7 @@ bk_verdict "$bk_fail" "$bk_t"
 # copy of this tree. No claude needed.
 # Cites: numbers-as-data/REQ-19 numbers-as-data/REQ-20 numbers-as-data/REQ-21
 # numbers-as-data/REQ-22 numbers-as-data/REQ-23 numbers-as-data/REQ-24 numbers-as-data/REQ-25
+# misses-to-checks/REQ-18
 FD="$WORK/fordiff"; FDS="$ROOT/scripts/evals-for-diff.sh"; mkdir -p "$FD/repo" "$FD/bin"; fd_fail=""
 fdg() { (cd "$FD/repo" && git -c user.email=s@s -c user.name=s "$@"); }
 (cd "$FD/repo" && git init -q && mkdir -p plugins/shipkit/agents plugins/shipkit/rules plugins/shipkit/scripts docs \
@@ -4382,9 +4383,14 @@ fd_case() {  # fd_case <branch> <file> → the cases evals-for-diff.sh prints fo
   fdg checkout -q -b "$1" base; echo b >> "$FD/repo/$2"; fdg commit -q -am "$1"
   (cd "$FD/repo" && sh "$FDS" base 2>&1); echo "exit=$?"
 }
+# The reviewer's cases are read from the map: Sprint 32 adds to the four of Sprint 31
+# (misses-to-checks/REQ-18 holds their number), and a held-out case is never named reviewer-*.
+fd_rev=$(awk -F '\t' 'NR > 1 && $1 ~ /^reviewer-/ { print $1 }' "$ROOT/scripts/evals-map.tsv" | sort | tr '\n' ' ')
 fd_out=$(fd_case rev plugins/shipkit/agents/reviewer.md | tr '\n' ' ')
-[ "$fd_out" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative exit=0 " ] \
-  || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out]"
+[ -n "$fd_rev" ] && [ "$fd_out" = "${fd_rev}exit=0 " ] || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out; the map's reviewer rows: $fd_rev]"
+for fd_old in reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative; do
+  case " $fd_out" in *" $fd_old "*) ;; *) fd_fail="$fd_fail [a diff on reviewer.md does not print $fd_old]" ;; esac
+done
 fd_always="hello rules-care rules-decision rules-nontrivial rules-trivial exit=0 "
 fd_out=$(fd_case rul plugins/shipkit/rules/shipkit.md | tr '\n' ' ')
 [ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on rules/shipkit.md: $fd_out]"
@@ -4397,8 +4403,12 @@ printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "%s"\nexit 0\n' "$FD/args" > "$FD/bin/
 fdg checkout -q rev
 (cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base >/dev/null 2>&1); fd_rc=$?
 fd_cases=$(tr ' ' '\n' < "$FD/args" 2>/dev/null | grep -A1 -x -- '--case' | grep -v -x -- '--case' | grep -v -x -- '--' | tr '\n' ' ')
-[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative " ] \
+[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "$fd_rev" ] \
   || fd_fail="$fd_fail [evals.sh --for-diff on reviewer.md: exit $fd_rc, cases $fd_cases]"
+# one more reviewer row, in a scratch map, is printed with the rest: the list is the map's
+{ cat "$ROOT/scripts/evals-map.tsv"; printf 'reviewer-zz-extra\ttune\tplugins/shipkit/agents/reviewer.md\n'; } > "$FD/map.tsv"
+fd_out=$(cd "$FD/repo" && EVALS_MAP="$FD/map.tsv" sh "$FDS" base 2>&1 | tr '\n' ' ')
+[ "$fd_out" = "${fd_rev}reviewer-zz-extra " ] || fd_fail="$fd_fail [a scratch map with one more reviewer row: $fd_out]"
 rm -f "$FD/args"; fdg checkout -q doc
 fd_msg=$(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base 2>&1); fd_rc=$?
 [ "$fd_rc" -eq 0 ] && [ ! -e "$FD/args" ] && [ "$fd_msg" = "evals: no case reads the files this diff changed" ] \
@@ -4418,7 +4428,7 @@ printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*no row for the eval case hell
   && [ "$(printf '%s\n' "$fd_lint" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p')" = 3 ] \
   || fd_fail="$fd_fail [lint on the doctored copy: $(printf '%s' "$fd_lint" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
 sh -n "$FDS" 2>/dev/null || fd_fail="$fd_fail [sh -n reports a syntax error]"
-if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the four reviewer cases; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
+if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the $(printf '%s' "$fd_rev" | wc -w | tr -d ' ') cases the map names reviewer-*, and one more from a scratch map; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
 else failc "evals-for-diff" "$fd_fail"; fi
 
 # 114. eval-room: room for new cases without a raise of the ceiling. The evals README's case
@@ -4451,7 +4461,12 @@ er_under=$(sed -n '/^## Cases$/,/^## /p' "$er_now" | sed '1d;$d' | grep -v '^[[:
   || er_fail="$er_fail [under ## Cases the README has: $(printf '%s' "$er_under" | head -3 | tr '\n' '|' | cut -c1-200)]"
 grep -q '^### A rule under test is installed by' "$er_now" && er_fail="$er_fail [the with-rule.sh section is still in the README]"
 er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in pathlib.Path(sys.argv[1]).rglob('*') if p.is_file()))" "$ROOT/plugins/shipkit/evals")
-[ "$er_bytes" -le 190800 ] || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 190,800]"
+# The room Sprint 31 made (the folder at most 190,800 bytes) is what Sprint 32's cases use. From
+# misses-to-checks T1 the folder is held where lint's check 17 holds it, at 204,800 bytes
+# (numbers-as-data/REQ-27, amended 2026-11-19).
+er_room() { [ "$1" -le 204800 ]; }
+er_room "$er_bytes" || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 204,800]"
+er_room 190801 && er_room 204800 && ! er_room 204801 || er_fail="$er_fail [the limit is not 204,800: 190,801 and 204,800 must pass, and 204,801 fail]"
 if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
 else failc "eval-room" "$er_fail"; fi
 

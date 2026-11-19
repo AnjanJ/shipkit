@@ -13,7 +13,7 @@ Sprint 35.
   - Test: none: REQ-45 to REQ-47 are prose, read against `design.md`
   - After: none
   - Done when: `design.md` holds W1 to W10, each naming the case it waits on, and a record for each of V13, V14 and V15 with its reversal event; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
-- [ ] **T1** Smoke check 114 reads the ceiling and check 113 reads its reviewer cases from the map → REQ-18
+- [x] **T1** Smoke check 114 reads the ceiling and check 113 reads its reviewer cases from the map → REQ-18
   - Files: scripts/smoke.sh, .shipkit/specs/numbers-as-data/spec.md
   - Test: scripts/smoke.sh checks 113 and 114, changed: for a diff on `agents/reviewer.md` check 113 expects every map row named `reviewer-*`, and a scratch map with one more such row prints it too; check 114 fails above 204,800 bytes and no longer at 190,800
   - After: T0
