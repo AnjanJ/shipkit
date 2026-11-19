@@ -23,7 +23,7 @@ Sprint 35.
   - Test: scripts/smoke.sh check 116 (`holdout-kept-out`): on a copy of this tree, lint fails a row whose set is `foo`, a case under `evals/holdout/` whose set is `tune`, and a `holdout` row whose case is elsewhere, naming each; with a scratch map, `evals-for-diff.sh` prints no held-out case and writes `evals-for-diff: 1 held-out case(s) not listed` to standard error; `evals-ledger.sh append` with that map writes `holdout` for the case it marks and `tune` or `watch` for the others
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 116 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); `docs/design/eval-cases.md` says when a held-out case runs; `numbers-as-data/spec.md` carries a dated note under its term "A case's set"
-- [ ] **T3** `grader-check.sh` shows a grader both ways through `node` → REQ-40
+- [x] **T3** `grader-check.sh` shows a grader both ways through `node` → REQ-40
   - Files: scripts/grader-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 117 (`grader-both-ways`): on a scratch case, a reply the pattern must pass reads `PASS` and one it must fail reads `FAIL` as expected, with the grader's flags honoured; a pattern changed to match both makes the script exit 1; a reply file whose grader does not exist, and a case with a `pass` file and no `fail` file, make it exit 1; on this repository's `scripts/grader-replies/` it exits 0
   - After: T2

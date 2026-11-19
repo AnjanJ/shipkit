@@ -175,6 +175,7 @@ registry() { cat <<'EOF'
 114 eval-room
 115 ledger-fired-if
 116 holdout-kept-out
+117 grader-both-ways
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4576,6 +4577,78 @@ EVALS_MAP="$HK/no-such-map.tsv" EVALS_LEDGER="$HK/l2.tsv" sh "$ROOT/scripts/eval
 sh -n "$ROOT/scripts/evals-for-diff.sh" 2>/dev/null && sh -n "$ROOT/scripts/evals-ledger.sh" 2>/dev/null || hk_fail="$hk_fail [sh -n reports a syntax error]"
 if [ -z "$hk_fail" ]; then pass "holdout-kept-out (lint takes tune, watch and holdout, and holds holdout to evals/holdout/; evals-for-diff.sh leaves a held-out case out and says so; the ledger writes holdout from the map)"
 else failc "holdout-kept-out" "$hk_fail"; fi
+
+# 117. grader-both-ways: a grader is shown on a reply it must pass and on one it must fail. A
+# `regex` grader is a JavaScript RegExp, and the verifier plan's rules 18 and 23 ask that a new
+# or changed one go through node on both sides; until Sprint 32 that was done by hand and kept
+# in a commit message. scripts/grader-check.sh reads scripts/grader-replies/<case>/, where
+# <grader>.pass.md must match the pattern and <grader>.fail.md must not, and this check runs it:
+# first on a scratch case, where each way of being wrong is made and must be caught, then on
+# this repository's replies, where every grader named in gc_need must have both sides. No claude
+# needed; it needs node. Cites: misses-to-checks/REQ-40
+GC="$WORK/gcheck"; GCS="$ROOT/scripts/grader-check.sh"; gc_fail=""
+mkdir -p "$GC/evals/demo/one/graders" "$GC/evals/demo/two/graders" "$GC/evals/fixtures/skipped" "$GC/replies/demo-one"
+printf 'A scratch case.\n' > "$GC/evals/demo/one/prompt.md"; printf 'Another.\n' > "$GC/evals/demo/two/prompt.md"
+printf 'Not a case: it is under fixtures.\n' > "$GC/evals/fixtures/skipped/prompt.md"
+gc_grader() {  # gc_grader <file> <pattern> [flags] → a regex grader file
+  { printf -- '---\ntype: regex\n'; printf "pattern: '%s'\n" "$2"; [ -z "${3:-}" ] || printf 'flags: %s\n' "$3"; printf -- '---\n'; } > "$1"
+}
+gc_good='^(?=[\s\S]*REQ-2\b[^\n]{0,80}NOT MET)(?=[\s\S]*verdict: fail)'
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good" i
+gc_grader "$GC/evals/demo/two/graders/other.md" 'x'
+printf -- '---\ntype: llm\n---\nA rubric.\n' > "$GC/evals/demo/two/graders/judge.md"
+printf '| REQ-1 | MET | code |\n| REQ-2 | NOT MET | no code rejects it |\n\nVERDICT: FAIL\n' > "$GC/replies/demo-one/marks.pass.md"
+printf '| REQ-1 | MET | code |\n| REQ-2 | MET | code and test |\n\nVERDICT: PASS\n' > "$GC/replies/demo-one/marks.fail.md"
+gc_run() { GRADER_EVALS="$GC/evals" GRADER_REPLIES="$GC/replies" sh "$GCS" "$@" > "$GC/out" 2>&1; echo $?; }
+gc_want() {  # gc_want <label> <exit wanted> <text the output must hold> [arguments]
+  _l=$1; _e=$2; _t=$3; shift 3; _rc=$(gc_run "$@")
+  [ "$_rc" = "$_e" ] && grep -q -F -- "$_t" "$GC/out" || gc_fail="$gc_fail [$_l: exit $_rc, want $_e and \"$_t\": $(tr '\n' '|' < "$GC/out" | cut -c1-240)]"
+}
+# a. both sides as they should be: two PASS lines, exit 0; the flag is the grader's
+gc_want "a: a good pair" 0 'PASS  demo-one marks.pass.md'
+grep -q -F 'PASS  demo-one marks.fail.md' "$GC/out" && grep -q -x 'grader-check: 2 as expected, 0 not' "$GC/out" || gc_fail="$gc_fail [a: $(tr '\n' '|' < "$GC/out" | cut -c1-240)]"
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good"
+gc_want "b: the grader's flag taken away" 1 'FAIL  demo-one marks.pass.md'
+# c. a pattern that matches both; d. one node cannot compile (a Python inline flag, rule 18)
+gc_grader "$GC/evals/demo/one/graders/marks.md" 'REQ-2'
+gc_want "c: a pattern that matches both" 1 'FAIL  demo-one marks.fail.md'
+gc_grader "$GC/evals/demo/one/graders/marks.md" '(?is)REQ-2'
+gc_want "d: a Python inline flag" 1 'does not compile'
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good" i
+# e. a reply whose grader does not exist; f. a pass reply with no fail reply; g. a folder that
+# names no case, the one under fixtures included; h. a reply for a grader that is not a regex
+cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/demo-one/ghost.pass.md"
+gc_want "e: a reply with no grader" 1 'FAIL  demo-one ghost.pass.md'
+rm -f "$GC/replies/demo-one/ghost.pass.md"; mv "$GC/replies/demo-one/marks.fail.md" "$GC/keep.fail.md"
+gc_want "f: a pass reply and no fail reply" 1 'FAIL  demo-one marks: a pass reply and no fail reply'
+mv "$GC/keep.fail.md" "$GC/replies/demo-one/marks.fail.md"
+mkdir -p "$GC/replies/fixtures-skipped"; cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/fixtures-skipped/x.pass.md"
+gc_want "g: a reply folder that names no case" 1 'FAIL  fixtures-skipped: no eval case has that name'
+rm -rf "$GC/replies/fixtures-skipped"; mkdir -p "$GC/replies/demo-two"
+cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/demo-two/judge.pass.md"
+gc_want "h: a reply for an llm grader" 1 'FAIL  demo-two judge.pass.md: not a regex grader'
+rm -rf "$GC/replies/demo-two"
+# i. --require: a regex grader with no replies fails, and an llm grader is not asked for any;
+# one case alone; a case with no folder; usage; and no node on the PATH
+gc_want "i: --require of a case shown both ways" 0 'grader-check: 2 as expected, 0 not' --require demo-one
+gc_want "i: --require of a case with no replies" 1 'FAIL  demo-two other: no replies' --require demo-two
+grep -q 'judge' "$GC/out" && gc_fail="$gc_fail [i: --require asked for replies to an llm grader]"
+gc_want "i: one case alone" 0 'grader-check: 2 as expected, 0 not' demo-one
+gc_want "i: one case alone, with no folder" 1 'FAIL  demo-two: no replies folder' demo-two
+gc_want "i: an unknown option" 2 'usage: grader-check.sh' --nope
+gc_rc=$(PATH=/usr/bin:/bin GRADER_EVALS="$GC/evals" GRADER_REPLIES="$GC/replies" sh "$GCS" > "$GC/out" 2>&1; echo $?)
+if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
+else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
+# j. this repository: every reply does what its name says, and each grader of the cases Sprint
+# 32 adds has both sides (the list grows with the cases)
+gc_need=""
+gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
+# shellcheck disable=SC2086
+sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
+[ "$gc_rc" -eq 0 ] || gc_fail="$gc_fail [j: this repository: exit $gc_rc: $(grep -E '^FAIL|not found|usage' "$GC/repo.out" | tr '\n' '|' | cut -c1-400)]"
+sh -n "$GCS" 2>/dev/null || gc_fail="$gc_fail [sh -n reports a syntax error]"
+if [ -z "$gc_fail" ]; then pass "grader-both-ways (grader-check.sh reads each reply through node with the grader's flags and catches a pattern that matches both, one that will not compile, a missing side, a missing grader and a missing case; this repository: $(tail -1 "$GC/repo.out"))"
+else failc "grader-both-ways" "$gc_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
