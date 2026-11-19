@@ -176,6 +176,7 @@ registry() { cat <<'EOF'
 115 ledger-fired-if
 116 holdout-kept-out
 117 grader-both-ways
+118 reviewer-trees
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4641,7 +4642,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need=""
+gc_need="reviewer-helper-only"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4649,6 +4650,69 @@ sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
 sh -n "$GCS" 2>/dev/null || gc_fail="$gc_fail [sh -n reports a syntax error]"
 if [ -z "$gc_fail" ]; then pass "grader-both-ways (grader-check.sh reads each reply through node with the grader's flags and catches a pattern that matches both, one that will not compile, a missing side, a missing grader and a missing case; this repository: $(tail -1 "$GC/repo.out"))"
 else failc "grader-both-ways" "$gc_fail"; fi
+
+# 118. reviewer-trees: every tree the reviewer is graded on is built here and read, so a case
+# says what its answer key says. Sprint 32 grows the shared fixture (evals/lib/review-fixture.sh)
+# from four variants to fourteen. The four old cases have release runs behind them, so each of
+# their trees must be, file for file and commit for commit, the tree the script at 9e061ca
+# built. Each new case comes from a miss a real run showed, and its tree is read for what makes
+# it that miss. helper-only (field-notes-5.2.md, section 9): the test that cites REQ-2 passes
+# and calls a helper that refund never calls, so spec-check.sh is satisfied and the behaviour
+# is not there. No claude needed. Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2
+RT="$WORK/rtrees"; rt_fail=""; mkdir -p "$RT/old/lib" "$RT/old/fixtures"
+rt_build() {  # rt_build <dir> <fixture script> [argument] → the tree the script leaves in <dir>
+  mkdir -p "$1"
+  (cd "$1" && bash "$2" ${3:+"$3"} > "$1.log" 2>&1); _rc=$?
+  [ "$_rc" -eq 0 ] || rt_fail="$rt_fail [$(basename "$1"): the fixture exited $_rc: $(tail -2 "$1.log" | tr '\n' '|' | cut -c1-160)]"
+}
+rt_test() { (cd "$1" && python3 -m unittest discover -s tests > "$1.test" 2>&1); echo $?; }  # the test command's exit status
+rt_cited() { awk -v c="# $2" 'index($0, c) { on = 1; next } on && /^[[:space:]]*$/ { exit } on' "$1"; }  # the test under a citation
+# a. the four old cases: the same files, the same commits, the same diff from base
+git -C "$ROOT" show 9e061ca:plugins/shipkit/evals/lib/review-fixture.sh > "$RT/old/lib/review-fixture.sh" 2>/dev/null || rt_fail="$rt_fail [git show 9e061ca failed]"
+cp -R "$COPY/evals/fixtures/sample-app" "$RT/old/fixtures/sample-app"
+for rt_pair in all-met:complete missing-req:missing rejected-alternative:rejected decision-unbuilt:unbuilt; do
+  rt_c=${rt_pair%%:*}; rt_v=${rt_pair#*:}
+  rt_build "$RT/new-$rt_c" "$COPY/evals/reviewer/$rt_c/fixture.sh"
+  rt_build "$RT/old-$rt_c" "$RT/old/lib/review-fixture.sh" "$rt_v"
+  diff -r -x .git "$RT/old-$rt_c" "$RT/new-$rt_c" > "$RT/diff.out" 2>&1 \
+    || rt_fail="$rt_fail [$rt_c: its tree is not the one built at 9e061ca: $(head -3 "$RT/diff.out" | tr '\n' '|' | cut -c1-200)]"
+  [ "$(git -C "$RT/old-$rt_c" log --format=%s 2>&1 | tr '\n' '|')" = "$(git -C "$RT/new-$rt_c" log --format=%s 2>&1 | tr '\n' '|')" ] \
+    || rt_fail="$rt_fail [$rt_c: its commits are not those built at 9e061ca: $(git -C "$RT/new-$rt_c" log --format=%s 2>&1 | tr '\n' '|' | cut -c1-120)]"
+  [ "$(git -C "$RT/old-$rt_c" diff base...HEAD 2>&1 | grep -v '^index ')" = "$(git -C "$RT/new-$rt_c" diff base...HEAD 2>&1 | grep -v '^index ')" ] \
+    || rt_fail="$rt_fail [$rt_c: its diff from base is not the one built at 9e061ca]"
+done
+# b. helper-only
+rt_build "$RT/helper" "$COPY/evals/reviewer/helper-only/fixture.sh"
+(cd "$RT/helper" && sh "$COPY/scripts/spec-check.sh" . refunds --as-shipped > "$RT/helper.spec" 2>&1) \
+  || rt_fail="$rt_fail [helper-only: spec-check.sh is not satisfied, and the miss is that it is: $(grep -v '^WAIVED' "$RT/helper.spec" | head -2 | tr '\n' '|' | cut -c1-160)]"
+[ "$(rt_test "$RT/helper")" = 0 ] || rt_fail="$rt_fail [helper-only: the test command failed: $(tail -3 "$RT/helper.test" | tr '\n' '|' | cut -c1-200)]"
+rt_t=$(rt_cited "$RT/helper/tests/test_refunds.py" refunds/REQ-2 2>/dev/null)
+printf '%s\n' "$rt_t" | grep -q 'check_amount(' && ! printf '%s\n' "$rt_t" | grep -q -E '(^|[^_a-zA-Z.])refund\(' \
+  || rt_fail="$rt_fail [helper-only: the test citing refunds/REQ-2 must call check_amount and not refund: $(printf '%s' "$rt_t" | tr '\n' '|' | cut -c1-200)]"
+(cd "$RT/helper" && python3 - > "$RT/helper.py" 2>&1 <<'RTPY'
+import inspect, sys
+sys.path.insert(0, ".")
+from app.refunds import RefundRejected, check_amount, refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+assert "check_amount" not in inspect.getsource(refund), "refund calls the helper"
+assert refund({"customer": "ada"}, 2500, 2000, gateway) == "rf_1" and gateway.amounts == [2500], \
+    "refund did not pass 2500 on a charge of 2000 to the gateway"
+try:
+    check_amount(2500, 2000)
+except RefundRejected:
+    pass
+else:
+    raise AssertionError("check_amount let 2500 on a charge of 2000 through")
+RTPY
+) || rt_fail="$rt_fail [helper-only: $(tail -1 "$RT/helper.py" | cut -c1-200)]"
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied)"
+else failc "reviewer-trees" "$rt_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

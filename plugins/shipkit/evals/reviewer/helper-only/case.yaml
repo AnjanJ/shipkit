@@ -1,0 +1,5 @@
+# From docs/design/field-notes-5.2.md, section 9: the tests cited REQ-5 and REQ-6, and no surface called the function they tested.
+schema_version: "1.1"
+name: reviewer-helper-only
+context:
+  scaffold_script: fixture.sh

@@ -6,7 +6,9 @@
 # REQ-2 with no code and no test. `rejected` meets every requirement and does what a live decision
 # turned down. `unbuilt` adds a decision a later task will build, and a superseded one the code does
 # not follow. Cites: decisions-bind/REQ-13
+# From real misses (Sprint 32): `helper` tests REQ-2 on a helper that `refund` never calls.
 VARIANT=${1:-complete}
+case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
@@ -94,7 +96,7 @@ SPEC
   - Done when: `python3 -m unittest discover -s tests` → all pass
 SPEC
 printf '\n## Refunds\n\nCall `app.refunds.refund(order, amount_cents, charged_cents, gateway)`; it returns the refund number.\n' >> README.md
-if [ "$VARIANT" != missing ]; then
+if [ -z "$BARE" ]; then
 cat > app/refunds.py <<'PY'
 """Refunds: give money back for a charged order."""
 
@@ -127,6 +129,14 @@ def refund(order, amount_cents, charged_cents, gateway):
     return gateway.refund(order["customer"], amount_cents)
 PY
 fi
+[ "$VARIANT" = helper ] && cat >> app/refunds.py <<'PY'
+
+
+def check_amount(amount_cents, charged_cents):
+    """Raise RefundRejected when a refund is larger than the charge."""
+    if amount_cents > charged_cents:
+        raise RefundRejected("refund is larger than the charge")
+PY
 cat > tests/test_refunds.py <<'PY'
 import sys
 import unittest
@@ -151,7 +161,16 @@ class RefundTest(unittest.TestCase):
     def test_refund_returns_the_gateways_refund_number(self):
         self.assertEqual(refund({"customer": "ada"}, 500, 2000, Gateway()), "rf_1")
 PY
-if [ "$VARIANT" != missing ]; then
+if [ "$VARIANT" = helper ]; then
+sed -i.bak 's/RefundRejected, refund/RefundRejected, check_amount, refund/' tests/test_refunds.py && rm tests/test_refunds.py.bak
+cat >> tests/test_refunds.py <<'PY'
+
+    # refunds/REQ-2
+    def test_refund_over_the_charge_is_rejected(self):
+        with self.assertRaises(RefundRejected):
+            check_amount(2500, 2000)
+PY
+elif [ -z "$BARE" ]; then
 cat >> tests/test_refunds.py <<'PY'
 
     # refunds/REQ-2

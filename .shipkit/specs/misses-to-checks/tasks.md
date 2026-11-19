@@ -28,7 +28,7 @@ Sprint 35.
   - Test: scripts/smoke.sh check 117 (`grader-both-ways`): on a scratch case, a reply the pattern must pass reads `PASS` and one it must fail reads `FAIL` as expected, with the grader's flags honoured; a pattern changed to match both makes the script exit 1; a reply file whose grader does not exist, and a case with a `pass` file and no `fail` file, make it exit 1; on this repository's `scripts/grader-replies/` it exits 0
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 117 `PASS`, exit 0; `sh -n scripts/grader-check.sh` → no output
-- [ ] **T4** `reviewer/helper-only`, and a check that builds every reviewer tree → REQ-1, REQ-2, REQ-7
+- [x] **T4** `reviewer/helper-only`, and a check that builds every reviewer tree → REQ-1, REQ-2, REQ-7
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/helper-only/, scripts/grader-replies/reviewer-helper-only/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118 (`reviewer-trees`): each of the four old cases' trees equals, file for file, the tree the shared fixture at `9e061ca` (`git show`) builds; in the `helper-only` tree the test citing `refunds/REQ-2` calls only `check_amount`, `refund` does not call it and passes 2500 on a charge of 2000 to the gateway, and the test command exits 0. Check 117 reads the new grader's three replies
   - After: T3

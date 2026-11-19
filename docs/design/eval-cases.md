@@ -177,3 +177,14 @@ folder together. A held-out case runs at a release run, which runs every case, o
 lists one, and the ledger writes its set as `holdout`. No agent or skill text is changed against
 a held-out case: text is tuned on the tuning cases, and a held-out failure is written into
 `docs/design/eval-history.md` before any text changes (the verifier plan's rule 31).
+
+### Cases from real misses
+
+*Added from 2026-11-19 (Sprint 32, `misses-to-checks`).* Each of these comes from a miss a real
+run showed, named in its `case.yaml`. Its tree is built and read by smoke check 118, and its
+grader is shown on a reply it must pass and one it must fail by `scripts/grader-check.sh`, from
+`scripts/grader-replies/`.
+
+| Case | The miss | Passes when the answer… | Grader |
+|------|----------|-------------------------|--------|
+| `reviewer/helper-only` | the test citing REQ-2 passes on a helper that `refund` never calls (`field-notes-5.2.md` §9, REQ-5 and REQ-6 of `team-day-boundary`) | marks REQ-2 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
