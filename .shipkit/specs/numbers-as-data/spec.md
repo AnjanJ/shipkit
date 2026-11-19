@@ -36,8 +36,10 @@ its one-second limit on CI's runner. This is Sprint 31 of `docs/plans/verifier-s
   writes into `<dir>`. At Claude Code 2.1.319 it holds `claudeVersion`, `startedAt`, `suite`
   (with `modelOverride`, `threshold` and the plugin's `version`) and `cases`, each with `name`,
   `runsPerCase` and `arms.with`, one entry per run with `passed` and `costUsd`.
-- **A case's set.** `watch` when its runs per case are 5, `tune` otherwise. `holdout` is
-  Sprint 32's and is not written here.
+- **A case's set.** `holdout` when the case's row in the map says so; otherwise `watch` when
+  its runs per case are 5, and `tune`.
+  > *Amended 2026-11-19 (`misses-to-checks` T2, the owner's yes):* this said "`holdout` is
+  > Sprint 32's and is not written here". Sprint 32 writes it: `misses-to-checks/REQ-19`.
 - **An eval run in the ledger.** The rows that share one `date` and one `commit`. Runs are ordered
   by `date`, then by the order their rows were appended.
 - **A release run.** An eval run whose rows' `source` is not `partial`. `evals.sh` writes

@@ -174,6 +174,7 @@ registry() { cat <<'EOF'
 113 evals-for-diff
 114 eval-room
 115 ledger-fired-if
+116 holdout-kept-out
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4507,6 +4508,74 @@ chmod 644 "$LFC/docs/design/eval-ledger.tsv"
 [ -z "$lf_miss" ] || lf_fail="$lf_fail [an unreadable ledger: not ERROR: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
 if [ -z "$lf_fail" ]; then pass "ledger-fired-if (eleven reversal conditions read the ledger: HOLDS here, FIRED on a ledger past each clause, ERROR on one that cannot be read)"
 else failc "ledger-fired-if" "$lf_fail"; fi
+
+# 116. holdout-kept-out: a held-out case stays held out. The verifier plan's rule 31 lets one
+# run at a release run or on the owner's word, and until Sprint 32 the map's set was a word
+# nothing read. Lint takes only tune, watch and holdout there and ties `holdout` to the folder
+# evals/holdout/, whose cases are named holdout-*, so no group's pattern meets them;
+# scripts/evals-for-diff.sh leaves a held-out case out and says how many on standard error;
+# scripts/evals-ledger.sh writes the set from the map. Lint runs on a copy of this tree, the
+# other two on a scratch map (EVALS_MAP). No claude needed.
+# Cites: misses-to-checks/REQ-15 misses-to-checks/REQ-16 misses-to-checks/REQ-17
+# misses-to-checks/REQ-19
+HK="$WORK/holdout"; HKL="$HK/tree"; mkdir -p "$HK/repo" "$HK/out" "$HKL"; hk_fail=""
+# a. lint, on a copy of this tree that holds one held-out case
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$HKL/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$HKL" && tar xf -); fi
+mkdir -p "$HKL/plugins/shipkit/evals/holdout/demo-held"
+printf 'A held-out case that exists only in this copy.\n' > "$HKL/plugins/shipkit/evals/holdout/demo-held/prompt.md"
+cp "$HKL/scripts/evals-map.tsv" "$HK/map.orig"
+hk_lint() {  # hk_lint <set of the demo case> <awk rule for the other rows> → lint's output on the copy
+  awk -F '\t' -v OFS='\t' -v s="$1" "$2"' { print } END { print "holdout-demo-held", s, "plugins/shipkit/evals/holdout/demo-held/" }' \
+    "$HK/map.orig" > "$HKL/scripts/evals-map.tsv"
+  python3 "$HKL/scripts/lint.py" 2>&1
+}
+hk_n() { printf '%s\n' "$1" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p'; }
+hk_out=$(hk_lint holdout '')
+[ "$(hk_n "$hk_out")" = 0 ] || hk_fail="$hk_fail [a: a held-out case in evals/holdout/ with the set holdout: $(printf '%s' "$hk_out" | grep -E 'evals-map|holdout|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint holdout '$1 == "hello" { $2 = "foo" }')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*hello.*foo' \
+  || hk_fail="$hk_fail [a: the set foo on hello's row: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint tune '')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*holdout-demo-held.*evals/holdout/' \
+  || hk_fail="$hk_fail [a: a case under evals/holdout/ with the set tune: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint holdout '$1 == "hello" { $2 = "holdout" }')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*hello.*evals/holdout/' \
+  || hk_fail="$hk_fail [a: the set holdout on hello, which is not under evals/holdout/: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+# b. evals-for-diff.sh: a held-out row that the diff meets is not printed, and is counted aloud
+hkg() { (cd "$HK/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$HK/repo" && git init -q && mkdir -p plugins/shipkit/agents && echo a > plugins/shipkit/agents/reviewer.md)
+hkg add -A; hkg commit -q -m base; hkg tag base
+echo b >> "$HK/repo/plugins/shipkit/agents/reviewer.md"; hkg commit -q -am change
+{ printf 'case\tset\tpaths\n'
+  printf 'reviewer-one\ttune\tplugins/shipkit/agents/reviewer.md\n'
+  printf 'holdout-reviewer-one\tholdout\tplugins/shipkit/agents/reviewer.md\n'
+  printf 'beta\twatch\tplugins/shipkit/agents/reviewer.md\n'; } > "$HK/map.tsv"
+hk_out=$(cd "$HK/repo" && EVALS_MAP="$HK/map.tsv" sh "$ROOT/scripts/evals-for-diff.sh" base 2>"$HK/err" | tr '\n' ' ')
+[ "$hk_out" = "beta reviewer-one " ] || hk_fail="$hk_fail [b: with a held-out row the diff meets, printed: $hk_out]"
+[ "$(cat "$HK/err")" = "evals-for-diff: 1 held-out case(s) not listed" ] || hk_fail="$hk_fail [b: standard error: $(tr '\n' '|' < "$HK/err" | cut -c1-200)]"
+grep -v '^holdout-' "$HK/map.tsv" > "$HK/map-none.tsv"
+hk_out=$(cd "$HK/repo" && EVALS_MAP="$HK/map-none.tsv" sh "$ROOT/scripts/evals-for-diff.sh" base 2>"$HK/err" | tr '\n' ' ')
+[ "$hk_out" = "beta reviewer-one " ] && [ ! -s "$HK/err" ] || hk_fail="$hk_fail [b: with no held-out row: printed $hk_out, standard error $(tr '\n' '|' < "$HK/err" | cut -c1-120)]"
+# c. evals-ledger.sh append: the set is holdout for a case the map marks so; watch or tune for
+# the others, and for every case when there is no map to read
+hk_runs() { _n=$1; _s=""; while [ "$_n" -gt 0 ]; do _s="$_s{\"passed\":true,\"costUsd\":0.1}"; _n=$((_n - 1)); [ "$_n" -gt 0 ] && _s="$_s,"; done; printf '%s' "$_s"; }
+printf '%s\n' '{"schemaVersion":1,"claudeVersion":"2.1.400","startedAt":"2026-12-02T10:00:00.000Z","costUsd":1.3,' \
+  '"suite":{"modelOverride":"sonnet","threshold":0.6,"plugins":[{"name":"shipkit","version":"9.9.9"}]},' \
+  '"cases":[{"name":"reviewer-one","runsPerCase":3,"arms":{"with":['"$(hk_runs 3)"']}},' \
+  '{"name":"holdout-reviewer-one","runsPerCase":5,"arms":{"with":['"$(hk_runs 5)"']}},' \
+  '{"name":"beta","runsPerCase":5,"arms":{"with":['"$(hk_runs 5)"']}}],' \
+  '"aggregates":{"casesTotal":3}}' > "$HK/out/aggregate-result.json"
+hk_sets() { awk -F '\t' 'NR > 1 { printf "%s=%s ", $6, $7 }' "$1" 2>/dev/null; }
+EVALS_MAP="$HK/map.tsv" EVALS_LEDGER="$HK/l.tsv" sh "$ROOT/scripts/evals-ledger.sh" append "$HK/out" --commit abc1234 >/dev/null 2>&1; hk_rc=$?
+[ "$hk_rc" -eq 0 ] && [ "$(hk_sets "$HK/l.tsv")" = "reviewer-one=tune holdout-reviewer-one=holdout beta=watch " ] \
+  || hk_fail="$hk_fail [c: append with the scratch map: exit $hk_rc, sets $(hk_sets "$HK/l.tsv")]"
+EVALS_MAP="$HK/no-such-map.tsv" EVALS_LEDGER="$HK/l2.tsv" sh "$ROOT/scripts/evals-ledger.sh" append "$HK/out" --commit abc1234 >/dev/null 2>&1; hk_rc=$?
+[ "$hk_rc" -eq 0 ] && [ "$(hk_sets "$HK/l2.tsv")" = "reviewer-one=tune holdout-reviewer-one=watch beta=watch " ] \
+  || hk_fail="$hk_fail [c: append with no map to read: exit $hk_rc, sets $(hk_sets "$HK/l2.tsv")]"
+sh -n "$ROOT/scripts/evals-for-diff.sh" 2>/dev/null && sh -n "$ROOT/scripts/evals-ledger.sh" 2>/dev/null || hk_fail="$hk_fail [sh -n reports a syntax error]"
+if [ -z "$hk_fail" ]; then pass "holdout-kept-out (lint takes tune, watch and holdout, and holds holdout to evals/holdout/; evals-for-diff.sh leaves a held-out case out and says so; the ledger writes holdout from the map)"
+else failc "holdout-kept-out" "$hk_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

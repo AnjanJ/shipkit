@@ -18,7 +18,7 @@ Sprint 35.
   - Test: scripts/smoke.sh checks 113 and 114, changed: for a diff on `agents/reviewer.md` check 113 expects every map row named `reviewer-*`, and a scratch map with one more such row prints it too; check 114 fails above 204,800 bytes and no longer at 190,800
   - After: T0
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 113 and 114 `PASS`, exit 0; `numbers-as-data/spec.md` carries a dated note under its REQ-21 and its REQ-27
-- [ ] **T2** A held-out case stays held out: lint, `evals-for-diff.sh` and the ledger → REQ-15, REQ-16, REQ-17, REQ-19, REQ-20
+- [x] **T2** A held-out case stays held out: lint, `evals-for-diff.sh` and the ledger → REQ-15, REQ-16, REQ-17, REQ-19, REQ-20
   - Files: scripts/lint.py, scripts/evals-for-diff.sh, scripts/evals-ledger.sh, scripts/evals.sh, scripts/smoke.sh, docs/design/eval-cases.md, .shipkit/specs/numbers-as-data/spec.md
   - Test: scripts/smoke.sh check 116 (`holdout-kept-out`): on a copy of this tree, lint fails a row whose set is `foo`, a case under `evals/holdout/` whose set is `tune`, and a `holdout` row whose case is elsewhere, naming each; with a scratch map, `evals-for-diff.sh` prints no held-out case and writes `evals-for-diff: 1 held-out case(s) not listed` to standard error; `evals-ledger.sh append` with that map writes `holdout` for the case it marks and `tune` or `watch` for the others
   - After: T1

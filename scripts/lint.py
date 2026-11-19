@@ -641,10 +641,14 @@ for doc in _map_docs:
 # never be picked for a diff, and a row for a gone case, or a path that no longer exists, would
 # pick by a stale map. A case is a folder under evals/, outside fixtures/, with a prompt.md; its
 # name is its path with / read as -.
+# The set, the row's second field, is tune, watch or holdout. A held-out case lives under
+# evals/holdout/, so its name starts holdout- and no other group's pattern runs it, and the set
+# and the folder go together (the misses-to-checks spec, REQ-15 and REQ-16).
 
 _evals_map = ROOT / "scripts" / "evals-map.tsv"
-_cases = {str(p.parent.relative_to(_evals_dir)).replace("/", "-")
-          for p in _evals_dir.rglob("prompt.md") if "fixtures" not in p.relative_to(_evals_dir).parts}
+_case_dir = {str(p.parent.relative_to(_evals_dir)).replace("/", "-"): p.parent.relative_to(_evals_dir)
+             for p in _evals_dir.rglob("prompt.md") if "fixtures" not in p.relative_to(_evals_dir).parts}
+_cases = set(_case_dir)
 if not _evals_map.exists():
     err(_evals_map, "missing: scripts/evals-for-diff.sh has nothing to read")
 else:
@@ -655,6 +659,11 @@ else:
             err(_evals_map, f"line {i}: want three tab-separated fields, case, set and paths")
             continue
         _rows[cols[0]] = (i, cols[2])
+        if cols[1] not in ("tune", "watch", "holdout"):
+            err(_evals_map, f"line {i}: {cols[0]}: the set {cols[1]!r} is not tune, watch or holdout")
+        elif cols[0] in _case_dir and (cols[1] == "holdout") != (_case_dir[cols[0]].parts[0] == "holdout"):
+            err(_evals_map, f"line {i}: {cols[0]}: the set holdout and the folder evals/holdout/ go together "
+                            f"(its set is {cols[1]}, its folder evals/{_case_dir[cols[0]]}/)")
     for c in sorted(_cases - set(_rows)):
         err(_evals_map, f"no row for the eval case {c}")
     for c in sorted(set(_rows) - _cases):

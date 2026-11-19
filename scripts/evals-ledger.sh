@@ -8,8 +8,9 @@
 #
 # append reads <dir>/aggregate-result.json, which `claude plugin eval --output-dir <dir>` writes,
 # and adds one row for each case: date, version, commit, claude, model, case, set, passed,
-# runs, threshold, cost, source (tab-separated). set is `watch` for a case run five times and
-# `tune` otherwise; cost sums the case's runs. The commit is --commit, else HEAD; the source is
+# runs, threshold, cost, source (tab-separated). set is `holdout` for a case whose row in
+# scripts/evals-map.tsv says so, else `watch` for a case run five times and `tune` otherwise;
+# cost sums the case's runs. The commit is --commit, else HEAD; the source is
 # --source, else `run`. A row whose date, commit and case the ledger already holds is not added
 # again. It prints "evals-ledger: <a> row(s) added, <s> already held".
 #
@@ -24,7 +25,8 @@
 #   --runs             "<date> <commit> <cases> <passed>/<runs> <cost>" for each run, over the
 #                      cases whose name starts with --prefix; cost is `-` when one is unknown
 #
-# EVALS_LEDGER names another ledger (the smoke checks use a scratch one). append needs
+# EVALS_LEDGER names another ledger and EVALS_MAP another map (the smoke checks use scratch
+# ones); with no map to read, no case is marked held out. append needs
 # python3, to read JSON; the queries need sh and awk only, since Fired-if commands run them.
 # Exit status: 0; 1 when append finds no result file or cannot write; 2 on usage, or when a
 # query cannot read the ledger.
@@ -32,6 +34,7 @@
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 LEDGER=${EVALS_LEDGER:-$ROOT/docs/design/eval-ledger.tsv}
+MAP=${EVALS_MAP:-$ROOT/scripts/evals-map.tsv}
 HEADER='date	version	commit	claude	model	case	set	passed	runs	threshold	cost	source'
 usage() {
   echo "usage: evals-ledger.sh append <dir> [--commit <sha>] [--source <word>]" >&2
@@ -61,9 +64,14 @@ if [ "$1" = append ]; then
     mkdir -p "$(dirname "$LEDGER")" && printf '%s\n' "$HEADER" > "$LEDGER" \
       || { echo "evals-ledger: cannot write $LEDGER" >&2; exit 1; }
   fi
-  python3 -I - "$RES" "$LEDGER" "$COMMIT" "$SOURCE" <<'PY'
+  python3 -I - "$RES" "$LEDGER" "$COMMIT" "$SOURCE" "$MAP" <<'PY'
 import json, sys
-res, ledger, commit, source = sys.argv[1:5]
+res, ledger, commit, source, emap = sys.argv[1:6]
+try:
+    held_out = {c[0] for c in (l.split("\t") for l in open(emap).read().splitlines()[1:])
+                if len(c) >= 2 and c[1] == "holdout"}
+except OSError:
+    held_out = set()
 d = json.load(open(res))
 suite = d.get("suite") or {}
 version = next((p.get("version") for p in suite.get("plugins") or [] if p.get("name") == "shipkit"), None)
@@ -90,7 +98,7 @@ for case in d.get("cases") or []:
     cost = "-" if (not runs or any(c is None for c in costs)) else "%.2f" % sum(costs)
     per = case.get("runsPerCase") or len(runs)
     rows.append("\t".join([date, f(version), commit, f(d.get("claudeVersion")), f(suite.get("modelOverride")),
-                           name, "watch" if per == 5 else "tune", str(passed), str(len(runs)),
+                           name, "holdout" if name in held_out else "watch" if per == 5 else "tune", str(passed), str(len(runs)),
                            f(suite.get("threshold")), cost, source]))
     held.add(key)
     added += 1

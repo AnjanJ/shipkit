@@ -9,6 +9,11 @@
 # reaches no case prints nothing and exits 0. `scripts/evals.sh --for-diff <base-ref>` runs
 # what this prints.
 #
+# A held-out case (set `holdout`, the row's second field) is never printed: a run chosen by a
+# diff is a tuning run, and a held-out case runs at a release run or on the owner's word (the
+# verifier plan's rule 31). When the diff meets one or more, standard error says how many:
+# "evals-for-diff: <n> held-out case(s) not listed".
+#
 # The map names, for each case, its own folder and the plugin files whose text reaches it: the
 # skill its prompt invokes, the agent it starts, the rule its fixture installs and the script
 # that delivers it, and, for a fixture with a .shipkit/ folder, the briefing and spec-check.sh,
@@ -18,7 +23,8 @@
 # check 19 holds the map to the case folders.
 #
 # Exit status: 0; 2 on usage or when git cannot read the diff. POSIX sh + awk + git.
-# Spec: .shipkit/specs/numbers-as-data/ (REQ-20 to REQ-23).
+# Spec: .shipkit/specs/numbers-as-data/ (REQ-20 to REQ-23); .shipkit/specs/misses-to-checks/
+# (REQ-17).
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 MAP=${EVALS_MAP:-$ROOT/scripts/evals-map.tsv}
@@ -35,7 +41,11 @@ printf '%s\n' "$changed" | awk -F '\t' '
       p = paths[i]
       for (k = 1; k <= nc; k++) {
         f = changed[k]
-        if (f == p || (p ~ /\/$/ && index(f, p) == 1)) { print $1; next }
+        if (f == p || (p ~ /\/$/ && index(f, p) == 1)) {
+          if ($2 == "holdout") held++; else print $1
+          next
+        }
       }
     }
-  }' - "$MAP" | sort -u
+  }
+  END { if (held) print "evals-for-diff: " held " held-out case(s) not listed" | "cat 1>&2" }' - "$MAP" | sort -u

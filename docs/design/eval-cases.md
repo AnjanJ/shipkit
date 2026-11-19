@@ -161,3 +161,19 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
 (commit 20 of 27) and in the map's *Evolution* section. They exist for decision 0001's re-test
 (`.shipkit/specs/map-on-trial/`); the comparison and its numbers are in
 `docs/design/eval-results-4.1.md`. Added in 4.1.0.
+
+## Cases added after the move
+
+The two sections above are held word for word by smoke check 114, so what has been added since
+2026-11-18 is written here.
+
+### Held-out cases
+
+*Added 2026-11-19 (Sprint 32, `misses-to-checks`).* A held-out case is one whose set in
+`scripts/evals-map.tsv` is `holdout`. It lives under `plugins/shipkit/evals/holdout/`, so its name
+starts `holdout-` and no other group's pattern runs it; lint's check 19 holds the set and the
+folder together. A held-out case runs at a release run, which runs every case, or by
+`bash scripts/evals.sh --group holdout` on the owner's word. `scripts/evals-for-diff.sh` never
+lists one, and the ledger writes its set as `holdout`. No agent or skill text is changed against
+a held-out case: text is tuned on the tuning cases, and a held-out failure is written into
+`docs/design/eval-history.md` before any text changes (the verifier plan's rule 31).

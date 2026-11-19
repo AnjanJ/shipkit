@@ -7,6 +7,9 @@
 # `--group <name>` (first argument) runs only the cases named <name>-* — every case is named
 # after its folder (rules-trivial, scoped-dependencies, stacks-gemfile), so a group is a name
 # prefix; `--group grandfather` also runs grandfather-xl-*. No flag still runs every case (B7).
+# A held-out case (set `holdout` in scripts/evals-map.tsv) lives under evals/holdout/ and is
+# named holdout-*, so no other group's pattern meets it: `--group holdout` runs the held-out
+# cases, on the owner's word, and a run with no flag runs them with the rest.
 # The eval cases are Markdown and cannot carry a citation that spec-check counts, so the
 # requirements they prove are cited here: measure-and-slim/REQ-1 measure-and-slim/REQ-2
 # measure-and-slim/REQ-3 measure-and-slim/REQ-9 measure-and-slim/REQ-10 measure-and-slim/REQ-17
