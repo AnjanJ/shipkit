@@ -1,0 +1,21 @@
+## Review: refunds against base
+
+| Requirement | Verdict | Evidence |
+|-------------|---------|----------|
+| REQ-1 | MET | code `app/refunds.py:12`, test `tests/test_refunds.py:22` |
+| REQ-2 (waived) | MET | `app/refunds.py:10` |
+| REQ-3 (waived) | MET | `README.md:14` |
+
+## Changes beyond the spec
+- None.
+
+## Decisions not followed
+- None.
+
+## Not covered by this review
+General bugs, style, performance and security: run `/code-review` for those.
+
+Note: the waiver on REQ-2 is new on this branch; the spec as first committed asked for a test.
+
+Requirements: 3 MET, 0 NOT MET, 0 CANNOT TELL (2 waived).
+VERDICT: PASS

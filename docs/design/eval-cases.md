@@ -225,11 +225,16 @@ a held-out case: text is tuned on the tuning cases, and a held-out failure is wr
 ### Cases from real misses
 
 *Added from 2026-11-19 (Sprint 32, `misses-to-checks`).* Each of these comes from a miss a real
-run showed, named in its `case.yaml`. Its tree is built and read by smoke check 118, and its
+run showed, or from a gap the verifier plan's read of the scripts found (its section 3), named in
+its `case.yaml`. Its tree is built and read by smoke check 118, and its
 grader is shown on a reply it must pass and one it must fail by `scripts/grader-check.sh`, from
 `scripts/grader-replies/`.
 
-| Case | The miss | Passes when the answer… | Grader |
-|------|----------|-------------------------|--------|
+| Case | The miss or the gap | Passes when the answer… | Grader |
+|------|---------------------|-------------------------|--------|
 | `reviewer/helper-only` | the test citing REQ-2 passes on a helper that `refund` never calls (`field-notes-5.2.md` §9, REQ-5 and REQ-6 of `team-day-boundary`) | marks REQ-2 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
 | `holdout/reviewer-helper-only` (held out) | the same miss on another feature, `notes-export`: the test citing REQ-1 passes on `is_shareable`, which `export_notes` never calls | marks REQ-1 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
+| `reviewer/skipped-test` | a citation in a skipped test counts as a test: the only test citing REQ-2 is skipped | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/comment-cite` | a citation in a comment in the code counts as a test: REQ-2 is cited in `app/refunds.py` and has no test | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/weakened-req` | an edit to the spec on its own branch is never listed: REQ-2 was rewritten to match the code | says REQ-2 was changed on this branch, under "Requirements changed on this branch" or on one line with `REQ-2` | regex |
+| `reviewer/waiver-added` | the same gap: REQ-2 gained `[untested: …]` on the branch and has no test | says REQ-2 gained its waiver on this branch | regex |

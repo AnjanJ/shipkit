@@ -57,11 +57,19 @@ Sprint 35.
     `spec-check.sh` are unchanged since `9e061ca`, the briefing still starts 229 commands with the
     same output, and the load average was 3.6 at the start of the run and 5.3 after it. The other 240
     checks passed, this task's among them. The owner was told.
-- [ ] **T6** Four more tuning cases: `skipped-test`, `comment-cite`, `weakened-req`, `waiver-added` → REQ-3, REQ-4, REQ-5, REQ-6, REQ-8, REQ-9, REQ-10
+- [x] **T6** Four more tuning cases: `skipped-test`, `comment-cite`, `weakened-req`, `waiver-added` → REQ-3, REQ-4, REQ-5, REQ-6, REQ-8, REQ-9, REQ-10
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/skipped-test/, plugins/shipkit/evals/reviewer/comment-cite/, plugins/shipkit/evals/reviewer/weakened-req/, plugins/shipkit/evals/reviewer/waiver-added/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `skipped-test` runs green with one test skipped and `spec-check.sh` prints `SKIPPED-CITE refunds REQ-2`; in `comment-cite`, `refunds/REQ-2` is in a comment in `app/refunds.py` and nowhere under `tests/`; in `weakened-req`, `spec-diff.sh . refunds base` prints `REQ-CHANGED refunds REQ-2` and no other `REQ-` or `WAIVER-` line and `refund` caps the amount; in `waiver-added` it prints `WAIVER-ADDED` and `REQ-CHANGED` for REQ-2 and no test cites it. Check 117 reads the four graders' replies
   - After: T5
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): only `helper-only` comes from a run. These four come from gaps the verifier
+    plan's read of the scripts found (its section 3: a comment in the code counts as a citation; an
+    edit to `spec.md` on the branch is never listed) and from `honest-evidence`'s purpose (a citation in
+    a skipped test counts). Each `case.yaml` and `docs/design/eval-cases.md` say "the gap", not
+    "the miss"; the plan's heading "from real misses" says more than its sources do.
+  - Note (2026-11-19): the four cost 5,120 bytes, 460 more than projected (the fixture 1,588, the
+    folders about 883 each). The folder is 197,963. With T7, T8, T11 and T12 projected at 6,840 it
+    lands at about 204,800: no room on the estimate. Lint's check 17 will say at each task.
 - [ ] **T7** `holdout/reviewer-skipped-test` → REQ-13, REQ-14
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-skipped-test/, scripts/grader-replies/holdout-reviewer-skipped-test/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `export_notes` leaves a private note out, the test citing `notes-export/REQ-1` is skipped, the test command exits 0 and `spec-check.sh . notes-export` prints `SKIPPED-CITE notes-export REQ-1`. Check 117 reads the grader's replies

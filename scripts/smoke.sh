@@ -4669,7 +4669,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need="reviewer-helper-only holdout-reviewer-helper-only"
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4688,7 +4688,12 @@ else failc "grader-both-ways" "$gc_fail"; fi
 # is not there. The two held-out cases are the same misses on another feature, a notes export,
 # so that nothing in them shares a word with the cases the reviewer's text is tuned on, and the
 # requirement they break is REQ-1, not REQ-2. No claude needed.
-# Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-11
+# Four more come from gaps the verifier plan's read of the scripts found (its section 3): a
+# citation in a skipped test counts (skipped-test), so does one in a comment in the code
+# (comment-cite), and an edit to the spec on its own branch is never listed, whether it rewrites
+# a requirement to match the code (weakened-req) or excuses it from a test (waiver-added).
+# Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-3
+# misses-to-checks/REQ-4 misses-to-checks/REQ-5 misses-to-checks/REQ-6 misses-to-checks/REQ-11
 # misses-to-checks/REQ-12
 RT="$WORK/rtrees"; rt_fail=""; mkdir -p "$RT/old/lib" "$RT/old/fixtures"
 rt_build() {  # rt_build <dir> <fixture script> [argument] → the tree the script leaves in <dir>
@@ -4742,6 +4747,66 @@ else:
     raise AssertionError("check_amount let 2500 on a charge of 2000 through")
 RTPY
 ) || rt_fail="$rt_fail [helper-only: $(tail -1 "$RT/helper.py" | cut -c1-200)]"
+# b2. the four from gaps in how a citation and a spec edit are read
+rt_rejects() {  # rt_rejects <dir> → refund raises RefundRejected for 2500 on a charge of 2000, and the gateway is not called
+  (cd "$1" && python3 - > "$1.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import RefundRejected, refund
+class Gateway:
+    calls = 0
+    def refund(self, customer, amount_cents):
+        Gateway.calls += 1
+        return "rf_1"
+try:
+    refund({"customer": "ada"}, 2500, 2000, Gateway())
+except RefundRejected:
+    assert Gateway.calls == 0, "the gateway was called"
+else:
+    raise AssertionError("refund did not raise RefundRejected for 2500 on a charge of 2000")
+RTPY
+  ) || rt_fail="$rt_fail [$(basename "$1"): $(tail -1 "$1.py" | cut -c1-200)]"
+}
+rt_diff() { (cd "$1" && sh "$COPY/scripts/spec-diff.sh" . refunds base 2>&1 | grep -E '^(REQ|WAIVER)-' | LC_ALL=C sort | tr '\n' '|'); }  # spec-diff's REQ- and WAIVER- lines, sorted
+rt_build "$RT/skipped" "$COPY/evals/reviewer/skipped-test/fixture.sh"
+(cd "$RT/skipped" && sh "$COPY/scripts/spec-check.sh" . refunds 2>&1) | grep -q '^SKIPPED-CITE refunds REQ-2 tests/test_refunds.py:' \
+  || rt_fail="$rt_fail [skipped-test: spec-check.sh prints no SKIPPED-CITE line for refunds REQ-2]"
+[ "$(rt_test "$RT/skipped")" = 0 ] && grep -q 'skipped=1' "$RT/skipped.test" \
+  || rt_fail="$rt_fail [skipped-test: the test command must exit 0 with one test skipped: $(tail -1 "$RT/skipped.test" | cut -c1-120)]"
+[ "$(grep -c 'refunds/REQ-2' "$RT/skipped/tests/test_refunds.py" 2>/dev/null)" = 1 ] \
+  && rt_cited "$RT/skipped/tests/test_refunds.py" refunds/REQ-2 | sed -n 1p | grep -q '@unittest.skip' \
+  || rt_fail="$rt_fail [skipped-test: the one test citing refunds/REQ-2 must carry @unittest.skip]"
+rt_rejects "$RT/skipped"
+rt_build "$RT/comment" "$COPY/evals/reviewer/comment-cite/fixture.sh"
+grep -q '^ *# refunds/REQ-2' "$RT/comment/app/refunds.py" 2>/dev/null && ! grep -rq 'refunds/REQ-2' "$RT/comment/tests" 2>/dev/null \
+  || rt_fail="$rt_fail [comment-cite: refunds/REQ-2 must be in a comment in app/refunds.py and nowhere under tests/]"
+[ "$(rt_test "$RT/comment")" = 0 ] || rt_fail="$rt_fail [comment-cite: the test command failed: $(tail -2 "$RT/comment.test" | tr '\n' '|' | cut -c1-160)]"
+rt_rejects "$RT/comment"
+rt_build "$RT/weakened" "$COPY/evals/reviewer/weakened-req/fixture.sh"
+[ "$(rt_diff "$RT/weakened")" = "REQ-CHANGED refunds REQ-2|" ] || rt_fail="$rt_fail [weakened-req: spec-diff.sh printed: $(rt_diff "$RT/weakened")]"
+grep -q '^  refund the amount charged\.$' "$RT/weakened/.shipkit/specs/refunds/spec.md" 2>/dev/null || rt_fail="$rt_fail [weakened-req: REQ-2 does not say the refund is cut to the charge]"
+[ "$(rt_test "$RT/weakened")" = 0 ] && grep -q 'refunds/REQ-2' "$RT/weakened/tests/test_refunds.py" \
+  || rt_fail="$rt_fail [weakened-req: a test citing refunds/REQ-2 must pass: $(tail -2 "$RT/weakened.test" | tr '\n' '|' | cut -c1-160)]"
+(cd "$RT/weakened" && python3 - > "$RT/weakened.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+refund({"customer": "ada"}, 2500, 2000, gateway)
+assert gateway.amounts == [2000], "refund did not cut 2500 to the charge of 2000: %r" % gateway.amounts
+RTPY
+) || rt_fail="$rt_fail [weakened-req: $(tail -1 "$RT/weakened.py" | cut -c1-200)]"
+rt_build "$RT/waived" "$COPY/evals/reviewer/waiver-added/fixture.sh"
+[ "$(rt_diff "$RT/waived")" = "REQ-CHANGED refunds REQ-2|WAIVER-ADDED refunds REQ-2|" ] \
+  || rt_fail="$rt_fail [waiver-added: spec-diff.sh printed: $(rt_diff "$RT/waived")]"
+grep -rq 'refunds/REQ-2' "$RT/waived/tests" "$RT/waived/app" 2>/dev/null && rt_fail="$rt_fail [waiver-added: a file still cites refunds/REQ-2]"
+[ "$(rt_test "$RT/waived")" = 0 ] || rt_fail="$rt_fail [waiver-added: the test command failed]"
 # c. the held-out pair, on the notes-export feature
 rt_notes() {  # rt_notes <dir> → the tree is the notes-export feature, with no word of the refunds one
   [ -f "$1/.shipkit/specs/notes-export/spec.md" ] && [ ! -e "$1/.shipkit/specs/refunds" ] \
@@ -4769,7 +4834,7 @@ assert not is_shareable(private), "is_shareable lets a private note through"
 assert len(export_notes([private])) == 1, "export_notes left the private note out, so the miss is not in the tree"
 RTPY
 ) || rt_fail="$rt_fail [holdout helper-only: $(tail -1 "$RT/notes-helper.py" | cut -c1-200)]"
-if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; held out, on notes-export with no word of refunds: the same miss on REQ-1)"
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only miss on REQ-1)"
 else failc "reviewer-trees" "$rt_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

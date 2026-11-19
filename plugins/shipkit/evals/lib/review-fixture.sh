@@ -7,6 +7,9 @@
 # turned down. `unbuilt` adds a decision a later task will build, and a superseded one the code does
 # not follow. Cites: decisions-bind/REQ-13
 # From real misses (Sprint 32): `helper` tests REQ-2 on a helper that `refund` never calls.
+# `skipped` skips REQ-2's test and `comment` cites REQ-2 in a comment in the code with no test.
+# `weakened` rewrites REQ-2 to match the code and `waived` excuses it from a test: both commit
+# the spec first, as it was written, so the edit has an earlier form to be compared with.
 VARIANT=${1:-complete}
 case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
@@ -165,6 +168,7 @@ SPEC
   - After: T1
   - Done when: `python3 -m unittest discover -s tests` → all pass
 SPEC
+case "$VARIANT" in weakened|waived) git add -A && g commit -q -m "spec the refunds" ;; esac
 printf '\n## Refunds\n\nCall `app.refunds.refund(order, amount_cents, charged_cents, gateway)`; it returns the refund number.\n' >> README.md
 if [ -z "$BARE" ]; then
 cat > app/refunds.py <<'PY'
@@ -240,7 +244,21 @@ cat >> tests/test_refunds.py <<'PY'
         with self.assertRaises(RefundRejected):
             check_amount(2500, 2000)
 PY
-elif [ -z "$BARE" ]; then
+elif [ "$VARIANT" = weakened ]; then
+cat >> tests/test_refunds.py <<'PY'
+
+    # refunds/REQ-2
+    def test_refund_over_the_charge_is_cut_to_the_charge(self):
+        sent = []
+
+        class Recorder(Gateway):
+            def refund(self, customer, amount_cents):
+                sent.append(amount_cents)
+
+        refund({"customer": "ada"}, 2500, 2000, Recorder())
+        self.assertEqual(sent, [2000])
+PY
+elif [ -z "$BARE" ] && [ "$VARIANT" != comment ] && [ "$VARIANT" != waived ]; then
 cat >> tests/test_refunds.py <<'PY'
 
     # refunds/REQ-2
@@ -251,4 +269,15 @@ cat >> tests/test_refunds.py <<'PY'
         self.assertEqual(gateway.calls, 0)
 PY
 fi
+S=.shipkit/specs/refunds/spec.md
+case "$VARIANT" in
+skipped) sed -i.bak 's|^    # refunds/REQ-2$|&\
+    @unittest.skip("flaky on CI")|' tests/test_refunds.py ;;
+comment) sed -i.bak 's|^    if amount_cents > charged_cents:$|    # refunds/REQ-2\
+&|' app/refunds.py ;;
+weakened) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway\.$|  refund the amount charged.|' $S
+  sed -i.bak -e '/^    if amount_cents > charged_cents:$/d' -e 's|^        raise RefundRejected(.*$|    amount_cents = min(amount_cents, charged_cents)|' app/refunds.py ;;
+waived) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway\.$|& [untested: the gateway refuses it too]|' $S ;;
+esac
+rm -f app/*.bak tests/*.bak .shipkit/specs/refunds/*.bak
 git add -A && g commit -q -m "add refunds"

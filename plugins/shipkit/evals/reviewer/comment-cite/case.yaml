@@ -1,0 +1,5 @@
+# The gap (verifier plan, section 3): a citation in a comment in the code counts as a test. REQ-2 has no test.
+schema_version: "1.1"
+name: reviewer-comment-cite
+context:
+  scaffold_script: fixture.sh
