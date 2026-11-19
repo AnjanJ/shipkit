@@ -6,22 +6,15 @@
 # REQ-2 with no code and no test. `rejected` meets every requirement and does what a live decision
 # turned down. `unbuilt` adds a decision a later task will build, and a superseded one the code does
 # not follow. Cites: decisions-bind/REQ-13
-# From real misses (Sprint 32): `helper` tests REQ-2 on a helper that `refund` never calls.
-# `skipped` skips REQ-2's test and `comment` cites REQ-2 in a comment in the code with no test.
-# `weakened` rewrites REQ-2 to match the code and `waived` excuses it from a test: both commit
-# the spec first, as it was written, so the edit has an earlier form to be compared with.
+# Sprint 32's variants are described in docs/design/eval-cases.md: helper, skipped, comment,
+# weakened, waived, round2, stale and check on refunds, and notes-* on the held-out feature.
 VARIANT=${1:-complete}
-# `round2` is the `helper` tree and `stale` the `missing` tree, each with an earlier ship report
-# left untracked: one that marked REQ-2 NOT MET, and one that marked it MET.
 EARLIER=; case "$VARIANT" in round2) EARLIER=round2; VARIANT=helper ;; stale) EARLIER=stale; VARIANT=missing ;; esac
 case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
-# `check` is `complete` with a checks file in the base commit, whose one item the diff breaks.
 [ "$VARIANT" = check ] && mkdir -p .shipkit && printf '## C1: A refund is sent once\nTrigger: path app/refunds.py\nCheck: Every call to gateway.refund passes an idempotency key as its third argument.\nFrom: .shipkit/escapes/0001-double-refund.md\n' > .shipkit/checks.md
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
-# Held out (Sprint 32): notes-* is another feature, a notes export, sharing no word with the
-# variants below. `notes-helper` tests REQ-1 on a helper; `notes-skipped` skips REQ-1's test.
 if [ "${VARIANT#notes-}" != "$VARIANT" ]; then
 mkdir -p .shipkit/specs/notes-export
 cat > .shipkit/specs/notes-export/spec.md <<'SPEC'

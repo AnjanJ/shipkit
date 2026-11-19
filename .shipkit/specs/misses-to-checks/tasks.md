@@ -101,11 +101,21 @@ Sprint 35.
   - After: T10
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 113, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
   - Note (2026-11-19): the case cost 1,229 bytes. The folder is 203,257, with 1,543 of room for T12.
-- [ ] **T12** `escape/second-of-a-kind`, a second grader on the first escape, and the eleven rows → REQ-36, REQ-37, REQ-38, REQ-39, REQ-42
+- [x] **T12** `escape/second-of-a-kind`, a second grader on the first escape, and the eleven rows → REQ-36, REQ-37, REQ-38, REQ-39, REQ-42
   - Files: plugins/shipkit/evals/escape/second-of-a-kind/, plugins/shipkit/evals/escape/missing-req/graders/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 120 (`escape-second`): the tree's spec holds REQ-3, `.shipkit/escapes/0001-refund-above-charge.md` names the cause `requirement missing` and the spec `.shipkit/specs/refunds/`, `refund` accepts an amount below zero and the test command exits 0; the map gives `holdout` to the two held-out cases and `tune` to the other nine. Check 117 reads the new grader's replies and those of `escape-missing-req`'s second grader
   - After: T11
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 120 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s), which holds the evals folder to 204,800 bytes; `docs/design/eval-cases.md` has a row for each of the eleven cases, and each one's `case.yaml` names its miss
+  - Note (2026-11-19): `plugins/shipkit/evals/lib/review-fixture.sh`, the ten new `fixture.sh` files under
+    `evals/reviewer/` and `evals/holdout/`, and `evals/reviewer/check-triggered/graders/` were added to
+    Files. With this case the folder was 205,627 bytes, 827 over the ceiling. What was cut is comment:
+    the shared fixture's notes on its new variants, now a paragraph in `docs/design/eval-cases.md`, and
+    the one-line comment in each new `fixture.sh`. No case was cut. The folder is 204,629: 171 bytes
+    of room. The next case anyone adds needs room made first.
+  - Note (2026-11-19): `scripts/grader-check.sh` caught the new grader `no-check-drafted` passing a reply
+    it must fail: with the `m` flag its leading `^` could start after the `Trigger:` line. It and the two
+    other graders written with `m` and a leading `^` (`drafts-a-check`, `c1-broken-and-pass`) now write a
+    line start out as `(?:^|\n)` and carry no flag. All 37 replies read as they must.
 - [ ] **T13** The briefing's command count, enforced on every machine → REQ-43, REQ-44
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check 121 (`briefing-commands`): with thirteen stand-ins as the whole `PATH`, the briefing on check 30's fixture prints what it prints under the normal `PATH` and starts at most 229 commands, and the `PASS` line carries the count; the count from fifty-one specs, given to the verdict with `CI=true` and `SMOKE_TIMING=report`, is a `FAIL`

@@ -2,6 +2,7 @@ case	set	paths
 brief-binds	tune	plugins/shipkit/evals/brief/binds/,plugins/shipkit/scripts/brief.sh,plugins/shipkit/skills/spec/,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 digest-attention	tune	plugins/shipkit/evals/digest/attention/,plugins/shipkit/skills/ask/,plugins/shipkit/agents/eve.md,plugins/shipkit/scripts/portfolio-digest.sh
 escape-missing-req	tune	plugins/shipkit/evals/escape/missing-req/,plugins/shipkit/skills/escape/,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
+escape-second-of-a-kind	tune	plugins/shipkit/evals/escape/second-of-a-kind/,plugins/shipkit/evals/escape/missing-req/,plugins/shipkit/skills/escape/,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 eve-consolidate	tune	plugins/shipkit/evals/eve/consolidate/,plugins/shipkit/skills/ask/,plugins/shipkit/agents/eve.md
 eve-jobs	tune	plugins/shipkit/evals/eve/jobs/,plugins/shipkit/skills/ask/,plugins/shipkit/agents/eve.md
 eve-matrix	tune	plugins/shipkit/evals/eve/matrix/,plugins/shipkit/skills/ask/,plugins/shipkit/agents/eve.md

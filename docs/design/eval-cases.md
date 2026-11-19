@@ -230,6 +230,15 @@ its `case.yaml`. Its tree is built and read by smoke check 118, and its
 grader is shown on a reply it must pass and one it must fail by `scripts/grader-check.sh`, from
 `scripts/grader-replies/`.
 
+`plugins/shipkit/evals/lib/review-fixture.sh` builds every reviewer tree, from the argument its
+case's `fixture.sh` gives it. `helper`, `skipped`, `comment`, `weakened`, `waived` and `check` are
+the refunds feature with one thing changed; `weakened` and `waived` commit the spec first, as it
+was written, so that the edit has an earlier form to be compared with. `round2` is the `helper`
+tree and `stale` the `missing` tree, each with an earlier ship report left untracked. `check`
+writes its checks file before the `base` commit. `notes-helper` and `notes-skipped` build the
+held-out feature, a notes export, which shares no word with the refunds variants and breaks REQ-1
+where they break REQ-2.
+
 | Case | The miss or the gap | Passes when the answer… | Grader |
 |------|---------------------|-------------------------|--------|
 | `reviewer/helper-only` | the test citing REQ-2 passes on a helper that `refund` never calls (`field-notes-5.2.md` §9, REQ-5 and REQ-6 of `team-day-boundary`) | marks REQ-2 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
@@ -242,3 +251,8 @@ grader is shown on a reply it must pass and one it must fail by `scripts/grader-
 | `reviewer/second-round` | one tree, two readings (`field-notes-5.2.md` §9): the helper-only tree, with an earlier report that marked REQ-2 `NOT MET` | marks REQ-2 `NOT MET` again, not `CANNOT TELL`, and ends `VERDICT: FAIL` | regex |
 | `reviewer/stale-met` | the guard on reading an earlier report: it marks REQ-2 `MET` and the code is not in the tree | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
 | `reviewer/check-triggered` | nothing asks about a past miss when a diff touches the same ground: the base commit holds a check, C1, that the diff triggers and breaks | marks C1 `BROKEN` and still ends `VERDICT: PASS`, since a triggered check is reported and not judged | regex |
+| `escape/second-of-a-kind` | `/shipkit:escape` repairs one spec and stops: a second escape with the same cause on the same paths (a negative refund, after the refund above the charge) | drafts a check item: a `Trigger:` line with `path` or `added`, and a `From:` line naming both escape records | regex |
+
+`escape/missing-req`, a first escape, has a second grader from Sprint 32, `no-check-drafted`: it fails a reply
+that holds a `Trigger:` line, since a first escape of its kind drafts no check. Like `rules/trivial`, the case
+now has two graders; read them separately when its score is not 0 or 1.

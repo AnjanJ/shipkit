@@ -178,6 +178,7 @@ registry() { cat <<'EOF'
 117 grader-both-ways
 118 reviewer-trees
 119 checks-match
+120 escape-second
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4671,7 +4672,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met reviewer-check-triggered"
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met reviewer-check-triggered escape-second-of-a-kind escape-missing-req"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4998,6 +4999,50 @@ cm_out=$(sh "$CMS" "$CMO" base 2>&1 | grep '^TRIGGERED ' | cut -d: -f1 | tr '\n'
 [ "$cm_out" = "TRIGGERED C1 TRIGGERED C2 TRIGGERED C3 TRIGGERED C4 " ] || cm_fail="$cm_fail [e: a change of each kind must trigger this repository's four items: $cm_out]"
 if [ -z "$cm_fail" ]; then pass "checks-match (the items a diff triggers, from the base ref's file: a path glob whose star crosses a slash, an added line and not a removed one; a branch's edit to the file changes nothing; no file at the base, nothing; --lint names five kinds of bad item; sh, awk and git only, and no file changed; this repository's four items are well formed and each is met by the change it is about)"
 else failc "checks-match" "$cm_fail"; fi
+
+# 120. escape-second: the second escape of a kind. /shipkit:escape repairs one spec and stops;
+# its waiting step (misses-to-checks/design.md, W9) drafts a check item when an escape has the
+# same cause as an earlier one on the same paths. The case's tree is escape/missing-req's after
+# that first escape was handled: REQ-3 is in the spec with its code and test, and the record is
+# in .shipkit/escapes/. The new report is of a negative refund, which no requirement covers. The
+# map is read here too: of the eleven cases Sprint 32 adds, two are held out and nine are tuning
+# cases. No claude needed. Cites: misses-to-checks/REQ-36 misses-to-checks/REQ-39
+ES="$WORK/esecond"; es_fail=""; mkdir -p "$ES/tree"
+(cd "$ES/tree" && bash "$COPY/evals/escape/second-of-a-kind/fixture.sh" > "$ES/build.log" 2>&1) \
+  || es_fail="$es_fail [the fixture failed: $(tail -2 "$ES/build.log" | tr '\n' '|' | cut -c1-200)]"
+grep -q '^- \*\*REQ-3\.\*\* ' "$ES/tree/.shipkit/specs/refunds/spec.md" 2>/dev/null || es_fail="$es_fail [the spec holds no REQ-3]"
+es_rec="$ES/tree/.shipkit/escapes/0001-refund-above-charge.md"
+grep -q -F '`requirement missing`' "$es_rec" 2>/dev/null && grep -q -F '`.shipkit/specs/refunds/`' "$es_rec" 2>/dev/null \
+  || es_fail="$es_fail [the record 0001 does not name the cause requirement missing and the spec .shipkit/specs/refunds/]"
+grep -i -E 'negative|below zero|above zero|positive|less than' "$ES/tree/.shipkit/specs/refunds/spec.md" > "$ES/neg.out" 2>/dev/null \
+  && es_fail="$es_fail [a requirement already speaks of a negative amount: $(head -1 "$ES/neg.out" | cut -c1-120)]"
+[ -z "$(git -C "$ES/tree" status --porcelain 2>/dev/null)" ] && [ -d "$ES/tree/.git" ] || es_fail="$es_fail [the tree is not committed clean]"
+(cd "$ES/tree" && python3 -m unittest discover -s tests > "$ES/test.out" 2>&1) || es_fail="$es_fail [the test command failed: $(tail -2 "$ES/test.out" | tr '\n' '|' | cut -c1-160)]"
+(cd "$ES/tree" && python3 - > "$ES/py.out" 2>&1 <<'ESPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import RefundFailed, refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+assert refund({"customer": "ada"}, -500, 2000, gateway) == "rf_1" and gateway.amounts == [-500], "refund did not accept an amount below zero"
+try:
+    refund({"customer": "ada"}, 2500, 2000, gateway)
+except RefundFailed:
+    pass
+else:
+    raise AssertionError("REQ-3 is not built: a refund above the charge went through")
+ESPY
+) || es_fail="$es_fail [$(tail -1 "$ES/py.out" | cut -c1-200)]"
+es_sets=$(awk -F '\t' '$1 ~ /^(holdout-reviewer-(helper-only|skipped-test)|reviewer-(helper-only|skipped-test|comment-cite|weakened-req|waiver-added|second-round|stale-met|check-triggered)|escape-second-of-a-kind)$/ { n[$2]++ } END { printf "holdout=%d tune=%d", n["holdout"], n["tune"] }' "$ROOT/scripts/evals-map.tsv")
+[ "$es_sets" = "holdout=2 tune=9" ] || es_fail="$es_fail [the map's sets for the eleven cases: $es_sets]"
+[ "$(awk -F '\t' '$1 ~ /^holdout-/ && $2 != "holdout"' "$ROOT/scripts/evals-map.tsv" | grep -c .)" = 0 ] || es_fail="$es_fail [a holdout- case is not held out in the map]"
+if [ -z "$es_fail" ]; then pass "escape-second (the tree is the first escape's, handled: REQ-3 built, the record 0001 names requirement missing and the refunds spec, and a negative refund still goes through with no requirement about it; the map holds two of the eleven cases out and tunes on nine)"
+else failc "escape-second" "$es_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
