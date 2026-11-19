@@ -116,7 +116,7 @@ Sprint 35.
     it must fail: with the `m` flag its leading `^` could start after the `Trigger:` line. It and the two
     other graders written with `m` and a leading `^` (`drafts-a-check`, `c1-broken-and-pass`) now write a
     line start out as `(?:^|\n)` and carry no flag. All 37 replies read as they must.
-- [ ] **T13** The briefing's command count, enforced on every machine → REQ-43, REQ-44
+- [x] **T13** The briefing's command count, enforced on every machine → REQ-43, REQ-44
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check 121 (`briefing-commands`): with thirteen stand-ins as the whole `PATH`, the briefing on check 30's fixture prints what it prints under the normal `PATH` and starts at most 229 commands, and the `PASS` line carries the count; the count from fifty-one specs, given to the verdict with `CI=true` and `SMOKE_TIMING=report`, is a `FAIL`
   - After: T12
@@ -125,6 +125,12 @@ Sprint 35.
     briefing with one command added reads 230, and both fail the verdict with `CI=true` and
     `SMOKE_TIMING=report`. The task stays open until CI's `smoke-no-model` job has read the count on
     the pull request, which needs the owner's yes to push.
+  - Done (2026-11-19): pushed on the owner's yes; on pull request #43, at `998ce16`, CI's
+    `smoke-no-model` job (run 44580818940) read check 121 as "the briefing starts 229 commands, limit
+    229", the count this machine reads. The runner has node: check 117 passed there with
+    "grader-check: 37 as expected, 0 not". The job read 244 passed (35 text-only), 16 skipped (model),
+    0 failed, and printed check 112's time, 0.49 s of CPU. The design's eighth and ninth records are
+    not called on.
 - [ ] **T14** Sprint 35: baselines, text only where a baseline misses, and the runs after → REQ-48
   - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/escape/SKILL.md, plugins/shipkit/skills/ship/reference.md, docs/design/eval-history.md, docs/design/eval-ledger.tsv, scripts/smoke.sh
   - Test: none: REQ-48 is read from Sprint 35's record
