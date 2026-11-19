@@ -4468,6 +4468,28 @@ er_under=$(sed -n '/^## Cases$/,/^## /p' "$er_now" | sed '1d;$d' | grep -v '^[[:
 [ "$(printf '%s\n' "$er_under" | grep -c .)" = 1 ] && printf '%s\n' "$er_under" | grep -q 'docs/design/eval-cases\.md' \
   || er_fail="$er_fail [under ## Cases the README has: $(printf '%s' "$er_under" | head -3 | tr '\n' '|' | cut -c1-200)]"
 grep -q '^### A rule under test is installed by' "$er_now" && er_fail="$er_fail [the with-rule.sh section is still in the README]"
+# Sprint 32 moved one more section, "What graders can check", the same way (misses-to-checks T5):
+# it is in eval-cases.md word for word as the README had it at 9e061ca, under a dated line. The
+# README keeps the heading with its two answers, which measure-and-slim/REQ-4 asks it to state,
+# and names the file.
+git -C "$ROOT" show 9e061ca:plugins/shipkit/evals/README.md 2>/dev/null \
+  | sed -n '/^## What graders can check$/,/^## How a case gets the fixture$/p' | sed '$d' > "$ER/graders.md"
+[ "$(grep -c . "$ER/graders.md")" -gt 20 ] || er_fail="$er_fail [the section What graders can check was not found at 9e061ca]"
+python3 - "$ERC" "$ER/graders.md" > "$ER/py2.out" 2>&1 <<'PY' || er_fail="$er_fail [$(cat "$ER/py2.out")]"
+import sys
+doc = open(sys.argv[1]).read()
+block = open(sys.argv[2]).read().strip("\n")
+i = doc.find(block)
+if i < 0:
+    print("the section What graders can check is not in eval-cases.md word for word"); sys.exit(1)
+if not any(l.startswith("*Moved 2026-11-19") for l in doc[:i].rstrip("\n").splitlines()[-4:]):
+    print("the section What graders can check has no dated *Moved …* line above it"); sys.exit(1)
+PY
+er_g=$(sed -n '/^## What graders can check$/,/^## How a case gets the fixture$/p' "$er_now" | sed '1d;$d')
+printf '%s\n' "$er_g" | grep -q 'docs/design/eval-cases\.md' && printf '%s\n' "$er_g" | grep -q '(a) Which tools were called — yes' \
+  && printf '%s\n' "$er_g" | grep -q '(b) A file the run wrote — yes' && [ "$(printf '%s\n' "$er_g" | grep -c .)" -le 5 ] \
+  || er_fail="$er_fail [under What graders can check the README has: $(printf '%s' "$er_g" | head -3 | tr '\n' '|' | cut -c1-200)]"
+grep -q 'No custom-code graders' "$er_now" && er_fail="$er_fail [the limits of What graders can check are still in the README]"
 er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in pathlib.Path(sys.argv[1]).rglob('*') if p.is_file()))" "$ROOT/plugins/shipkit/evals")
 # The room Sprint 31 made (the folder at most 190,800 bytes) is what Sprint 32's cases use. From
 # misses-to-checks T1 the folder is held where lint's check 17 holds it, at 204,800 bytes
@@ -4475,7 +4497,7 @@ er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in p
 er_room() { [ "$1" -le 204800 ]; }
 er_room "$er_bytes" || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 204,800]"
 er_room 190801 && er_room 204800 && ! er_room 204801 || er_fail="$er_fail [the limit is not 204,800: 190,801 and 204,800 must pass, and 204,801 fail]"
-if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
+if [ -z "$er_fail" ]; then pass "eval-room (the case table, the with-rule.sh section and What graders can check are in docs/design/eval-cases.md word for word under dated lines; the README keeps ## Cases with one line and its two answers on graders; the evals folder is $er_bytes of 204800 bytes)"
 else failc "eval-room" "$er_fail"; fi
 
 # 115. ledger-fired-if: a reversal condition about an eval count is a command. Eleven records

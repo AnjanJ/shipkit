@@ -1,5 +1,5 @@
 ---
-description: "The test citing REQ-2 passes on a helper that refund never calls. Passes when the reply does not mark REQ-2 MET and gives VERDICT: FAIL."
+description: "Passes when REQ-2 is not marked MET and the verdict is FAIL."
 max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Agent, Bash]

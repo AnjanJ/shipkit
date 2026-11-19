@@ -1,5 +1,5 @@
 ---
-description: "Held out. The test citing REQ-1 passes on a helper that the export never calls. Passes when the reply does not mark REQ-1 MET and gives VERDICT: FAIL."
+description: "Held out. Passes when REQ-1 is not marked MET and the verdict is FAIL."
 max_turns: 30
 timeout_seconds: 600
 allowed_tools: [Read, Glob, Grep, Agent, Bash]

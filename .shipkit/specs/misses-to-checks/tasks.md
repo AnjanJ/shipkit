@@ -33,18 +33,30 @@ Sprint 35.
   - Test: scripts/smoke.sh check 118 (`reviewer-trees`): each of the four old cases' trees equals, file for file, the tree the shared fixture at `9e061ca` (`git show`) builds; in the `helper-only` tree the test citing `refunds/REQ-2` calls only `check_amount`, `refund` does not call it and passes 2500 on a charge of 2000 to the gateway, and the test command exits 0. Check 117 reads the new grader's three replies
   - After: T3
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 113, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
-- [ ] **T5** `holdout/reviewer-helper-only` on the `notes-export` feature, and the bytes measured → REQ-11, REQ-12, REQ-14, REQ-41
-  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-helper-only/, scripts/grader-replies/holdout-reviewer-helper-only/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh, plugins/shipkit/evals/README.md
+- [x] **T5** `holdout/reviewer-helper-only` on the `notes-export` feature, and the bytes measured → REQ-11, REQ-12, REQ-14, REQ-41
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-helper-only/, scripts/grader-replies/holdout-reviewer-helper-only/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh, plugins/shipkit/evals/README.md, plugins/shipkit/evals/reviewer/helper-only/
   - Test: scripts/smoke.sh check 118, extended: the held-out tree is the `notes-export` feature, its diff from `base` holds no `refund` in any letter case, the test citing `notes-export/REQ-1` calls only `is_shareable`, `export_notes` does not call it and returns a private note, and the test command exits 0. Check 77, extended: a case under `evals/holdout/reviewer-*` builds from the shared fixture too. Check 117 reads the new grader's replies
   - After: T4
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); the evals folder's size and the projection for the nine cases to come are written under this task as a note, and the README's section "What graders can check" has moved to `docs/design/eval-cases.md` only if the projection passed 204,800
-  - Note (2026-11-19): the case is in and the task stays open. Measured with the folder at 195,749 bytes:
-    `reviewer/helper-only` cost 1,799 (its folder 1,020, the shared fixture 779) and this case 3,394 (its
-    folder 1,066, the `notes-export` feature 2,328). Projected for the nine cases to come: about 13,400,
-    so about 209,150 against 204,800. Moving the README's section (2,871) leaves it about 1,500 over.
-    Still to do here: that move, with check 114 holding the moved text to the README at `9e061ca`; and
-    a shorter description and `fixture.sh` comment in each case, about 150 bytes a case. Then the
-    projection is written again. If it is still over, the owner is asked before any case is cut.
+  - Note (2026-11-19): measured after this case, with the folder at 195,749 bytes: `reviewer/helper-only`
+    cost 1,799 (its folder 1,020, the shared fixture 779) and this case 3,394 (its folder 1,066, the
+    `notes-export` feature 2,328). The nine cases to come projected to about 209,150, over 204,800, so
+    the README's section "What graders can check" moved to `docs/design/eval-cases.md`, word for word
+    (check 114 holds it to the README at `9e061ca`). The README keeps the heading and its two answers,
+    314 bytes, because `measure-and-slim/REQ-4`, a shipped requirement, asks the README to state them;
+    the design counted on all 2,871 bytes and this frees 2,557.
+  - Note (2026-11-19): `plugins/shipkit/evals/reviewer/helper-only/` was added to Files. Both cases'
+    descriptions, `case.yaml` comments and `fixture.sh` comments were shortened: 839 and 898 bytes a
+    case. The folder is 192,843 bytes, 11,957 under the ceiling. Projected for the nine cases to come:
+    about 11,500 (T6 4,660, T7 1,280, T8 2,370, T11 1,200, T12 1,990), so about 204,350. That is 450
+    of room on an estimate that has been off by more, so the folder is measured again after each task,
+    and the owner is asked before any case is cut.
+  - Note (2026-11-19): the suite's run for this task's second commit exited 1 on one check: 112
+    (`briefing-cost`) read 0.55 s of CPU, best of three, against its half second, and check 30 read
+    0.56 s where it usually reads 0.39. It was read and not run again: `briefing.sh` and
+    `spec-check.sh` are unchanged since `9e061ca`, the briefing still starts 229 commands with the
+    same output, and the load average was 3.6 at the start of the run and 5.3 after it. The other 240
+    checks passed, this task's among them. The owner was told.
 - [ ] **T6** Four more tuning cases: `skipped-test`, `comment-cite`, `weakened-req`, `waiver-added` → REQ-3, REQ-4, REQ-5, REQ-6, REQ-8, REQ-9, REQ-10
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/skipped-test/, plugins/shipkit/evals/reviewer/comment-cite/, plugins/shipkit/evals/reviewer/weakened-req/, plugins/shipkit/evals/reviewer/waiver-added/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `skipped-test` runs green with one test skipped and `spec-check.sh` prints `SKIPPED-CITE refunds REQ-2`; in `comment-cite`, `refunds/REQ-2` is in a comment in `app/refunds.py` and nowhere under `tests/`; in `weakened-req`, `spec-diff.sh . refunds base` prints `REQ-CHANGED refunds REQ-2` and no other `REQ-` or `WAIVER-` line and `refund` caps the amount; in `waiver-added` it prints `WAIVER-ADDED` and `REQ-CHANGED` for REQ-2 and no test cites it. Check 117 reads the four graders' replies

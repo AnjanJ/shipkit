@@ -162,6 +162,50 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
 (`.shipkit/specs/map-on-trial/`); the comparison and its numbers are in
 `docs/design/eval-results-4.1.md`. Added in 4.1.0.
 
+*Moved 2026-11-19 (Sprint 32, `misses-to-checks` T5), to make room for the cases from real
+misses. The README keeps the heading and the two answers. "Below" in this text means the
+README's section "How a case gets the fixture":*
+
+## What graders can check
+
+Both answers were found by running probe cases with a control grader that had to fail.
+
+**(a) Which tools were called — yes.** A `tool_used` grader counts calls to a named tool, and
+`tool_order` checks that one call came before another. Probe: the prompt asked for a Glob call;
+`tool_used: Glob` passed ("Glob called 1x") and the control `tool_used: Grep` failed ("Grep
+called 0x"). `input_match` narrows the count to calls whose JSON input matches a regex.
+
+**(b) A file the run wrote — yes, if the run is allowed to write.** `file_exists` checks that a
+file was created, and a `regex` grader with `target: { source: file, path: out.txt }` reads
+its contents. (An `llm` grader with `target:` was accepted by the 3.2 probe; on Claude Code
+2.1.291 the case refuses to load — `graders.0: Unrecognized key(s) in object: 'target'` — so
+a judgement about a written file is a `regex` on the file or an `llm` grader on the reply.) Probe: the prompt asked for `out.txt` containing one word; both graders
+passed and the control `file_exists: missing.txt` failed. The case must list `Write` in
+`allowed_tools` **and** the command must pass `--allow-tools Write`; without the grant the tool
+is removed from the run and every file grader fails. `file_exists` sees only files created
+during the run, not files that were edited.
+
+Limits worth knowing before writing a case:
+
+- **No custom-code graders.** A grader cannot run a script. To check a command's result, have
+  the prompt ask Claude to run it and write the outcome to a file, then grade the file — or use
+  a check in `scripts/smoke.sh`.
+- **Every run starts in an empty workspace** with a temporary home. Nothing from your own
+  settings, `CLAUDE.md`, memory or other plugins loads. This plugin's hooks, skills and agents do.
+- **The run cannot read `evals/`.** A case that needs files gets them from a `case.yaml` beside
+  the prompt; see "How a case gets the fixture" below.
+- **`Bash`, `Write`, `Edit`, `WebFetch` need `--allow-tools`** on the command line. A case's
+  `allowed_tools` alone grants only the read-only tools. `scripts/evals.sh` grants `Bash`,
+  `Write` and `Edit` (confined to the run's workspace): `grandfather` uses the first, the
+  `rules` cases the other two.
+- **Graders marked `tool_used: Skill` are not scored** when the no-plugin comparison runs
+  (`--ablation with-without`); they show whether the plugin fired.
+- `llm` graders call a judge model three times per run and can disagree with themselves.
+  Prefer `regex`, `tool_used` and `file_exists` where they can express the check.
+- **A `regex` grader is a JavaScript `RegExp`.** A Python inline flag such as `(?is)` makes the
+  grader throw ("Invalid regular expression") and every run fails with no model error. Use
+  `[\s\S]*` for "across lines" and `[Ss]idekiq` for case (4.9.0, the three `eve` cases).
+
 ## Cases added after the move
 
 The two sections above are held word for word by smoke check 114, so what has been added since
