@@ -85,7 +85,7 @@ Sprint 35.
   - Note (2026-11-19): the two cost 2,860 bytes, 490 more than projected. The folder is 202,028, with
     2,772 of room for T11 and T12, projected at 3,190: about 420 short on the estimate. Both are written
     as small as they can be and measured; if they do not fit, the owner is asked before any case is cut.
-- [ ] **T9** `checks-match.sh` prints the items a diff triggers, from the base ref → REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
+- [x] **T9** `checks-match.sh` prints the items a diff triggers, from the base ref → REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
   - Files: plugins/shipkit/scripts/checks-match.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 119 (`checks-match`), in a scratch repository: a `path` trigger is met by a changed file and prints `TRIGGERED C<n>: <title>` with the item's three lines, in the file's order; an `added` trigger is met by an added line and not by a removed one; the working tree's edited copy is not read; a checks file that exists only on the branch gives nothing and exit 0; no arguments and an unknown ref exit 64; `--lint` prints `BAD-ITEM` and exits 1 for an item with a missing line, a trigger of neither kind and a source that does not exist, and exits 0 on a good file and on none; `git status --porcelain` is the same before and after
   - After: T8

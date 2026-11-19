@@ -177,6 +177,7 @@ registry() { cat <<'EOF'
 116 holdout-kept-out
 117 grader-both-ways
 118 reviewer-trees
+119 checks-match
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -4872,6 +4873,101 @@ rt_build "$RT/stale" "$COPY/evals/reviewer/stale-met/fixture.sh"
 rt_report "$RT/stale" "$RT/new-missing-req" "READY" '| REQ-2 | MET | code `app/refunds.py:'
 if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1; second-round and stale-met are another case's tree with one earlier report, untracked)"
 else failc "reviewer-trees" "$rt_fail"; fi
+
+# 119. checks-match: a past miss is asked about when a diff touches the same ground.
+# .shipkit/checks.md holds items, each with a trigger a diff can meet (`path <glob>` or
+# `added <pattern>`), a check and the miss it came from. plugins/shipkit/scripts/checks-match.sh
+# prints the items a diff triggers, and reads the file from the base ref, never from the
+# working tree, so a branch cannot edit the list it is judged by (the verifier plan's rule 28).
+# --lint reads the file being written. Nothing runs the script yet: the reviewer's use of it
+# waits for Sprint 35. Here: a scratch repository. No claude needed.
+# Cites: misses-to-checks/REQ-25 misses-to-checks/REQ-26 misses-to-checks/REQ-27
+# misses-to-checks/REQ-28 misses-to-checks/REQ-29 misses-to-checks/REQ-30 misses-to-checks/REQ-31
+CM="$WORK/cmatch"; CMS="$COPY/scripts/checks-match.sh"; cm_fail=""; mkdir -p "$CM/repo/app/sub" "$CM/repo/docs" "$CM/bin" "$CM/lint/.shipkit" "$CM/lint/docs"
+cmg() { (cd "$CM/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$CM/repo" && git init -q && echo x > docs/note.md); cmg add -A; cmg commit -q -m empty; cmg tag empty
+mkdir -p "$CM/repo/.shipkit"
+cat > "$CM/repo/.shipkit/checks.md" <<'CMEOF'
+# Checks
+
+## C1: Payments are sent once
+Trigger: path app/pay.py, docs/never.md
+Check: Every call to the gateway passes an idempotency key.
+From: docs/note.md (the double payment), docs/note.md
+
+## C2: Never met by this diff
+Trigger: path docs/never.md
+Check: Nothing.
+From: docs/note.md
+
+## C3: A retry was added
+Trigger: added retry\(
+Check: The retry is bounded.
+From: docs/note.md
+
+## C4: Only a removed line holds this
+Trigger: added legacy_call
+Check: Nothing.
+From: docs/note.md
+
+## C5: A star crosses a slash
+Trigger: path app/*.txt
+Check: The text is still right.
+From: docs/note.md
+CMEOF
+printf 'def pay(charge):\n    legacy_call()\n    return charge\n' > "$CM/repo/app/pay.py"; echo one > "$CM/repo/app/sub/deep.txt"
+cmg add -A; cmg commit -q -m base; cmg tag base
+printf 'def pay(charge):\n    retry(charge)\n    return charge\n' > "$CM/repo/app/pay.py"; echo two > "$CM/repo/app/sub/deep.txt"
+# on the branch, C2's trigger is rewritten so that this diff would meet it, and committed; the
+# working tree's copy then loses C1 altogether. Neither may change what is printed.
+sed -i.bak 's|^Trigger: path docs/never.md$|Trigger: path app/pay.py|' "$CM/repo/.shipkit/checks.md" && rm -f "$CM/repo/.shipkit/checks.md.bak"
+cmg add -A; cmg commit -q -m change
+sed -i.bak '/^## C1:/,/^From:/d' "$CM/repo/.shipkit/checks.md" && rm -f "$CM/repo/.shipkit/checks.md.bak"
+cm_before=$(cmg status --porcelain)
+cm_want='TRIGGERED C1: Payments are sent once
+Trigger: path app/pay.py, docs/never.md
+Check: Every call to the gateway passes an idempotency key.
+From: docs/note.md (the double payment), docs/note.md
+TRIGGERED C3: A retry was added
+Trigger: added retry\(
+Check: The retry is bounded.
+From: docs/note.md
+TRIGGERED C5: A star crosses a slash
+Trigger: path app/*.txt
+Check: The text is still right.
+From: docs/note.md'
+cm_out=$(sh "$CMS" "$CM/repo" base 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ "$cm_out" = "$cm_want" ] \
+  || cm_fail="$cm_fail [a: the base's items C1, C3 and C5, in order, each with its three lines; not C2 (the branch's edit) and not C4 (a removed line): exit $cm_rc: $(printf '%s' "$cm_out" | grep -E '^TRIGGERED|^checks-match|not found' | tr '\n' '|' | cut -c1-300)]"
+[ "$(cmg status --porcelain)" = "$cm_before" ] || cm_fail="$cm_fail [a: the script changed a file]"
+# b. no checks file at the base, though the branch and the working tree hold one: nothing, exit 0;
+# a diff that triggers nothing: nothing, exit 0; usage and an unknown ref: 64
+cm_out=$(sh "$CMS" "$CM/repo" empty 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ -z "$cm_out" ] || cm_fail="$cm_fail [b: no checks file at the base: exit $cm_rc, printed: $(printf '%s' "$cm_out" | head -2 | tr '\n' '|' | cut -c1-160)]"
+cm_out=$(sh "$CMS" "$CM/repo" HEAD 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ -z "$cm_out" ] || cm_fail="$cm_fail [b: an empty diff: exit $cm_rc, printed: $(printf '%s' "$cm_out" | head -2 | tr '\n' '|' | cut -c1-160)]"
+sh "$CMS" > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: no arguments is not exit 64]"
+sh "$CMS" "$CM/repo" > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: one argument is not exit 64]"
+sh "$CMS" "$CM/repo" no-such-ref > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: an unknown base ref is not exit 64]"
+# c. sh, awk and git only: with nothing else on the PATH it prints the same
+for cm_t in awk git; do ln -s "$(command -v "$cm_t")" "$CM/bin/$cm_t" 2>/dev/null; done
+cm_out=$(PATH="$CM/bin" /bin/sh "$CMS" "$CM/repo" base 2>&1)
+[ "$cm_out" = "$cm_want" ] || cm_fail="$cm_fail [c: with only awk and git on the PATH: $(printf '%s' "$cm_out" | grep -v -E '^(TRIGGERED|Trigger|Check|From)' | head -2 | tr '\n' '|' | cut -c1-200)]"
+sh -n "$CMS" 2>/dev/null || cm_fail="$cm_fail [c: sh -n reports a syntax error]"
+# d. --lint: the file being written. Each kind of bad item is named; a good file and no file say nothing
+cm_lint() { sh "$CMS" --lint "$CM/lint" > "$CM/lint.out" 2>&1; echo $?; }
+echo x > "$CM/lint/docs/real.md"
+[ "$(cm_lint)" = 0 ] && [ ! -s "$CM/lint.out" ] || cm_fail="$cm_fail [d: no checks file: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-120)]"
+printf '## C1: Good\nTrigger: path app/*\nCheck: Look.\nFrom: docs/real.md (a note), docs/real.md\n\n## C2: Good too\nTrigger: added foo|bar\nCheck: Look.\nFrom: docs/real.md\n' > "$CM/lint/.shipkit/checks.md"
+[ "$(cm_lint)" = 0 ] && [ ! -s "$CM/lint.out" ] || cm_fail="$cm_fail [d: a good file: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-160)]"
+printf '## C1: No trigger\nCheck: Look.\nFrom: docs/real.md\n\n## C2: No check\nTrigger: path app/*\nFrom: docs/real.md\n\n## C3: No source\nTrigger: path app/*\nCheck: Look.\n\n## C4: A trigger of neither kind\nTrigger: when it rains\nCheck: Look.\nFrom: docs/real.md\n\n## C5: A source that is not there\nTrigger: added foo\nCheck: Look.\nFrom: docs/real.md, docs/nope.md (gone)\n' > "$CM/lint/.shipkit/checks.md"
+[ "$(cm_lint)" = 1 ] && [ "$(grep -c '^BAD-ITEM ' "$CM/lint.out")" = 5 ] && [ "$(grep -c . "$CM/lint.out")" = 5 ] \
+  && grep -q '^BAD-ITEM C1 .*Trigger' "$CM/lint.out" && grep -q '^BAD-ITEM C2 .*Check' "$CM/lint.out" && grep -q '^BAD-ITEM C3 .*From' "$CM/lint.out" \
+  && grep -q '^BAD-ITEM C4 .*neither' "$CM/lint.out" && grep -q '^BAD-ITEM C5 .*docs/nope\.md' "$CM/lint.out" \
+  || cm_fail="$cm_fail [d: five bad items, each named once: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-400)]"
+sh "$CMS" --lint > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [d: --lint with no folder is not exit 64]"
+if [ -z "$cm_fail" ]; then pass "checks-match (the items a diff triggers, from the base ref's file: a path glob whose star crosses a slash, an added line and not a removed one; a branch's edit to the file changes nothing; no file at the base, nothing; --lint names five kinds of bad item; sh, awk and git only, and no file changed)"
+else failc "checks-match" "$cm_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
