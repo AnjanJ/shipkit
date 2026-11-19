@@ -168,6 +168,12 @@ registry() { cat <<'EOF'
 107 ship-check
 108 release-check
 109 judge
+110 eval-ledger
+111 ledger-backfill
+112 briefing-cost
+113 evals-for-diff
+114 eval-room
+115 ledger-fired-if
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3840,11 +3846,15 @@ else failc "text-label" "$tx_fail"; fi
 
 # 105. timing-switch: check 30 holds the fifty-spec briefing to one second of CPU. That limit
 # was set on the owner's machine. CI's shared runner read 0.96 s and then 1.53 s on the same
-# scripts (pull request 40), so the workflow sets SMOKE_TIMING=report: a time of a second or
+# scripts (pull request 40), so the workflow once set SMOKE_TIMING=report: a time of a second or
 # more is then printed in a PASS line that says it was not enforced. The line and byte limits
-# still fail, and without the switch nothing changes. Check 30's own verdict function runs here
-# on given numbers, in a subshell, so its lines are read and not counted. No claude needed.
+# still fail, and without the switch nothing changes. Sprint 31 made the briefing cheap and took
+# the switch out; five runs passed (0.41 to 0.97 s) and the sixth failed at 1.02 s, best of
+# three, on unchanged scripts, so the workflow sets the switch again (numbers-as-data T8). Check
+# 30's own verdict function runs here on given numbers, in a subshell, so its lines are read and
+# not counted. No claude needed.
 # Cites: honest-evidence/REQ-41 honest-evidence/REQ-42 honest-evidence/REQ-43
+# numbers-as-data/REQ-18
 ts_v() { ( COUNTS=/dev/null; SMOKE_TIMING=$1; brief50_verdict "$2" "$3" "$4" 3 ); }  # ts_v <switch> <lines> <bytes> <seconds>
 ts_fail=""
 ts_out=$(ts_v report 3 299 1.53)
@@ -4156,6 +4166,332 @@ printf '%s\n' "$jg_job" | grep -q '^        run: sh plugins/shipkit/scripts/spec
 sh -n "$JGS" 2>/dev/null || jg_fail="$jg_fail [sh -n reports a syntax error]"
 if [ -z "$jg_fail" ]; then pass "judge (without --yes the tag and command, nothing run; with --yes the plugin from a worktree of the last tag, removed after, also on failure; another worktree kept; no tag → exit 2; CI runs the tag's spec-check)"
 else failc "judge" "$jg_fail"; fi
+
+# 110. eval-ledger: an eval result is a row, not a paragraph. scripts/evals-ledger.sh appends
+# one row per case from a run's aggregate-result.json to docs/design/eval-ledger.tsv (here a
+# scratch ledger, through EVALS_LEDGER) and answers three queries over the release runs in it;
+# scripts/evals.sh appends after its run and keeps traces. evals.sh runs a stand-in for claude
+# here (EVALS_TOOL), so nothing is paid for. No claude needed.
+# Cites: numbers-as-data/REQ-1 numbers-as-data/REQ-2 numbers-as-data/REQ-3 numbers-as-data/REQ-4
+# numbers-as-data/REQ-5 numbers-as-data/REQ-6 numbers-as-data/REQ-7 numbers-as-data/REQ-8
+# numbers-as-data/REQ-9 numbers-as-data/REQ-10 numbers-as-data/REQ-33
+EL="$WORK/eledger"; ELS="$ROOT/scripts/evals-ledger.sh"; mkdir -p "$EL/out" "$EL/repo" "$EL/bin"; el_fail=""
+el_result() {  # el_result <file> <startedAt> → a result file with a 3-run case and a 5-run case
+  printf '%s\n' '{"schemaVersion":1,"claudeVersion":"2.1.400","startedAt":"'"$2"'","costUsd":0.85,' \
+    '"suite":{"modelOverride":"sonnet","threshold":0.6,"plugins":[{"name":"shipkit","version":"9.9.9"}]},' \
+    '"cases":[{"name":"alpha","runsPerCase":3,"arms":{"with":[{"passed":true,"costUsd":0.1},{"passed":false,"costUsd":0.2},{"passed":true,"costUsd":0.3}]}},' \
+    '{"name":"beta","runsPerCase":5,"arms":{"with":[{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05},{"passed":true,"costUsd":0.05}]}}],' \
+    '"aggregates":{"casesTotal":2}}' > "$1"
+}
+el_result "$EL/out/aggregate-result.json" 2026-12-01T10:00:00.000Z
+TAB=$(printf '\t')
+# a. append: one row per case, the fields of REQ-2, the summary line; a second append adds none
+el_out=$(EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --commit abc1234 2>&1)
+[ "$el_out" = "evals-ledger: 2 row(s) added, 0 already held" ] || el_fail="$el_fail [a: first append said: $el_out]"
+el_want="date${TAB}version${TAB}commit${TAB}claude${TAB}model${TAB}case${TAB}set${TAB}passed${TAB}runs${TAB}threshold${TAB}cost${TAB}source
+2026-12-01${TAB}9.9.9${TAB}abc1234${TAB}2.1.400${TAB}sonnet${TAB}alpha${TAB}tune${TAB}2${TAB}3${TAB}0.6${TAB}0.60${TAB}run
+2026-12-01${TAB}9.9.9${TAB}abc1234${TAB}2.1.400${TAB}sonnet${TAB}beta${TAB}watch${TAB}5${TAB}5${TAB}0.6${TAB}0.25${TAB}run"
+[ "$(cat "$EL/l.tsv" 2>/dev/null)" = "$el_want" ] || el_fail="$el_fail [a: the ledger: $(tr '\t\n' ' |' < "$EL/l.tsv" 2>/dev/null)]"
+el_out=$(EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --commit abc1234 2>&1)
+[ "$el_out" = "evals-ledger: 0 row(s) added, 2 already held" ] && [ "$(grep -c . "$EL/l.tsv")" = 3 ] \
+  || el_fail="$el_fail [a: second append said: $el_out, $(grep -c . "$EL/l.tsv") lines]"
+# b. no --commit: HEAD's short sha; --source is written as given
+(cd "$EL/repo" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m one)
+el_head=$(cd "$EL/repo" && git rev-parse --short HEAD)
+(cd "$EL/repo" && EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/out" --source mine >/dev/null 2>&1)
+[ "$(awk -F '\t' -v c="$el_head" '$3 == c && $12 == "mine"' "$EL/l.tsv" | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [b: rows with HEAD's commit $el_head and source mine: $(awk -F '\t' -v c="$el_head" '$3 == c' "$EL/l.tsv" | grep -c .)]"
+# c. no result file: exit 1, a message, nothing added
+mkdir -p "$EL/empty"; el_n=$(grep -c . "$EL/l.tsv")
+EVALS_LEDGER="$EL/l.tsv" sh "$ELS" append "$EL/empty" >/dev/null 2>"$EL/err"; el_rc=$?
+[ "$el_rc" -eq 1 ] && grep -q 'no result file' "$EL/err" && [ "$(grep -c . "$EL/l.tsv")" = "$el_n" ] \
+  || el_fail="$el_fail [c: no result file: exit $el_rc]"
+# d. the queries, on a seeded ledger: three release runs and a partial run between them
+{ printf 'date\tversion\tcommit\tclaude\tmodel\tcase\tset\tpassed\truns\tthreshold\tcost\tsource\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\ta\ttune\t3\t3\t0.6\t1.00\trelease\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\tb\ttune\t2\t3\t0.6\t1.00\trelease\n'
+  printf '2026-01-01\t1\tc1\t-\tsonnet\tc\ttune\t3\t3\t0.6\t1.00\trelease\n'
+  printf '2026-02-01\t2\tc2\t-\tsonnet\ta\ttune\t2\t3\t0.6\t1.00\thistory\n'
+  printf '2026-02-01\t2\tc2\t-\tsonnet\tb\ttune\t2\t3\t0.6\t-\thistory\n'
+  printf '2026-02-15\t2\tc3\t-\tsonnet\ta\ttune\t0\t3\t0.6\t0.10\tpartial\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\ta\ttune\t2\t3\t0.6\t0.50\trelease\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\tb\ttune\t1\t3\t0.6\t0.50\trelease\n'
+  printf '2026-03-01\t3\tc4\t-\tsonnet\tc\ttune\t3\t3\t0.6\t0.50\trelease\n'; } > "$EL/q.tsv"
+elq() { EVALS_LEDGER="$EL/q.tsv" sh "$ELS" "$@" 2>&1 | tr '\n' '|'; }
+[ "$(elq --below-full 2)" = "a|b|" ] || el_fail="$el_fail [d: --below-full 2: $(elq --below-full 2)]"
+[ "$(elq --below-full 3)" = "b|" ] || el_fail="$el_fail [d: --below-full 3: $(elq --below-full 3)]"
+[ "$(elq --below-full 5)" = "" ] || el_fail="$el_fail [d: --below-full 5 with three release runs: $(elq --below-full 5)]"
+[ "$(elq --rate a)" = "a 7/9 over 3 run(s)|" ] || el_fail="$el_fail [d: --rate a: $(elq --rate a)]"
+[ "$(elq --rate a --last 1)" = "a 2/3 over 1 run(s)|" ] || el_fail="$el_fail [d: --rate a --last 1: $(elq --rate a --last 1)]"
+[ "$(elq --rate c --last 2)" = "c 3/3 over 1 run(s)|" ] || el_fail="$el_fail [d: --rate c --last 2: $(elq --rate c --last 2)]"
+[ "$(elq --runs)" = "2026-01-01 c1 3 8/9 3.00|2026-02-01 c2 2 4/6 -|2026-03-01 c4 3 6/9 1.50|" ] || el_fail="$el_fail [d: --runs: $(elq --runs)]"
+[ "$(elq --runs --last 1 --prefix b)" = "2026-03-01 c4 1 1/3 0.50|" ] || el_fail="$el_fail [d: --runs --last 1 --prefix b: $(elq --runs --last 1 --prefix b)]"
+EVALS_LEDGER="$EL/q.tsv" sh "$ELS" --bogus >/dev/null 2>&1; [ $? -eq 2 ] || el_fail="$el_fail [d: an unknown argument is not exit 2]"
+# e. evals.sh with a stand-in tool: traces kept, rows appended as release or partial, the tool's status
+el_result "$EL/tmpl.json" @DATE@
+cat > "$EL/bin/tool" <<STUB
+#!/bin/sh
+printf '%s\n' "\$*" > "$EL/args"
+out=""; prev=""
+for a in "\$@"; do [ "\$prev" = --output-dir ] && out=\$a; prev=\$a; done
+if [ "\${STUB_WRITE:-1}" = 1 ]; then mkdir -p "\$out" && sed "s/@DATE@/\$STUB_DATE/" "$EL/tmpl.json" > "\$out/aggregate-result.json"; fi
+exit \${STUB_EXIT:-0}
+STUB
+chmod +x "$EL/bin/tool"
+el_evals() { EVALS_TOOL="$EL/bin/tool" EVALS_LEDGER="$EL/e.tsv" EVALS_OUT="$EL/eout" sh "$ROOT/scripts/evals.sh" "$@" >/dev/null 2>&1; }
+STUB_DATE=2026-12-02T10:00:00Z STUB_EXIT=3 el_evals; el_rc=$?
+[ "$el_rc" -eq 3 ] && grep -q -- '--keep-temp' "$EL/args" 2>/dev/null && [ "$(awk -F '\t' '$1 == "2026-12-02" && $12 == "release"' "$EL/e.tsv" 2>/dev/null | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [e: a full run: exit $el_rc, args $(cat "$EL/args" 2>/dev/null), release rows $(awk -F '\t' '$12 == "release"' "$EL/e.tsv" 2>/dev/null | grep -c .)]"
+STUB_DATE=2026-12-03T10:00:00Z EVALS_KEEP=0 el_evals --group alpha; el_rc=$?
+! grep -q -- '--keep-temp' "$EL/args" 2>/dev/null && [ "$(awk -F '\t' '$1 == "2026-12-03" && $12 == "partial"' "$EL/e.tsv" 2>/dev/null | grep -c .)" = 2 ] \
+  || el_fail="$el_fail [e: EVALS_KEEP=0 --group: args $(cat "$EL/args" 2>/dev/null), partial rows $(awk -F '\t' '$12 == "partial"' "$EL/e.tsv" 2>/dev/null | grep -c .)]"
+el_n=$(grep -c . "$EL/e.tsv" 2>/dev/null)
+STUB_WRITE=0 STUB_EXIT=5 el_evals; el_rc=$?
+[ "$el_rc" -eq 5 ] && [ "$(grep -c . "$EL/e.tsv" 2>/dev/null)" = "$el_n" ] \
+  || el_fail="$el_fail [e: no result file written (an old one left in the folder): exit $el_rc, $(grep -c . "$EL/e.tsv" 2>/dev/null) lines, want $el_n]"
+sh -n "$ELS" 2>/dev/null && sh -n "$ROOT/scripts/evals.sh" 2>/dev/null || el_fail="$el_fail [sh -n reports a syntax error]"
+if [ -z "$el_fail" ]; then pass "eval-ledger (append writes a row per case, once; three queries read release runs only; evals.sh keeps traces, appends release or partial rows, and exits with the tool's status, with or without a result file)"
+else failc "eval-ledger" "$el_fail"; fi
+
+# 111. ledger-backfill: the ledger starts with two release runs, so the flake rule has two runs
+# to read from the first day. 5.2.0's 65 rows come from its kept result file (source
+# result-file); 5.1.0's from eval-history.md's "Release run 5.1.0" and the tree at 073938c
+# (source history), and must add up to the page's 65 cases and 227 runs, with exactly its three
+# cases at 2 of 3. Read from the repository's ledger. No claude needed.
+# Cites: numbers-as-data/REQ-11 numbers-as-data/REQ-12
+LB="$ROOT/docs/design/eval-ledger.tsv"; lb_fail=""
+[ -f "$LB" ] || lb_fail="$lb_fail [no docs/design/eval-ledger.tsv]"
+lb_52=$(awk -F '\t' '$2 == "5.2.0" && $3 == "4e2afc2" && $12 == "result-file"' "$LB" 2>/dev/null | grep -c .)
+[ "$lb_52" = 65 ] || lb_fail="$lb_fail [5.2.0 result-file rows: $lb_52, want 65]"
+lb_51=$(awk -F '\t' '$12 == "history" && $1 == "2026-11-04" && $2 == "5.1.0" && $3 == "073938c" && $4 == "2.1.318" && $5 == "sonnet" && $10 == "0.6" && $11 == "-"' "$LB" 2>/dev/null)
+lb_n=$(printf '%s\n' "$lb_51" | grep -c .); lb_runs=$(printf '%s\n' "$lb_51" | awk -F '\t' '{ s += $9 } END { print s + 0 }')
+lb_below=$(printf '%s\n' "$lb_51" | awk -F '\t' '$8 != $9 { print $6 " " $8 "/" $9 }' | sort | tr '\n' '|')
+[ "$lb_n" = 65 ] && [ "$lb_runs" = 227 ] && [ "$lb_below" = "grandfather-xl-drift 2/3|hello 2/3|intake-limit 2/3|" ] \
+  && [ "$(awk -F '\t' '$12 == "history"' "$LB" 2>/dev/null | grep -c .)" = 65 ] \
+  || lb_fail="$lb_fail [5.1.0 history rows: $lb_n with the fixed fields, $lb_runs runs, below full: $lb_below]"
+lb_q=$(sh "$ROOT/scripts/evals-ledger.sh" --below-full 2 2>&1 | tr '\n' '|')
+[ "$lb_q" = "hello|" ] || lb_fail="$lb_fail [--below-full 2 on the ledger: $lb_q]"
+if [ -z "$lb_fail" ]; then pass "ledger-backfill (5.2.0: 65 rows from its result file; 5.1.0: 65 cases and 227 runs from its page and 073938c, three at 2 of 3; below full in both: hello)"
+else failc "ledger-backfill" "$lb_fail"; fi
+
+# 112. briefing-cost: the briefing starts fewer processes, and spec-check.sh says exactly what
+# it said before. The briefing runs spec-check.sh at every session start for one number, and on
+# fifty open specs that cost 0.82 s of CPU here and up to 1.53 s on CI's runner, against check
+# 30's one second. This check holds spec-check.sh to the script at 398d1c9 (taken with git
+# show), line for line and exit for exit, on check 30's fixture, on a fixture with every kind
+# of line spec-check prints, and on this repository, for the whole project and for one spec,
+# with --as-open and --as-shipped; reads the briefing's gap line against spec-check's count;
+# and times the briefing on fifty specs against half a second of CPU, best of three. That limit
+# is the owner's machine's (REQ-16): on CI (CI=true), where the runner read 0.77 s on the first
+# run without the switch, and under SMOKE_TIMING=report, the time is printed and not failed.
+# Check 30's one second is still held on CI. No claude needed.
+# Cites: numbers-as-data/REQ-15 numbers-as-data/REQ-16 numbers-as-data/REQ-17
+BK="$WORK/bcost"; mkdir -p "$BK"; bk_fail=""
+git -C "$ROOT" show 398d1c9:plugins/shipkit/scripts/spec-check.sh > "$BK/old.sh" 2>/dev/null || bk_fail="$bk_fail [git show 398d1c9 failed]"
+BKN="$COPY/scripts/spec-check.sh"
+bk_same() {  # bk_same <project> <label> [args…] → both scripts, same lines and exit
+  _p=$1; _l=$2; shift 2
+  (cd "$_p" && sh "$BK/old.sh" . "$@") > "$BK/o.out" 2>&1; _o=$?
+  (cd "$_p" && sh "$BKN" . "$@") > "$BK/n.out" 2>&1; _n=$?
+  if [ "$_o" -ne "$_n" ] || ! cmp -s "$BK/o.out" "$BK/n.out"; then
+    bk_fail="$bk_fail [$_l $*: exit $_o then $_n; first difference: $(diff "$BK/o.out" "$BK/n.out" | sed -n '2,3p' | tr '\n' '|' | cut -c1-200)]"
+  fi
+}
+# a. check 30's fixture: fifty open specs
+BK50="$BK/fifty"; mkdir -p "$BK50"; (cd "$BK50" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+i=1; while [ "$i" -le 50 ]; do bspec "$BK50" "spec-$i-with-a-rather-long-name-to-fill-the-line" open 1 4; i=$((i + 1)); done
+bk_same "$BK50" fifty
+bk_same "$BK50" fifty spec-7-with-a-rather-long-name-to-fill-the-line
+# b. every kind of line: missing task, missing field, a bad After, a conflict, a cycle, a stray
+# Status, a waiver, a pending and a missing test, a draft and a dropped spec, a spec with no
+# Status line, a Tests line with a citation elsewhere, a citation beside a skip marker
+BKG="$BK/gaps"; mkdir -p "$BKG/t" "$BKG/x"; (cd "$BKG" && git init -q)
+bkspec() {  # bkspec <slug> <status|none> <extra spec lines> <tasks text>
+  mkdir -p "$BKG/.shipkit/specs/$1"
+  { printf '# Spec: %s\n\n' "$1"; [ "$2" = none ] || printf '> Status: %s\n' "$2"; printf '%b' "$3"
+    printf '\n- **REQ-1.** It shall one.\n- **REQ-2.** It shall two. [untested: prose]\n- **REQ-3.** It shall three.\n'; } > "$BKG/.shipkit/specs/$1/spec.md"
+  printf '%b' "$4" > "$BKG/.shipkit/specs/$1/tasks.md"
+}
+BKT='- [x] **T1** One → REQ-1, REQ-2\n  - Files: a.py\n  - Test: t\n  - After: none\n  - Done when: x\n- [ ] **T2** Three → REQ-3\n  - Files: a.py\n  - Test: t\n  - After: T1\n  - Done when: x\n'
+bkspec alpha open '' "$BKT"
+bkspec beta open '' '- [ ] **T1** One → REQ-1\n  - Files: a.py\n  - After: T9\n  - Done when: x\n- [ ] **T2** Two → REQ-2\n  - Files: a.py\n  - Test: t\n  - After: T3\n  - Done when: x\n- [ ] **T3** Three → REQ-2\n  - Files: b.py\n  - Test: t\n  - After: T2\n  - Done when: x\n'
+bkspec gamma shipped '> Paths: x/\n> Tests: t/\n' "$BKT"
+bkspec delta draft '' "$BKT"; bkspec epsilon dropped '' "$BKT"; bkspec zeta none '' "$BKT"
+printf '> Status: open\n' >> "$BKG/.shipkit/specs/alpha/tasks.md"
+printf '# Design\n\n> Status: open\n' > "$BKG/.shipkit/specs/beta/design.md"
+bkspec eta Shipped '' "$BKT"   # a Status word spec-check does not know: read as open, the line is there
+printf '# alpha/REQ-1 gamma/REQ-1\n' > "$BKG/x/elsewhere.py"
+printf 'it.skip("x", () => {\n  // gamma/REQ-3\n})\n' > "$BKG/t/skip.test.js"
+(cd "$BKG" && git add -A && git -c user.email=s@s -c user.name=s commit -q -m fixture)
+bk_same "$BKG" gaps
+bk_same "$BKG" gaps --as-open
+bk_same "$BKG" gaps beta
+bk_same "$BKG" gaps gamma --as-shipped
+bk_same "$BKG" gaps delta --as-open
+bk_same "$BKG" gaps nosuch
+mkdir -p "$BK/with space" && cp -R "$BKG" "$BK/with space/gaps"
+bk_same "$BK/with space/gaps" 'a path with a space'
+# c. this repository
+bk_same "$ROOT" repo
+bk_same "$ROOT" repo numbers-as-data --as-shipped
+# d. the briefing's gap line is spec-check's count
+bk_g=$(cd "$BKG" && sh "$BKN" . 2>/dev/null | sed -n 's/^spec-check: .* checked, \([0-9]*\) gap(s)$/\1/p')
+bk_b=$(cd "$BKG" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-check:')
+[ -n "$bk_g" ] && [ "$bk_g" -gt 0 ] && [ "$bk_b" = "shipkit: spec-check: $bk_g gap(s) — run spec-check.sh" ] \
+  || bk_fail="$bk_fail [d: spec-check counts '$bk_g', the briefing printed '$bk_b']"
+[ -z "$(cd "$BK50" && sh "$COPY/scripts/briefing.sh" 2>/dev/null | grep 'spec-check:')" ] || bk_fail="$bk_fail [d: a gap line on fifty specs with no gap]"
+bk_verdict() {  # bk_verdict <fail text> <cpu seconds> → check 112's one PASS or FAIL line
+  if [ -z "$1" ] && [ "$(awk -v t="$2" 'BEGIN { print (t + 0 > 0.5) ? 1 : 0 }')" -eq 0 ]; then
+    pass "briefing-cost (spec-check.sh prints what it printed at 398d1c9 on fifty specs, every kind of line and this repository; the briefing's gap line is its count; fifty specs in ${2}s of CPU, best of 3)"
+  elif [ -z "$1" ] && { [ "${CI:-}" = true ] || [ "${SMOKE_TIMING:-}" = report ]; }; then
+    pass "briefing-cost (output unchanged, gap line matches; fifty specs in ${2}s of CPU, best of 3, over 0.5 s: reported, not enforced, the limit is the owner's machine's (REQ-16) and this is CI or SMOKE_TIMING=report)"
+  else failc "briefing-cost" "$1 [fifty specs: ${2}s of CPU, best of 3, want ≤ 0.5]"; fi
+}
+# f. the verdict on given numbers, in a subshell so its lines are read and not counted: the
+# half second is the owner's machine's (REQ-16), so on CI (CI=true) a slower time is printed
+# and not failed; a changed output fails everywhere
+bk_v() { ( COUNTS=/dev/null; CI=$1; SMOKE_TIMING=""; bk_verdict "$2" "$3" ); }  # bk_v <CI> <fail text> <seconds>
+case "$(bk_v true "" 0.77)" in "PASS  briefing-cost"*"0.77s of CPU"*"not enforced"*) ;; *) bk_fail="$bk_fail [f: CI, 0.77 s: not a PASS that says not enforced]" ;; esac
+case "$(bk_v "" "" 0.77)" in "FAIL  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: no CI, 0.77 s: not a FAIL]" ;; esac
+case "$(bk_v true "[x]" 0.30)" in "FAIL  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: CI, a changed output: not a FAIL]" ;; esac
+case "$(bk_v "" "" 0.30)" in *"not enforced"*) bk_fail="$bk_fail [f: no CI, 0.30 s is called not enforced]" ;; "PASS  briefing-cost"*) ;; *) bk_fail="$bk_fail [f: no CI, 0.30 s: not a PASS]" ;; esac
+# e. the briefing on fifty specs, best of three, against half a second of CPU
+bk_t=9; bk_i=0
+while [ "$bk_i" -lt 3 ]; do
+  bk_i=$((bk_i + 1))
+  bk_one=$(python3 -c "import os,subprocess; a=os.times(); subprocess.run(['sh','$COPY/scripts/briefing.sh'],cwd='$BK50',stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); b=os.times(); print(round((b.children_user-a.children_user)+(b.children_system-a.children_system),2))")
+  bk_t=$(awk -v a="$bk_t" -v b="$bk_one" 'BEGIN { print (b + 0 < a + 0) ? b : a }')
+done
+bk_verdict "$bk_fail" "$bk_t"
+
+# 113. evals-for-diff: the cases a change needs are chosen by the change. scripts/evals-map.tsv
+# names, for each eval case, the plugin paths whose text reaches it; scripts/evals-for-diff.sh
+# reads `git diff --name-only <base>...HEAD` against it, and `evals.sh --for-diff <base>` runs
+# what it picks. Here the diffs are made in a scratch repository and the map is this one's;
+# evals.sh runs a stand-in for claude. Lint's check 19 holds the map to the case folders, on a
+# copy of this tree. No claude needed.
+# Cites: numbers-as-data/REQ-19 numbers-as-data/REQ-20 numbers-as-data/REQ-21
+# numbers-as-data/REQ-22 numbers-as-data/REQ-23 numbers-as-data/REQ-24 numbers-as-data/REQ-25
+FD="$WORK/fordiff"; FDS="$ROOT/scripts/evals-for-diff.sh"; mkdir -p "$FD/repo" "$FD/bin"; fd_fail=""
+fdg() { (cd "$FD/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$FD/repo" && git init -q && mkdir -p plugins/shipkit/agents plugins/shipkit/rules plugins/shipkit/scripts docs \
+  && echo a > plugins/shipkit/agents/reviewer.md && echo a > plugins/shipkit/rules/shipkit.md \
+  && echo a > plugins/shipkit/scripts/session-start.sh && echo a > docs/x.md)
+fdg add -A; fdg commit -q -m base; fdg tag base
+fd_case() {  # fd_case <branch> <file> → the cases evals-for-diff.sh prints for a diff touching only <file>
+  fdg checkout -q -b "$1" base; echo b >> "$FD/repo/$2"; fdg commit -q -am "$1"
+  (cd "$FD/repo" && sh "$FDS" base 2>&1); echo "exit=$?"
+}
+fd_out=$(fd_case rev plugins/shipkit/agents/reviewer.md | tr '\n' ' ')
+[ "$fd_out" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative exit=0 " ] \
+  || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out]"
+fd_always="hello rules-care rules-decision rules-nontrivial rules-trivial exit=0 "
+fd_out=$(fd_case rul plugins/shipkit/rules/shipkit.md | tr '\n' ' ')
+[ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on rules/shipkit.md: $fd_out]"
+fd_out=$(fd_case hook plugins/shipkit/scripts/session-start.sh | tr '\n' ' ')
+[ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on session-start.sh: $fd_out]"
+fd_out=$(fd_case doc docs/x.md | tr '\n' ' ')
+[ "$fd_out" = "exit=0 " ] || fd_fail="$fd_fail [a diff under docs/: $fd_out]"
+# evals.sh --for-diff: one --case for each case picked, marked partial; none picked, nothing run
+printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "%s"\nexit 0\n' "$FD/args" > "$FD/bin/tool"; chmod +x "$FD/bin/tool"
+fdg checkout -q rev
+(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base >/dev/null 2>&1); fd_rc=$?
+fd_cases=$(tr ' ' '\n' < "$FD/args" 2>/dev/null | grep -A1 -x -- '--case' | grep -v -x -- '--case' | grep -v -x -- '--' | tr '\n' ' ')
+[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative " ] \
+  || fd_fail="$fd_fail [evals.sh --for-diff on reviewer.md: exit $fd_rc, cases $fd_cases]"
+rm -f "$FD/args"; fdg checkout -q doc
+fd_msg=$(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base 2>&1); fd_rc=$?
+[ "$fd_rc" -eq 0 ] && [ ! -e "$FD/args" ] && [ "$fd_msg" = "evals: no case reads the files this diff changed" ] \
+  || fd_fail="$fd_fail [evals.sh --for-diff under docs/: exit $fd_rc, said '$fd_msg', tool run: $([ -e "$FD/args" ] && echo yes || echo no)]"
+# lint: the map against the case folders, on a copy of this tree
+FL="$WORK/fordiff-lint"; mkdir -p "$FL"
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$FL/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$FL" && tar xf -); fi
+fd_clean=$(python3 "$FL/scripts/lint.py" 2>&1 | tail -1)
+case "$fd_clean" in *" 0 error(s)"*) ;; *) fd_fail="$fd_fail [lint on the clean copy: $fd_clean]";; esac
+awk -F '\t' -v OFS='\t' '$1 == "hello" { next } $1 == "intake-limit" { $3 = $3 ",plugins/shipkit/skills/nosuch/" } { print } END { print "nosuch-case", "tune", "plugins/shipkit/rules/shipkit.md" }' \
+  "$FL/scripts/evals-map.tsv" > "$FL/m.tmp" && mv "$FL/m.tmp" "$FL/scripts/evals-map.tsv"
+fd_lint=$(python3 "$FL/scripts/lint.py" 2>&1)
+printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*no row for the eval case hello' \
+  && printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*nosuch-case.*names no eval case' \
+  && printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*intake-limit.*plugins/shipkit/skills/nosuch/.*does not exist' \
+  && [ "$(printf '%s\n' "$fd_lint" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p')" = 3 ] \
+  || fd_fail="$fd_fail [lint on the doctored copy: $(printf '%s' "$fd_lint" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+sh -n "$FDS" 2>/dev/null || fd_fail="$fd_fail [sh -n reports a syntax error]"
+if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the four reviewer cases; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
+else failc "evals-for-diff" "$fd_fail"; fi
+
+# 114. eval-room: room for new cases without a raise of the ceiling. The evals README's case
+# table and its section on lib/with-rule.sh moved, word for word, to docs/design/eval-cases.md,
+# as earlier sprints moved readings to eval-history.md; the README keeps its "## Cases" heading,
+# which checks 54 and 57 read up to, with one line naming the new file. The folder is measured
+# as lint's check 17 measures it: the sum of its files' sizes. The moved text is compared with
+# the README at 398d1c9. No claude needed. (Decision 0005 stands: the evals stay in the plugin.)
+# Cites: numbers-as-data/REQ-26 numbers-as-data/REQ-27
+ER="$WORK/evroom"; mkdir -p "$ER"; er_fail=""; ERC="$ROOT/docs/design/eval-cases.md"
+git -C "$ROOT" show 398d1c9:plugins/shipkit/evals/README.md > "$ER/old.md" 2>/dev/null || er_fail="$er_fail [git show 398d1c9 failed]"
+sed -n '/^### A rule under test is installed by `lib\/with-rule.sh`/,/^### Path-scoped loading, measured/p' "$ER/old.md" | sed '$d' > "$ER/withrule.md"
+sed -n '/^## Cases$/,/^## The cuts (4.8.0)$/p' "$ER/old.md" | sed '1d;$d' > "$ER/cases.md"
+[ "$(grep -c . "$ER/withrule.md")" -gt 10 ] && [ "$(grep -c . "$ER/cases.md")" -gt 40 ] || er_fail="$er_fail [the two sections were not found at 398d1c9]"
+python3 - "$ERC" "$ER/withrule.md" "$ER/cases.md" > "$ER/py.out" 2>&1 <<'PY' || er_fail="$er_fail [$(cat "$ER/py.out")]"
+import sys
+doc = open(sys.argv[1]).read() if __import__("os").path.exists(sys.argv[1]) else ""
+for name, path in (("the with-rule.sh section", sys.argv[2]), ("the case table", sys.argv[3])):
+    block = open(path).read().strip("\n")
+    i = doc.find(block)
+    if i < 0:
+        print(f"{name} is not in eval-cases.md word for word"); sys.exit(1)
+    before = doc[:i].rstrip("\n").splitlines()
+    if not any(l.startswith("*Moved 2026-11-18") for l in before[-3:]):
+        print(f"{name} has no dated *Moved …* line above it"); sys.exit(1)
+PY
+er_now="$COPY/evals/README.md"
+er_under=$(sed -n '/^## Cases$/,/^## /p' "$er_now" | sed '1d;$d' | grep -v '^[[:space:]]*$')
+[ "$(printf '%s\n' "$er_under" | grep -c .)" = 1 ] && printf '%s\n' "$er_under" | grep -q 'docs/design/eval-cases\.md' \
+  || er_fail="$er_fail [under ## Cases the README has: $(printf '%s' "$er_under" | head -3 | tr '\n' '|' | cut -c1-200)]"
+grep -q '^### A rule under test is installed by' "$er_now" && er_fail="$er_fail [the with-rule.sh section is still in the README]"
+er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in pathlib.Path(sys.argv[1]).rglob('*') if p.is_file()))" "$ROOT/plugins/shipkit/evals")
+[ "$er_bytes" -le 190800 ] || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 190,800]"
+if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
+else failc "eval-room" "$er_fail"; fi
+
+# 115. ledger-fired-if: a reversal condition about an eval count is a command. Eleven records
+# (numbers-as-data/design.md, the table) carry a Fired-if command that reads the ledger. On
+# this repository each reads HOLDS. On a scratch copy whose ledger is seeded past every clause
+# each reads FIRED, and on one whose ledger cannot be read each reads ERROR, never HOLDS. No
+# claude needed. Cites: numbers-as-data/REQ-29 numbers-as-data/REQ-30
+LF="$WORK/lfired"; mkdir -p "$LF"; lf_fail=""
+lf_recs=".shipkit/decisions/0002-spec-first-eval.md|.shipkit/specs/always-on/design.md (The Care lines move only by their number)|.shipkit/specs/decisions-bind/design.md (A contradicted decision fails through the reviewer's verdict)|.shipkit/specs/graders-and-eve/design.md (The release run accepts a fifty-ninth case)|.shipkit/specs/measured-cuts/design.md (The intake's assumption names its file; the four-question ceiling counts parts)|.shipkit/specs/overlays-and-eve/design.md (\`eve.md\` ships at the measured size, not the audit's estimate)|.shipkit/specs/portfolio-run/design.md (The release run grows to 58 cases, every case every release)|.shipkit/specs/rule-evals/design.md (One case per rule file, eighteen of them)|.shipkit/specs/rule-evals/design.md (\`--group\` exists; the release run still runs everything)|.shipkit/specs/rule-evals/design.md (The stopping rule for \`rules/nontrivial\`)|.shipkit/specs/second-traps/design.md (The Gemfile line is reworded on the 4.2.0 measurement)"
+lf_read() {  # lf_read <project> <word> → each of the eleven read as <word>, or a note of the first that did not
+  sh "$COPY/scripts/decision-check.sh" "$1" --run > "$LF/dc.out" 2>&1
+  printf '%s\n' "$lf_recs" | tr '|' '\n' | while IFS= read -r r; do
+    grep -q -F "$2 $r:" "$LF/dc.out" 2>/dev/null || grep -q -F "$2  $r:" "$LF/dc.out" 2>/dev/null || grep -q -F "$2 $r (" "$LF/dc.out" 2>/dev/null || { echo "$r"; break; }
+  done
+}
+lf_miss=$(lf_read "$ROOT" HOLDS)
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [this repository: not HOLDS: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-160)]"
+grep -q '^ERROR' "$LF/dc.out" && lf_fail="$lf_fail [this repository: an ERROR line: $(grep '^ERROR' "$LF/dc.out" | head -1 | cut -c1-160)]"
+# a copy with the records, the ledger script and a ledger seeded past every clause
+LFC="$LF/copy"; mkdir -p "$LFC/scripts" "$LFC/docs/design"
+cp -R "$ROOT/.shipkit" "$LFC/.shipkit"; cp "$ROOT/scripts/evals-ledger.sh" "$LFC/scripts/"
+{ printf 'date\tversion\tcommit\tclaude\tmodel\tcase\tset\tpassed\truns\tthreshold\tcost\tsource\n'
+  for r in 2026-01-01:z 2026-02-01:a 2026-03-01:b; do d=${r%%:*}; c=${r#*:}
+    printf '%s\t9\t%s\t-\tsonnet\trules-nontrivial\ttune\t0\t3\t0.6\t0.10\trelease\n' "$d" "$c"
+  done
+  for k in rules-care:1:3:0.10 reviewer-decision-unbuilt:2:3:0.10 intake-limit:1:3:0.10 eve-x:3:3:1.00 scoped-x:3:3:11.00 stacks-gemfile:1:3:0.10 big:3:3:30.00; do
+    IFS=: read -r n p r c <<LFEOF
+$k
+LFEOF
+    printf '2026-03-01\t9\tb\t-\tsonnet\t%s\ttune\t%s\t%s\t0.6\t%s\trelease\n' "$n" "$p" "$r" "$c"
+  done; } > "$LFC/docs/design/eval-ledger.tsv"
+lf_miss=$(lf_read "$LFC" FIRED)
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [seeded past every clause: not FIRED: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
+chmod 000 "$LFC/docs/design/eval-ledger.tsv"
+lf_miss=$(lf_read "$LFC" ERROR)
+chmod 644 "$LFC/docs/design/eval-ledger.tsv"
+[ -z "$lf_miss" ] || lf_fail="$lf_fail [an unreadable ledger: not ERROR: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
+if [ -z "$lf_fail" ]; then pass "ledger-fired-if (eleven reversal conditions read the ledger: HOLDS here, FIRED on a ledger past each clause, ERROR on one that cannot be read)"
+else failc "ledger-fired-if" "$lf_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

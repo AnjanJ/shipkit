@@ -252,4 +252,4 @@ re-measures what did not change.
 **Decision.** We chose (1), E19's default.
 **Falsifiability.** We would move to (2) if a release run passes $25 or the case count passes
 80 — then the suite has outgrown "every case, every release".
-**Fired-if.** manual
+**Fired-if.** `o=$(sh scripts/evals-ledger.sh --runs --last 1) || exit 2; printf '%s\n' "$o" | awk '($5 != "-" && $5 + 0 > 25) || $3 + 0 > 80 { f = 1 } END { exit !f }'` <!-- covers: the last release run above $25 or above 80 cases -->

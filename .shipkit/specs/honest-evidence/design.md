@@ -169,6 +169,15 @@ an edit to a requirement that `spec-diff.sh` did not print.
 
 ## Decision: On CI the briefing's time is printed, not enforced   (→ REQ-41, REQ-42, REQ-43)
 
+> **Reversed on 2026-11-19** by its own clause, on the owner's yes: after S31-T2's fix the CI
+> job ran without the switch and check 30 passed five times running (0.41 to 0.97 s;
+> `numbers-as-data` T8, `numbers-as-data/REQ-18`). The switch stays for a run by hand; REQ-43 is
+> amended. Kept as written, below, so the reasoning stays readable.
+>
+> **Reversal undone on 2026-11-19**, on the owner's yes: the next CI run, on unchanged scripts,
+> read check 30 at 1.02 s, best of three. Five passes did not show the runner holds the limit;
+> the record below stands again and the workflow sets the switch.
+
 **Context.** Smoke check 30 holds the briefing on fifty open specs to one second of CPU
 (`briefing-and-handoff/REQ-8`). The owner's Mac reads 0.75 to 0.85 s. The CI job this spec added
 read 0.96 s on its first run and 1.53 s, the best of three tries, on its second. The scripts were

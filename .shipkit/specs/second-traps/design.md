@@ -38,6 +38,11 @@ or a file over 20 KB under `evals/` that is not a case.
 
 ## Decision: Sixteen trap-2 cases, with and without; no rule changes on them   (→ REQ-4, REQ-5, REQ-6, REQ-7)
 
+> **Superseded on 2026-11-18** by `.shipkit/decisions/0008-trap2-cases-stay.md`, on the owner's
+> yes. Its own clause had fired: the release run passed $18 at 5.1.0 ($21.10) and 5.2.0 ($21.25),
+> while the trap-2 cases cost $5.29 of 5.2.0. The new record keeps all sixteen and ties the limit
+> to their own cost. Kept as written, below, so the reasoning stays readable.
+
 **Context.** `eval-results-4.2.md` reading 1: sixteen of eighteen rule cases pass equally
 without the rule, because each probes the rule's *first* named trap and `sonnet` clears that
 unaided. Nothing measures the other lines. The ROADMAP carries the sixteen as "a finding, no
@@ -117,7 +122,7 @@ may probe this very line, in which case T3 runs it too.
 **Decision.** We chose (1), C10's default.
 **Falsifiability.** We would revert to (2) if `stacks-gemfile` or `trap2/gemfile` drops below
 2 of 3 with the new text.
-**Fired-if.** manual
+**Fired-if.** `o0=$(sh scripts/evals-ledger.sh --rate stacks-gemfile --last 1) && o1=$(sh scripts/evals-ledger.sh --rate trap2-gemfile --last 1) || exit 2; printf '%s\n%s\n' "$o0" "$o1" | awk '{ split($2, a, "/") } a[2] > 0 && a[1] * 3 < 2 * a[2] { f = 1 } END { exit !f }'` <!-- covers: either case below 2 of 3 in the last release run -->
 
 ---
 

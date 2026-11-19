@@ -39,7 +39,7 @@ loading — the results say so.
 **Falsifiability.** We would fold cases back to one per stack if the eighteen rule cases cost
 more than $10 in a single release run of `scripts/evals.sh` (their share of the bill, from
 `trace-tools.sh`), which would mean the fixtures grew past "three to six files, nothing run".
-**Fired-if.** manual
+**Fired-if.** `s=$(sh scripts/evals-ledger.sh --runs --last 1 --prefix scoped-) && k=$(sh scripts/evals-ledger.sh --runs --last 1 --prefix stacks-) || exit 2; printf '%s\n%s\n' "$s" "$k" | awk '$5 == "-" { u = 1 } { c += $5 } END { exit !(NR > 0 && !u && c > 10) }'` <!-- covers: the scoped- and stacks- cases, the eighteen rule cases, above $10 together in the last release run -->
 
 ---
 
@@ -212,7 +212,7 @@ meaning (every case, every time); T5 gets its regression watch for about $1.
 **Decision.** We chose (1).
 **Falsifiability.** We would adopt (2) if a release run of `scripts/evals.sh` passes $25 at
 list price, which is where "run everything" stops being the cheap default.
-**Fired-if.** manual
+**Fired-if.** `o=$(sh scripts/evals-ledger.sh --runs --last 1) || exit 2; printf '%s\n' "$o" | awk '$5 != "-" && $5 + 0 > 25 { f = 1 } END { exit !f }'` <!-- covers: the last release run above $25 -->
 
 ---
 
@@ -244,7 +244,7 @@ go in record 0002 either way.
 **Falsifiability.** We would reopen this if `rules/nontrivial` passes fewer than one run in
 ten across three consecutive releases, or if a user reports building without a spec after
 asking for one — the clause the plan wrote, carried into 0002.
-**Fired-if.** manual
+**Fired-if.** `o=$(sh scripts/evals-ledger.sh --rate rules-nontrivial --last 3) || exit 2; printf '%s\n' "$o" | awk '{ split($2, a, "/") } $4 == 3 && a[1] * 10 < a[2] { f = 1 } END { exit !f }'` <!-- covers: rules-nontrivial passing fewer than one run in ten over the last three release runs; a user's report is read by a person -->
 
 ---
 

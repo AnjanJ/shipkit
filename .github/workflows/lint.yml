@@ -57,9 +57,9 @@ jobs:
   # (.shipkit/specs/honest-evidence/design.md, third record). The full history is fetched
   # because some checks read this repository's tags, and git is given a name because some
   # checks commit in scratch repositories. SMOKE_TIMING=report: check 30 holds the briefing to
-  # one second of CPU, a limit set on the owner's machine; this runner read 0.96 s and then
-  # 1.53 s on the same scripts, so here the time is printed and not failed
-  # (honest-evidence/design.md, seventh record; honest-evidence/REQ-43).
+  # one second of CPU, a limit set on the owner's machine. Without the switch this runner read
+  # 0.41 to 0.97 s five times, then 1.02 s, best of three, on unchanged scripts, so here the
+  # time is printed and not failed (honest-evidence/REQ-43, numbers-as-data/REQ-18).
   smoke-no-model:
     runs-on: macos-latest
     env:

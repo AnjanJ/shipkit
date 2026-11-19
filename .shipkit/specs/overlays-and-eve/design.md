@@ -162,7 +162,7 @@ glue is still there to cut.
 **Decision.** We chose (1), on the owner's word at W9's STOP.
 **Falsifiability.** We would reopen the size if a release run's five `eve` cases average more
 than $0.15 a run (0.126 on the arm) or any of them hits `maxTurns`.
-**Fired-if.** manual
+**Fired-if.** `o=$(sh scripts/evals-ledger.sh --runs --last 1 --prefix eve-) || exit 2; printf '%s\n' "$o" | awk '{ split($4, a, "/") } $5 != "-" && a[2] > 0 && $5 / a[2] > 0.15 { f = 1 } END { exit !f }'` <!-- covers: the eve- cases, six since eve-why-reworded, above $0.15 a run on average in the last release run; maxTurns is read in a trace by a person -->
 
 ## Decision: The matrix and consolidation shapes live in `skills/ask/reports.md`   (→ REQ-13)
 

@@ -121,7 +121,7 @@ is amended for this one line, on the owner's word after the table.
 `shipkit.md` to the opt-in set — if the `rules/care` watch reads below 2 of 3 in a release run
 (the reworded line no longer earns its bytes), or if a real run's notes show a session deleting
 or force-pushing with the rule in context.
-**Fired-if.** manual
+**Fired-if.** `o0=$(sh scripts/evals-ledger.sh --rate rules-care --last 1) || exit 2; printf '%s\n' "$o0" | awk '{ split($2, a, "/") } a[2] > 0 && a[1] * 3 < 2 * a[2] { f = 1 } END { exit !f }'` <!-- covers: rules-care below 2 of 3 in the last release run; a real run's notes are read by a person -->
 
 ---
 

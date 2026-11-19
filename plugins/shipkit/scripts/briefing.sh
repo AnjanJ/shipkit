@@ -66,11 +66,8 @@ MAXBYTES=800
 
   # 1b. specs with no Status line at all, counted over every spec (the loop above stops at
   # three open ones): one line, with the fix in it (run-wounds/REQ-3)
-  nostatus=0
-  for spec in .shipkit/specs/*/spec.md; do
-    [ -f "$spec" ] || continue
-    grep -q '^> *Status:' "$spec" 2>/dev/null || nostatus=$((nostatus + 1))
-  done
+  # One grep -L over every spec, not a grep for each (numbers-as-data/REQ-16)
+  nostatus=$(grep -L '^> *Status:' .shipkit/specs/*/spec.md 2>/dev/null | grep -c .)
   if [ "$nostatus" -gt 0 ]; then
     if [ "$nostatus" -eq 1 ]; then w="spec predates"; else w="specs predate"; fi
     echo "shipkit: $nostatus $w 3.3 and have no Status line — add \`> Status: shipped\` (or open, dropped) under each title so the briefing and spec-check read them right."

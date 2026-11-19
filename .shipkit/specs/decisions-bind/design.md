@@ -153,7 +153,7 @@ NOT READY is what `ship-gate` already suffers from `placeholder`. A verdict that
 "Changes beyond the spec" stay reported only, for the owner to read in the report.
 **Falsifiability.** We would fall back to (3) if `reviewer/decision-unbuilt` or `reviewer/all-met`
 reads below 3 of 3 after REQ-8, or if a real gate says NOT READY on a decision the code follows.
-**Fired-if.** manual
+**Fired-if.** `o0=$(sh scripts/evals-ledger.sh --rate reviewer-decision-unbuilt --last 1) && o1=$(sh scripts/evals-ledger.sh --rate reviewer-all-met --last 1) || exit 2; printf '%s\n%s\n' "$o0" "$o1" | awk '{ split($2, a, "/") } a[2] > 0 && a[1] < a[2] { f = 1 } END { exit !f }'` <!-- covers: either case below full in the last release run; a real gate's NOT READY is read by a person -->
 
 ---
 

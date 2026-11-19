@@ -583,7 +583,7 @@ if version:
         err(roadmap, f"the status line does not name the current version {version}: "
                      f"{status_lines[0][:90]!r}")
 
-# --- 17. The eval budget: plugins/shipkit/evals/ stays under 192 KB ------------------
+# --- 17. The eval budget: plugins/shipkit/evals/ stays at most 204,800 bytes ------
 # Proves map-on-trial/REQ-7 and rule-evals/REQ-9. Decision A9 of the quality-gate plan set a
 # 100 KB ceiling in 3.2.0 and nothing enforced it; 4.1.0 added this check and generated the XL
 # fixture at scaffold time precisely to stay inside. 4.2.0 raised it to 128 KB with the
@@ -634,6 +634,35 @@ for doc in _map_docs:
                for ln in text.splitlines()):
         err(doc, "names the map but never on a line that says it is optional — say so where "
                  "/shipkit:map or PROJECT_MAP.md is introduced (decision 0001, 4.1.0)")
+
+# --- 19. The eval map names every case, and only cases that exist ------------------
+# Proves numbers-as-data/REQ-19 and numbers-as-data/REQ-25. scripts/evals-map.tsv tells
+# scripts/evals-for-diff.sh which plugin files reach which eval case; a case with no row would
+# never be picked for a diff, and a row for a gone case, or a path that no longer exists, would
+# pick by a stale map. A case is a folder under evals/, outside fixtures/, with a prompt.md; its
+# name is its path with / read as -.
+
+_evals_map = ROOT / "scripts" / "evals-map.tsv"
+_cases = {str(p.parent.relative_to(_evals_dir)).replace("/", "-")
+          for p in _evals_dir.rglob("prompt.md") if "fixtures" not in p.relative_to(_evals_dir).parts}
+if not _evals_map.exists():
+    err(_evals_map, "missing: scripts/evals-for-diff.sh has nothing to read")
+else:
+    _rows = {}
+    for i, ln in enumerate(_evals_map.read_text(encoding="utf-8").splitlines()[1:], 2):
+        cols = ln.split("\t")
+        if len(cols) != 3 or not cols[0]:
+            err(_evals_map, f"line {i}: want three tab-separated fields, case, set and paths")
+            continue
+        _rows[cols[0]] = (i, cols[2])
+    for c in sorted(_cases - set(_rows)):
+        err(_evals_map, f"no row for the eval case {c}")
+    for c in sorted(set(_rows) - _cases):
+        err(_evals_map, f"line {_rows[c][0]}: {c} names no eval case")
+    for c, (i, paths) in sorted(_rows.items()):
+        for p in filter(None, paths.split(",")):
+            if not (ROOT / p.rstrip("/")).exists():
+                err(_evals_map, f"line {i}: {c}: {p} does not exist")
 
 # --- Report ------------------------------------------------------------------
 

@@ -155,4 +155,4 @@ case measure less than the owner asked for.
 **Falsifiability.** The second sentence comes out if `intake/limit` is still below 2 of 3 on
 the release run after it is added — then the ceiling, not the wording, is the problem, and a
 record for the plan after says so.
-**Fired-if.** manual
+**Fired-if.** `o0=$(sh scripts/evals-ledger.sh --rate intake-limit --last 1) || exit 2; printf '%s\n' "$o0" | awk '{ split($2, a, "/") } a[2] > 0 && a[1] * 3 < 2 * a[2] { f = 1 } END { exit !f }'` <!-- covers: intake-limit below 2 of 3 in the last release run -->

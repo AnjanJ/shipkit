@@ -167,6 +167,13 @@ Added after the CI job's first two runs (2026-11-18, on the owner's yes):
 - **REQ-42.** Where `SMOKE_TIMING` is `report`, the suite shall still fail check 30 when the
   fifty-spec briefing prints more than eight lines or more than 800 bytes.
 - **REQ-43.** The CI job of REQ-11 shall set `SMOKE_TIMING` to `report`.
+  > *Amended 2026-11-18 (`numbers-as-data` T8, the owner's yes):* this said the job shall set
+  > `SMOKE_TIMING` to `report`. Sprint 31 cut the fifty-spec briefing to 0.38 s of CPU, so the
+  > switch comes out of the job and CI holds check 30's limit again (`numbers-as-data/REQ-18`).
+  >
+  > *Amended again 2026-11-19 (the owner's yes):* back to the first form. Without the switch the
+  > runner passed five times (0.41 to 0.97 s), then read 1.02 s, best of three, on unchanged
+  > scripts. The limit holds on the owner's machine.
 
 ## Out of scope
 
