@@ -112,7 +112,11 @@ The flake rule, and a briefing quick enough for CI:
   best of three runs, on the owner's machine.
 - **REQ-17.** `spec-check.sh` shall print the same lines, and exit with the same status, as it
   did at the base of this spec, for the same tree and the same arguments.
-- **REQ-18.** The CI job of `honest-evidence/REQ-11` shall not set `SMOKE_TIMING`.
+- **REQ-18.** The CI job of `honest-evidence/REQ-11` shall set `SMOKE_TIMING` to `report`.
+  > *Amended 2026-11-19 (T8, the owner's yes):* this said the job shall not set `SMOKE_TIMING`.
+  > Without it the runner passed check 30 five times running (0.41 to 0.97 s), and the sixth run
+  > read 1.02 s, best of three, on unchanged scripts. The runner's CPU time spreads too far for
+  > the one-second limit, so the switch is back and the limit holds on the owner's machine.
 
 The cases for a diff:
 

@@ -55,6 +55,7 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - Note (2026-11-18): this reverses `honest-evidence`'s seventh record by its own clause, and `honest-evidence/REQ-43` ("the CI job shall set `SMOKE_TIMING` to `report`") stops being true. That requirement is amended in the same commit, on the owner's word at the time.
   - Note (2026-11-18): the first CI run that reached a runner read check 30 at 0.69 s (PASS) and failed check 112: 0.77 s of CPU against its half second. Check 112 had read the switch too, and T8's first commit missed it. REQ-16's half second is "on the owner's machine", so check 112 now prints the time on CI (`CI=true`) and still fails on a changed output. The count of five runs starts again after that fix.
   - Done (2026-11-19): five `workflow_dispatch` runs in a row at `354eb13`, 03:35 to about 04:00 UTC, all green, smoke 238 passed and 0 failed each (runs 44452531406, 44452757519, 44452972791, 44453303674, 44453648212). Check 30, first try each time: 0.41, 0.50, 0.76, 0.97 and 0.58 s of CPU. Check 112, best of three, printed on CI: 0.54, 0.45, 0.66, 0.78 and 0.52 s. Three earlier attempts were cancelled because no macOS runner took the job; they ran no step and are not counted. The runner's spread is wide: 0.97 s is 0.03 s from the limit, and check 30 fails only if three tries in a row reach 1 s.
+  - Note (2026-11-19): the next CI run, on the pull request at `f451af5` (a change to two spec files only), failed check 30 at 1.02 s, best of three, while check 112 read the same briefing at 0.72 s in the same job (run 44461093791). On the owner's yes the switch is back in the workflow, check 105 asserts it again, and REQ-18 and `honest-evidence/REQ-43` are amended. The task stays ticked: its five runs passed; the sixth showed that five runs were not enough.
 - [ ] **T9** Sprint 35: the release run appends its rows → REQ-31
   - Files: docs/design/eval-ledger.tsv
   - Test: none: REQ-31 is read from Sprint 35's record
@@ -76,3 +77,7 @@ Not fixed here; each goes to the sprint's pull request.
   Decided the same day, on the owner's yes: `.shipkit/decisions/0008-trap2-cases-stay.md` keeps
   all sixteen and fires on the trap-2 cases' own cost (above $8) or size (above 24 KB); the old
   record is marked superseded.
+- For Sprint 32: CI's runner read the same briefing at 0.41 to over 1.02 s of CPU on unchanged
+  scripts, so a CPU limit cannot be enforced there. The number of processes the briefing starts
+  on check 30's fixture is the cost's cause and is the same on any machine; CI could enforce a
+  count and print the time. Its own requirement, so it goes to Sprint 32's intake.

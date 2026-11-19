@@ -173,6 +173,10 @@ an edit to a requirement that `spec-diff.sh` did not print.
 > job ran without the switch and check 30 passed five times running (0.41 to 0.97 s;
 > `numbers-as-data` T8, `numbers-as-data/REQ-18`). The switch stays for a run by hand; REQ-43 is
 > amended. Kept as written, below, so the reasoning stays readable.
+>
+> **Reversal undone on 2026-11-19**, on the owner's yes: the next CI run, on unchanged scripts,
+> read check 30 at 1.02 s, best of three. Five passes did not show the runner holds the limit;
+> the record below stands again and the workflow sets the switch.
 
 **Context.** Smoke check 30 holds the briefing on fifty open specs to one second of CPU
 (`briefing-and-handoff/REQ-8`). The owner's Mac reads 0.75 to 0.85 s. The CI job this spec added

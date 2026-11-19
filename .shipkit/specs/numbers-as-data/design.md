@@ -223,6 +223,8 @@ line, and on this repository, and reads the briefing's gap line against `spec-ch
 `.github/workflows/lint.yml` (REQ-18): `SMOKE_TIMING: report` comes out of the `smoke-no-model`
 job, with its comment, after five passes running on the runner without it. Until then the task
 stays open.
+*Note 2026-11-19:* it came out, five runs passed, and the sixth failed at 1.02 s on unchanged
+scripts; on the owner's yes the switch is back and REQ-18 is amended to say so.
 
 `scripts/evals-map.tsv` (REQ-19 to REQ-23): the header line `case set paths`. `scripts/
 evals-for-diff.sh <base>` reads `git diff --name-only <base>...HEAD`, and prints each case one of
