@@ -38,6 +38,13 @@ Sprint 35.
   - Test: scripts/smoke.sh check 118, extended: the held-out tree is the `notes-export` feature, its diff from `base` holds no `refund` in any letter case, the test citing `notes-export/REQ-1` calls only `is_shareable`, `export_notes` does not call it and returns a private note, and the test command exits 0. Check 77, extended: a case under `evals/holdout/reviewer-*` builds from the shared fixture too. Check 117 reads the new grader's replies
   - After: T4
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); the evals folder's size and the projection for the nine cases to come are written under this task as a note, and the README's section "What graders can check" has moved to `docs/design/eval-cases.md` only if the projection passed 204,800
+  - Note (2026-11-19): the case is in and the task stays open. Measured with the folder at 195,749 bytes:
+    `reviewer/helper-only` cost 1,799 (its folder 1,020, the shared fixture 779) and this case 3,394 (its
+    folder 1,066, the `notes-export` feature 2,328). Projected for the nine cases to come: about 13,400,
+    so about 209,150 against 204,800. Moving the README's section (2,871) leaves it about 1,500 over.
+    Still to do here: that move, with check 114 holding the moved text to the README at `9e061ca`; and
+    a shorter description and `fixture.sh` comment in each case, about 150 bytes a case. Then the
+    projection is written again. If it is still over, the owner is asked before any case is cut.
 - [ ] **T6** Four more tuning cases: `skipped-test`, `comment-cite`, `weakened-req`, `waiver-added` → REQ-3, REQ-4, REQ-5, REQ-6, REQ-8, REQ-9, REQ-10
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/skipped-test/, plugins/shipkit/evals/reviewer/comment-cite/, plugins/shipkit/evals/reviewer/weakened-req/, plugins/shipkit/evals/reviewer/waiver-added/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `skipped-test` runs green with one test skipped and `spec-check.sh` prints `SKIPPED-CITE refunds REQ-2`; in `comment-cite`, `refunds/REQ-2` is in a comment in `app/refunds.py` and nowhere under `tests/`; in `weakened-req`, `spec-diff.sh . refunds base` prints `REQ-CHANGED refunds REQ-2` and no other `REQ-` or `WAIVER-` line and `refund` caps the amount; in `waiver-added` it prints `WAIVER-ADDED` and `REQ-CHANGED` for REQ-2 and no test cites it. Check 117 reads the four graders' replies

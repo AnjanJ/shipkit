@@ -12,6 +12,76 @@ case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
+# Held out (Sprint 32): `notes-helper` is the helper-only miss on another feature, a notes export,
+# so that it shares no word with the variants below. The requirement it breaks is REQ-1.
+if [ "${VARIANT#notes-}" != "$VARIANT" ]; then
+mkdir -p .shipkit/specs/notes-export
+cat > .shipkit/specs/notes-export/spec.md <<'SPEC'
+# Spec: Notes export
+
+> Spec accepted at commit `base` on main.
+> Status: open
+> Paths: app/notes.py, tests/test_notes.py
+
+## Purpose
+A user's notes can be exported as lines of text.
+
+## Requirements (EARS)
+- **REQ-1.** If a note is marked private, then the export shall leave it out.
+- **REQ-2.** When an export is requested, the system shall return one line for each note,
+  its title first.
+SPEC
+cat > .shipkit/specs/notes-export/design.md <<'SPEC'
+# Design: Notes export
+
+## Decision: The export is a function in `app/notes.py`   (→ REQ-1, REQ-2)
+
+**Decision.** A function, not a command-line tool.
+**Falsifiability.** We would reverse this if a second caller needs a file on disk.
+SPEC
+cat > .shipkit/specs/notes-export/tasks.md <<'SPEC'
+# Tasks: Notes export
+
+- [x] **T1** Export the notes that may be shared → REQ-1, REQ-2
+  - Files: app/notes.py, tests/test_notes.py
+  - Test: tests/test_notes.py::test_a_private_note_is_left_out
+  - After: none
+  - Done when: `python3 -m unittest discover -s tests` → all pass
+SPEC
+cat > app/notes.py <<'PY'
+"""Notes: export a user's notes as text."""
+
+
+def is_shareable(note):
+    """A note may be exported unless it is marked private."""
+    return not note.get("private")
+
+
+def export_notes(notes):
+    """One line for each note, its title first."""
+    return [f'{n["title"]}: {n["body"]}' for n in notes]
+PY
+cat > tests/test_notes.py <<'PY'
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app.notes import export_notes, is_shareable
+
+
+class NotesExportTest(unittest.TestCase):
+    # notes-export/REQ-2
+    def test_one_line_for_each_note(self):
+        self.assertEqual(export_notes([{"title": "Milk", "body": "two litres"}]), ["Milk: two litres"])
+
+    # notes-export/REQ-1
+    def test_a_private_note_is_left_out(self):
+        self.assertFalse(is_shareable({"title": "Pin", "body": "1234", "private": True}))
+PY
+git add -A && g commit -q -m "add the notes export"; exit
+fi
 mkdir -p .shipkit/specs/refunds
 cat > .shipkit/specs/refunds/spec.md <<'SPEC'
 # Spec: Refunds

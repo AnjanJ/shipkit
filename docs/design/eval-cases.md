@@ -188,3 +188,4 @@ grader is shown on a reply it must pass and one it must fail by `scripts/grader-
 | Case | The miss | Passes when the answer… | Grader |
 |------|----------|-------------------------|--------|
 | `reviewer/helper-only` | the test citing REQ-2 passes on a helper that `refund` never calls (`field-notes-5.2.md` §9, REQ-5 and REQ-6 of `team-day-boundary`) | marks REQ-2 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
+| `holdout/reviewer-helper-only` (held out) | the same miss on another feature, `notes-export`: the test citing REQ-1 passes on `is_shareable`, which `export_notes` never calls | marks REQ-1 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
