@@ -47,13 +47,14 @@ owner's yes at the time. T9 and T10 need a paid run and wait for Sprint 35.
   - After: T6
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 115 `PASS`, exit 0; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
   - Note (2026-11-18): `scripts/evals-ledger.sh` was added to Files. Check 115 showed a ledger that cannot be read gave decision 0002 `HOLDS`: the queries ended in a pipe to `sort` or `cat`, whose status hid awk's failure. The queries now exit 2 on a ledger they cannot read and on an awk failure, so a command built on them reads `ERROR`.
-- [ ] **T8** CI enforces the briefing's limit again → REQ-18
+- [x] **T8** CI enforces the briefing's limit again → REQ-18
   - Files: .github/workflows/lint.yml, scripts/smoke.sh, .shipkit/specs/honest-evidence/spec.md
   - Test: scripts/smoke.sh check 105 (`timing-switch`), changed: the `smoke-no-model` job does not set `SMOKE_TIMING`, and the switch still works when set by hand
   - After: T7
   - Done when: five CI runs in a row on the runner, without the switch, read check 30 `PASS`; `sh scripts/smoke.sh --no-model </dev/null` → exit 0
   - Note (2026-11-18): this reverses `honest-evidence`'s seventh record by its own clause, and `honest-evidence/REQ-43` ("the CI job shall set `SMOKE_TIMING` to `report`") stops being true. That requirement is amended in the same commit, on the owner's word at the time.
   - Note (2026-11-18): the first CI run that reached a runner read check 30 at 0.69 s (PASS) and failed check 112: 0.77 s of CPU against its half second. Check 112 had read the switch too, and T8's first commit missed it. REQ-16's half second is "on the owner's machine", so check 112 now prints the time on CI (`CI=true`) and still fails on a changed output. The count of five runs starts again after that fix.
+  - Done (2026-11-19): five `workflow_dispatch` runs in a row at `354eb13`, 03:35 to about 04:00 UTC, all green, smoke 238 passed and 0 failed each (runs 44452531406, 44452757519, 44452972791, 44453303674, 44453648212). Check 30, first try each time: 0.41, 0.50, 0.76, 0.97 and 0.58 s of CPU. Check 112, best of three, printed on CI: 0.54, 0.45, 0.66, 0.78 and 0.52 s. Three earlier attempts were cancelled because no macOS runner took the job; they ran no step and are not counted. The runner's spread is wide: 0.97 s is 0.03 s from the limit, and check 30 fails only if three tries in a row reach 1 s.
 - [ ] **T9** Sprint 35: the release run appends its rows → REQ-31
   - Files: docs/design/eval-ledger.tsv
   - Test: none: REQ-31 is read from Sprint 35's record
