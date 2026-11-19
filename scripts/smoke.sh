@@ -4883,6 +4883,7 @@ else failc "reviewer-trees" "$rt_fail"; fi
 # waits for Sprint 35. Here: a scratch repository. No claude needed.
 # Cites: misses-to-checks/REQ-25 misses-to-checks/REQ-26 misses-to-checks/REQ-27
 # misses-to-checks/REQ-28 misses-to-checks/REQ-29 misses-to-checks/REQ-30 misses-to-checks/REQ-31
+# misses-to-checks/REQ-32
 CM="$WORK/cmatch"; CMS="$COPY/scripts/checks-match.sh"; cm_fail=""; mkdir -p "$CM/repo/app/sub" "$CM/repo/docs" "$CM/bin" "$CM/lint/.shipkit" "$CM/lint/docs"
 cmg() { (cd "$CM/repo" && git -c user.email=s@s -c user.name=s "$@"); }
 (cd "$CM/repo" && git init -q && echo x > docs/note.md); cmg add -A; cmg commit -q -m empty; cmg tag empty
@@ -4966,7 +4967,23 @@ printf '## C1: No trigger\nCheck: Look.\nFrom: docs/real.md\n\n## C2: No check\n
   && grep -q '^BAD-ITEM C4 .*neither' "$CM/lint.out" && grep -q '^BAD-ITEM C5 .*docs/nope\.md' "$CM/lint.out" \
   || cm_fail="$cm_fail [d: five bad items, each named once: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-400)]"
 sh "$CMS" --lint > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [d: --lint with no folder is not exit 64]"
-if [ -z "$cm_fail" ]; then pass "checks-match (the items a diff triggers, from the base ref's file: a path glob whose star crosses a slash, an added line and not a removed one; a branch's edit to the file changes nothing; no file at the base, nothing; --lint names five kinds of bad item; sh, awk and git only, and no file changed)"
+# e. this repository's own file: four items, well formed, and each one's trigger is met by the
+# kind of change it is about (a grader, lint.py, a requirement that names READY, a text-only pass)
+CMO="$CM/own"; mkdir -p "$CMO/.shipkit/specs/x" "$CMO/scripts" "$CMO/plugins/shipkit/evals/demo/one/graders"
+cmo() { (cd "$CMO" && git -c user.email=s@s -c user.name=s "$@"); }
+[ "$(grep -c '^## C[0-9][0-9]*: ' "$ROOT/.shipkit/checks.md" 2>/dev/null)" = 4 ] || cm_fail="$cm_fail [e: .shipkit/checks.md does not hold four items]"
+sh "$CMS" --lint "$ROOT" > "$CM/own.lint" 2>&1; cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ ! -s "$CM/own.lint" ] || cm_fail="$cm_fail [e: --lint on this repository: exit $cm_rc: $(tr '\n' '|' < "$CM/own.lint" | cut -c1-300)]"
+cp "$ROOT/.shipkit/checks.md" "$CMO/.shipkit/checks.md" 2>/dev/null
+(cd "$CMO" && git init -q && echo x > scripts/lint.py && echo x > scripts/smoke.sh && echo x > .shipkit/specs/x/spec.md); cmo add -A; cmo commit -q -m base; cmo tag base
+echo y > "$CMO/plugins/shipkit/evals/demo/one/graders/g.md"; echo y >> "$CMO/scripts/lint.py"
+printf -- '- **REQ-9.** The ship report shall read READY.\n' >> "$CMO/.shipkit/specs/x/spec.md"
+# (written in two parts: check 104 counts this script's own text-only assertions by that word)
+printf 'pass%s "demo (the words are there)"\n' t >> "$CMO/scripts/smoke.sh"
+cmo add -A; cmo commit -q -m change
+cm_out=$(sh "$CMS" "$CMO" base 2>&1 | grep '^TRIGGERED ' | cut -d: -f1 | tr '\n' ' ')
+[ "$cm_out" = "TRIGGERED C1 TRIGGERED C2 TRIGGERED C3 TRIGGERED C4 " ] || cm_fail="$cm_fail [e: a change of each kind must trigger this repository's four items: $cm_out]"
+if [ -z "$cm_fail" ]; then pass "checks-match (the items a diff triggers, from the base ref's file: a path glob whose star crosses a slash, an added line and not a removed one; a branch's edit to the file changes nothing; no file at the base, nothing; --lint names five kinds of bad item; sh, awk and git only, and no file changed; this repository's four items are well formed and each is met by the change it is about)"
 else failc "checks-match" "$cm_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

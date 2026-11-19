@@ -951,6 +951,39 @@ The baseline is `spec.md` at the base ref; for a spec written on its own branch,
 commit after the base ref in which its `> Status:` reads `open`. The script exits 1 when it
 prints a `REQ-` line, 0 otherwise, and 64 on wrong usage. It blocks nothing and changes no file.
 
+### Checks that a diff triggers
+
+A miss that has happened before is worth asking about whenever a change touches the same ground.
+`.shipkit/checks.md` is where a project keeps such checks, one item for each:
+
+```markdown
+## C1: A refund is sent once
+Trigger: path app/refunds.py, app/billing/*
+Check: Every call to gateway.refund passes an idempotency key.
+From: .shipkit/escapes/0001-double-refund.md, .shipkit/escapes/0004-refund-retried.md
+```
+
+An item is its `## C<n>: <title>` line and three lines: the trigger, the thing to check, and the
+miss it came from. A trigger is one of two kinds, and both can be read from a diff:
+
+| Trigger | Met when |
+|---------|----------|
+| `path <glob>[, <glob>]` | a changed file matches a glob; `*` also matches `/` |
+| `added <pattern>` | a line the diff adds matches the pattern, a regular expression as `awk` reads it; a removed line never does |
+
+```sh
+sh "<plugin root>/scripts/checks-match.sh" . <base-ref>   # the items this branch's diff triggers
+sh "<plugin root>/scripts/checks-match.sh" --lint .       # is the file well formed?
+```
+
+For each item the diff triggers it prints `TRIGGERED C1: <title>` and the item's three lines. The
+file is read **from the base ref**, never from the working tree: a branch cannot edit the list
+it is judged by, and an item added on a branch takes effect after it merges. `--lint` reads the
+file you are writing and prints `BAD-ITEM C<n> <reason>` for an item with a line missing, a
+trigger of neither kind, or a source on its `From:` line that does not exist; a source is each
+comma-separated entry there, and its first word is a path. The script blocks nothing and changes
+no file. Nothing runs it for you yet: it is a command you run by hand.
+
 ### Handing a task to an agent
 
 A task in the checked format already says everything an agent needs, so the brief is built by
