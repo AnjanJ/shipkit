@@ -4616,8 +4616,12 @@ else failc "holdout-kept-out" "$hk_fail"; fi
 # in a commit message. scripts/grader-check.sh reads scripts/grader-replies/<case>/, where
 # <grader>.pass.md must match the pattern and <grader>.fail.md must not, and this check runs it:
 # first on a scratch case, where each way of being wrong is made and must be caught, then on
-# this repository's replies, where every grader named in gc_need must have both sides. No claude
-# needed; it needs node. Cites: misses-to-checks/REQ-40
+# this repository's replies, where every grader named in gc_need must have both sides, and where
+# each reply carries the mark its requirement names: a grader shown on the wrong replies is not
+# shown. No claude needed; it needs node.
+# Cites: misses-to-checks/REQ-40 misses-to-checks/REQ-7 misses-to-checks/REQ-8
+# misses-to-checks/REQ-9 misses-to-checks/REQ-10 misses-to-checks/REQ-14 misses-to-checks/REQ-23
+# misses-to-checks/REQ-24 misses-to-checks/REQ-34 misses-to-checks/REQ-37 misses-to-checks/REQ-38
 GC="$WORK/gcheck"; GCS="$ROOT/scripts/grader-check.sh"; gc_fail=""
 mkdir -p "$GC/evals/demo/one/graders" "$GC/evals/demo/two/graders" "$GC/evals/fixtures/skipped" "$GC/replies/demo-one"
 printf 'A scratch case.\n' > "$GC/evals/demo/one/prompt.md"; printf 'Another.\n' > "$GC/evals/demo/two/prompt.md"
@@ -4678,8 +4682,53 @@ gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
 [ "$gc_rc" -eq 0 ] || gc_fail="$gc_fail [j: this repository: exit $gc_rc: $(grep -E '^FAIL|not found|usage' "$GC/repo.out" | tr '\n' '|' | cut -c1-400)]"
+# k. each reply carries the mark its requirement names (case, file, held or not, the text)
+GCT=$(printf '\t')
+while IFS="$GCT" read -r gc_c gc_f gc_yn gc_text; do
+  [ -n "$gc_c" ] || continue
+  if [ ! -f "$ROOT/scripts/grader-replies/$gc_c/$gc_f" ]; then gc_fail="$gc_fail [k: no reply $gc_c/$gc_f]"; continue; fi
+  if grep -q -F -- "$gc_text" "$ROOT/scripts/grader-replies/$gc_c/$gc_f"; then gc_has=yes; else gc_has=no; fi
+  [ "$gc_has" = "$gc_yn" ] || gc_fail="$gc_fail [k: $gc_c/$gc_f holds \"$gc_text\": $gc_has, want $gc_yn]"
+done <<'GCK'
+reviewer-helper-only	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-helper-only	req2-not-met-and-fail.pass-2.md	yes	| REQ-2 | CANNOT TELL |
+reviewer-helper-only	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-helper-only	req2-not-met-and-fail.fail-2.md	yes	| REQ-2 | MET |
+reviewer-skipped-test	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-skipped-test	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-comment-cite	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-comment-cite	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-weakened-req	names-the-change.pass.md	yes	## Requirements changed on this branch
+reviewer-weakened-req	names-the-change.pass-2.md	yes	REQ-2 was rewritten on this branch
+reviewer-weakened-req	names-the-change.fail.md	yes	| REQ-2 | MET |
+reviewer-weakened-req	names-the-change.fail.md	no	changed on this branch
+reviewer-waiver-added	names-the-waiver.pass.md	yes	WAIVER-ADDED
+reviewer-waiver-added	names-the-waiver.pass-2.md	yes	the waiver on REQ-2 is new
+reviewer-waiver-added	names-the-waiver.fail.md	yes	| REQ-2 (waived) | MET |
+reviewer-waiver-added	names-the-waiver.fail.md	no	WAIVER-ADDED
+holdout-reviewer-helper-only	req1-not-met-and-fail.pass.md	yes	| REQ-1 | NOT MET |
+holdout-reviewer-helper-only	req1-not-met-and-fail.pass-2.md	yes	| REQ-1 | CANNOT TELL |
+holdout-reviewer-helper-only	req1-not-met-and-fail.fail.md	yes	| REQ-1 | MET |
+holdout-reviewer-skipped-test	req1-not-met-and-fail.pass.md	yes	| REQ-1 | NOT MET |
+holdout-reviewer-skipped-test	req1-not-met-and-fail.fail.md	yes	| REQ-1 | MET |
+reviewer-second-round	same-mark-as-before.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-second-round	same-mark-as-before.fail.md	yes	| REQ-2 | CANNOT TELL |
+reviewer-second-round	same-mark-as-before.fail-2.md	yes	| REQ-2 | MET |
+reviewer-stale-met	not-met-despite-the-report.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-stale-met	not-met-despite-the-report.fail.md	yes	| REQ-2 | MET |
+reviewer-check-triggered	c1-broken-and-pass.pass.md	yes	| BROKEN |
+reviewer-check-triggered	c1-broken-and-pass.pass.md	yes	VERDICT: PASS
+reviewer-check-triggered	c1-broken-and-pass.fail.md	no	C1
+reviewer-check-triggered	c1-broken-and-pass.fail-2.md	yes	| HELD |
+escape-second-of-a-kind	drafts-a-check.pass.md	yes	Trigger: path
+escape-second-of-a-kind	drafts-a-check.pass.md	yes	From: .shipkit/escapes/0001-refund-above-charge.md, .shipkit/escapes/0002-
+escape-second-of-a-kind	drafts-a-check.fail.md	no	Trigger:
+escape-second-of-a-kind	drafts-a-check.fail-2.md	no	From: .shipkit/escapes/0001-
+escape-missing-req	no-check-drafted.pass.md	no	Trigger:
+escape-missing-req	no-check-drafted.fail.md	yes	Trigger:
+GCK
 sh -n "$GCS" 2>/dev/null || gc_fail="$gc_fail [sh -n reports a syntax error]"
-if [ -z "$gc_fail" ]; then pass "grader-both-ways (grader-check.sh reads each reply through node with the grader's flags and catches a pattern that matches both, one that will not compile, a missing side, a missing grader and a missing case; this repository: $(tail -1 "$GC/repo.out"))"
+if [ -z "$gc_fail" ]; then pass "grader-both-ways (grader-check.sh reads each reply through node with the grader's flags and catches a pattern that matches both, one that will not compile, a missing side, a missing grader and a missing case; this repository: $(tail -1 "$GC/repo.out"), each reply carrying the mark its requirement names)"
 else failc "grader-both-ways" "$gc_fail"; fi
 
 # 118. reviewer-trees: every tree the reviewer is graded on is built here and read, so a case

@@ -136,6 +136,19 @@ Sprint 35.
   - After: T14
   - Done when: the ledger holds the two `holdout-` rows of the 5.4.0 release run, and any held-out failure is a line in `eval-history.md` dated before any change of text
 
+## The sprint's exit checklist (2026-11-19, at the commit after T13's)
+
+Lint 0 errors. `sh scripts/smoke.sh --no-model </dev/null` exit 0: 244 passed (35 text-only), 16 skipped
+(model), 0 failed. `scripts/grader-check.sh`: 37 replies as expected, 0 not. `spec-check.sh .` exit 0: 35
+specs, 0 gaps; this spec reads tested=41, waived=8, uncited=0. The three always-on rules: 2,999 of 3,000
+bytes. The evals folder: 204,629 of 204,800 bytes, 78 cases. `release-check.sh .`: 31 shipped, 5
+findings, the five of the sprint's start. `decision-check.sh . --run`: 0 fired, 0 errors. Line 10: no
+existing skill, agent, rule or overlay file is changed or removed since `main`.
+
+The ten grader requirements (REQ-7 to REQ-10, REQ-14, REQ-23, REQ-24, REQ-34, REQ-37, REQ-38) were
+proven by check 117 and not cited by it until the last commit, which also holds each reply to the mark
+its requirement names.
+
 ## Found on the way
 
 Not fixed here; each goes to the sprint's pull request.
