@@ -4669,7 +4669,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test"
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4694,7 +4694,10 @@ else failc "grader-both-ways" "$gc_fail"; fi
 # a requirement to match the code (weakened-req) or excuses it from a test (waiver-added).
 # Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-3
 # misses-to-checks/REQ-4 misses-to-checks/REQ-5 misses-to-checks/REQ-6 misses-to-checks/REQ-11
-# misses-to-checks/REQ-12 misses-to-checks/REQ-13
+# misses-to-checks/REQ-12 misses-to-checks/REQ-13 misses-to-checks/REQ-21 misses-to-checks/REQ-22
+# A second round (field-notes-5.2.md, "One tree, two readings"): second-round is the helper-only
+# tree with an earlier report that marked REQ-2 NOT MET, and stale-met the missing-req tree with
+# one that marked it MET.
 RT="$WORK/rtrees"; rt_fail=""; mkdir -p "$RT/old/lib" "$RT/old/fixtures"
 rt_build() {  # rt_build <dir> <fixture script> [argument] → the tree the script leaves in <dir>
   mkdir -p "$1"
@@ -4852,7 +4855,22 @@ public = {"title": "Milk", "body": "two litres"}
 assert export_notes([private, public]) == ["Milk: two litres"], "export_notes did not leave the private note out: %r" % export_notes([private, public])
 RTPY
 ) || rt_fail="$rt_fail [holdout skipped-test: $(tail -1 "$RT/notes-skipped.py" | cut -c1-200)]"
-if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1)"
+# d. a second round: the same tree as another case, and one untracked file, an earlier report
+rt_report() {  # rt_report <tree> <the tree it equals but for the report> <first line> <REQ-2's row starts>
+  _f="$1/.shipkit/releases/2026-11-01-refunds.md"
+  [ "$(diff -r -x .git "$2" "$1" 2>&1)" = "Only in $1/.shipkit: releases" ] \
+    || rt_fail="$rt_fail [$(basename "$1"): it must be $(basename "$2")'s tree and one more folder: $(diff -r -x .git "$2" "$1" 2>&1 | head -3 | tr '\n' '|' | cut -c1-200)]"
+  [ "$(sed -n 1p "$_f" 2>/dev/null)" = "$3" ] && grep -q -F "$4" "$_f" && grep -q '^### 4\. Independent review$' "$_f" && grep -q '^VERDICT: ' "$_f" \
+    || rt_fail="$rt_fail [$(basename "$1"): the earlier report must start '$3' and hold '$4' in a review: $(sed -n 1p "$_f" 2>/dev/null)]"
+  [ "$(git -C "$1" status --porcelain 2>/dev/null)" = "?? .shipkit/releases/" ] || rt_fail="$rt_fail [$(basename "$1"): the earlier report must be the one untracked file]"
+  [ "2026-11-01" \< "$(date +%F)" ] || rt_fail="$rt_fail [$(basename "$1"): the report is not dated before today]"
+}
+rt_build "$RT/helper-again" "$COPY/evals/reviewer/helper-only/fixture.sh"
+rt_build "$RT/round2" "$COPY/evals/reviewer/second-round/fixture.sh"
+rt_report "$RT/round2" "$RT/helper-again" "NOT READY" "| REQ-2 | NOT MET |"
+rt_build "$RT/stale" "$COPY/evals/reviewer/stale-met/fixture.sh"
+rt_report "$RT/stale" "$RT/new-missing-req" "READY" '| REQ-2 | MET | code `app/refunds.py:'
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1; second-round and stale-met are another case's tree with one earlier report, untracked)"
 else failc "reviewer-trees" "$rt_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

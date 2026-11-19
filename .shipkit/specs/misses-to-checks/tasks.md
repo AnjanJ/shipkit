@@ -77,11 +77,14 @@ Sprint 35.
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
   - Note (2026-11-19): the case cost 1,205 bytes. The folder is 199,168, with 5,632 of room for T8, T11
     and T12, projected at 5,560.
-- [ ] **T8** A second round: `reviewer/second-round` and `reviewer/stale-met` → REQ-21, REQ-22, REQ-23, REQ-24
+- [x] **T8** A second round: `reviewer/second-round` and `reviewer/stale-met` → REQ-21, REQ-22, REQ-23, REQ-24
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/second-round/, plugins/shipkit/evals/reviewer/stale-met/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `second-round` is the `helper-only` tree plus one untracked file, `.shipkit/releases/2026-11-01-refunds.md`, whose first line is `NOT READY` and whose table marks REQ-2 `NOT MET`; `stale-met` is the `missing-req` tree plus that file with `READY` and REQ-2 `MET` at an `app/refunds.py` line. Check 117 reads both graders' replies, a `CANNOT TELL` reply among those `second-round` must fail
   - After: T7
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the two cost 2,860 bytes, 490 more than projected. The folder is 202,028, with
+    2,772 of room for T11 and T12, projected at 3,190: about 420 short on the estimate. Both are written
+    as small as they can be and measured; if they do not fit, the owner is asked before any case is cut.
 - [ ] **T9** `checks-match.sh` prints the items a diff triggers, from the base ref → REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
   - Files: plugins/shipkit/scripts/checks-match.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 119 (`checks-match`), in a scratch repository: a `path` trigger is met by a changed file and prints `TRIGGERED C<n>: <title>` with the item's three lines, in the file's order; an `added` trigger is met by an added line and not by a removed one; the working tree's edited copy is not read; a checks file that exists only on the branch gives nothing and exit 0; no arguments and an unknown ref exit 64; `--lint` prints `BAD-ITEM` and exits 1 for an item with a missing line, a trigger of neither kind and a source that does not exist, and exits 0 on a good file and on none; `git status --porcelain` is the same before and after

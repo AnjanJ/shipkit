@@ -11,6 +11,9 @@
 # `weakened` rewrites REQ-2 to match the code and `waived` excuses it from a test: both commit
 # the spec first, as it was written, so the edit has an earlier form to be compared with.
 VARIANT=${1:-complete}
+# `round2` is the `helper` tree and `stale` the `missing` tree, each with an earlier ship report
+# left untracked: one that marked REQ-2 NOT MET, and one that marked it MET.
+EARLIER=; case "$VARIANT" in round2) EARLIER=round2; VARIANT=helper ;; stale) EARLIER=stale; VARIANT=missing ;; esac
 case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
@@ -284,4 +287,30 @@ weakened) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway
 waived) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway\.$|& [untested: the gateway refuses it too]|' $S ;;
 esac
 rm -f app/*.bak tests/*.bak .shipkit/specs/refunds/*.bak
-git add -A && g commit -q -m "add refunds"
+git add -A && g commit -q -m "add refunds" || exit 1
+[ -n "$EARLIER" ] || exit 0
+if [ "$EARLIER" = round2 ]; then R="NOT READY"; H=$(git rev-parse --short HEAD); C="2 MET, 1 NOT MET"; V=FAIL
+  M='NOT MET | `tests/test_refunds.py:27` calls only `check_amount`, and `refund` never calls it'
+else R=READY; H=a1b2c3d; C="3 MET, 0 NOT MET"; V=PASS; M='MET | code `app/refunds.py:12`, test `tests/test_refunds.py:27`'; fi
+mkdir -p .shipkit/releases
+cat > .shipkit/releases/2026-11-01-refunds.md <<SPEC
+$R
+
+# Ship report: refunds
+
+> Checked on 2026-11-01 at commit \`$H\` on \`main\`, against base \`base\`.
+
+## Evidence
+
+### 4. Independent review
+## Review: refunds against base
+
+| Requirement | Verdict | Evidence |
+|-------------|---------|----------|
+| REQ-1 | MET | code \`app/refunds.py:9\`, test \`tests/test_refunds.py:22\` |
+| REQ-2 | $M |
+| REQ-3 (waived) | MET | \`README.md:14\` |
+
+Requirements: $C, 0 CANNOT TELL (1 waived).
+VERDICT: $V
+SPEC
