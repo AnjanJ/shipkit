@@ -238,3 +238,4 @@ grader is shown on a reply it must pass and one it must fail by `scripts/grader-
 | `reviewer/comment-cite` | a citation in a comment in the code counts as a test: REQ-2 is cited in `app/refunds.py` and has no test | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
 | `reviewer/weakened-req` | an edit to the spec on its own branch is never listed: REQ-2 was rewritten to match the code | says REQ-2 was changed on this branch, under "Requirements changed on this branch" or on one line with `REQ-2` | regex |
 | `reviewer/waiver-added` | the same gap: REQ-2 gained `[untested: …]` on the branch and has no test | says REQ-2 gained its waiver on this branch | regex |
+| `holdout/reviewer-skipped-test` (held out) | the skipped-test gap on `notes-export`: the only test citing REQ-1 is skipped | marks REQ-1 `NOT MET` and ends `VERDICT: FAIL` | regex |

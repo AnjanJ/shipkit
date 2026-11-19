@@ -4669,7 +4669,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added"
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4694,7 +4694,7 @@ else failc "grader-both-ways" "$gc_fail"; fi
 # a requirement to match the code (weakened-req) or excuses it from a test (waiver-added).
 # Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-3
 # misses-to-checks/REQ-4 misses-to-checks/REQ-5 misses-to-checks/REQ-6 misses-to-checks/REQ-11
-# misses-to-checks/REQ-12
+# misses-to-checks/REQ-12 misses-to-checks/REQ-13
 RT="$WORK/rtrees"; rt_fail=""; mkdir -p "$RT/old/lib" "$RT/old/fixtures"
 rt_build() {  # rt_build <dir> <fixture script> [argument] → the tree the script leaves in <dir>
   mkdir -p "$1"
@@ -4834,7 +4834,25 @@ assert not is_shareable(private), "is_shareable lets a private note through"
 assert len(export_notes([private])) == 1, "export_notes left the private note out, so the miss is not in the tree"
 RTPY
 ) || rt_fail="$rt_fail [holdout helper-only: $(tail -1 "$RT/notes-helper.py" | cut -c1-200)]"
-if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only miss on REQ-1)"
+rt_build "$RT/notes-skipped" "$COPY/evals/holdout/reviewer-skipped-test/fixture.sh"
+rt_notes "$RT/notes-skipped"
+(cd "$RT/notes-skipped" && sh "$COPY/scripts/spec-check.sh" . notes-export 2>&1) | grep -q '^SKIPPED-CITE notes-export REQ-1 tests/test_notes.py:' \
+  || rt_fail="$rt_fail [holdout skipped-test: spec-check.sh prints no SKIPPED-CITE line for notes-export REQ-1]"
+[ "$(rt_test "$RT/notes-skipped")" = 0 ] && grep -q 'skipped=1' "$RT/notes-skipped.test" \
+  || rt_fail="$rt_fail [holdout skipped-test: the test command must exit 0 with one test skipped: $(tail -1 "$RT/notes-skipped.test" | cut -c1-120)]"
+[ "$(grep -c 'notes-export/REQ-1' "$RT/notes-skipped/tests/test_notes.py" 2>/dev/null)" = 1 ] \
+  && rt_cited "$RT/notes-skipped/tests/test_notes.py" notes-export/REQ-1 | sed -n 1p | grep -q '@unittest.skip' \
+  || rt_fail="$rt_fail [holdout skipped-test: the one test citing notes-export/REQ-1 must carry @unittest.skip]"
+(cd "$RT/notes-skipped" && python3 - > "$RT/notes-skipped.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.notes import export_notes
+private = {"title": "Pin", "body": "1234", "private": True}
+public = {"title": "Milk", "body": "two litres"}
+assert export_notes([private, public]) == ["Milk: two litres"], "export_notes did not leave the private note out: %r" % export_notes([private, public])
+RTPY
+) || rt_fail="$rt_fail [holdout skipped-test: $(tail -1 "$RT/notes-skipped.py" | cut -c1-200)]"
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1)"
 else failc "reviewer-trees" "$rt_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

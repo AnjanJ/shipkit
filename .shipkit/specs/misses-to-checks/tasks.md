@@ -70,11 +70,13 @@ Sprint 35.
   - Note (2026-11-19): the four cost 5,120 bytes, 460 more than projected (the fixture 1,588, the
     folders about 883 each). The folder is 197,963. With T7, T8, T11 and T12 projected at 6,840 it
     lands at about 204,800: no room on the estimate. Lint's check 17 will say at each task.
-- [ ] **T7** `holdout/reviewer-skipped-test` → REQ-13, REQ-14
+- [x] **T7** `holdout/reviewer-skipped-test` → REQ-13, REQ-14
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-skipped-test/, scripts/grader-replies/holdout-reviewer-skipped-test/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `export_notes` leaves a private note out, the test citing `notes-export/REQ-1` is skipped, the test command exits 0 and `spec-check.sh . notes-export` prints `SKIPPED-CITE notes-export REQ-1`. Check 117 reads the grader's replies
   - After: T6
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the case cost 1,205 bytes. The folder is 199,168, with 5,632 of room for T8, T11
+    and T12, projected at 5,560.
 - [ ] **T8** A second round: `reviewer/second-round` and `reviewer/stale-met` → REQ-21, REQ-22, REQ-23, REQ-24
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/second-round/, plugins/shipkit/evals/reviewer/stale-met/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: `second-round` is the `helper-only` tree plus one untracked file, `.shipkit/releases/2026-11-01-refunds.md`, whose first line is `NOT READY` and whose table marks REQ-2 `NOT MET`; `stale-met` is the `missing-req` tree plus that file with `READY` and REQ-2 `MET` at an `app/refunds.py` line. Check 117 reads both graders' replies, a `CANNOT TELL` reply among those `second-round` must fail

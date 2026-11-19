@@ -15,8 +15,8 @@ case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
-# Held out (Sprint 32): `notes-helper` is the helper-only miss on another feature, a notes export,
-# so that it shares no word with the variants below. The requirement it breaks is REQ-1.
+# Held out (Sprint 32): notes-* is another feature, a notes export, sharing no word with the
+# variants below. `notes-helper` tests REQ-1 on a helper; `notes-skipped` skips REQ-1's test.
 if [ "${VARIANT#notes-}" != "$VARIANT" ]; then
 mkdir -p .shipkit/specs/notes-export
 cat > .shipkit/specs/notes-export/spec.md <<'SPEC'
@@ -83,6 +83,10 @@ class NotesExportTest(unittest.TestCase):
     def test_a_private_note_is_left_out(self):
         self.assertFalse(is_shareable({"title": "Pin", "body": "1234", "private": True}))
 PY
+[ "$VARIANT" = notes-skipped ] && sed -i.bak 's| for n in notes\]| for n in notes if is_shareable(n)]|' app/notes.py \
+  && sed -i.bak -e 's|^    # notes-export/REQ-1$|&\
+    @unittest.skip("fails on the build server")|' -e 's|assertFalse(is_shareable(\(.*\)))$|assertEqual(export_notes([\1]), [])|' tests/test_notes.py
+rm -f app/*.bak tests/*.bak
 git add -A && g commit -q -m "add the notes export"; exit
 fi
 mkdir -p .shipkit/specs/refunds
