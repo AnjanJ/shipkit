@@ -17,6 +17,8 @@ EARLIER=; case "$VARIANT" in round2) EARLIER=round2; VARIANT=helper ;; stale) EA
 case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
+# `check` is `complete` with a checks file in the base commit, whose one item the diff breaks.
+[ "$VARIANT" = check ] && mkdir -p .shipkit && printf '## C1: A refund is sent once\nTrigger: path app/refunds.py\nCheck: Every call to gateway.refund passes an idempotency key as its third argument.\nFrom: .shipkit/escapes/0001-double-refund.md\n' > .shipkit/checks.md
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
 # Held out (Sprint 32): notes-* is another feature, a notes export, sharing no word with the
 # variants below. `notes-helper` tests REQ-1 on a helper; `notes-skipped` skips REQ-1's test.

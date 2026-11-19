@@ -95,11 +95,12 @@ Sprint 35.
   - Test: scripts/smoke.sh check 119, extended: this repository's `.shipkit/checks.md` holds four items and `checks-match.sh --lint` exits 0 on it
   - After: T9
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 119 `PASS`, exit 0; `sh plugins/shipkit/scripts/checks-match.sh --lint .` → no output, exit 0; `GUIDE.md` names the script, `--lint`, an item's form and both kinds of trigger; `bash scripts/lint.sh` → 0 error(s)
-- [ ] **T11** `reviewer/check-triggered`, and the twelve reviewer cases → REQ-18, REQ-33, REQ-34, REQ-41
+- [x] **T11** `reviewer/check-triggered`, and the twelve reviewer cases → REQ-18, REQ-33, REQ-34, REQ-41
   - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/check-triggered/, scripts/grader-replies/reviewer-check-triggered/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 118, extended: in the `check-triggered` tree `base` holds a checks file with one item, `checks-match.sh . base` prints `TRIGGERED C1`, `refund` calls `gateway.refund` with two arguments, and the tree is otherwise `all-met`'s. Check 113: a diff on `agents/reviewer.md` prints exactly twelve cases, all named `reviewer-*`. Check 77: every case whose prompt starts the reviewer builds from the shared fixture. Check 117 reads the grader's three replies
   - After: T10
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 113, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the case cost 1,229 bytes. The folder is 203,257, with 1,543 of room for T12.
 - [ ] **T12** `escape/second-of-a-kind`, a second grader on the first escape, and the eleven rows → REQ-36, REQ-37, REQ-38, REQ-39, REQ-42
   - Files: plugins/shipkit/evals/escape/second-of-a-kind/, plugins/shipkit/evals/escape/missing-req/graders/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 120 (`escape-second`): the tree's spec holds REQ-3, `.shipkit/escapes/0001-refund-above-charge.md` names the cause `requirement missing` and the spec `.shipkit/specs/refunds/`, `refund` accepts an amount below zero and the test command exits 0; the map gives `holdout` to the two held-out cases and `tune` to the other nine. Check 117 reads the new grader's replies and those of `escape-missing-req`'s second grader

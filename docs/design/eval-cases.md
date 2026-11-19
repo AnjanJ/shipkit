@@ -241,3 +241,4 @@ grader is shown on a reply it must pass and one it must fail by `scripts/grader-
 | `holdout/reviewer-skipped-test` (held out) | the skipped-test gap on `notes-export`: the only test citing REQ-1 is skipped | marks REQ-1 `NOT MET` and ends `VERDICT: FAIL` | regex |
 | `reviewer/second-round` | one tree, two readings (`field-notes-5.2.md` §9): the helper-only tree, with an earlier report that marked REQ-2 `NOT MET` | marks REQ-2 `NOT MET` again, not `CANNOT TELL`, and ends `VERDICT: FAIL` | regex |
 | `reviewer/stale-met` | the guard on reading an earlier report: it marks REQ-2 `MET` and the code is not in the tree | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/check-triggered` | nothing asks about a past miss when a diff touches the same ground: the base commit holds a check, C1, that the diff triggers and breaks | marks C1 `BROKEN` and still ends `VERDICT: PASS`, since a triggered check is reported and not judged | regex |

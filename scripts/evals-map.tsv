@@ -27,6 +27,7 @@ intake-limit	tune	plugins/shipkit/evals/intake/limit/,plugins/shipkit/skills/int
 intake-nongoal	tune	plugins/shipkit/evals/intake/nongoal/,plugins/shipkit/skills/intake/,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 intake-trivial	tune	plugins/shipkit/evals/intake/trivial/,plugins/shipkit/skills/intake/,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 reviewer-all-met	tune	plugins/shipkit/evals/reviewer/all-met/,plugins/shipkit/agents/reviewer.md,plugins/shipkit/evals/lib/review-fixture.sh,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
+reviewer-check-triggered	tune	plugins/shipkit/evals/reviewer/check-triggered/,plugins/shipkit/agents/reviewer.md,plugins/shipkit/evals/lib/review-fixture.sh,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh,plugins/shipkit/scripts/checks-match.sh
 reviewer-comment-cite	tune	plugins/shipkit/evals/reviewer/comment-cite/,plugins/shipkit/agents/reviewer.md,plugins/shipkit/evals/lib/review-fixture.sh,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 reviewer-decision-unbuilt	tune	plugins/shipkit/evals/reviewer/decision-unbuilt/,plugins/shipkit/agents/reviewer.md,plugins/shipkit/evals/lib/review-fixture.sh,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh
 reviewer-helper-only	tune	plugins/shipkit/evals/reviewer/helper-only/,plugins/shipkit/agents/reviewer.md,plugins/shipkit/evals/lib/review-fixture.sh,plugins/shipkit/scripts/briefing.sh,plugins/shipkit/scripts/spec-check.sh

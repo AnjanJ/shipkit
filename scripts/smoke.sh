@@ -4397,6 +4397,7 @@ fd_held=$(awk -F '\t' 'NR > 1 && $2 == "holdout" && index("," $3 ",", ",plugins/
 fd_said=""; [ "$fd_held" -eq 0 ] || fd_said="evals-for-diff: $fd_held held-out case(s) not listed "
 fd_out=$(fd_case rev plugins/shipkit/agents/reviewer.md | tr '\n' ' ')
 [ -n "$fd_rev" ] && [ "$fd_out" = "${fd_rev}exit=0 $fd_said" ] || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out; the map's reviewer rows: $fd_rev; held out: $fd_held]"
+[ "$(printf '%s' "$fd_rev" | wc -w | tr -d ' ')" = 12 ] || fd_fail="$fd_fail [the map names $(printf '%s' "$fd_rev" | wc -w | tr -d ' ') reviewer-* cases, and misses-to-checks/REQ-18 says twelve]"
 for fd_old in reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative; do
   case " $fd_out" in *" $fd_old "*) ;; *) fd_fail="$fd_fail [a diff on reviewer.md does not print $fd_old]" ;; esac
 done
@@ -4670,7 +4671,7 @@ if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
 else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
 # j. this repository: every reply does what its name says, and each grader of the cases Sprint
 # 32 adds has both sides (the list grows with the cases)
-gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met"
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met reviewer-check-triggered"
 gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
 # shellcheck disable=SC2086
 sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
@@ -4696,6 +4697,7 @@ else failc "grader-both-ways" "$gc_fail"; fi
 # Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-3
 # misses-to-checks/REQ-4 misses-to-checks/REQ-5 misses-to-checks/REQ-6 misses-to-checks/REQ-11
 # misses-to-checks/REQ-12 misses-to-checks/REQ-13 misses-to-checks/REQ-21 misses-to-checks/REQ-22
+# misses-to-checks/REQ-33
 # A second round (field-notes-5.2.md, "One tree, two readings"): second-round is the helper-only
 # tree with an earlier report that marked REQ-2 NOT MET, and stale-met the missing-req tree with
 # one that marked it MET.
@@ -4871,7 +4873,18 @@ rt_build "$RT/round2" "$COPY/evals/reviewer/second-round/fixture.sh"
 rt_report "$RT/round2" "$RT/helper-again" "NOT READY" "| REQ-2 | NOT MET |"
 rt_build "$RT/stale" "$COPY/evals/reviewer/stale-met/fixture.sh"
 rt_report "$RT/stale" "$RT/new-missing-req" "READY" '| REQ-2 | MET | code `app/refunds.py:'
-if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1; second-round and stale-met are another case's tree with one earlier report, untracked)"
+# e. check-triggered: the all-met tree, with a checks file in the base commit whose one item
+# the diff triggers and the code breaks
+rt_build "$RT/check" "$COPY/evals/reviewer/check-triggered/fixture.sh"
+[ "$(diff -r -x .git "$RT/new-all-met" "$RT/check" 2>&1)" = "Only in $RT/check/.shipkit: checks.md" ] \
+  || rt_fail="$rt_fail [check-triggered: it must be all-met's tree and a checks file: $(diff -r -x .git "$RT/new-all-met" "$RT/check" 2>&1 | head -3 | tr '\n' '|' | cut -c1-200)]"
+[ "$(git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -c '^## C[0-9]*: ')" = 1 ] \
+  && git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -q -x 'Trigger: path app/refunds.py' \
+  || rt_fail="$rt_fail [check-triggered: the base commit must hold a checks file with one item whose trigger is path app/refunds.py]"
+sh "$COPY/scripts/checks-match.sh" "$RT/check" base 2>&1 | grep -q '^TRIGGERED C1: ' || rt_fail="$rt_fail [check-triggered: checks-match.sh . base does not print TRIGGERED C1]"
+git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -q 'idempotency key' && grep -q 'gateway\.refund(order\["customer"\], amount_cents)$' "$RT/check/app/refunds.py" 2>/dev/null \
+  || rt_fail="$rt_fail [check-triggered: the check asks for an idempotency key, and refund must call the gateway with two arguments]"
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1; second-round and stale-met are another case's tree with one earlier report, untracked; check-triggered is all-met's tree with a check in the base commit that the diff triggers and breaks)"
 else failc "reviewer-trees" "$rt_fail"; fi
 
 # 119. checks-match: a past miss is asked about when a diff touches the same ground.
