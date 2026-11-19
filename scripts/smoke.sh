@@ -179,6 +179,7 @@ registry() { cat <<'EOF'
 118 reviewer-trees
 119 checks-match
 120 escape-second
+121 briefing-commands
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5043,6 +5044,59 @@ es_sets=$(awk -F '\t' '$1 ~ /^(holdout-reviewer-(helper-only|skipped-test)|revie
 [ "$(awk -F '\t' '$1 ~ /^holdout-/ && $2 != "holdout"' "$ROOT/scripts/evals-map.tsv" | grep -c .)" = 0 ] || es_fail="$es_fail [a holdout- case is not held out in the map]"
 if [ -z "$es_fail" ]; then pass "escape-second (the tree is the first escape's, handled: REQ-3 built, the record 0001 names requirement missing and the refunds spec, and a negative refund still goes through with no requirement about it; the map holds two of the eleven cases out and tunes on nine)"
 else failc "escape-second" "$es_fail"; fi
+
+# 121. briefing-commands: what the briefing costs, counted and not timed. CI's runner read the
+# same briefing at 0.41 to 1.02 s of CPU on unchanged scripts, so no time limit holds there
+# (honest-evidence/design.md, seventh record), and this machine reads it slow under load. What
+# the time is made of does not vary: the commands the briefing starts. On check 30's fixture
+# that is 229: 29, and four for each open spec. Here the briefing runs with a PATH that holds
+# only stand-ins for the thirteen programs it uses; each adds a line to a count and runs the
+# real one, and a program not on the list is "command not found". The limit is the number
+# itself and no switch is read, so CI enforces it. Two things show it can fail: fifty-one specs
+# count four more, and a copy of the briefing with one command added counts one more; both are
+# given to the verdict with CI=true and SMOKE_TIMING=report. No claude needed.
+# Cites: misses-to-checks/REQ-43 misses-to-checks/REQ-44
+BN="$WORK/bcount"; BNB="$COPY/scripts/briefing.sh"; mkdir -p "$BN/bin"; bn_fail=""
+for bn_t in awk sed grep sort git tr tail sh rm mktemp ls dirname cut; do
+  bn_real=$(command -v "$bn_t" 2>/dev/null)
+  case "$bn_real" in /*) ;; *) bn_fail="$bn_fail [$bn_t was not found as a program]"; continue ;; esac
+  printf '#!/bin/sh\necho %s >> "$BRIEF_COUNT"\nexec "%s" "$@"\n' "$bn_t" "$bn_real" > "$BN/bin/$bn_t"; chmod +x "$BN/bin/$bn_t"
+done
+bn_project() {  # bn_project <dir> <n> → n open specs, built as check 30 builds its fifty
+  mkdir -p "$1"; (cd "$1" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  _k=1; while [ "$_k" -le "$2" ]; do bspec "$1" "spec-$_k-with-a-rather-long-name-to-fill-the-line" open 1 4; _k=$((_k + 1)); done
+}
+bn_run() {  # bn_run <project> [briefing script] → bn_n: the commands the briefing starts there; its output is in <project>.out
+  : > "$BN/count"
+  (cd "$1" && BRIEF_COUNT="$BN/count" PATH="$BN/bin" /bin/sh "${2:-$BNB}" > "$1.out" 2> "$1.err"); _rc=$?
+  [ "$_rc" -eq 0 ] && [ ! -s "$1.err" ] \
+    || bn_fail="$bn_fail [$(basename "$1"): under the stand-ins the briefing exited $_rc and said: $(head -2 "$1.err" | tr '\n' '|' | cut -c1-200)]"
+  bn_n=$(grep -c . "$BN/count")
+}
+bn_verdict() {  # bn_verdict <count> <the output is the plain run's: yes or no> → the one PASS or FAIL line; it reads no switch
+  if [ "$2" = yes ] && [ "$1" -ge 1 ] && [ "$1" -le 229 ]; then
+    pass "briefing-commands (50 open specs → the briefing starts $1 commands, limit 229, and prints what it prints with the whole PATH; 51 specs and one added command are each over the limit, on CI too)"
+  else failc "briefing-commands" "50 specs: $1 commands started, want at most 229; the output is the plain run's: $2"; fi
+}
+bn_v() { ( COUNTS=/dev/null; CI=$1; SMOKE_TIMING=$2; export CI SMOKE_TIMING; bn_verdict "$3" yes ); }  # bn_v <CI> <SMOKE_TIMING> <count>
+bn_project "$BN/p50" 50; bn_project "$BN/p51" 51
+bn_run "$BN/p50"; bn_50=$bn_n
+(cd "$BN/p50" && sh "$BNB" > "$BN/plain.out" 2>/dev/null)
+if cmp -s "$BN/p50.out" "$BN/plain.out" && [ -s "$BN/plain.out" ]; then bn_same=yes; else bn_same=no; fi
+bn_run "$BN/p51"; bn_51=$bn_n
+cp -R "$COPY/scripts" "$BN/scripts-plus"
+sed '1a\
+ls . > /dev/null
+' "$BNB" > "$BN/scripts-plus/briefing.sh"
+cp -R "$BN/p50" "$BN/p50-plus"; bn_run "$BN/p50-plus" "$BN/scripts-plus/briefing.sh"; bn_plus=$bn_n
+[ "$bn_51" -eq $((bn_50 + 4)) ] || bn_fail="$bn_fail [fifty-one specs: $bn_51 commands, want four more than fifty's $bn_50]"
+[ "$bn_plus" -eq $((bn_50 + 1)) ] || bn_fail="$bn_fail [a briefing with one command added: $bn_plus commands, want one more than $bn_50]"
+case "$(bn_v true report "$bn_51")" in "FAIL  briefing-commands"*) ;; *) bn_fail="$bn_fail [fifty-one specs' count, $bn_51, with CI=true and SMOKE_TIMING=report: not a FAIL]" ;; esac
+case "$(bn_v true report "$bn_plus")" in "FAIL  briefing-commands"*) ;; *) bn_fail="$bn_fail [one added command's count, $bn_plus, with CI=true and SMOKE_TIMING=report: not a FAIL]" ;; esac
+case "$(bn_v "" "" 230)" in "FAIL  briefing-commands"*"230 commands"*) ;; *) bn_fail="$bn_fail [230 with no switch: not a FAIL that carries the count]" ;; esac
+case "$(bn_v true report 229)" in "PASS  briefing-commands"*"starts 229 commands"*) ;; *) bn_fail="$bn_fail [229 with CI=true and SMOKE_TIMING=report: not a PASS that carries the count]" ;; esac
+if [ -n "$bn_fail" ]; then failc "briefing-commands" "$bn_fail [50 specs: $bn_50 commands]"
+else bn_verdict "$bn_50" "$bn_same"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

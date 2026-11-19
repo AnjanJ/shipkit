@@ -121,6 +121,10 @@ Sprint 35.
   - Test: scripts/smoke.sh check 121 (`briefing-commands`): with thirteen stand-ins as the whole `PATH`, the briefing on check 30's fixture prints what it prints under the normal `PATH` and starts at most 229 commands, and the `PASS` line carries the count; the count from fifty-one specs, given to the verdict with `CI=true` and `SMOKE_TIMING=report`, is a `FAIL`
   - After: T12
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 121 `PASS` with its count, exit 0; on the pull request, CI's `smoke-no-model` job reads the same count
+  - Note (2026-11-19): check 121 is in and reads 229 here; fifty-one specs read 233 and a copy of the
+    briefing with one command added reads 230, and both fail the verdict with `CI=true` and
+    `SMOKE_TIMING=report`. The task stays open until CI's `smoke-no-model` job has read the count on
+    the pull request, which needs the owner's yes to push.
 - [ ] **T14** Sprint 35: baselines, text only where a baseline misses, and the runs after → REQ-48
   - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/escape/SKILL.md, plugins/shipkit/skills/ship/reference.md, docs/design/eval-history.md, docs/design/eval-ledger.tsv, scripts/smoke.sh
   - Test: none: REQ-48 is read from Sprint 35's record
