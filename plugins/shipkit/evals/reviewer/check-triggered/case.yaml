@@ -1,0 +1,5 @@
+# The gap (verifier plan, S32-T3): nothing asks about a past miss when a diff touches the same ground. The base holds a check, and the diff breaks it.
+schema_version: "1.1"
+name: reviewer-check-triggered
+context:
+  scaffold_script: fixture.sh

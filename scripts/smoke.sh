@@ -174,6 +174,12 @@ registry() { cat <<'EOF'
 113 evals-for-diff
 114 eval-room
 115 ledger-fired-if
+116 holdout-kept-out
+117 grader-both-ways
+118 reviewer-trees
+119 checks-match
+120 escape-second
+121 briefing-commands
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -2907,10 +2913,13 @@ else failc "ship-retry" "$sy_fail"; fi
 # text, no claude needed. Cites: decisions-bind/REQ-12 decisions-bind/REQ-13
 rf_fail=""
 [ -f "$COPY/evals/lib/review-fixture.sh" ] || rf_fail=" [evals/lib/review-fixture.sh is missing]"
-for rf_case in "$COPY"/evals/reviewer/*/; do
-  grep -q 'lib/review-fixture\.sh' "$rf_case/fixture.sh" || rf_fail="$rf_fail [$(basename "$rf_case") builds its own]"
+# A held-out reviewer case lives under evals/holdout/ and builds from the same script
+# (misses-to-checks/REQ-41).
+for rf_case in "$COPY"/evals/reviewer/*/ "$COPY"/evals/holdout/reviewer-*/; do
+  [ -d "$rf_case" ] || continue
+  grep -q 'lib/review-fixture\.sh' "$rf_case/fixture.sh" || rf_fail="$rf_fail [$(basename "$(dirname "$rf_case")")/$(basename "$rf_case") builds its own]"
 done
-if [ -z "$rf_fail" ]; then pass "reviewer-fixture (every reviewer case uses evals/lib/review-fixture.sh)"
+if [ -z "$rf_fail" ]; then pass "reviewer-fixture (every reviewer case, held-out ones too, uses evals/lib/review-fixture.sh)"
 else failc "reviewer-fixture" "$rf_fail"; fi
 rd_fail=""
 for rd_want in '`contradicted`. Otherwise it is' '`not built`' 'turned down'; do
@@ -4372,6 +4381,7 @@ bk_verdict "$bk_fail" "$bk_t"
 # copy of this tree. No claude needed.
 # Cites: numbers-as-data/REQ-19 numbers-as-data/REQ-20 numbers-as-data/REQ-21
 # numbers-as-data/REQ-22 numbers-as-data/REQ-23 numbers-as-data/REQ-24 numbers-as-data/REQ-25
+# misses-to-checks/REQ-18
 FD="$WORK/fordiff"; FDS="$ROOT/scripts/evals-for-diff.sh"; mkdir -p "$FD/repo" "$FD/bin"; fd_fail=""
 fdg() { (cd "$FD/repo" && git -c user.email=s@s -c user.name=s "$@"); }
 (cd "$FD/repo" && git init -q && mkdir -p plugins/shipkit/agents plugins/shipkit/rules plugins/shipkit/scripts docs \
@@ -4380,11 +4390,19 @@ fdg() { (cd "$FD/repo" && git -c user.email=s@s -c user.name=s "$@"); }
 fdg add -A; fdg commit -q -m base; fdg tag base
 fd_case() {  # fd_case <branch> <file> → the cases evals-for-diff.sh prints for a diff touching only <file>
   fdg checkout -q -b "$1" base; echo b >> "$FD/repo/$2"; fdg commit -q -am "$1"
-  (cd "$FD/repo" && sh "$FDS" base 2>&1); echo "exit=$?"
+  (cd "$FD/repo" && sh "$FDS" base 2>"$FD/err"); echo "exit=$?"; cat "$FD/err"
 }
+# The reviewer's cases are read from the map: Sprint 32 adds to the four of Sprint 31
+# (misses-to-checks/REQ-18 holds their number), and a held-out case is never named reviewer-*.
+fd_rev=$(awk -F '\t' 'NR > 1 && $1 ~ /^reviewer-/ { print $1 }' "$ROOT/scripts/evals-map.tsv" | sort | tr '\n' ' ')
+fd_held=$(awk -F '\t' 'NR > 1 && $2 == "holdout" && index("," $3 ",", ",plugins/shipkit/agents/reviewer.md,")' "$ROOT/scripts/evals-map.tsv" | grep -c .)
+fd_said=""; [ "$fd_held" -eq 0 ] || fd_said="evals-for-diff: $fd_held held-out case(s) not listed "
 fd_out=$(fd_case rev plugins/shipkit/agents/reviewer.md | tr '\n' ' ')
-[ "$fd_out" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative exit=0 " ] \
-  || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out]"
+[ -n "$fd_rev" ] && [ "$fd_out" = "${fd_rev}exit=0 $fd_said" ] || fd_fail="$fd_fail [a diff on reviewer.md: $fd_out; the map's reviewer rows: $fd_rev; held out: $fd_held]"
+[ "$(printf '%s' "$fd_rev" | wc -w | tr -d ' ')" = 12 ] || fd_fail="$fd_fail [the map names $(printf '%s' "$fd_rev" | wc -w | tr -d ' ') reviewer-* cases, and misses-to-checks/REQ-18 says twelve]"
+for fd_old in reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative; do
+  case " $fd_out" in *" $fd_old "*) ;; *) fd_fail="$fd_fail [a diff on reviewer.md does not print $fd_old]" ;; esac
+done
 fd_always="hello rules-care rules-decision rules-nontrivial rules-trivial exit=0 "
 fd_out=$(fd_case rul plugins/shipkit/rules/shipkit.md | tr '\n' ' ')
 [ "$fd_out" = "$fd_always" ] || fd_fail="$fd_fail [a diff on rules/shipkit.md: $fd_out]"
@@ -4397,8 +4415,12 @@ printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "%s"\nexit 0\n' "$FD/args" > "$FD/bin/
 fdg checkout -q rev
 (cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base >/dev/null 2>&1); fd_rc=$?
 fd_cases=$(tr ' ' '\n' < "$FD/args" 2>/dev/null | grep -A1 -x -- '--case' | grep -v -x -- '--case' | grep -v -x -- '--' | tr '\n' ' ')
-[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "reviewer-all-met reviewer-decision-unbuilt reviewer-missing-req reviewer-rejected-alternative " ] \
+[ "$fd_rc" -eq 0 ] && [ "$fd_cases" = "$fd_rev" ] \
   || fd_fail="$fd_fail [evals.sh --for-diff on reviewer.md: exit $fd_rc, cases $fd_cases]"
+# one more reviewer row, in a scratch map, is printed with the rest: the list is the map's
+{ cat "$ROOT/scripts/evals-map.tsv"; printf 'reviewer-zz-extra\ttune\tplugins/shipkit/agents/reviewer.md\n'; } > "$FD/map.tsv"
+fd_out=$(cd "$FD/repo" && EVALS_MAP="$FD/map.tsv" sh "$FDS" base 2>/dev/null | tr '\n' ' ')
+[ "$fd_out" = "${fd_rev}reviewer-zz-extra " ] || fd_fail="$fd_fail [a scratch map with one more reviewer row: $fd_out]"
 rm -f "$FD/args"; fdg checkout -q doc
 fd_msg=$(cd "$FD/repo" && EVALS_TOOL="$FD/bin/tool" EVALS_LEDGER="$FD/l.tsv" EVALS_OUT="$FD/out" sh "$ROOT/scripts/evals.sh" --for-diff base 2>&1); fd_rc=$?
 [ "$fd_rc" -eq 0 ] && [ ! -e "$FD/args" ] && [ "$fd_msg" = "evals: no case reads the files this diff changed" ] \
@@ -4418,7 +4440,7 @@ printf '%s\n' "$fd_lint" | grep -q 'evals-map.tsv.*no row for the eval case hell
   && [ "$(printf '%s\n' "$fd_lint" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p')" = 3 ] \
   || fd_fail="$fd_fail [lint on the doctored copy: $(printf '%s' "$fd_lint" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
 sh -n "$FDS" 2>/dev/null || fd_fail="$fd_fail [sh -n reports a syntax error]"
-if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the four reviewer cases; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
+if [ -z "$fd_fail" ]; then pass "evals-for-diff (reviewer.md → the $(printf '%s' "$fd_rev" | wc -w | tr -d ' ') cases the map names reviewer-*, and one more from a scratch map; rules/shipkit.md or the hook → the rules cases and hello; docs/ → none; evals.sh --for-diff runs those, or nothing; lint holds the map to the cases)"
 else failc "evals-for-diff" "$fd_fail"; fi
 
 # 114. eval-room: room for new cases without a raise of the ceiling. The evals README's case
@@ -4450,9 +4472,36 @@ er_under=$(sed -n '/^## Cases$/,/^## /p' "$er_now" | sed '1d;$d' | grep -v '^[[:
 [ "$(printf '%s\n' "$er_under" | grep -c .)" = 1 ] && printf '%s\n' "$er_under" | grep -q 'docs/design/eval-cases\.md' \
   || er_fail="$er_fail [under ## Cases the README has: $(printf '%s' "$er_under" | head -3 | tr '\n' '|' | cut -c1-200)]"
 grep -q '^### A rule under test is installed by' "$er_now" && er_fail="$er_fail [the with-rule.sh section is still in the README]"
+# Sprint 32 moved one more section, "What graders can check", the same way (misses-to-checks T5):
+# it is in eval-cases.md word for word as the README had it at 9e061ca, under a dated line. The
+# README keeps the heading with its two answers, which measure-and-slim/REQ-4 asks it to state,
+# and names the file.
+git -C "$ROOT" show 9e061ca:plugins/shipkit/evals/README.md 2>/dev/null \
+  | sed -n '/^## What graders can check$/,/^## How a case gets the fixture$/p' | sed '$d' > "$ER/graders.md"
+[ "$(grep -c . "$ER/graders.md")" -gt 20 ] || er_fail="$er_fail [the section What graders can check was not found at 9e061ca]"
+python3 - "$ERC" "$ER/graders.md" > "$ER/py2.out" 2>&1 <<'PY' || er_fail="$er_fail [$(cat "$ER/py2.out")]"
+import sys
+doc = open(sys.argv[1]).read()
+block = open(sys.argv[2]).read().strip("\n")
+i = doc.find(block)
+if i < 0:
+    print("the section What graders can check is not in eval-cases.md word for word"); sys.exit(1)
+if not any(l.startswith("*Moved 2026-11-19") for l in doc[:i].rstrip("\n").splitlines()[-4:]):
+    print("the section What graders can check has no dated *Moved …* line above it"); sys.exit(1)
+PY
+er_g=$(sed -n '/^## What graders can check$/,/^## How a case gets the fixture$/p' "$er_now" | sed '1d;$d')
+printf '%s\n' "$er_g" | grep -q 'docs/design/eval-cases\.md' && printf '%s\n' "$er_g" | grep -q '(a) Which tools were called — yes' \
+  && printf '%s\n' "$er_g" | grep -q '(b) A file the run wrote — yes' && [ "$(printf '%s\n' "$er_g" | grep -c .)" -le 5 ] \
+  || er_fail="$er_fail [under What graders can check the README has: $(printf '%s' "$er_g" | head -3 | tr '\n' '|' | cut -c1-200)]"
+grep -q 'No custom-code graders' "$er_now" && er_fail="$er_fail [the limits of What graders can check are still in the README]"
 er_bytes=$(python3 -c "import pathlib,sys; print(sum(p.stat().st_size for p in pathlib.Path(sys.argv[1]).rglob('*') if p.is_file()))" "$ROOT/plugins/shipkit/evals")
-[ "$er_bytes" -le 190800 ] || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 190,800]"
-if [ -z "$er_fail" ]; then pass "eval-room (the case table and the with-rule.sh section are in docs/design/eval-cases.md word for word under a dated line; the README keeps ## Cases with one line; the evals folder is $er_bytes bytes)"
+# The room Sprint 31 made (the folder at most 190,800 bytes) is what Sprint 32's cases use. From
+# misses-to-checks T1 the folder is held where lint's check 17 holds it, at 204,800 bytes
+# (numbers-as-data/REQ-27, amended 2026-11-19).
+er_room() { [ "$1" -le 204800 ]; }
+er_room "$er_bytes" || er_fail="$er_fail [the evals folder is $er_bytes bytes, want at most 204,800]"
+er_room 190801 && er_room 204800 && ! er_room 204801 || er_fail="$er_fail [the limit is not 204,800: 190,801 and 204,800 must pass, and 204,801 fail]"
+if [ -z "$er_fail" ]; then pass "eval-room (the case table, the with-rule.sh section and What graders can check are in docs/design/eval-cases.md word for word under dated lines; the README keeps ## Cases with one line and its two answers on graders; the evals folder is $er_bytes of 204800 bytes)"
 else failc "eval-room" "$er_fail"; fi
 
 # 115. ledger-fired-if: a reversal condition about an eval count is a command. Eleven records
@@ -4492,6 +4541,611 @@ chmod 644 "$LFC/docs/design/eval-ledger.tsv"
 [ -z "$lf_miss" ] || lf_fail="$lf_fail [an unreadable ledger: not ERROR: $lf_miss — $(grep -F "$(printf '%s' "$lf_miss" | cut -c1-40)" "$LF/dc.out" | head -1 | cut -c1-200)]"
 if [ -z "$lf_fail" ]; then pass "ledger-fired-if (eleven reversal conditions read the ledger: HOLDS here, FIRED on a ledger past each clause, ERROR on one that cannot be read)"
 else failc "ledger-fired-if" "$lf_fail"; fi
+
+# 116. holdout-kept-out: a held-out case stays held out. The verifier plan's rule 31 lets one
+# run at a release run or on the owner's word, and until Sprint 32 the map's set was a word
+# nothing read. Lint takes only tune, watch and holdout there and ties `holdout` to the folder
+# evals/holdout/, whose cases are named holdout-*, so no group's pattern meets them;
+# scripts/evals-for-diff.sh leaves a held-out case out and says how many on standard error;
+# scripts/evals-ledger.sh writes the set from the map. Lint runs on a copy of this tree, the
+# other two on a scratch map (EVALS_MAP). No claude needed.
+# Cites: misses-to-checks/REQ-15 misses-to-checks/REQ-16 misses-to-checks/REQ-17
+# misses-to-checks/REQ-19
+HK="$WORK/holdout"; HKL="$HK/tree"; mkdir -p "$HK/repo" "$HK/out" "$HKL"; hk_fail=""
+# a. lint, on a copy of this tree that holds one held-out case
+if command -v rsync >/dev/null 2>&1; then rsync -a --exclude /.git --exclude /.claude "$ROOT/" "$HKL/"
+else (cd "$ROOT" && tar cf - --exclude ./.git --exclude ./.claude .) | (cd "$HKL" && tar xf -); fi
+mkdir -p "$HKL/plugins/shipkit/evals/holdout/demo-held"
+printf 'A held-out case that exists only in this copy.\n' > "$HKL/plugins/shipkit/evals/holdout/demo-held/prompt.md"
+cp "$HKL/scripts/evals-map.tsv" "$HK/map.orig"
+hk_lint() {  # hk_lint <set of the demo case> <awk rule for the other rows> → lint's output on the copy
+  awk -F '\t' -v OFS='\t' -v s="$1" "$2"' { print } END { print "holdout-demo-held", s, "plugins/shipkit/evals/holdout/demo-held/" }' \
+    "$HK/map.orig" > "$HKL/scripts/evals-map.tsv"
+  python3 "$HKL/scripts/lint.py" 2>&1
+}
+hk_n() { printf '%s\n' "$1" | tail -1 | sed -n 's/^lint: \([0-9]*\) error.*/\1/p'; }
+hk_out=$(hk_lint holdout '')
+[ "$(hk_n "$hk_out")" = 0 ] || hk_fail="$hk_fail [a: a held-out case in evals/holdout/ with the set holdout: $(printf '%s' "$hk_out" | grep -E 'evals-map|holdout|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint holdout '$1 == "hello" { $2 = "foo" }')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*hello.*foo' \
+  || hk_fail="$hk_fail [a: the set foo on hello's row: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint tune '')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*holdout-demo-held.*evals/holdout/' \
+  || hk_fail="$hk_fail [a: a case under evals/holdout/ with the set tune: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+hk_out=$(hk_lint holdout '$1 == "hello" { $2 = "holdout" }')
+[ "$(hk_n "$hk_out")" = 1 ] && printf '%s\n' "$hk_out" | grep -q 'evals-map.tsv.*hello.*evals/holdout/' \
+  || hk_fail="$hk_fail [a: the set holdout on hello, which is not under evals/holdout/: $(printf '%s' "$hk_out" | grep -E 'evals-map|^lint:' | tr '\n' '|' | cut -c1-300)]"
+# b. evals-for-diff.sh: a held-out row that the diff meets is not printed, and is counted aloud
+hkg() { (cd "$HK/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$HK/repo" && git init -q && mkdir -p plugins/shipkit/agents && echo a > plugins/shipkit/agents/reviewer.md)
+hkg add -A; hkg commit -q -m base; hkg tag base
+echo b >> "$HK/repo/plugins/shipkit/agents/reviewer.md"; hkg commit -q -am change
+{ printf 'case\tset\tpaths\n'
+  printf 'reviewer-one\ttune\tplugins/shipkit/agents/reviewer.md\n'
+  printf 'holdout-reviewer-one\tholdout\tplugins/shipkit/agents/reviewer.md\n'
+  printf 'beta\twatch\tplugins/shipkit/agents/reviewer.md\n'; } > "$HK/map.tsv"
+hk_out=$(cd "$HK/repo" && EVALS_MAP="$HK/map.tsv" sh "$ROOT/scripts/evals-for-diff.sh" base 2>"$HK/err" | tr '\n' ' ')
+[ "$hk_out" = "beta reviewer-one " ] || hk_fail="$hk_fail [b: with a held-out row the diff meets, printed: $hk_out]"
+[ "$(cat "$HK/err")" = "evals-for-diff: 1 held-out case(s) not listed" ] || hk_fail="$hk_fail [b: standard error: $(tr '\n' '|' < "$HK/err" | cut -c1-200)]"
+grep -v '^holdout-' "$HK/map.tsv" > "$HK/map-none.tsv"
+hk_out=$(cd "$HK/repo" && EVALS_MAP="$HK/map-none.tsv" sh "$ROOT/scripts/evals-for-diff.sh" base 2>"$HK/err" | tr '\n' ' ')
+[ "$hk_out" = "beta reviewer-one " ] && [ ! -s "$HK/err" ] || hk_fail="$hk_fail [b: with no held-out row: printed $hk_out, standard error $(tr '\n' '|' < "$HK/err" | cut -c1-120)]"
+# c. evals-ledger.sh append: the set is holdout for a case the map marks so; watch or tune for
+# the others, and for every case when there is no map to read
+hk_runs() { _n=$1; _s=""; while [ "$_n" -gt 0 ]; do _s="$_s{\"passed\":true,\"costUsd\":0.1}"; _n=$((_n - 1)); [ "$_n" -gt 0 ] && _s="$_s,"; done; printf '%s' "$_s"; }
+printf '%s\n' '{"schemaVersion":1,"claudeVersion":"2.1.400","startedAt":"2026-12-02T10:00:00.000Z","costUsd":1.3,' \
+  '"suite":{"modelOverride":"sonnet","threshold":0.6,"plugins":[{"name":"shipkit","version":"9.9.9"}]},' \
+  '"cases":[{"name":"reviewer-one","runsPerCase":3,"arms":{"with":['"$(hk_runs 3)"']}},' \
+  '{"name":"holdout-reviewer-one","runsPerCase":5,"arms":{"with":['"$(hk_runs 5)"']}},' \
+  '{"name":"beta","runsPerCase":5,"arms":{"with":['"$(hk_runs 5)"']}}],' \
+  '"aggregates":{"casesTotal":3}}' > "$HK/out/aggregate-result.json"
+hk_sets() { awk -F '\t' 'NR > 1 { printf "%s=%s ", $6, $7 }' "$1" 2>/dev/null; }
+EVALS_MAP="$HK/map.tsv" EVALS_LEDGER="$HK/l.tsv" sh "$ROOT/scripts/evals-ledger.sh" append "$HK/out" --commit abc1234 >/dev/null 2>&1; hk_rc=$?
+[ "$hk_rc" -eq 0 ] && [ "$(hk_sets "$HK/l.tsv")" = "reviewer-one=tune holdout-reviewer-one=holdout beta=watch " ] \
+  || hk_fail="$hk_fail [c: append with the scratch map: exit $hk_rc, sets $(hk_sets "$HK/l.tsv")]"
+EVALS_MAP="$HK/no-such-map.tsv" EVALS_LEDGER="$HK/l2.tsv" sh "$ROOT/scripts/evals-ledger.sh" append "$HK/out" --commit abc1234 >/dev/null 2>&1; hk_rc=$?
+[ "$hk_rc" -eq 0 ] && [ "$(hk_sets "$HK/l2.tsv")" = "reviewer-one=tune holdout-reviewer-one=watch beta=watch " ] \
+  || hk_fail="$hk_fail [c: append with no map to read: exit $hk_rc, sets $(hk_sets "$HK/l2.tsv")]"
+sh -n "$ROOT/scripts/evals-for-diff.sh" 2>/dev/null && sh -n "$ROOT/scripts/evals-ledger.sh" 2>/dev/null || hk_fail="$hk_fail [sh -n reports a syntax error]"
+if [ -z "$hk_fail" ]; then pass "holdout-kept-out (lint takes tune, watch and holdout, and holds holdout to evals/holdout/; evals-for-diff.sh leaves a held-out case out and says so; the ledger writes holdout from the map)"
+else failc "holdout-kept-out" "$hk_fail"; fi
+
+# 117. grader-both-ways: a grader is shown on a reply it must pass and on one it must fail. A
+# `regex` grader is a JavaScript RegExp, and the verifier plan's rules 18 and 23 ask that a new
+# or changed one go through node on both sides; until Sprint 32 that was done by hand and kept
+# in a commit message. scripts/grader-check.sh reads scripts/grader-replies/<case>/, where
+# <grader>.pass.md must match the pattern and <grader>.fail.md must not, and this check runs it:
+# first on a scratch case, where each way of being wrong is made and must be caught, then on
+# this repository's replies, where every grader named in gc_need must have both sides, and where
+# each reply carries the mark its requirement names: a grader shown on the wrong replies is not
+# shown. No claude needed; it needs node.
+# Cites: misses-to-checks/REQ-40 misses-to-checks/REQ-7 misses-to-checks/REQ-8
+# misses-to-checks/REQ-9 misses-to-checks/REQ-10 misses-to-checks/REQ-14 misses-to-checks/REQ-23
+# misses-to-checks/REQ-24 misses-to-checks/REQ-34 misses-to-checks/REQ-37 misses-to-checks/REQ-38
+GC="$WORK/gcheck"; GCS="$ROOT/scripts/grader-check.sh"; gc_fail=""
+mkdir -p "$GC/evals/demo/one/graders" "$GC/evals/demo/two/graders" "$GC/evals/fixtures/skipped" "$GC/replies/demo-one"
+printf 'A scratch case.\n' > "$GC/evals/demo/one/prompt.md"; printf 'Another.\n' > "$GC/evals/demo/two/prompt.md"
+printf 'Not a case: it is under fixtures.\n' > "$GC/evals/fixtures/skipped/prompt.md"
+gc_grader() {  # gc_grader <file> <pattern> [flags] → a regex grader file
+  { printf -- '---\ntype: regex\n'; printf "pattern: '%s'\n" "$2"; [ -z "${3:-}" ] || printf 'flags: %s\n' "$3"; printf -- '---\n'; } > "$1"
+}
+gc_good='^(?=[\s\S]*REQ-2\b[^\n]{0,80}NOT MET)(?=[\s\S]*verdict: fail)'
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good" i
+gc_grader "$GC/evals/demo/two/graders/other.md" 'x'
+printf -- '---\ntype: llm\n---\nA rubric.\n' > "$GC/evals/demo/two/graders/judge.md"
+printf '| REQ-1 | MET | code |\n| REQ-2 | NOT MET | no code rejects it |\n\nVERDICT: FAIL\n' > "$GC/replies/demo-one/marks.pass.md"
+printf '| REQ-1 | MET | code |\n| REQ-2 | MET | code and test |\n\nVERDICT: PASS\n' > "$GC/replies/demo-one/marks.fail.md"
+gc_run() { GRADER_EVALS="$GC/evals" GRADER_REPLIES="$GC/replies" sh "$GCS" "$@" > "$GC/out" 2>&1; echo $?; }
+gc_want() {  # gc_want <label> <exit wanted> <text the output must hold> [arguments]
+  _l=$1; _e=$2; _t=$3; shift 3; _rc=$(gc_run "$@")
+  [ "$_rc" = "$_e" ] && grep -q -F -- "$_t" "$GC/out" || gc_fail="$gc_fail [$_l: exit $_rc, want $_e and \"$_t\": $(tr '\n' '|' < "$GC/out" | cut -c1-240)]"
+}
+# a. both sides as they should be: two PASS lines, exit 0; the flag is the grader's
+gc_want "a: a good pair" 0 'PASS  demo-one marks.pass.md'
+grep -q -F 'PASS  demo-one marks.fail.md' "$GC/out" && grep -q -x 'grader-check: 2 as expected, 0 not' "$GC/out" || gc_fail="$gc_fail [a: $(tr '\n' '|' < "$GC/out" | cut -c1-240)]"
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good"
+gc_want "b: the grader's flag taken away" 1 'FAIL  demo-one marks.pass.md'
+# c. a pattern that matches both; d. one node cannot compile (a Python inline flag, rule 18)
+gc_grader "$GC/evals/demo/one/graders/marks.md" 'REQ-2'
+gc_want "c: a pattern that matches both" 1 'FAIL  demo-one marks.fail.md'
+gc_grader "$GC/evals/demo/one/graders/marks.md" '(?is)REQ-2'
+gc_want "d: a Python inline flag" 1 'does not compile'
+gc_grader "$GC/evals/demo/one/graders/marks.md" "$gc_good" i
+# e. a reply whose grader does not exist; f. a pass reply with no fail reply; g. a folder that
+# names no case, the one under fixtures included; h. a reply for a grader that is not a regex
+cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/demo-one/ghost.pass.md"
+gc_want "e: a reply with no grader" 1 'FAIL  demo-one ghost.pass.md'
+rm -f "$GC/replies/demo-one/ghost.pass.md"; mv "$GC/replies/demo-one/marks.fail.md" "$GC/keep.fail.md"
+gc_want "f: a pass reply and no fail reply" 1 'FAIL  demo-one marks: a pass reply and no fail reply'
+mv "$GC/keep.fail.md" "$GC/replies/demo-one/marks.fail.md"
+mkdir -p "$GC/replies/fixtures-skipped"; cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/fixtures-skipped/x.pass.md"
+gc_want "g: a reply folder that names no case" 1 'FAIL  fixtures-skipped: no eval case has that name'
+rm -rf "$GC/replies/fixtures-skipped"; mkdir -p "$GC/replies/demo-two"
+cp "$GC/replies/demo-one/marks.pass.md" "$GC/replies/demo-two/judge.pass.md"
+gc_want "h: a reply for an llm grader" 1 'FAIL  demo-two judge.pass.md: not a regex grader'
+rm -rf "$GC/replies/demo-two"
+# i. --require: a regex grader with no replies fails, and an llm grader is not asked for any;
+# one case alone; a case with no folder; usage; and no node on the PATH
+gc_want "i: --require of a case shown both ways" 0 'grader-check: 2 as expected, 0 not' --require demo-one
+gc_want "i: --require of a case with no replies" 1 'FAIL  demo-two other: no replies' --require demo-two
+grep -q 'judge' "$GC/out" && gc_fail="$gc_fail [i: --require asked for replies to an llm grader]"
+gc_want "i: one case alone" 0 'grader-check: 2 as expected, 0 not' demo-one
+gc_want "i: one case alone, with no folder" 1 'FAIL  demo-two: no replies folder' demo-two
+gc_want "i: an unknown option" 2 'usage: grader-check.sh' --nope
+gc_rc=$(PATH=/usr/bin:/bin GRADER_EVALS="$GC/evals" GRADER_REPLIES="$GC/replies" sh "$GCS" > "$GC/out" 2>&1; echo $?)
+if PATH=/usr/bin:/bin command -v node >/dev/null 2>&1; then :
+else [ "$gc_rc" = 2 ] && grep -q 'node not found' "$GC/out" || gc_fail="$gc_fail [i: no node on the PATH: exit $gc_rc, $(tr '\n' '|' < "$GC/out" | cut -c1-160)]"; fi
+# j. this repository: every reply does what its name says, and each grader of the cases Sprint
+# 32 adds has both sides (the list grows with the cases)
+gc_need="reviewer-helper-only holdout-reviewer-helper-only reviewer-skipped-test reviewer-comment-cite reviewer-weakened-req reviewer-waiver-added holdout-reviewer-skipped-test reviewer-second-round reviewer-stale-met reviewer-check-triggered escape-second-of-a-kind escape-missing-req"
+gc_args=""; for gc_c in $gc_need; do gc_args="$gc_args --require $gc_c"; done
+# shellcheck disable=SC2086
+sh "$GCS" $gc_args > "$GC/repo.out" 2>&1; gc_rc=$?
+[ "$gc_rc" -eq 0 ] || gc_fail="$gc_fail [j: this repository: exit $gc_rc: $(grep -E '^FAIL|not found|usage' "$GC/repo.out" | tr '\n' '|' | cut -c1-400)]"
+# k. each reply carries the mark its requirement names (case, file, held or not, the text)
+GCT=$(printf '\t')
+while IFS="$GCT" read -r gc_c gc_f gc_yn gc_text; do
+  [ -n "$gc_c" ] || continue
+  if [ ! -f "$ROOT/scripts/grader-replies/$gc_c/$gc_f" ]; then gc_fail="$gc_fail [k: no reply $gc_c/$gc_f]"; continue; fi
+  if grep -q -F -- "$gc_text" "$ROOT/scripts/grader-replies/$gc_c/$gc_f"; then gc_has=yes; else gc_has=no; fi
+  [ "$gc_has" = "$gc_yn" ] || gc_fail="$gc_fail [k: $gc_c/$gc_f holds \"$gc_text\": $gc_has, want $gc_yn]"
+done <<'GCK'
+reviewer-helper-only	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-helper-only	req2-not-met-and-fail.pass-2.md	yes	| REQ-2 | CANNOT TELL |
+reviewer-helper-only	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-helper-only	req2-not-met-and-fail.fail-2.md	yes	| REQ-2 | MET |
+reviewer-skipped-test	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-skipped-test	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-comment-cite	req2-not-met-and-fail.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-comment-cite	req2-not-met-and-fail.fail.md	yes	| REQ-2 | MET |
+reviewer-weakened-req	names-the-change.pass.md	yes	## Requirements changed on this branch
+reviewer-weakened-req	names-the-change.pass-2.md	yes	REQ-2 was rewritten on this branch
+reviewer-weakened-req	names-the-change.fail.md	yes	| REQ-2 | MET |
+reviewer-weakened-req	names-the-change.fail.md	no	changed on this branch
+reviewer-waiver-added	names-the-waiver.pass.md	yes	WAIVER-ADDED
+reviewer-waiver-added	names-the-waiver.pass-2.md	yes	the waiver on REQ-2 is new
+reviewer-waiver-added	names-the-waiver.fail.md	yes	| REQ-2 (waived) | MET |
+reviewer-waiver-added	names-the-waiver.fail.md	no	WAIVER-ADDED
+holdout-reviewer-helper-only	req1-not-met-and-fail.pass.md	yes	| REQ-1 | NOT MET |
+holdout-reviewer-helper-only	req1-not-met-and-fail.pass-2.md	yes	| REQ-1 | CANNOT TELL |
+holdout-reviewer-helper-only	req1-not-met-and-fail.fail.md	yes	| REQ-1 | MET |
+holdout-reviewer-skipped-test	req1-not-met-and-fail.pass.md	yes	| REQ-1 | NOT MET |
+holdout-reviewer-skipped-test	req1-not-met-and-fail.fail.md	yes	| REQ-1 | MET |
+reviewer-second-round	same-mark-as-before.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-second-round	same-mark-as-before.fail.md	yes	| REQ-2 | CANNOT TELL |
+reviewer-second-round	same-mark-as-before.fail-2.md	yes	| REQ-2 | MET |
+reviewer-stale-met	not-met-despite-the-report.pass.md	yes	| REQ-2 | NOT MET |
+reviewer-stale-met	not-met-despite-the-report.fail.md	yes	| REQ-2 | MET |
+reviewer-check-triggered	c1-broken-and-pass.pass.md	yes	| BROKEN |
+reviewer-check-triggered	c1-broken-and-pass.pass.md	yes	VERDICT: PASS
+reviewer-check-triggered	c1-broken-and-pass.fail.md	no	C1
+reviewer-check-triggered	c1-broken-and-pass.fail-2.md	yes	| HELD |
+escape-second-of-a-kind	drafts-a-check.pass.md	yes	Trigger: path
+escape-second-of-a-kind	drafts-a-check.pass.md	yes	From: .shipkit/escapes/0001-refund-above-charge.md, .shipkit/escapes/0002-
+escape-second-of-a-kind	drafts-a-check.fail.md	no	Trigger:
+escape-second-of-a-kind	drafts-a-check.fail-2.md	no	From: .shipkit/escapes/0001-
+escape-missing-req	no-check-drafted.pass.md	no	Trigger:
+escape-missing-req	no-check-drafted.fail.md	yes	Trigger:
+GCK
+sh -n "$GCS" 2>/dev/null || gc_fail="$gc_fail [sh -n reports a syntax error]"
+if [ -z "$gc_fail" ]; then pass "grader-both-ways (grader-check.sh reads each reply through node with the grader's flags and catches a pattern that matches both, one that will not compile, a missing side, a missing grader and a missing case; this repository: $(tail -1 "$GC/repo.out"), each reply carrying the mark its requirement names)"
+else failc "grader-both-ways" "$gc_fail"; fi
+
+# 118. reviewer-trees: every tree the reviewer is graded on is built here and read, so a case
+# says what its answer key says. Sprint 32 grows the shared fixture (evals/lib/review-fixture.sh)
+# from four variants to fourteen. The four old cases have release runs behind them, so each of
+# their trees must be, file for file and commit for commit, the tree the script at 9e061ca
+# built. Each new case comes from a miss a real run showed, and its tree is read for what makes
+# it that miss. helper-only (field-notes-5.2.md, section 9): the test that cites REQ-2 passes
+# and calls a helper that refund never calls, so spec-check.sh is satisfied and the behaviour
+# is not there. The two held-out cases are the same misses on another feature, a notes export,
+# so that nothing in them shares a word with the cases the reviewer's text is tuned on, and the
+# requirement they break is REQ-1, not REQ-2. No claude needed.
+# Four more come from gaps the verifier plan's read of the scripts found (its section 3): a
+# citation in a skipped test counts (skipped-test), so does one in a comment in the code
+# (comment-cite), and an edit to the spec on its own branch is never listed, whether it rewrites
+# a requirement to match the code (weakened-req) or excuses it from a test (waiver-added).
+# Cites: misses-to-checks/REQ-1 misses-to-checks/REQ-2 misses-to-checks/REQ-3
+# misses-to-checks/REQ-4 misses-to-checks/REQ-5 misses-to-checks/REQ-6 misses-to-checks/REQ-11
+# misses-to-checks/REQ-12 misses-to-checks/REQ-13 misses-to-checks/REQ-21 misses-to-checks/REQ-22
+# misses-to-checks/REQ-33
+# A second round (field-notes-5.2.md, "One tree, two readings"): second-round is the helper-only
+# tree with an earlier report that marked REQ-2 NOT MET, and stale-met the missing-req tree with
+# one that marked it MET.
+RT="$WORK/rtrees"; rt_fail=""; mkdir -p "$RT/old/lib" "$RT/old/fixtures"
+rt_build() {  # rt_build <dir> <fixture script> [argument] → the tree the script leaves in <dir>
+  mkdir -p "$1"
+  (cd "$1" && bash "$2" ${3:+"$3"} > "$1.log" 2>&1); _rc=$?
+  [ "$_rc" -eq 0 ] || rt_fail="$rt_fail [$(basename "$1"): the fixture exited $_rc: $(tail -2 "$1.log" | tr '\n' '|' | cut -c1-160)]"
+}
+rt_test() { (cd "$1" && python3 -m unittest discover -s tests > "$1.test" 2>&1); echo $?; }  # the test command's exit status
+rt_cited() { awk -v c="# $2" 'index($0, c) { on = 1; next } on && /^[[:space:]]*$/ { exit } on' "$1"; }  # the test under a citation
+# a. the four old cases: the same files, the same commits, the same diff from base
+git -C "$ROOT" show 9e061ca:plugins/shipkit/evals/lib/review-fixture.sh > "$RT/old/lib/review-fixture.sh" 2>/dev/null || rt_fail="$rt_fail [git show 9e061ca failed]"
+cp -R "$COPY/evals/fixtures/sample-app" "$RT/old/fixtures/sample-app"
+for rt_pair in all-met:complete missing-req:missing rejected-alternative:rejected decision-unbuilt:unbuilt; do
+  rt_c=${rt_pair%%:*}; rt_v=${rt_pair#*:}
+  rt_build "$RT/new-$rt_c" "$COPY/evals/reviewer/$rt_c/fixture.sh"
+  rt_build "$RT/old-$rt_c" "$RT/old/lib/review-fixture.sh" "$rt_v"
+  diff -r -x .git "$RT/old-$rt_c" "$RT/new-$rt_c" > "$RT/diff.out" 2>&1 \
+    || rt_fail="$rt_fail [$rt_c: its tree is not the one built at 9e061ca: $(head -3 "$RT/diff.out" | tr '\n' '|' | cut -c1-200)]"
+  [ "$(git -C "$RT/old-$rt_c" log --format=%s 2>&1 | tr '\n' '|')" = "$(git -C "$RT/new-$rt_c" log --format=%s 2>&1 | tr '\n' '|')" ] \
+    || rt_fail="$rt_fail [$rt_c: its commits are not those built at 9e061ca: $(git -C "$RT/new-$rt_c" log --format=%s 2>&1 | tr '\n' '|' | cut -c1-120)]"
+  [ "$(git -C "$RT/old-$rt_c" diff base...HEAD 2>&1 | grep -v '^index ')" = "$(git -C "$RT/new-$rt_c" diff base...HEAD 2>&1 | grep -v '^index ')" ] \
+    || rt_fail="$rt_fail [$rt_c: its diff from base is not the one built at 9e061ca]"
+done
+# b. helper-only
+rt_build "$RT/helper" "$COPY/evals/reviewer/helper-only/fixture.sh"
+(cd "$RT/helper" && sh "$COPY/scripts/spec-check.sh" . refunds --as-shipped > "$RT/helper.spec" 2>&1) \
+  || rt_fail="$rt_fail [helper-only: spec-check.sh is not satisfied, and the miss is that it is: $(grep -v '^WAIVED' "$RT/helper.spec" | head -2 | tr '\n' '|' | cut -c1-160)]"
+[ "$(rt_test "$RT/helper")" = 0 ] || rt_fail="$rt_fail [helper-only: the test command failed: $(tail -3 "$RT/helper.test" | tr '\n' '|' | cut -c1-200)]"
+rt_t=$(rt_cited "$RT/helper/tests/test_refunds.py" refunds/REQ-2 2>/dev/null)
+printf '%s\n' "$rt_t" | grep -q 'check_amount(' && ! printf '%s\n' "$rt_t" | grep -q -E '(^|[^_a-zA-Z.])refund\(' \
+  || rt_fail="$rt_fail [helper-only: the test citing refunds/REQ-2 must call check_amount and not refund: $(printf '%s' "$rt_t" | tr '\n' '|' | cut -c1-200)]"
+(cd "$RT/helper" && python3 - > "$RT/helper.py" 2>&1 <<'RTPY'
+import inspect, sys
+sys.path.insert(0, ".")
+from app.refunds import RefundRejected, check_amount, refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+assert "check_amount" not in inspect.getsource(refund), "refund calls the helper"
+assert refund({"customer": "ada"}, 2500, 2000, gateway) == "rf_1" and gateway.amounts == [2500], \
+    "refund did not pass 2500 on a charge of 2000 to the gateway"
+try:
+    check_amount(2500, 2000)
+except RefundRejected:
+    pass
+else:
+    raise AssertionError("check_amount let 2500 on a charge of 2000 through")
+RTPY
+) || rt_fail="$rt_fail [helper-only: $(tail -1 "$RT/helper.py" | cut -c1-200)]"
+# b2. the four from gaps in how a citation and a spec edit are read
+rt_rejects() {  # rt_rejects <dir> → refund raises RefundRejected for 2500 on a charge of 2000, and the gateway is not called
+  (cd "$1" && python3 - > "$1.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import RefundRejected, refund
+class Gateway:
+    calls = 0
+    def refund(self, customer, amount_cents):
+        Gateway.calls += 1
+        return "rf_1"
+try:
+    refund({"customer": "ada"}, 2500, 2000, Gateway())
+except RefundRejected:
+    assert Gateway.calls == 0, "the gateway was called"
+else:
+    raise AssertionError("refund did not raise RefundRejected for 2500 on a charge of 2000")
+RTPY
+  ) || rt_fail="$rt_fail [$(basename "$1"): $(tail -1 "$1.py" | cut -c1-200)]"
+}
+rt_diff() { (cd "$1" && sh "$COPY/scripts/spec-diff.sh" . refunds base 2>&1 | grep -E '^(REQ|WAIVER)-' | LC_ALL=C sort | tr '\n' '|'); }  # spec-diff's REQ- and WAIVER- lines, sorted
+rt_build "$RT/skipped" "$COPY/evals/reviewer/skipped-test/fixture.sh"
+(cd "$RT/skipped" && sh "$COPY/scripts/spec-check.sh" . refunds 2>&1) | grep -q '^SKIPPED-CITE refunds REQ-2 tests/test_refunds.py:' \
+  || rt_fail="$rt_fail [skipped-test: spec-check.sh prints no SKIPPED-CITE line for refunds REQ-2]"
+[ "$(rt_test "$RT/skipped")" = 0 ] && grep -q 'skipped=1' "$RT/skipped.test" \
+  || rt_fail="$rt_fail [skipped-test: the test command must exit 0 with one test skipped: $(tail -1 "$RT/skipped.test" | cut -c1-120)]"
+[ "$(grep -c 'refunds/REQ-2' "$RT/skipped/tests/test_refunds.py" 2>/dev/null)" = 1 ] \
+  && rt_cited "$RT/skipped/tests/test_refunds.py" refunds/REQ-2 | sed -n 1p | grep -q '@unittest.skip' \
+  || rt_fail="$rt_fail [skipped-test: the one test citing refunds/REQ-2 must carry @unittest.skip]"
+rt_rejects "$RT/skipped"
+rt_build "$RT/comment" "$COPY/evals/reviewer/comment-cite/fixture.sh"
+grep -q '^ *# refunds/REQ-2' "$RT/comment/app/refunds.py" 2>/dev/null && ! grep -rq 'refunds/REQ-2' "$RT/comment/tests" 2>/dev/null \
+  || rt_fail="$rt_fail [comment-cite: refunds/REQ-2 must be in a comment in app/refunds.py and nowhere under tests/]"
+[ "$(rt_test "$RT/comment")" = 0 ] || rt_fail="$rt_fail [comment-cite: the test command failed: $(tail -2 "$RT/comment.test" | tr '\n' '|' | cut -c1-160)]"
+rt_rejects "$RT/comment"
+rt_build "$RT/weakened" "$COPY/evals/reviewer/weakened-req/fixture.sh"
+[ "$(rt_diff "$RT/weakened")" = "REQ-CHANGED refunds REQ-2|" ] || rt_fail="$rt_fail [weakened-req: spec-diff.sh printed: $(rt_diff "$RT/weakened")]"
+grep -q '^  refund the amount charged\.$' "$RT/weakened/.shipkit/specs/refunds/spec.md" 2>/dev/null || rt_fail="$rt_fail [weakened-req: REQ-2 does not say the refund is cut to the charge]"
+[ "$(rt_test "$RT/weakened")" = 0 ] && grep -q 'refunds/REQ-2' "$RT/weakened/tests/test_refunds.py" \
+  || rt_fail="$rt_fail [weakened-req: a test citing refunds/REQ-2 must pass: $(tail -2 "$RT/weakened.test" | tr '\n' '|' | cut -c1-160)]"
+(cd "$RT/weakened" && python3 - > "$RT/weakened.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+refund({"customer": "ada"}, 2500, 2000, gateway)
+assert gateway.amounts == [2000], "refund did not cut 2500 to the charge of 2000: %r" % gateway.amounts
+RTPY
+) || rt_fail="$rt_fail [weakened-req: $(tail -1 "$RT/weakened.py" | cut -c1-200)]"
+rt_build "$RT/waived" "$COPY/evals/reviewer/waiver-added/fixture.sh"
+[ "$(rt_diff "$RT/waived")" = "REQ-CHANGED refunds REQ-2|WAIVER-ADDED refunds REQ-2|" ] \
+  || rt_fail="$rt_fail [waiver-added: spec-diff.sh printed: $(rt_diff "$RT/waived")]"
+grep -rq 'refunds/REQ-2' "$RT/waived/tests" "$RT/waived/app" 2>/dev/null && rt_fail="$rt_fail [waiver-added: a file still cites refunds/REQ-2]"
+[ "$(rt_test "$RT/waived")" = 0 ] || rt_fail="$rt_fail [waiver-added: the test command failed]"
+# c. the held-out pair, on the notes-export feature
+rt_notes() {  # rt_notes <dir> → the tree is the notes-export feature, with no word of the refunds one
+  [ -f "$1/.shipkit/specs/notes-export/spec.md" ] && [ ! -e "$1/.shipkit/specs/refunds" ] \
+    || rt_fail="$rt_fail [$(basename "$1"): the tree is not the notes-export feature]"
+  if git -C "$1" diff base...HEAD 2>/dev/null | grep -q -i refund; then
+    rt_fail="$rt_fail [$(basename "$1"): its diff from base holds 'refund': $(git -C "$1" diff base...HEAD | grep -i -m1 refund | cut -c1-100)]"
+  fi
+  [ -n "$(git -C "$1" diff base...HEAD --name-only 2>/dev/null)" ] || rt_fail="$rt_fail [$(basename "$1"): no diff from base]"
+}
+rt_build "$RT/notes-helper" "$COPY/evals/holdout/reviewer-helper-only/fixture.sh"
+rt_notes "$RT/notes-helper"
+(cd "$RT/notes-helper" && sh "$COPY/scripts/spec-check.sh" . notes-export --as-shipped > "$RT/notes-helper.spec" 2>&1) \
+  || rt_fail="$rt_fail [holdout helper-only: spec-check.sh is not satisfied, and the miss is that it is: $(grep -v '^WAIVED' "$RT/notes-helper.spec" | head -2 | tr '\n' '|' | cut -c1-160)]"
+[ "$(rt_test "$RT/notes-helper")" = 0 ] || rt_fail="$rt_fail [holdout helper-only: the test command failed: $(tail -3 "$RT/notes-helper.test" | tr '\n' '|' | cut -c1-200)]"
+rt_t=$(rt_cited "$RT/notes-helper/tests/test_notes.py" notes-export/REQ-1 2>/dev/null)
+printf '%s\n' "$rt_t" | grep -q 'is_shareable(' && ! printf '%s\n' "$rt_t" | grep -q 'export_notes(' \
+  || rt_fail="$rt_fail [holdout helper-only: the test citing notes-export/REQ-1 must call is_shareable and not export_notes: $(printf '%s' "$rt_t" | tr '\n' '|' | cut -c1-200)]"
+(cd "$RT/notes-helper" && python3 - > "$RT/notes-helper.py" 2>&1 <<'RTPY'
+import inspect, sys
+sys.path.insert(0, ".")
+from app.notes import export_notes, is_shareable
+private = {"title": "Pin", "body": "1234", "private": True}
+assert "is_shareable" not in inspect.getsource(export_notes), "export_notes calls the helper"
+assert not is_shareable(private), "is_shareable lets a private note through"
+assert len(export_notes([private])) == 1, "export_notes left the private note out, so the miss is not in the tree"
+RTPY
+) || rt_fail="$rt_fail [holdout helper-only: $(tail -1 "$RT/notes-helper.py" | cut -c1-200)]"
+rt_build "$RT/notes-skipped" "$COPY/evals/holdout/reviewer-skipped-test/fixture.sh"
+rt_notes "$RT/notes-skipped"
+(cd "$RT/notes-skipped" && sh "$COPY/scripts/spec-check.sh" . notes-export 2>&1) | grep -q '^SKIPPED-CITE notes-export REQ-1 tests/test_notes.py:' \
+  || rt_fail="$rt_fail [holdout skipped-test: spec-check.sh prints no SKIPPED-CITE line for notes-export REQ-1]"
+[ "$(rt_test "$RT/notes-skipped")" = 0 ] && grep -q 'skipped=1' "$RT/notes-skipped.test" \
+  || rt_fail="$rt_fail [holdout skipped-test: the test command must exit 0 with one test skipped: $(tail -1 "$RT/notes-skipped.test" | cut -c1-120)]"
+[ "$(grep -c 'notes-export/REQ-1' "$RT/notes-skipped/tests/test_notes.py" 2>/dev/null)" = 1 ] \
+  && rt_cited "$RT/notes-skipped/tests/test_notes.py" notes-export/REQ-1 | sed -n 1p | grep -q '@unittest.skip' \
+  || rt_fail="$rt_fail [holdout skipped-test: the one test citing notes-export/REQ-1 must carry @unittest.skip]"
+(cd "$RT/notes-skipped" && python3 - > "$RT/notes-skipped.py" 2>&1 <<'RTPY'
+import sys
+sys.path.insert(0, ".")
+from app.notes import export_notes
+private = {"title": "Pin", "body": "1234", "private": True}
+public = {"title": "Milk", "body": "two litres"}
+assert export_notes([private, public]) == ["Milk: two litres"], "export_notes did not leave the private note out: %r" % export_notes([private, public])
+RTPY
+) || rt_fail="$rt_fail [holdout skipped-test: $(tail -1 "$RT/notes-skipped.py" | cut -c1-200)]"
+# d. a second round: the same tree as another case, and one untracked file, an earlier report
+rt_report() {  # rt_report <tree> <the tree it equals but for the report> <first line> <REQ-2's row starts>
+  _f="$1/.shipkit/releases/2026-11-01-refunds.md"
+  [ "$(diff -r -x .git "$2" "$1" 2>&1)" = "Only in $1/.shipkit: releases" ] \
+    || rt_fail="$rt_fail [$(basename "$1"): it must be $(basename "$2")'s tree and one more folder: $(diff -r -x .git "$2" "$1" 2>&1 | head -3 | tr '\n' '|' | cut -c1-200)]"
+  [ "$(sed -n 1p "$_f" 2>/dev/null)" = "$3" ] && grep -q -F "$4" "$_f" && grep -q '^### 4\. Independent review$' "$_f" && grep -q '^VERDICT: ' "$_f" \
+    || rt_fail="$rt_fail [$(basename "$1"): the earlier report must start '$3' and hold '$4' in a review: $(sed -n 1p "$_f" 2>/dev/null)]"
+  [ "$(git -C "$1" status --porcelain 2>/dev/null)" = "?? .shipkit/releases/" ] || rt_fail="$rt_fail [$(basename "$1"): the earlier report must be the one untracked file]"
+  [ "2026-11-01" \< "$(date +%F)" ] || rt_fail="$rt_fail [$(basename "$1"): the report is not dated before today]"
+}
+rt_build "$RT/helper-again" "$COPY/evals/reviewer/helper-only/fixture.sh"
+rt_build "$RT/round2" "$COPY/evals/reviewer/second-round/fixture.sh"
+rt_report "$RT/round2" "$RT/helper-again" "NOT READY" "| REQ-2 | NOT MET |"
+rt_build "$RT/stale" "$COPY/evals/reviewer/stale-met/fixture.sh"
+rt_report "$RT/stale" "$RT/new-missing-req" "READY" '| REQ-2 | MET | code `app/refunds.py:'
+# e. check-triggered: the all-met tree, with a checks file in the base commit whose one item
+# the diff triggers and the code breaks
+rt_build "$RT/check" "$COPY/evals/reviewer/check-triggered/fixture.sh"
+[ "$(diff -r -x .git "$RT/new-all-met" "$RT/check" 2>&1)" = "Only in $RT/check/.shipkit: checks.md" ] \
+  || rt_fail="$rt_fail [check-triggered: it must be all-met's tree and a checks file: $(diff -r -x .git "$RT/new-all-met" "$RT/check" 2>&1 | head -3 | tr '\n' '|' | cut -c1-200)]"
+[ "$(git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -c '^## C[0-9]*: ')" = 1 ] \
+  && git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -q -x 'Trigger: path app/refunds.py' \
+  || rt_fail="$rt_fail [check-triggered: the base commit must hold a checks file with one item whose trigger is path app/refunds.py]"
+sh "$COPY/scripts/checks-match.sh" "$RT/check" base 2>&1 | grep -q '^TRIGGERED C1: ' || rt_fail="$rt_fail [check-triggered: checks-match.sh . base does not print TRIGGERED C1]"
+git -C "$RT/check" show base:.shipkit/checks.md 2>/dev/null | grep -q 'idempotency key' && grep -q 'gateway\.refund(order\["customer"\], amount_cents)$' "$RT/check/app/refunds.py" 2>/dev/null \
+  || rt_fail="$rt_fail [check-triggered: the check asks for an idempotency key, and refund must call the gateway with two arguments]"
+if [ -z "$rt_fail" ]; then pass "reviewer-trees (the four old cases' trees are, file for file and commit for commit, what the fixture at 9e061ca built; helper-only: the test citing REQ-2 passes on a helper that refund never calls, and spec-check.sh is satisfied; skipped-test, comment-cite, weakened-req and waiver-added are what spec-check.sh and spec-diff.sh say they are; held out, on notes-export with no word of refunds: the helper-only and the skipped-test miss on REQ-1; second-round and stale-met are another case's tree with one earlier report, untracked; check-triggered is all-met's tree with a check in the base commit that the diff triggers and breaks)"
+else failc "reviewer-trees" "$rt_fail"; fi
+
+# 119. checks-match: a past miss is asked about when a diff touches the same ground.
+# .shipkit/checks.md holds items, each with a trigger a diff can meet (`path <glob>` or
+# `added <pattern>`), a check and the miss it came from. plugins/shipkit/scripts/checks-match.sh
+# prints the items a diff triggers, and reads the file from the base ref, never from the
+# working tree, so a branch cannot edit the list it is judged by (the verifier plan's rule 28).
+# --lint reads the file being written. Nothing runs the script yet: the reviewer's use of it
+# waits for Sprint 35. Here: a scratch repository. No claude needed.
+# Cites: misses-to-checks/REQ-25 misses-to-checks/REQ-26 misses-to-checks/REQ-27
+# misses-to-checks/REQ-28 misses-to-checks/REQ-29 misses-to-checks/REQ-30 misses-to-checks/REQ-31
+# misses-to-checks/REQ-32
+CM="$WORK/cmatch"; CMS="$COPY/scripts/checks-match.sh"; cm_fail=""; mkdir -p "$CM/repo/app/sub" "$CM/repo/docs" "$CM/bin" "$CM/lint/.shipkit" "$CM/lint/docs"
+cmg() { (cd "$CM/repo" && git -c user.email=s@s -c user.name=s "$@"); }
+(cd "$CM/repo" && git init -q && echo x > docs/note.md); cmg add -A; cmg commit -q -m empty; cmg tag empty
+mkdir -p "$CM/repo/.shipkit"
+cat > "$CM/repo/.shipkit/checks.md" <<'CMEOF'
+# Checks
+
+## C1: Payments are sent once
+Trigger: path app/pay.py, docs/never.md
+Check: Every call to the gateway passes an idempotency key.
+From: docs/note.md (the double payment), docs/note.md
+
+## C2: Never met by this diff
+Trigger: path docs/never.md
+Check: Nothing.
+From: docs/note.md
+
+## C3: A retry was added
+Trigger: added retry\(
+Check: The retry is bounded.
+From: docs/note.md
+
+## C4: Only a removed line holds this
+Trigger: added legacy_call
+Check: Nothing.
+From: docs/note.md
+
+## C5: A star crosses a slash
+Trigger: path app/*.txt
+Check: The text is still right.
+From: docs/note.md
+CMEOF
+printf 'def pay(charge):\n    legacy_call()\n    return charge\n' > "$CM/repo/app/pay.py"; echo one > "$CM/repo/app/sub/deep.txt"
+cmg add -A; cmg commit -q -m base; cmg tag base
+printf 'def pay(charge):\n    retry(charge)\n    return charge\n' > "$CM/repo/app/pay.py"; echo two > "$CM/repo/app/sub/deep.txt"
+# on the branch, C2's trigger is rewritten so that this diff would meet it, and committed; the
+# working tree's copy then loses C1 altogether. Neither may change what is printed.
+sed -i.bak 's|^Trigger: path docs/never.md$|Trigger: path app/pay.py|' "$CM/repo/.shipkit/checks.md" && rm -f "$CM/repo/.shipkit/checks.md.bak"
+cmg add -A; cmg commit -q -m change
+sed -i.bak '/^## C1:/,/^From:/d' "$CM/repo/.shipkit/checks.md" && rm -f "$CM/repo/.shipkit/checks.md.bak"
+cm_before=$(cmg status --porcelain)
+cm_want='TRIGGERED C1: Payments are sent once
+Trigger: path app/pay.py, docs/never.md
+Check: Every call to the gateway passes an idempotency key.
+From: docs/note.md (the double payment), docs/note.md
+TRIGGERED C3: A retry was added
+Trigger: added retry\(
+Check: The retry is bounded.
+From: docs/note.md
+TRIGGERED C5: A star crosses a slash
+Trigger: path app/*.txt
+Check: The text is still right.
+From: docs/note.md'
+cm_out=$(sh "$CMS" "$CM/repo" base 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ "$cm_out" = "$cm_want" ] \
+  || cm_fail="$cm_fail [a: the base's items C1, C3 and C5, in order, each with its three lines; not C2 (the branch's edit) and not C4 (a removed line): exit $cm_rc: $(printf '%s' "$cm_out" | grep -E '^TRIGGERED|^checks-match|not found' | tr '\n' '|' | cut -c1-300)]"
+[ "$(cmg status --porcelain)" = "$cm_before" ] || cm_fail="$cm_fail [a: the script changed a file]"
+# b. no checks file at the base, though the branch and the working tree hold one: nothing, exit 0;
+# a diff that triggers nothing: nothing, exit 0; usage and an unknown ref: 64
+cm_out=$(sh "$CMS" "$CM/repo" empty 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ -z "$cm_out" ] || cm_fail="$cm_fail [b: no checks file at the base: exit $cm_rc, printed: $(printf '%s' "$cm_out" | head -2 | tr '\n' '|' | cut -c1-160)]"
+cm_out=$(sh "$CMS" "$CM/repo" HEAD 2>&1); cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ -z "$cm_out" ] || cm_fail="$cm_fail [b: an empty diff: exit $cm_rc, printed: $(printf '%s' "$cm_out" | head -2 | tr '\n' '|' | cut -c1-160)]"
+sh "$CMS" > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: no arguments is not exit 64]"
+sh "$CMS" "$CM/repo" > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: one argument is not exit 64]"
+sh "$CMS" "$CM/repo" no-such-ref > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [b: an unknown base ref is not exit 64]"
+# c. sh, awk and git only: with nothing else on the PATH it prints the same
+for cm_t in awk git; do ln -s "$(command -v "$cm_t")" "$CM/bin/$cm_t" 2>/dev/null; done
+cm_out=$(PATH="$CM/bin" /bin/sh "$CMS" "$CM/repo" base 2>&1)
+[ "$cm_out" = "$cm_want" ] || cm_fail="$cm_fail [c: with only awk and git on the PATH: $(printf '%s' "$cm_out" | grep -v -E '^(TRIGGERED|Trigger|Check|From)' | head -2 | tr '\n' '|' | cut -c1-200)]"
+sh -n "$CMS" 2>/dev/null || cm_fail="$cm_fail [c: sh -n reports a syntax error]"
+# d. --lint: the file being written. Each kind of bad item is named; a good file and no file say nothing
+cm_lint() { sh "$CMS" --lint "$CM/lint" > "$CM/lint.out" 2>&1; echo $?; }
+echo x > "$CM/lint/docs/real.md"
+[ "$(cm_lint)" = 0 ] && [ ! -s "$CM/lint.out" ] || cm_fail="$cm_fail [d: no checks file: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-120)]"
+printf '## C1: Good\nTrigger: path app/*\nCheck: Look.\nFrom: docs/real.md (a note), docs/real.md\n\n## C2: Good too\nTrigger: added foo|bar\nCheck: Look.\nFrom: docs/real.md\n' > "$CM/lint/.shipkit/checks.md"
+[ "$(cm_lint)" = 0 ] && [ ! -s "$CM/lint.out" ] || cm_fail="$cm_fail [d: a good file: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-160)]"
+printf '## C1: No trigger\nCheck: Look.\nFrom: docs/real.md\n\n## C2: No check\nTrigger: path app/*\nFrom: docs/real.md\n\n## C3: No source\nTrigger: path app/*\nCheck: Look.\n\n## C4: A trigger of neither kind\nTrigger: when it rains\nCheck: Look.\nFrom: docs/real.md\n\n## C5: A source that is not there\nTrigger: added foo\nCheck: Look.\nFrom: docs/real.md, docs/nope.md (gone)\n' > "$CM/lint/.shipkit/checks.md"
+[ "$(cm_lint)" = 1 ] && [ "$(grep -c '^BAD-ITEM ' "$CM/lint.out")" = 5 ] && [ "$(grep -c . "$CM/lint.out")" = 5 ] \
+  && grep -q '^BAD-ITEM C1 .*Trigger' "$CM/lint.out" && grep -q '^BAD-ITEM C2 .*Check' "$CM/lint.out" && grep -q '^BAD-ITEM C3 .*From' "$CM/lint.out" \
+  && grep -q '^BAD-ITEM C4 .*neither' "$CM/lint.out" && grep -q '^BAD-ITEM C5 .*docs/nope\.md' "$CM/lint.out" \
+  || cm_fail="$cm_fail [d: five bad items, each named once: $(tr '\n' '|' < "$CM/lint.out" | cut -c1-400)]"
+sh "$CMS" --lint > /dev/null 2>&1; [ $? -eq 64 ] || cm_fail="$cm_fail [d: --lint with no folder is not exit 64]"
+# e. this repository's own file: four items, well formed, and each one's trigger is met by the
+# kind of change it is about (a grader, lint.py, a requirement that names READY, a text-only pass)
+CMO="$CM/own"; mkdir -p "$CMO/.shipkit/specs/x" "$CMO/scripts" "$CMO/plugins/shipkit/evals/demo/one/graders"
+cmo() { (cd "$CMO" && git -c user.email=s@s -c user.name=s "$@"); }
+[ "$(grep -c '^## C[0-9][0-9]*: ' "$ROOT/.shipkit/checks.md" 2>/dev/null)" = 4 ] || cm_fail="$cm_fail [e: .shipkit/checks.md does not hold four items]"
+sh "$CMS" --lint "$ROOT" > "$CM/own.lint" 2>&1; cm_rc=$?
+[ "$cm_rc" -eq 0 ] && [ ! -s "$CM/own.lint" ] || cm_fail="$cm_fail [e: --lint on this repository: exit $cm_rc: $(tr '\n' '|' < "$CM/own.lint" | cut -c1-300)]"
+cp "$ROOT/.shipkit/checks.md" "$CMO/.shipkit/checks.md" 2>/dev/null
+(cd "$CMO" && git init -q && echo x > scripts/lint.py && echo x > scripts/smoke.sh && echo x > .shipkit/specs/x/spec.md); cmo add -A; cmo commit -q -m base; cmo tag base
+echo y > "$CMO/plugins/shipkit/evals/demo/one/graders/g.md"; echo y >> "$CMO/scripts/lint.py"
+printf -- '- **REQ-9.** The ship report shall read READY.\n' >> "$CMO/.shipkit/specs/x/spec.md"
+# (written in two parts: check 104 counts this script's own text-only assertions by that word)
+printf 'pass%s "demo (the words are there)"\n' t >> "$CMO/scripts/smoke.sh"
+cmo add -A; cmo commit -q -m change
+cm_out=$(sh "$CMS" "$CMO" base 2>&1 | grep '^TRIGGERED ' | cut -d: -f1 | tr '\n' ' ')
+[ "$cm_out" = "TRIGGERED C1 TRIGGERED C2 TRIGGERED C3 TRIGGERED C4 " ] || cm_fail="$cm_fail [e: a change of each kind must trigger this repository's four items: $cm_out]"
+if [ -z "$cm_fail" ]; then pass "checks-match (the items a diff triggers, from the base ref's file: a path glob whose star crosses a slash, an added line and not a removed one; a branch's edit to the file changes nothing; no file at the base, nothing; --lint names five kinds of bad item; sh, awk and git only, and no file changed; this repository's four items are well formed and each is met by the change it is about)"
+else failc "checks-match" "$cm_fail"; fi
+
+# 120. escape-second: the second escape of a kind. /shipkit:escape repairs one spec and stops;
+# its waiting step (misses-to-checks/design.md, W9) drafts a check item when an escape has the
+# same cause as an earlier one on the same paths. The case's tree is escape/missing-req's after
+# that first escape was handled: REQ-3 is in the spec with its code and test, and the record is
+# in .shipkit/escapes/. The new report is of a negative refund, which no requirement covers. The
+# map is read here too: of the eleven cases Sprint 32 adds, two are held out and nine are tuning
+# cases. No claude needed. Cites: misses-to-checks/REQ-36 misses-to-checks/REQ-39
+ES="$WORK/esecond"; es_fail=""; mkdir -p "$ES/tree"
+(cd "$ES/tree" && bash "$COPY/evals/escape/second-of-a-kind/fixture.sh" > "$ES/build.log" 2>&1) \
+  || es_fail="$es_fail [the fixture failed: $(tail -2 "$ES/build.log" | tr '\n' '|' | cut -c1-200)]"
+grep -q '^- \*\*REQ-3\.\*\* ' "$ES/tree/.shipkit/specs/refunds/spec.md" 2>/dev/null || es_fail="$es_fail [the spec holds no REQ-3]"
+es_rec="$ES/tree/.shipkit/escapes/0001-refund-above-charge.md"
+grep -q -F '`requirement missing`' "$es_rec" 2>/dev/null && grep -q -F '`.shipkit/specs/refunds/`' "$es_rec" 2>/dev/null \
+  || es_fail="$es_fail [the record 0001 does not name the cause requirement missing and the spec .shipkit/specs/refunds/]"
+grep -i -E 'negative|below zero|above zero|positive|less than' "$ES/tree/.shipkit/specs/refunds/spec.md" > "$ES/neg.out" 2>/dev/null \
+  && es_fail="$es_fail [a requirement already speaks of a negative amount: $(head -1 "$ES/neg.out" | cut -c1-120)]"
+[ -z "$(git -C "$ES/tree" status --porcelain 2>/dev/null)" ] && [ -d "$ES/tree/.git" ] || es_fail="$es_fail [the tree is not committed clean]"
+(cd "$ES/tree" && python3 -m unittest discover -s tests > "$ES/test.out" 2>&1) || es_fail="$es_fail [the test command failed: $(tail -2 "$ES/test.out" | tr '\n' '|' | cut -c1-160)]"
+(cd "$ES/tree" && python3 - > "$ES/py.out" 2>&1 <<'ESPY'
+import sys
+sys.path.insert(0, ".")
+from app.refunds import RefundFailed, refund
+class Gateway:
+    def __init__(self):
+        self.amounts = []
+    def refund(self, customer, amount_cents):
+        self.amounts.append(amount_cents)
+        return "rf_1"
+gateway = Gateway()
+assert refund({"customer": "ada"}, -500, 2000, gateway) == "rf_1" and gateway.amounts == [-500], "refund did not accept an amount below zero"
+try:
+    refund({"customer": "ada"}, 2500, 2000, gateway)
+except RefundFailed:
+    pass
+else:
+    raise AssertionError("REQ-3 is not built: a refund above the charge went through")
+ESPY
+) || es_fail="$es_fail [$(tail -1 "$ES/py.out" | cut -c1-200)]"
+es_sets=$(awk -F '\t' '$1 ~ /^(holdout-reviewer-(helper-only|skipped-test)|reviewer-(helper-only|skipped-test|comment-cite|weakened-req|waiver-added|second-round|stale-met|check-triggered)|escape-second-of-a-kind)$/ { n[$2]++ } END { printf "holdout=%d tune=%d", n["holdout"], n["tune"] }' "$ROOT/scripts/evals-map.tsv")
+[ "$es_sets" = "holdout=2 tune=9" ] || es_fail="$es_fail [the map's sets for the eleven cases: $es_sets]"
+[ "$(awk -F '\t' '$1 ~ /^holdout-/ && $2 != "holdout"' "$ROOT/scripts/evals-map.tsv" | grep -c .)" = 0 ] || es_fail="$es_fail [a holdout- case is not held out in the map]"
+if [ -z "$es_fail" ]; then pass "escape-second (the tree is the first escape's, handled: REQ-3 built, the record 0001 names requirement missing and the refunds spec, and a negative refund still goes through with no requirement about it; the map holds two of the eleven cases out and tunes on nine)"
+else failc "escape-second" "$es_fail"; fi
+
+# 121. briefing-commands: what the briefing costs, counted and not timed. CI's runner read the
+# same briefing at 0.41 to 1.02 s of CPU on unchanged scripts, so no time limit holds there
+# (honest-evidence/design.md, seventh record), and this machine reads it slow under load. What
+# the time is made of does not vary: the commands the briefing starts. On check 30's fixture
+# that is 229: 29, and four for each open spec. Here the briefing runs with a PATH that holds
+# only stand-ins for the thirteen programs it uses; each adds a line to a count and runs the
+# real one, and a program not on the list is "command not found". The limit is the number
+# itself and no switch is read, so CI enforces it. Two things show it can fail: fifty-one specs
+# count four more, and a copy of the briefing with one command added counts one more; both are
+# given to the verdict with CI=true and SMOKE_TIMING=report. No claude needed.
+# Cites: misses-to-checks/REQ-43 misses-to-checks/REQ-44
+BN="$WORK/bcount"; BNB="$COPY/scripts/briefing.sh"; mkdir -p "$BN/bin"; bn_fail=""
+for bn_t in awk sed grep sort git tr tail sh rm mktemp ls dirname cut; do
+  bn_real=$(command -v "$bn_t" 2>/dev/null)
+  case "$bn_real" in /*) ;; *) bn_fail="$bn_fail [$bn_t was not found as a program]"; continue ;; esac
+  printf '#!/bin/sh\necho %s >> "$BRIEF_COUNT"\nexec "%s" "$@"\n' "$bn_t" "$bn_real" > "$BN/bin/$bn_t"; chmod +x "$BN/bin/$bn_t"
+done
+bn_project() {  # bn_project <dir> <n> → n open specs, built as check 30 builds its fifty
+  mkdir -p "$1"; (cd "$1" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init)
+  _k=1; while [ "$_k" -le "$2" ]; do bspec "$1" "spec-$_k-with-a-rather-long-name-to-fill-the-line" open 1 4; _k=$((_k + 1)); done
+}
+bn_run() {  # bn_run <project> [briefing script] → bn_n: the commands the briefing starts there; its output is in <project>.out
+  : > "$BN/count"
+  (cd "$1" && BRIEF_COUNT="$BN/count" PATH="$BN/bin" /bin/sh "${2:-$BNB}" > "$1.out" 2> "$1.err"); _rc=$?
+  [ "$_rc" -eq 0 ] && [ ! -s "$1.err" ] \
+    || bn_fail="$bn_fail [$(basename "$1"): under the stand-ins the briefing exited $_rc and said: $(head -2 "$1.err" | tr '\n' '|' | cut -c1-200)]"
+  bn_n=$(grep -c . "$BN/count")
+}
+bn_verdict() {  # bn_verdict <count> <the output is the plain run's: yes or no> → the one PASS or FAIL line; it reads no switch
+  if [ "$2" = yes ] && [ "$1" -ge 1 ] && [ "$1" -le 229 ]; then
+    pass "briefing-commands (50 open specs → the briefing starts $1 commands, limit 229, and prints what it prints with the whole PATH; 51 specs and one added command are each over the limit, on CI too)"
+  else failc "briefing-commands" "50 specs: $1 commands started, want at most 229; the output is the plain run's: $2"; fi
+}
+bn_v() { ( COUNTS=/dev/null; CI=$1; SMOKE_TIMING=$2; export CI SMOKE_TIMING; bn_verdict "$3" yes ); }  # bn_v <CI> <SMOKE_TIMING> <count>
+bn_project "$BN/p50" 50; bn_project "$BN/p51" 51
+bn_run "$BN/p50"; bn_50=$bn_n
+(cd "$BN/p50" && sh "$BNB" > "$BN/plain.out" 2>/dev/null)
+if cmp -s "$BN/p50.out" "$BN/plain.out" && [ -s "$BN/plain.out" ]; then bn_same=yes; else bn_same=no; fi
+bn_run "$BN/p51"; bn_51=$bn_n
+cp -R "$COPY/scripts" "$BN/scripts-plus"
+sed '1a\
+ls . > /dev/null
+' "$BNB" > "$BN/scripts-plus/briefing.sh"
+cp -R "$BN/p50" "$BN/p50-plus"; bn_run "$BN/p50-plus" "$BN/scripts-plus/briefing.sh"; bn_plus=$bn_n
+[ "$bn_51" -eq $((bn_50 + 4)) ] || bn_fail="$bn_fail [fifty-one specs: $bn_51 commands, want four more than fifty's $bn_50]"
+[ "$bn_plus" -eq $((bn_50 + 1)) ] || bn_fail="$bn_fail [a briefing with one command added: $bn_plus commands, want one more than $bn_50]"
+case "$(bn_v true report "$bn_51")" in "FAIL  briefing-commands"*) ;; *) bn_fail="$bn_fail [fifty-one specs' count, $bn_51, with CI=true and SMOKE_TIMING=report: not a FAIL]" ;; esac
+case "$(bn_v true report "$bn_plus")" in "FAIL  briefing-commands"*) ;; *) bn_fail="$bn_fail [one added command's count, $bn_plus, with CI=true and SMOKE_TIMING=report: not a FAIL]" ;; esac
+case "$(bn_v "" "" 230)" in "FAIL  briefing-commands"*"230 commands"*) ;; *) bn_fail="$bn_fail [230 with no switch: not a FAIL that carries the count]" ;; esac
+case "$(bn_v true report 229)" in "PASS  briefing-commands"*"starts 229 commands"*) ;; *) bn_fail="$bn_fail [229 with CI=true and SMOKE_TIMING=report: not a PASS that carries the count]" ;; esac
+if [ -n "$bn_fail" ]; then failc "briefing-commands" "$bn_fail [50 specs: $bn_50 commands]"
+else bn_verdict "$bn_50" "$bn_same"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

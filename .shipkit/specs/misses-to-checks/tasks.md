@@ -1,0 +1,166 @@
+# Tasks: misses to checks
+
+The test command for this spec is the model-free smoke suite: `sh scripts/smoke.sh --no-model
+</dev/null`. Every new smoke check is written first and shown failing, then the code.
+
+T0 to T13 are Sprint 32's and start no model; `scripts/evals.sh` is only ever run here with a
+stand-in for `claude plugin eval` (`EVALS_TOOL`). No file under `plugins/*/skills`,
+`plugins/*/agents` or `plugins/*/rules` changes in them. T14 and T15 need paid runs and wait for
+Sprint 35.
+
+- [x] **T0** The design holds the waiting text and the records for the plan's V13, V14 and V15 → REQ-45, REQ-46, REQ-47
+  - Files: .shipkit/specs/misses-to-checks/design.md
+  - Test: none: REQ-45 to REQ-47 are prose, read against `design.md`
+  - After: none
+  - Done when: `design.md` holds W1 to W10, each naming the case it waits on, and a record for each of V13, V14 and V15 with its reversal event; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
+- [x] **T1** Smoke check 114 reads the ceiling and check 113 reads its reviewer cases from the map → REQ-18
+  - Files: scripts/smoke.sh, .shipkit/specs/numbers-as-data/spec.md
+  - Test: scripts/smoke.sh checks 113 and 114, changed: for a diff on `agents/reviewer.md` check 113 expects every map row named `reviewer-*`, and a scratch map with one more such row prints it too; check 114 fails above 204,800 bytes and no longer at 190,800
+  - After: T0
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 113 and 114 `PASS`, exit 0; `numbers-as-data/spec.md` carries a dated note under its REQ-21 and its REQ-27
+- [x] **T2** A held-out case stays held out: lint, `evals-for-diff.sh` and the ledger → REQ-15, REQ-16, REQ-17, REQ-19, REQ-20
+  - Files: scripts/lint.py, scripts/evals-for-diff.sh, scripts/evals-ledger.sh, scripts/evals.sh, scripts/smoke.sh, docs/design/eval-cases.md, .shipkit/specs/numbers-as-data/spec.md
+  - Test: scripts/smoke.sh check 116 (`holdout-kept-out`): on a copy of this tree, lint fails a row whose set is `foo`, a case under `evals/holdout/` whose set is `tune`, and a `holdout` row whose case is elsewhere, naming each; with a scratch map, `evals-for-diff.sh` prints no held-out case and writes `evals-for-diff: 1 held-out case(s) not listed` to standard error; `evals-ledger.sh append` with that map writes `holdout` for the case it marks and `tune` or `watch` for the others
+  - After: T1
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 116 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); `docs/design/eval-cases.md` says when a held-out case runs; `numbers-as-data/spec.md` carries a dated note under its term "A case's set"
+- [x] **T3** `grader-check.sh` shows a grader both ways through `node` → REQ-40
+  - Files: scripts/grader-check.sh, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 117 (`grader-both-ways`): on a scratch case, a reply the pattern must pass reads `PASS` and one it must fail reads `FAIL` as expected, with the grader's flags honoured; a pattern changed to match both makes the script exit 1; a reply file whose grader does not exist, and a case with a `pass` file and no `fail` file, make it exit 1; on this repository's `scripts/grader-replies/` it exits 0
+  - After: T2
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 117 `PASS`, exit 0; `sh -n scripts/grader-check.sh` → no output
+- [x] **T4** `reviewer/helper-only`, and a check that builds every reviewer tree → REQ-1, REQ-2, REQ-7
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/helper-only/, scripts/grader-replies/reviewer-helper-only/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 118 (`reviewer-trees`): each of the four old cases' trees equals, file for file, the tree the shared fixture at `9e061ca` (`git show`) builds; in the `helper-only` tree the test citing `refunds/REQ-2` calls only `check_amount`, `refund` does not call it and passes 2500 on a charge of 2000 to the gateway, and the test command exits 0. Check 117 reads the new grader's three replies
+  - After: T3
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 113, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+- [x] **T5** `holdout/reviewer-helper-only` on the `notes-export` feature, and the bytes measured → REQ-11, REQ-12, REQ-14, REQ-41
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-helper-only/, scripts/grader-replies/holdout-reviewer-helper-only/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh, plugins/shipkit/evals/README.md, plugins/shipkit/evals/reviewer/helper-only/
+  - Test: scripts/smoke.sh check 118, extended: the held-out tree is the `notes-export` feature, its diff from `base` holds no `refund` in any letter case, the test citing `notes-export/REQ-1` calls only `is_shareable`, `export_notes` does not call it and returns a private note, and the test command exits 0. Check 77, extended: a case under `evals/holdout/reviewer-*` builds from the shared fixture too. Check 117 reads the new grader's replies
+  - After: T4
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s); the evals folder's size and the projection for the nine cases to come are written under this task as a note, and the README's section "What graders can check" has moved to `docs/design/eval-cases.md` only if the projection passed 204,800
+  - Note (2026-11-19): measured after this case, with the folder at 195,749 bytes: `reviewer/helper-only`
+    cost 1,799 (its folder 1,020, the shared fixture 779) and this case 3,394 (its folder 1,066, the
+    `notes-export` feature 2,328). The nine cases to come projected to about 209,150, over 204,800, so
+    the README's section "What graders can check" moved to `docs/design/eval-cases.md`, word for word
+    (check 114 holds it to the README at `9e061ca`). The README keeps the heading and its two answers,
+    314 bytes, because `measure-and-slim/REQ-4`, a shipped requirement, asks the README to state them;
+    the design counted on all 2,871 bytes and this frees 2,557.
+  - Note (2026-11-19): `plugins/shipkit/evals/reviewer/helper-only/` was added to Files. Both cases'
+    descriptions, `case.yaml` comments and `fixture.sh` comments were shortened: 839 and 898 bytes a
+    case. The folder is 192,843 bytes, 11,957 under the ceiling. Projected for the nine cases to come:
+    about 11,500 (T6 4,660, T7 1,280, T8 2,370, T11 1,200, T12 1,990), so about 204,350. That is 450
+    of room on an estimate that has been off by more, so the folder is measured again after each task,
+    and the owner is asked before any case is cut.
+  - Note (2026-11-19): the suite's run for this task's second commit exited 1 on one check: 112
+    (`briefing-cost`) read 0.55 s of CPU, best of three, against its half second, and check 30 read
+    0.56 s where it usually reads 0.39. It was read and not run again: `briefing.sh` and
+    `spec-check.sh` are unchanged since `9e061ca`, the briefing still starts 229 commands with the
+    same output, and the load average was 3.6 at the start of the run and 5.3 after it. The other 240
+    checks passed, this task's among them. The owner was told.
+- [x] **T6** Four more tuning cases: `skipped-test`, `comment-cite`, `weakened-req`, `waiver-added` → REQ-3, REQ-4, REQ-5, REQ-6, REQ-8, REQ-9, REQ-10
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/skipped-test/, plugins/shipkit/evals/reviewer/comment-cite/, plugins/shipkit/evals/reviewer/weakened-req/, plugins/shipkit/evals/reviewer/waiver-added/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 118, extended: `skipped-test` runs green with one test skipped and `spec-check.sh` prints `SKIPPED-CITE refunds REQ-2`; in `comment-cite`, `refunds/REQ-2` is in a comment in `app/refunds.py` and nowhere under `tests/`; in `weakened-req`, `spec-diff.sh . refunds base` prints `REQ-CHANGED refunds REQ-2` and no other `REQ-` or `WAIVER-` line and `refund` caps the amount; in `waiver-added` it prints `WAIVER-ADDED` and `REQ-CHANGED` for REQ-2 and no test cites it. Check 117 reads the four graders' replies
+  - After: T5
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): only `helper-only` comes from a run. These four come from gaps the verifier
+    plan's read of the scripts found (its section 3: a comment in the code counts as a citation; an
+    edit to `spec.md` on the branch is never listed) and from `honest-evidence`'s purpose (a citation in
+    a skipped test counts). Each `case.yaml` and `docs/design/eval-cases.md` say "the gap", not
+    "the miss"; the plan's heading "from real misses" says more than its sources do.
+  - Note (2026-11-19): the four cost 5,120 bytes, 460 more than projected (the fixture 1,588, the
+    folders about 883 each). The folder is 197,963. With T7, T8, T11 and T12 projected at 6,840 it
+    lands at about 204,800: no room on the estimate. Lint's check 17 will say at each task.
+- [x] **T7** `holdout/reviewer-skipped-test` → REQ-13, REQ-14
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/holdout/reviewer-skipped-test/, scripts/grader-replies/holdout-reviewer-skipped-test/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 118, extended: `export_notes` leaves a private note out, the test citing `notes-export/REQ-1` is skipped, the test command exits 0 and `spec-check.sh . notes-export` prints `SKIPPED-CITE notes-export REQ-1`. Check 117 reads the grader's replies
+  - After: T6
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 116, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the case cost 1,205 bytes. The folder is 199,168, with 5,632 of room for T8, T11
+    and T12, projected at 5,560.
+- [x] **T8** A second round: `reviewer/second-round` and `reviewer/stale-met` → REQ-21, REQ-22, REQ-23, REQ-24
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/second-round/, plugins/shipkit/evals/reviewer/stale-met/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 118, extended: `second-round` is the `helper-only` tree plus one untracked file, `.shipkit/releases/2026-11-01-refunds.md`, whose first line is `NOT READY` and whose table marks REQ-2 `NOT MET`; `stale-met` is the `missing-req` tree plus that file with `READY` and REQ-2 `MET` at an `app/refunds.py` line. Check 117 reads both graders' replies, a `CANNOT TELL` reply among those `second-round` must fail
+  - After: T7
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the two cost 2,860 bytes, 490 more than projected. The folder is 202,028, with
+    2,772 of room for T11 and T12, projected at 3,190: about 420 short on the estimate. Both are written
+    as small as they can be and measured; if they do not fit, the owner is asked before any case is cut.
+- [x] **T9** `checks-match.sh` prints the items a diff triggers, from the base ref → REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30, REQ-31
+  - Files: plugins/shipkit/scripts/checks-match.sh, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 119 (`checks-match`), in a scratch repository: a `path` trigger is met by a changed file and prints `TRIGGERED C<n>: <title>` with the item's three lines, in the file's order; an `added` trigger is met by an added line and not by a removed one; the working tree's edited copy is not read; a checks file that exists only on the branch gives nothing and exit 0; no arguments and an unknown ref exit 64; `--lint` prints `BAD-ITEM` and exits 1 for an item with a missing line, a trigger of neither kind and a source that does not exist, and exits 0 on a good file and on none; `git status --porcelain` is the same before and after
+  - After: T8
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 119 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/checks-match.sh` → no output
+- [x] **T10** This repository's four check items, and the guide → REQ-32, REQ-35
+  - Files: .shipkit/checks.md, GUIDE.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 119, extended: this repository's `.shipkit/checks.md` holds four items and `checks-match.sh --lint` exits 0 on it
+  - After: T9
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 119 `PASS`, exit 0; `sh plugins/shipkit/scripts/checks-match.sh --lint .` → no output, exit 0; `GUIDE.md` names the script, `--lint`, an item's form and both kinds of trigger; `bash scripts/lint.sh` → 0 error(s)
+- [x] **T11** `reviewer/check-triggered`, and the twelve reviewer cases → REQ-18, REQ-33, REQ-34, REQ-41
+  - Files: plugins/shipkit/evals/lib/review-fixture.sh, plugins/shipkit/evals/reviewer/check-triggered/, scripts/grader-replies/reviewer-check-triggered/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 118, extended: in the `check-triggered` tree `base` holds a checks file with one item, `checks-match.sh . base` prints `TRIGGERED C1`, `refund` calls `gateway.refund` with two arguments, and the tree is otherwise `all-met`'s. Check 113: a diff on `agents/reviewer.md` prints exactly twelve cases, all named `reviewer-*`. Check 77: every case whose prompt starts the reviewer builds from the shared fixture. Check 117 reads the grader's three replies
+  - After: T10
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 77, 113, 117 and 118 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s)
+  - Note (2026-11-19): the case cost 1,229 bytes. The folder is 203,257, with 1,543 of room for T12.
+- [x] **T12** `escape/second-of-a-kind`, a second grader on the first escape, and the eleven rows → REQ-36, REQ-37, REQ-38, REQ-39, REQ-42
+  - Files: plugins/shipkit/evals/escape/second-of-a-kind/, plugins/shipkit/evals/escape/missing-req/graders/, scripts/grader-replies/, scripts/evals-map.tsv, docs/design/eval-cases.md, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 120 (`escape-second`): the tree's spec holds REQ-3, `.shipkit/escapes/0001-refund-above-charge.md` names the cause `requirement missing` and the spec `.shipkit/specs/refunds/`, `refund` accepts an amount below zero and the test command exits 0; the map gives `holdout` to the two held-out cases and `tune` to the other nine. Check 117 reads the new grader's replies and those of `escape-missing-req`'s second grader
+  - After: T11
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 117 and 120 `PASS`, exit 0; `bash scripts/lint.sh` → 0 error(s), which holds the evals folder to 204,800 bytes; `docs/design/eval-cases.md` has a row for each of the eleven cases, and each one's `case.yaml` names its miss
+  - Note (2026-11-19): `plugins/shipkit/evals/lib/review-fixture.sh`, the ten new `fixture.sh` files under
+    `evals/reviewer/` and `evals/holdout/`, and `evals/reviewer/check-triggered/graders/` were added to
+    Files. With this case the folder was 205,627 bytes, 827 over the ceiling. What was cut is comment:
+    the shared fixture's notes on its new variants, now a paragraph in `docs/design/eval-cases.md`, and
+    the one-line comment in each new `fixture.sh`. No case was cut. The folder is 204,629: 171 bytes
+    of room. The next case anyone adds needs room made first.
+  - Note (2026-11-19): `scripts/grader-check.sh` caught the new grader `no-check-drafted` passing a reply
+    it must fail: with the `m` flag its leading `^` could start after the `Trigger:` line. It and the two
+    other graders written with `m` and a leading `^` (`drafts-a-check`, `c1-broken-and-pass`) now write a
+    line start out as `(?:^|\n)` and carry no flag. All 37 replies read as they must.
+- [x] **T13** The briefing's command count, enforced on every machine → REQ-43, REQ-44
+  - Files: scripts/smoke.sh
+  - Test: scripts/smoke.sh check 121 (`briefing-commands`): with thirteen stand-ins as the whole `PATH`, the briefing on check 30's fixture prints what it prints under the normal `PATH` and starts at most 229 commands, and the `PASS` line carries the count; the count from fifty-one specs, given to the verdict with `CI=true` and `SMOKE_TIMING=report`, is a `FAIL`
+  - After: T12
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 121 `PASS` with its count, exit 0; on the pull request, CI's `smoke-no-model` job reads the same count
+  - Note (2026-11-19): check 121 is in and reads 229 here; fifty-one specs read 233 and a copy of the
+    briefing with one command added reads 230, and both fail the verdict with `CI=true` and
+    `SMOKE_TIMING=report`. The task stays open until CI's `smoke-no-model` job has read the count on
+    the pull request, which needs the owner's yes to push.
+  - Done (2026-11-19): pushed on the owner's yes; on pull request #43, at `998ce16`, CI's
+    `smoke-no-model` job (run 44580818940) read check 121 as "the briefing starts 229 commands, limit
+    229", the count this machine reads. The runner has node: check 117 passed there with
+    "grader-check: 37 as expected, 0 not". The job read 244 passed (35 text-only), 16 skipped (model),
+    0 failed, and printed check 112's time, 0.49 s of CPU. The design's eighth and ninth records are
+    not called on.
+- [ ] **T14** Sprint 35: baselines, text only where a baseline misses, and the runs after → REQ-48
+  - Files: plugins/shipkit/agents/reviewer.md, plugins/shipkit/skills/escape/SKILL.md, plugins/shipkit/skills/ship/reference.md, docs/design/eval-history.md, docs/design/eval-ledger.tsv, scripts/smoke.sh
+  - Test: none: REQ-48 is read from Sprint 35's record
+  - After: T13
+  - Done when: `eval-history.md` holds, for each waiting entry W1 to W10, its case's score before, whether the text went in, and the score after
+- [ ] **T15** Sprint 35: the held-out pair runs at the release run, and no text answers it → REQ-49
+  - Files: docs/design/eval-history.md, docs/design/eval-ledger.tsv
+  - Test: none: REQ-49 is read from Sprint 35's record
+  - After: T14
+  - Done when: the ledger holds the two `holdout-` rows of the 5.4.0 release run, and any held-out failure is a line in `eval-history.md` dated before any change of text
+
+## The sprint's exit checklist (2026-11-19, at the commit after T13's)
+
+Lint 0 errors. `sh scripts/smoke.sh --no-model </dev/null` exit 0: 244 passed (35 text-only), 16 skipped
+(model), 0 failed. `scripts/grader-check.sh`: 37 replies as expected, 0 not. `spec-check.sh .` exit 0: 35
+specs, 0 gaps; this spec reads tested=41, waived=8, uncited=0. The three always-on rules: 2,999 of 3,000
+bytes. The evals folder: 204,629 of 204,800 bytes, 78 cases. `release-check.sh .`: 31 shipped, 5
+findings, the five of the sprint's start. `decision-check.sh . --run`: 0 fired, 0 errors. Line 10: no
+existing skill, agent, rule or overlay file is changed or removed since `main`.
+
+The ten grader requirements (REQ-7 to REQ-10, REQ-14, REQ-23, REQ-24, REQ-34, REQ-37, REQ-38) were
+proven by check 117 and not cited by it until the last commit, which also holds each reply to the mark
+its requirement names.
+
+## Found on the way
+
+Not fixed here; each goes to the sprint's pull request.
+
+- `docs/design/eval-cases.md` has no row for `reviewer/decision-unbuilt` or
+  `reviewer/rejected-alternative` (found 2026-11-19; its table has rows for `reviewer/missing-req`
+  and `reviewer/all-met` only).
+- The hand-off note of 2026-11-19 said smoke check 114 enforces the 204,800-byte ceiling. It
+  enforced 190,800 (`numbers-as-data/REQ-27`); T1 moves it.

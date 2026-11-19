@@ -1,0 +1,5 @@
+# The guard on reading an earlier report: it marks REQ-2 MET, and the code is not in the tree.
+schema_version: "1.1"
+name: reviewer-stale-met
+context:
+  scaffold_script: fixture.sh

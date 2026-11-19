@@ -1,0 +1,5 @@
+# The gap (verifier plan, section 3): an edit to the spec on its own branch is never listed. REQ-2 gained a waiver and lost its test.
+schema_version: "1.1"
+name: reviewer-waiver-added
+context:
+  scaffold_script: fixture.sh

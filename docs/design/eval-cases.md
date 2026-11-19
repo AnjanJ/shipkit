@@ -161,3 +161,98 @@ fixture with decoys, plus one the current source cannot answer: `history` is in 
 (commit 20 of 27) and in the map's *Evolution* section. They exist for decision 0001's re-test
 (`.shipkit/specs/map-on-trial/`); the comparison and its numbers are in
 `docs/design/eval-results-4.1.md`. Added in 4.1.0.
+
+*Moved 2026-11-19 (Sprint 32, `misses-to-checks` T5), to make room for the cases from real
+misses. The README keeps the heading and the two answers. "Below" in this text means the
+README's section "How a case gets the fixture":*
+
+## What graders can check
+
+Both answers were found by running probe cases with a control grader that had to fail.
+
+**(a) Which tools were called — yes.** A `tool_used` grader counts calls to a named tool, and
+`tool_order` checks that one call came before another. Probe: the prompt asked for a Glob call;
+`tool_used: Glob` passed ("Glob called 1x") and the control `tool_used: Grep` failed ("Grep
+called 0x"). `input_match` narrows the count to calls whose JSON input matches a regex.
+
+**(b) A file the run wrote — yes, if the run is allowed to write.** `file_exists` checks that a
+file was created, and a `regex` grader with `target: { source: file, path: out.txt }` reads
+its contents. (An `llm` grader with `target:` was accepted by the 3.2 probe; on Claude Code
+2.1.291 the case refuses to load — `graders.0: Unrecognized key(s) in object: 'target'` — so
+a judgement about a written file is a `regex` on the file or an `llm` grader on the reply.) Probe: the prompt asked for `out.txt` containing one word; both graders
+passed and the control `file_exists: missing.txt` failed. The case must list `Write` in
+`allowed_tools` **and** the command must pass `--allow-tools Write`; without the grant the tool
+is removed from the run and every file grader fails. `file_exists` sees only files created
+during the run, not files that were edited.
+
+Limits worth knowing before writing a case:
+
+- **No custom-code graders.** A grader cannot run a script. To check a command's result, have
+  the prompt ask Claude to run it and write the outcome to a file, then grade the file — or use
+  a check in `scripts/smoke.sh`.
+- **Every run starts in an empty workspace** with a temporary home. Nothing from your own
+  settings, `CLAUDE.md`, memory or other plugins loads. This plugin's hooks, skills and agents do.
+- **The run cannot read `evals/`.** A case that needs files gets them from a `case.yaml` beside
+  the prompt; see "How a case gets the fixture" below.
+- **`Bash`, `Write`, `Edit`, `WebFetch` need `--allow-tools`** on the command line. A case's
+  `allowed_tools` alone grants only the read-only tools. `scripts/evals.sh` grants `Bash`,
+  `Write` and `Edit` (confined to the run's workspace): `grandfather` uses the first, the
+  `rules` cases the other two.
+- **Graders marked `tool_used: Skill` are not scored** when the no-plugin comparison runs
+  (`--ablation with-without`); they show whether the plugin fired.
+- `llm` graders call a judge model three times per run and can disagree with themselves.
+  Prefer `regex`, `tool_used` and `file_exists` where they can express the check.
+- **A `regex` grader is a JavaScript `RegExp`.** A Python inline flag such as `(?is)` makes the
+  grader throw ("Invalid regular expression") and every run fails with no model error. Use
+  `[\s\S]*` for "across lines" and `[Ss]idekiq` for case (4.9.0, the three `eve` cases).
+
+## Cases added after the move
+
+The two sections above are held word for word by smoke check 114, so what has been added since
+2026-11-18 is written here.
+
+### Held-out cases
+
+*Added 2026-11-19 (Sprint 32, `misses-to-checks`).* A held-out case is one whose set in
+`scripts/evals-map.tsv` is `holdout`. It lives under `plugins/shipkit/evals/holdout/`, so its name
+starts `holdout-` and no other group's pattern runs it; lint's check 19 holds the set and the
+folder together. A held-out case runs at a release run, which runs every case, or by
+`bash scripts/evals.sh --group holdout` on the owner's word. `scripts/evals-for-diff.sh` never
+lists one, and the ledger writes its set as `holdout`. No agent or skill text is changed against
+a held-out case: text is tuned on the tuning cases, and a held-out failure is written into
+`docs/design/eval-history.md` before any text changes (the verifier plan's rule 31).
+
+### Cases from real misses
+
+*Added from 2026-11-19 (Sprint 32, `misses-to-checks`).* Each of these comes from a miss a real
+run showed, or from a gap the verifier plan's read of the scripts found (its section 3), named in
+its `case.yaml`. Its tree is built and read by smoke check 118, and its
+grader is shown on a reply it must pass and one it must fail by `scripts/grader-check.sh`, from
+`scripts/grader-replies/`.
+
+`plugins/shipkit/evals/lib/review-fixture.sh` builds every reviewer tree, from the argument its
+case's `fixture.sh` gives it. `helper`, `skipped`, `comment`, `weakened`, `waived` and `check` are
+the refunds feature with one thing changed; `weakened` and `waived` commit the spec first, as it
+was written, so that the edit has an earlier form to be compared with. `round2` is the `helper`
+tree and `stale` the `missing` tree, each with an earlier ship report left untracked. `check`
+writes its checks file before the `base` commit. `notes-helper` and `notes-skipped` build the
+held-out feature, a notes export, which shares no word with the refunds variants and breaks REQ-1
+where they break REQ-2.
+
+| Case | The miss or the gap | Passes when the answer… | Grader |
+|------|---------------------|-------------------------|--------|
+| `reviewer/helper-only` | the test citing REQ-2 passes on a helper that `refund` never calls (`field-notes-5.2.md` §9, REQ-5 and REQ-6 of `team-day-boundary`) | marks REQ-2 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
+| `holdout/reviewer-helper-only` (held out) | the same miss on another feature, `notes-export`: the test citing REQ-1 passes on `is_shareable`, which `export_notes` never calls | marks REQ-1 `NOT MET` or `CANNOT TELL`, not `MET`, and ends `VERDICT: FAIL` | regex |
+| `reviewer/skipped-test` | a citation in a skipped test counts as a test: the only test citing REQ-2 is skipped | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/comment-cite` | a citation in a comment in the code counts as a test: REQ-2 is cited in `app/refunds.py` and has no test | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/weakened-req` | an edit to the spec on its own branch is never listed: REQ-2 was rewritten to match the code | says REQ-2 was changed on this branch, under "Requirements changed on this branch" or on one line with `REQ-2` | regex |
+| `reviewer/waiver-added` | the same gap: REQ-2 gained `[untested: …]` on the branch and has no test | says REQ-2 gained its waiver on this branch | regex |
+| `holdout/reviewer-skipped-test` (held out) | the skipped-test gap on `notes-export`: the only test citing REQ-1 is skipped | marks REQ-1 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/second-round` | one tree, two readings (`field-notes-5.2.md` §9): the helper-only tree, with an earlier report that marked REQ-2 `NOT MET` | marks REQ-2 `NOT MET` again, not `CANNOT TELL`, and ends `VERDICT: FAIL` | regex |
+| `reviewer/stale-met` | the guard on reading an earlier report: it marks REQ-2 `MET` and the code is not in the tree | marks REQ-2 `NOT MET` and ends `VERDICT: FAIL` | regex |
+| `reviewer/check-triggered` | nothing asks about a past miss when a diff touches the same ground: the base commit holds a check, C1, that the diff triggers and breaks | marks C1 `BROKEN` and still ends `VERDICT: PASS`, since a triggered check is reported and not judged | regex |
+| `escape/second-of-a-kind` | `/shipkit:escape` repairs one spec and stops: a second escape with the same cause on the same paths (a negative refund, after the refund above the charge) | drafts a check item: a `Trigger:` line with `path` or `added`, and a `From:` line naming both escape records | regex |
+
+`escape/missing-req`, a first escape, has a second grader from Sprint 32, `no-check-drafted`: it fails a reply
+that holds a `Trigger:` line, since a first escape of its kind drafts no check. Like `rules/trivial`, the case
+now has two graders; read them separately when its score is not 0 or 1.

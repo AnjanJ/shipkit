@@ -6,10 +6,87 @@
 # REQ-2 with no code and no test. `rejected` meets every requirement and does what a live decision
 # turned down. `unbuilt` adds a decision a later task will build, and a superseded one the code does
 # not follow. Cites: decisions-bind/REQ-13
+# Sprint 32's variants are described in docs/design/eval-cases.md: helper, skipped, comment,
+# weakened, waived, round2, stale and check on refunds, and notes-* on the held-out feature.
 VARIANT=${1:-complete}
+EARLIER=; case "$VARIANT" in round2) EARLIER=round2; VARIANT=helper ;; stale) EARLIER=stale; VARIANT=missing ;; esac
+case "$VARIANT" in missing|helper) BARE=1 ;; *) BARE= ;; esac
 cp -R "$(cd "$(dirname "$0")" && pwd)/../fixtures/sample-app/." . || exit 1
 g() { git -c user.email=eval@example.com -c user.name=eval "$@"; }
+[ "$VARIANT" = check ] && mkdir -p .shipkit && printf '## C1: A refund is sent once\nTrigger: path app/refunds.py\nCheck: Every call to gateway.refund passes an idempotency key as its third argument.\nFrom: .shipkit/escapes/0001-double-refund.md\n' > .shipkit/checks.md
 git init -q . && git add -A && g commit -q -m "initial commit" && git tag base
+if [ "${VARIANT#notes-}" != "$VARIANT" ]; then
+mkdir -p .shipkit/specs/notes-export
+cat > .shipkit/specs/notes-export/spec.md <<'SPEC'
+# Spec: Notes export
+
+> Spec accepted at commit `base` on main.
+> Status: open
+> Paths: app/notes.py, tests/test_notes.py
+
+## Purpose
+A user's notes can be exported as lines of text.
+
+## Requirements (EARS)
+- **REQ-1.** If a note is marked private, then the export shall leave it out.
+- **REQ-2.** When an export is requested, the system shall return one line for each note,
+  its title first.
+SPEC
+cat > .shipkit/specs/notes-export/design.md <<'SPEC'
+# Design: Notes export
+
+## Decision: The export is a function in `app/notes.py`   (→ REQ-1, REQ-2)
+
+**Decision.** A function, not a command-line tool.
+**Falsifiability.** We would reverse this if a second caller needs a file on disk.
+SPEC
+cat > .shipkit/specs/notes-export/tasks.md <<'SPEC'
+# Tasks: Notes export
+
+- [x] **T1** Export the notes that may be shared → REQ-1, REQ-2
+  - Files: app/notes.py, tests/test_notes.py
+  - Test: tests/test_notes.py::test_a_private_note_is_left_out
+  - After: none
+  - Done when: `python3 -m unittest discover -s tests` → all pass
+SPEC
+cat > app/notes.py <<'PY'
+"""Notes: export a user's notes as text."""
+
+
+def is_shareable(note):
+    """A note may be exported unless it is marked private."""
+    return not note.get("private")
+
+
+def export_notes(notes):
+    """One line for each note, its title first."""
+    return [f'{n["title"]}: {n["body"]}' for n in notes]
+PY
+cat > tests/test_notes.py <<'PY'
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app.notes import export_notes, is_shareable
+
+
+class NotesExportTest(unittest.TestCase):
+    # notes-export/REQ-2
+    def test_one_line_for_each_note(self):
+        self.assertEqual(export_notes([{"title": "Milk", "body": "two litres"}]), ["Milk: two litres"])
+
+    # notes-export/REQ-1
+    def test_a_private_note_is_left_out(self):
+        self.assertFalse(is_shareable({"title": "Pin", "body": "1234", "private": True}))
+PY
+[ "$VARIANT" = notes-skipped ] && sed -i.bak 's| for n in notes\]| for n in notes if is_shareable(n)]|' app/notes.py \
+  && sed -i.bak -e 's|^    # notes-export/REQ-1$|&\
+    @unittest.skip("fails on the build server")|' -e 's|assertFalse(is_shareable(\(.*\)))$|assertEqual(export_notes([\1]), [])|' tests/test_notes.py
+rm -f app/*.bak tests/*.bak
+git add -A && g commit -q -m "add the notes export"; exit
+fi
 mkdir -p .shipkit/specs/refunds
 cat > .shipkit/specs/refunds/spec.md <<'SPEC'
 # Spec: Refunds
@@ -93,8 +170,9 @@ SPEC
   - After: T1
   - Done when: `python3 -m unittest discover -s tests` → all pass
 SPEC
+case "$VARIANT" in weakened|waived) git add -A && g commit -q -m "spec the refunds" ;; esac
 printf '\n## Refunds\n\nCall `app.refunds.refund(order, amount_cents, charged_cents, gateway)`; it returns the refund number.\n' >> README.md
-if [ "$VARIANT" != missing ]; then
+if [ -z "$BARE" ]; then
 cat > app/refunds.py <<'PY'
 """Refunds: give money back for a charged order."""
 
@@ -127,6 +205,14 @@ def refund(order, amount_cents, charged_cents, gateway):
     return gateway.refund(order["customer"], amount_cents)
 PY
 fi
+[ "$VARIANT" = helper ] && cat >> app/refunds.py <<'PY'
+
+
+def check_amount(amount_cents, charged_cents):
+    """Raise RefundRejected when a refund is larger than the charge."""
+    if amount_cents > charged_cents:
+        raise RefundRejected("refund is larger than the charge")
+PY
 cat > tests/test_refunds.py <<'PY'
 import sys
 import unittest
@@ -151,7 +237,30 @@ class RefundTest(unittest.TestCase):
     def test_refund_returns_the_gateways_refund_number(self):
         self.assertEqual(refund({"customer": "ada"}, 500, 2000, Gateway()), "rf_1")
 PY
-if [ "$VARIANT" != missing ]; then
+if [ "$VARIANT" = helper ]; then
+sed -i.bak 's/RefundRejected, refund/RefundRejected, check_amount, refund/' tests/test_refunds.py && rm tests/test_refunds.py.bak
+cat >> tests/test_refunds.py <<'PY'
+
+    # refunds/REQ-2
+    def test_refund_over_the_charge_is_rejected(self):
+        with self.assertRaises(RefundRejected):
+            check_amount(2500, 2000)
+PY
+elif [ "$VARIANT" = weakened ]; then
+cat >> tests/test_refunds.py <<'PY'
+
+    # refunds/REQ-2
+    def test_refund_over_the_charge_is_cut_to_the_charge(self):
+        sent = []
+
+        class Recorder(Gateway):
+            def refund(self, customer, amount_cents):
+                sent.append(amount_cents)
+
+        refund({"customer": "ada"}, 2500, 2000, Recorder())
+        self.assertEqual(sent, [2000])
+PY
+elif [ -z "$BARE" ] && [ "$VARIANT" != comment ] && [ "$VARIANT" != waived ]; then
 cat >> tests/test_refunds.py <<'PY'
 
     # refunds/REQ-2
@@ -162,4 +271,41 @@ cat >> tests/test_refunds.py <<'PY'
         self.assertEqual(gateway.calls, 0)
 PY
 fi
-git add -A && g commit -q -m "add refunds"
+S=.shipkit/specs/refunds/spec.md
+case "$VARIANT" in
+skipped) sed -i.bak 's|^    # refunds/REQ-2$|&\
+    @unittest.skip("flaky on CI")|' tests/test_refunds.py ;;
+comment) sed -i.bak 's|^    if amount_cents > charged_cents:$|    # refunds/REQ-2\
+&|' app/refunds.py ;;
+weakened) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway\.$|  refund the amount charged.|' $S
+  sed -i.bak -e '/^    if amount_cents > charged_cents:$/d' -e 's|^        raise RefundRejected(.*$|    amount_cents = min(amount_cents, charged_cents)|' app/refunds.py ;;
+waived) sed -i.bak 's|^  raise `RefundRejected` and shall not call the gateway\.$|& [untested: the gateway refuses it too]|' $S ;;
+esac
+rm -f app/*.bak tests/*.bak .shipkit/specs/refunds/*.bak
+git add -A && g commit -q -m "add refunds" || exit 1
+[ -n "$EARLIER" ] || exit 0
+if [ "$EARLIER" = round2 ]; then R="NOT READY"; H=$(git rev-parse --short HEAD); C="2 MET, 1 NOT MET"; V=FAIL
+  M='NOT MET | `tests/test_refunds.py:27` calls only `check_amount`, and `refund` never calls it'
+else R=READY; H=a1b2c3d; C="3 MET, 0 NOT MET"; V=PASS; M='MET | code `app/refunds.py:12`, test `tests/test_refunds.py:27`'; fi
+mkdir -p .shipkit/releases
+cat > .shipkit/releases/2026-11-01-refunds.md <<SPEC
+$R
+
+# Ship report: refunds
+
+> Checked on 2026-11-01 at commit \`$H\` on \`main\`, against base \`base\`.
+
+## Evidence
+
+### 4. Independent review
+## Review: refunds against base
+
+| Requirement | Verdict | Evidence |
+|-------------|---------|----------|
+| REQ-1 | MET | code \`app/refunds.py:9\`, test \`tests/test_refunds.py:22\` |
+| REQ-2 | $M |
+| REQ-3 (waived) | MET | \`README.md:14\` |
+
+Requirements: $C, 0 CANNOT TELL (1 waived).
+VERDICT: $V
+SPEC

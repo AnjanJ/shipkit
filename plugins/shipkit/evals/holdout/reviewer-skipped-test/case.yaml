@@ -1,0 +1,5 @@
+# Held out: no text is tuned on it. The skipped-test gap on another feature: REQ-1's only test is skipped.
+schema_version: "1.1"
+name: holdout-reviewer-skipped-test
+context:
+  scaffold_script: fixture.sh
