@@ -984,6 +984,41 @@ trigger of neither kind, or a source on its `From:` line that does not exist; a 
 comma-separated entry there, and its first word is a path. The script blocks nothing and changes
 no file. Nothing runs it for you yet: it is a command you run by hand.
 
+### Red at base
+
+A test that passes before the feature exists proves nothing about the feature. `red-check.sh`
+shows which kind a spec's new tests are. It lists the test files that cite the spec and differ
+from the base ref, makes a scratch copy of the base ref outside your project, and runs your test
+command there twice: once as the base has it, and once with those files copied in.
+
+```sh
+sh "<plugin root>/scripts/red-check.sh" . <slug> <base-ref>                 # the recorded test command
+sh "<plugin root>/scripts/red-check.sh" . <slug> <base-ref> --test 'mix test' --link deps,_build
+```
+
+It prints `TEST <file>` for each file it listed, and then one line:
+
+| The line | What it means |
+|----------|---------------|
+| `RED-AT-BASE` | With the new tests the suite fails on the base tree: at least one of them needs the feature. It is one run for all the files, so a file whose tests pass at the base can hide behind one that fails |
+| `GREEN-AT-BASE <files>` | The suite passes with them. None of these tests needs the feature: read them before trusting them |
+| `BASE-NOT-RUNNABLE` | The suite fails on the base tree as it is, so nothing is judged. Usually a folder git does not track is missing there: name it with `--link` |
+| `NO-TESTS` | No test file that cites the spec differs from the base ref. Nothing was run |
+
+The two runs' own output goes to standard error. A test you have written and not yet committed
+counts, so you can run this before the first commit of a task.
+
+`--link` names folders of your project that git does not track, such as `deps`, `_build` or
+`node_modules`, separated by commas. Each is linked into the scratch copy, not copied. **A linked
+folder is shared with the project you pointed the script at:** a suite that writes there, such as
+a build of the base's code into `_build`, writes into your project. Point the script at a clone
+when your suite does that. Nothing is linked unless you name it.
+
+Your files, index, branches and stash are not touched, and the scratch copy is removed on every
+way out, an interrupt included. The script is run by hand. It is not a step of the ship gate and
+exits 0 whichever line it prints; `ship-check.sh` only names the command, as the last line of its
+evidence.
+
 ### Handing a task to an agent
 
 A task in the checked format already says everything an agent needs, so the brief is built by

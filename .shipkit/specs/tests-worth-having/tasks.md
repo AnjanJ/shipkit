@@ -60,7 +60,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 107, extended: the last line of `evidence.md` starts `Not run, a suggestion:` and holds `red-check.sh`, the slug and the base ref, and holds `--test` only when `ship-check.sh` was given one; standard output is still the scratch path and the six step lines; the file still has six `### ` headings
   - After: T7
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 107 `PASS`, exit 0; `gate-as-software/spec.md` carries a dated note under its REQ-11
-- [ ] **T9** `GUIDE.md` says what `red-check.sh` is for → REQ-44
+- [x] **T9** `GUIDE.md` says what `red-check.sh` is for → REQ-44
   - Files: GUIDE.md
   - Test: none: REQ-44 is prose, read against `GUIDE.md`
   - After: T8
