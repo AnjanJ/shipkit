@@ -70,7 +70,7 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - Test: scripts/smoke.sh check 133, extended: a row marked `cut YYYY-MM-DD` names a label `registry()` no longer prints or a case `scripts/evals-map.tsv` no longer lists, and a copy of the audit with a cut row whose label is still listed fails the check's own reading
   - After: T8
   - Done when: each cut has the owner's yes in the thread; `sh scripts/smoke.sh --no-model </dev/null` → check 133 `PASS`, exit 0; `sh plugins/shipkit/scripts/spec-check.sh .` → 0 gaps; `sh scripts/grader-check.sh` → 0 not as expected
-- [ ] **T10** The plan's release task holds the prune pass → REQ-34
+- [x] **T10** The plan's release task holds the prune pass → REQ-34
   - Files: docs/plans/verifier-sprint-plan.md
   - Test: none: REQ-34 is prose, read against the plan's "The release task"
   - After: T0

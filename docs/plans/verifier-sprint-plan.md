@@ -165,6 +165,12 @@ As the thinning plan wrote it, once, at the end of Sprint 35. The CHANGELOG's en
 how much was tested, and the reviewer is graded on real misses. By rule 28 the gates are judged by
 `v5.3.0`.
 
+From 5.4.0 on, every release also makes a prune pass before its paid runs (added 2026-11-20,
+`running-the-change` REQ-34): each row of `docs/design/trim-audit-checks.md` is brought up to
+date (the last release in which it failed on a real defect, what else covers it, its cost), its
+candidates go to the owner as one numbered list, and a check or case is cut only on the owner's
+yes, with its citations moved to a check that still proves the requirement.
+
 ---
 
 ## 2. Decisions the owner must approve
