@@ -60,7 +60,7 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - Test: none: REQ-28 and REQ-29 are prose, read against `design.md` and `GUIDE.md`
   - After: T6
   - Done when: the record "a separate script, and what it costs" in `design.md` gives `commit-gate.sh`'s time per call on a call that is not a commit, measured as the design's other four were (300 calls, the JSON for `ls -la`); `GUIDE.md` has a section on the commit gate with its three modes, `$SHIPKIT_HOME/commit-gate.log`, and the two `git log` lines from the design; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
-- [ ] **T8** The audit of every smoke check and eval case, held to the registry → REQ-30, REQ-31
+- [x] **T8** The audit of every smoke check and eval case, held to the registry → REQ-30, REQ-31
   - Files: docs/design/trim-audit-checks.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 133 (`trim-audit`): between `<!-- audit:begin -->` and `<!-- audit:end -->`, the audit has one row for each label `registry()` prints and each case `scripts/evals-map.tsv` lists, and no row without `cut YYYY-MM-DD` for anything else; each row's "last failed" cell is `X.Y.Z` or `never`, its "also covered by" cell is labels or cases or `nothing`, its cost is `<n> s` or `$<n>`; no trap-2 case's Candidate cell starts with `yes`; and on a copy of the audit with one row taken out, one cell put in the wrong form, or a trap-2 case marked `yes`, the check's own reading fails
   - After: T6

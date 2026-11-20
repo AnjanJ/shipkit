@@ -191,6 +191,7 @@ registry() { cat <<'EOF'
 130 verify-skills
 131 commit-gate
 132 commit-gate-hook
+133 trim-audit
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5831,6 +5832,49 @@ ch_c=$(printf '%s' "$ch_json" | (cd "$CH" && unset SHIPKIT_COMMIT_GATE; SHIPKIT_
   || ch_fail="$ch_fail [a staged .env with the gate unset: guard exit $ch_g (want 2), gate exit $ch_c (want 0), gate output $(head -c 80 "$CH/out"), log $([ -e "$CH/home" ] && echo written || echo none)]"
 if [ -z "$ch_fail" ]; then pass "commit-gate-hook (the Bash entry of PreToolUse runs guard-commit.sh then commit-gate.sh, timeout 5 each, both executable; with the gate unset a staged .env is still blocked by the guard and the gate adds nothing)"
 else failc "commit-gate-hook" "$ch_fail"; fi
+
+# 133. trim-audit: docs/design/trim-audit-checks.md has one row for every smoke check in
+# registry() and every case in scripts/evals-map.tsv, each cell in its form, no trap-2 case a
+# candidate, and a cut row only for what is gone (running-the-change T8, T9). A new check or case
+# without a row fails here, so the prune pass at each release starts from a complete list.
+# Cites: running-the-change/REQ-30 running-the-change/REQ-31 running-the-change/REQ-32
+TA="$WORK/trim-audit"; mkdir -p "$TA"; ta_fail=""
+TAF="$ROOT/docs/design/trim-audit-checks.md"
+{ registry | sed 's/^/smoke	/'; awk -F'\t' 'NR > 1 { print "eval\t" $1 }' "$ROOT/scripts/evals-map.tsv"; } > "$TA/listed"
+ta_read() {  # ta_read <audit file> → one line per problem; nothing when the audit holds
+  awk -F'\t' 'NR == FNR { listed[$1 "\t" $2] = 1; next }
+    /<!-- audit:begin -->/ { on = 1; next } /<!-- audit:end -->/ { on = 0; next }
+    !on || !/^\| / || /^\| Kind / || /^\|---/ { next }
+    { n = split($0, c, / \| /); sub(/^\| /, "", c[1]); sub(/ \|$/, "", c[n])
+      if (n != 7) { print "a row of " n " cells: " substr($0, 1, 60); next }
+      k = c[1]; l = c[2]; key = k "\t" l; seen[key] = 1
+      if (k != "smoke" && k != "eval") print "kind " k ": " l
+      if (c[3] !~ /^([0-9]+\.[0-9]+\.[0-9]+|never)$/) print "last failed " c[3] ": " l
+      if (c[4] == "") print "also covered by is empty: " l
+      if (c[5] !~ /^([0-9]+(\.[0-9]+)? s|\$[0-9]+(\.[0-9]+)?)$/) print "cost " c[5] ": " l
+      if (k == "eval" && l ~ /^trap2-/ && c[6] ~ /^yes/) print "a trap-2 case is a candidate: " l
+      if (c[7] != "" && c[7] !~ /^cut [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) print "cut " c[7] ": " l
+      if (key in listed && c[7] != "") print "cut but still listed: " l
+      if (!(key in listed) && c[7] == "") print "not listed and not cut: " l }
+    END { for (x in listed) if (!(x in seen)) { sub(/\t/, " ", x); print "no row: " x } }' "$TA/listed" "$1"
+}
+if [ ! -f "$TAF" ]; then
+  failc "trim-audit" "docs/design/trim-audit-checks.md does not exist (checks written first, by design)"
+else
+  ta_out=$(ta_read "$TAF")
+  [ -z "$ta_out" ] || ta_fail="$ta_fail [the audit: $(printf '%s\n' "$ta_out" | head -4 | tr '\n' '|')]"
+  [ "$(awk '/<!-- audit:begin -->/{on=1} on && /^\| (smoke|eval) \|/{n++} END{print n+0}' "$TAF")" -ge "$(grep -c . "$TA/listed")" ] \
+    || ta_fail="$ta_fail [fewer rows than checks and cases]"
+  # the reading itself fails on a broken copy: a row taken out, a cell in the wrong form, a trap-2 case marked yes
+  awk '!done && /^\| smoke \| / { done = 1; next } { print }' "$TAF" > "$TA/one-gone.md"
+  awk '/^\| smoke \| / && !done { n = split($0, c, / \| /); c[5] = "quick"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/bad-cost.md"
+  awk '/^\| eval \| trap2-/ && !done { n = split($0, c, / \| /); c[6] = "yes: full score, a script holds it"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/trap2-yes.md"
+  for ta_c in one-gone bad-cost trap2-yes; do
+    [ -n "$(ta_read "$TA/$ta_c.md")" ] || ta_fail="$ta_fail [the reading passes a broken copy: $ta_c]"
+  done
+  if [ -z "$ta_fail" ]; then pass "trim-audit (one row per smoke check and eval case, each cell in its form, no trap-2 case a candidate, a cut row only for what is gone; the reading fails on a copy with a row gone, a cost in the wrong form or a trap-2 case marked yes)"
+  else failc "trim-audit" "$ta_fail"; fi
+fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
