@@ -297,8 +297,15 @@ the gate's start overlaps the guard's.
 **Case against 1.** Every Bash call of every session starts one more process, even with the gate
 off. Measured on 2026-11-20 (macOS 27.2.1, arm64, 300 calls each, the hook's JSON for `ls -la`
 on stdin): `/usr/bin/true` 2.16 ms, `/bin/sh -c :` 4.12 ms, `guard-commit.sh` 6.54 ms and
-6.46 ms. A script of the guard's shape costs about 6.5 ms of process time per call. T2
-measures `commit-gate.sh` itself the same way and writes the number here.
+6.46 ms. A script of the guard's shape costs about 6.5 ms of process time per call.
+
+Measured for `commit-gate.sh` itself in T7 (2026-11-20, the same machine and method, load
+average 2.5): `/usr/bin/true` 1.57 ms, `/bin/sh -c :` 3.27 ms, `guard-commit.sh` 6.86 ms;
+`commit-gate.sh` with the gate unset **4.72 ms**, and with `SHIPKIT_COMMIT_GATE=off` set through
+`env` 5.03 ms; with it `observe`, on the same call that is not a commit, 7.34 ms through `env`.
+So the gate as it ships, off, adds about 1.5 ms over an empty shell to each Bash call: it drains
+its input with `read` and starts no process. Hooks run in parallel, so the wall time a Bash call
+waits grows by less than that.
 
 **Decision.** We chose 1.
 **Falsifiability.** We would reverse this if T2 measures `commit-gate.sh` above 15 ms per call

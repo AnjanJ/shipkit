@@ -55,7 +55,7 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - Test: scripts/smoke.sh check 132 (`commit-gate-hook`): `hooks.json` parses; the `PreToolUse` entry whose matcher is `Bash` lists exactly two commands, `guard-commit.sh` then `commit-gate.sh`, each with timeout 5; each resolves to an executable file in the copy; the guard's existing check (smoke `:696-742`) still passes; with `SHIPKIT_COMMIT_GATE` unset, the hook JSON of a commit that stages `.env` is still blocked by the guard and the gate adds nothing. `scripts/lint.py` changes only if it rejects a second command, and then only to accept it
   - After: T5
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 132 `PASS`, exit 0; `bash scripts/lint.sh` → 0 errors, 0 warnings; the always-on rules still 2,999 bytes
-- [ ] **T7** The gate's cost measured, and the guide's section → REQ-28, REQ-29
+- [x] **T7** The gate's cost measured, and the guide's section → REQ-28, REQ-29
   - Files: .shipkit/specs/running-the-change/design.md, GUIDE.md
   - Test: none: REQ-28 and REQ-29 are prose, read against `design.md` and `GUIDE.md`
   - After: T6

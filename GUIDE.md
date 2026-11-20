@@ -106,6 +106,7 @@ loaded (the session hook injects the rules); the path-scoped rules need
 | **Session hook** | Session start | Tells Claude the plugin root and version; injects `shipkit.md` everywhere and the two loop rules where the project has opted in (`.shipkit/` or installed rules), else one line naming the opt-in; prints one line if `PROJECT_MAP.md` or a spec has drifted from the code |
 | **Session briefing** | Session start, in a project with `.shipkit/` | At most eight lines: each open spec's progress and next task, spec-check gaps, the top goal, the last handoff's next step, a digest more than a week old. Silent when there is nothing to say |
 | **Commit guard** | Before every Bash call | Blocks a `git commit` when a staged file's name looks like a secret (`.env`, `.env.*` but not `.env.example`, `*.pem`, `*.key`, `id_rsa*`, `credentials*.json`). Names only, never contents; it does not see commits typed in your own terminal |
+| **Commit gate** | Before every Bash call | Off unless `SHIPKIT_COMMIT_GATE` is `observe` (logs a `git commit` whose message has no `Verified:` line) or `enforce` (blocks it, twice a session at most) — see [The commit gate](#the-commit-gate) |
 
 ### 🔵 Auto-invoked — Claude picks the right skill
 
@@ -1018,6 +1019,34 @@ Your files, index, branches and stash are not touched, and the scratch copy is r
 way out, an interrupt included. The script is run by hand. It is not a step of the ship gate and
 exits 0 whichever line it prints; `ship-check.sh` only names the command, as the last line of its
 evidence.
+
+### The commit gate
+
+A commit message can say how the change was checked in one line that a query can read:
+`Verified: tests (<command> → exit 0)`, `Verified: gate (<report file>)`,
+`Verified: brief-verify (<slug>/<task>)`, `Verified: ran (<the verify-run.sh line>)`, or
+`Verified: none (<reason>)`. Put it last, as a paragraph of its own: git reads it as a trailer
+only then. The commit gate, `commit-gate.sh`, runs before every Bash call beside the commit guard
+and looks for that line on a `git commit`. Its mode is the environment variable
+`SHIPKIT_COMMIT_GATE`:
+
+| Mode | An unstamped commit |
+|------|---------------------|
+| `off`, the default (any value but the two below) | Nothing happens. The gate reads nothing but its input and starts no process |
+| `observe` | Goes through, and adds a row to `~/.claude/shipkit/commit-gate.log` (`$SHIPKIT_HOME/commit-gate.log` when that is set): the time in UTC, the session, the mode, `unstamped` and the project directory, separated by tabs |
+| `enforce` | Is blocked with one line on how to stamp it, and a `blocked` row. After two blocks in one session the next one goes through with a `passed` row, so a session cannot get stuck |
+
+It sees only a message given on the command line, with `-m` or `--message`. A commit from a file
+(`-F`), an editor, `--no-edit` or your own terminal is never blocked; in `observe` and `enforce`
+it adds an `unseen` row. On any error of its own it lets the commit through. Set the variable for
+one command or one session, never in a shell profile: a profile turns it on in every window.
+
+To list each commit with its stamp, and the ones stamped `none`:
+
+```sh
+git log --format='%h %s%x09%(trailers:key=Verified,valueonly)'
+git log --format='%h %s' --grep='^Verified: none ('
+```
 
 ### Handing a task to an agent
 
