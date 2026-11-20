@@ -180,6 +180,7 @@ registry() { cat <<'EOF'
 119 checks-match
 120 escape-second
 121 briefing-commands
+122 kind-fixtures
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5146,6 +5147,65 @@ case "$(bn_v "" "" 230)" in "FAIL  briefing-commands"*"230 commands"*) ;; *) bn_
 case "$(bn_v true report 229)" in "PASS  briefing-commands"*"starts 229 commands"*) ;; *) bn_fail="$bn_fail [229 with CI=true and SMOKE_TIMING=report: not a PASS that carries the count]" ;; esac
 if [ -n "$bn_fail" ]; then failc "briefing-commands" "$bn_fail [50 specs: $bn_50 commands]"
 else bn_verdict "$bn_50" "$bn_same"; fi
+
+# 122. kind-fixtures: which kind of test proves which requirement is measured before any text
+# says so (the verifier plan's V16, "measure first"). scripts/kind-probe.sh writes the project the
+# measurement runs on: an accepted spec, `passbook`, whose three requirements have three shapes
+# (something that never happens, a round trip, a replacement that behaves as before), a design and
+# no task list. It prints the headless commands and starts one only with its run flag, which this
+# check never gives. A stand-in first on the PATH shows that no model is called.
+# Cites: tests-worth-having/REQ-1 tests-worth-having/REQ-2 tests-worth-having/REQ-3 tests-worth-having/REQ-4 tests-worth-having/REQ-5 tests-worth-having/REQ-20
+KP="$WORK/kind-probe"; mkdir -p "$KP/bin" "$KP/tmp"; kp_fail=""
+kp_sh="$ROOT/scripts/kind-probe.sh"
+printf '#!/bin/sh\ntouch "%s/claude-called"\nexit 1\n' "$KP" > "$KP/bin/claude"; chmod +x "$KP/bin/claude"
+kp() { PATH="$KP/bin:$PATH" TMPDIR="$KP/tmp" sh "$kp_sh" "$@"; }
+kp_tree() { find "$KP" -not -path '*/__pycache__*' | sort; }
+kp --scaffold kinds "$KP/kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] || kp_fail="$kp_fail [--scaffold kinds: exit $kp_rc]"
+[ "$(git -C "$KP/kinds" rev-list --count HEAD 2>/dev/null)" = 1 ] && [ -z "$(git -C "$KP/kinds" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [kinds: not one commit with a clean tree]"
+kp_spec="$KP/kinds/.shipkit/specs/passbook"
+grep -q '^> Spec accepted at commit ' "$kp_spec/spec.md" 2>/dev/null && grep -qx '> Status: open' "$kp_spec/spec.md" 2>/dev/null \
+  && [ -f "$kp_spec/design.md" ] || kp_fail="$kp_fail [kinds: the spec lacks its stamp, Status: open or design.md]"
+[ -e "$kp_spec/tasks.md" ] && kp_fail="$kp_fail [kinds: the spec already has a tasks.md]"
+[ "$(grep -c '^- \*\*REQ-[0-9][0-9]*\.\*\*' "$kp_spec/spec.md" 2>/dev/null)" = 3 ] || kp_fail="$kp_fail [kinds: not three requirements]"
+kp_req() { grep "^- \\*\\*REQ-$1\\.\\*\\*" "$kp_spec/spec.md" 2>/dev/null | grep -qF "$2" || kp_fail="$kp_fail [kinds: REQ-$1 does not hold \"$2\"]"; }
+kp_req 1 'the balance shall never be negative'
+kp_req 2 'an exported file shall import to the same records'
+kp_req 3 'after the move to the new parser, every stored document shall render as before'
+kp_cmd=$(sh "$COPY/scripts/test-command.sh" "$KP/kinds" 2>/dev/null)
+[ -n "$kp_cmd" ] && (cd "$KP/kinds" && sh -c "$kp_cmd") >/dev/null 2>&1 \
+  || kp_fail="$kp_fail [kinds: no recorded test command, or it does not exit 0: ${kp_cmd:-none}]"
+kp_head=$(git -C "$KP/kinds" rev-parse HEAD 2>/dev/null)
+kp --scaffold kinds "$KP/kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 2 ] && [ "$(git -C "$KP/kinds" rev-parse HEAD 2>/dev/null)" = "$kp_head" ] && [ -z "$(git -C "$KP/kinds" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [--scaffold into the fixture again: exit $kp_rc, not 2, or the tree changed]"
+mkdir -p "$KP/held"; echo kept > "$KP/held/note.txt"
+kp --scaffold kinds "$KP/held" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 2 ] && [ "$(ls -A "$KP/held" | tr '\n' ' ')" = "note.txt " ] \
+  || kp_fail="$kp_fail [--scaffold into a directory that holds a file: exit $kp_rc, not 2, or something was written]"
+kp_before=$(kp_tree)
+kp_out=$(cd "$KP" && kp --run kinds 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out" | grep -c .)" = 5 ] && [ "$(printf '%s\n' "$kp_out" | grep -cF '/shipkit:spec passbook tasks')" = 5 ] \
+  || kp_fail="$kp_fail [--run kinds: exit $kp_rc, or not 5 lines that each hold the request]"
+kp_out2=$(cd "$KP" && kp --run kinds 2 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out2" | grep -c .)" = 2 ] && [ "$(printf '%s\n' "$kp_out2" | grep -cF '/shipkit:spec passbook tasks')" = 2 ] \
+  || kp_fail="$kp_fail [--run kinds 2: exit $kp_rc, or not 2 lines that each hold the request]"
+[ "$(kp_tree)" = "$kp_before" ] || kp_fail="$kp_fail [--run without its flag wrote a file]"
+kp_bad() {  # kp_bad <what> <args>...: usage on standard error, nothing on standard output, exit 2
+  kp_what=$1; shift
+  kp_o=$(kp "$@" 2>"$KP/err"); kp_rc=$?
+  [ "$kp_rc" -eq 2 ] && [ -z "$kp_o" ] && grep -qF 'kind-probe.sh --scaffold' "$KP/err" \
+    || kp_fail="$kp_fail [$kp_what: exit $kp_rc, not 2 with the usage on standard error]"
+}
+kp_bad "an unknown mode" --frobnicate
+kp_bad "no arguments"
+kp_bad "an unknown fixture to --scaffold" --scaffold nosuch "$KP/nosuch"
+kp_bad "an unknown fixture to --run" --run nosuch
+[ -e "$KP/nosuch" ] && kp_fail="$kp_fail [an unknown fixture still made its directory]"
+[ -e "$KP/claude-called" ] && kp_fail="$kp_fail [a model was called]"
+if [ -z "$kp_fail" ]; then pass "kind-fixtures (kind-probe.sh scaffolds the passbook spec with its three requirements, a design and no task list, and a passing test command; prints 5 commands, or the number asked for, and starts none)"
+else failc "kind-fixtures" "$kp_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

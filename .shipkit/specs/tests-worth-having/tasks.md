@@ -15,7 +15,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: none: REQ-45 to REQ-47 are prose, read against `design.md`
   - After: none
   - Done when: `design.md` holds W1 to W5, each naming what it waits on, and a record for each of V16, V17 and V18 with its reversal event; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
-- [ ] **T1** `kind-probe.sh`: the kinds fixture, and the commands printed and not run → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-20
+- [x] **T1** `kind-probe.sh`: the kinds fixture, and the commands printed and not run → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-20
   - Files: scripts/kind-probe.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 122 (`kind-fixtures`): `--scaffold kinds` into an empty directory leaves one commit and a clean tree, a spec `passbook` with a stamp, `Status: open` and a `design.md`, no `tasks.md`, and exactly three requirements holding the three sentences; the recorded test command exits 0 there; a second scaffold into the same directory exits 2 and changes nothing; `--run kinds` prints 5 lines and `--run kinds 2` prints 2, each holding `/shipkit:spec passbook tasks`, writes no file and never calls a stand-in `claude` put first on the `PATH`; an unknown mode and an unknown fixture name each print the usage on standard error and exit 2
   - After: T0
