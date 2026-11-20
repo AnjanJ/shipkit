@@ -34,6 +34,11 @@
 #       and right or missed. Then a TOTAL line for each requirement. A tag at the start of a
 #       Test: line, [e2e], [property] or [differential], settles that line; without one, a
 #       kind is named by one of its words (design.md, "The reader's words"). No model call.
+#   kind-probe.sh --read-plan <file>...
+#       For each migration plan print two tab-separated fields: the file's path, and
+#       differential when one block of the plan (the lines between two blank lines) holds a
+#       step that runs the old and the new version on the same inputs and compares them, or
+#       none. No model call.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 NOTE='This run is not interactive: you cannot ask me anything.'
@@ -579,9 +584,38 @@ def read(top):
     return 0
 
 
+ALONE = ["differential", "characterization", "characterisation", "golden"]
+BOTH = ["old and new", "old and the new", "both versions", "1.4 and 2.0"]
+SAME = ["same input", "same inputs", "compare", "identical"]
+
+
+def has_differential_step(text):
+    """One block holds the step: a word that says it alone, or the two versions named together
+    with the same inputs or a comparison."""
+    for block in re.split(r"\n[ \t]*\n", text.lower()):
+        if any(w in block for w in ALONE):
+            return True
+        if any(w in block for w in BOTH) and any(w in block for w in SAME):
+            return True
+    return False
+
+
+def read_plans(paths):
+    for path in paths:
+        if not os.path.isfile(path):
+            sys.stderr.write("kind-probe: no such file: %s\n" % path)
+            return 2
+    for path in paths:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            print("%s\t%s" % (path, "differential" if has_differential_step(f.read()) else "none"))
+    return 0
+
+
 mode, args = sys.argv[1], sys.argv[2:]
 if mode == "read":
     sys.exit(read(args[0]))
+if mode == "plan":
+    sys.exit(read_plans(args))
 PYEOF
 }
 
@@ -589,6 +623,9 @@ case "${1:-}" in
   --read)
     [ $# -eq 2 ] || usage
     py read "$2" ;;
+  --read-plan)
+    shift; [ $# -ge 1 ] || usage
+    py plan "$@" ;;
   --scaffold)
     [ $# -eq 3 ] || usage
     scaffold "$2" "$3" ;;

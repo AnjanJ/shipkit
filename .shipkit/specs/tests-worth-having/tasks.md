@@ -30,7 +30,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 123 (`kind-reader`): on `scripts/kind-replies/`, `--read` prints three tab-separated lines for each of the six `tasks.md` files, in path order, and they are the eighteen lines of the table in `design.md`, "The eight files written by hand"; then `TOTAL REQ-1 right=4 missed=2`, `TOTAL REQ-2 right=5 missed=1` and `TOTAL REQ-3 right=4 missed=2`
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 123 `PASS`, exit 0
-- [ ] **T4** `--read-plan`, and two plans written by hand → REQ-18, REQ-19
+- [x] **T4** `--read-plan`, and two plans written by hand → REQ-18, REQ-19
   - Files: scripts/kind-probe.sh, scripts/kind-replies/, scripts/smoke.sh
   - Test: scripts/smoke.sh check 123, extended: `--read-plan` on `plan-differential.md` and `plan-none.md` prints two tab-separated lines, the first ending `differential` and the second `none`; a file that does not exist is a line on standard error and exit 2
   - After: T3

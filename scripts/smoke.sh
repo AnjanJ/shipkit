@@ -5261,8 +5261,11 @@ else failc "kind-fixtures" "$kp_fail"; fi
 # start of the line settles it; without one a short list of words does. Six task lists written
 # by hand, two for each kind, are kept in scripts/kind-replies/: one that names the kind and one
 # that does not. A seventh, made here, has a ticked task whose header runs over two lines, a tag
-# in capitals and words in capitals.
-# Cites: tests-worth-having/REQ-7 tests-worth-having/REQ-8 tests-worth-having/REQ-9 tests-worth-having/REQ-10 tests-worth-having/REQ-11 tests-worth-having/REQ-12 tests-worth-having/REQ-13 tests-worth-having/REQ-14
+# in capitals and words in capitals. --read-plan says whether a migration plan holds a step that
+# runs the old and the new version on the same inputs and compares them: the words must be in one
+# block of the plan, and two plans written by hand, one with such a step and one without, are kept
+# beside the task lists.
+# Cites: tests-worth-having/REQ-7 tests-worth-having/REQ-8 tests-worth-having/REQ-9 tests-worth-having/REQ-10 tests-worth-having/REQ-11 tests-worth-having/REQ-12 tests-worth-having/REQ-13 tests-worth-having/REQ-14 tests-worth-having/REQ-18 tests-worth-having/REQ-19
 KR="$WORK/kind-reader"; mkdir -p "$KR/one"; kr_fail=""
 kr_sh="$ROOT/scripts/kind-probe.sh"
 kr_want=$(tr '|' '\t' <<'KREOF'
@@ -5312,7 +5315,19 @@ kr_one=$(sh "$kr_sh" --read "$KR/one" 2>&1 | tr '\t\n' ' |')
   || kr_fail="$kr_fail [--read on a ticked task with a wrapped header, a tag and words in capitals: $kr_one]"
 kr_none=$(sh "$kr_sh" --read "$KR/no-such-directory" 2>"$KR/err"); kr_rc=$?
 [ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read on a directory that is not there: exit $kr_rc, not 2 with a line on standard error]"
-if [ -z "$kr_fail" ]; then pass "kind-reader (--read gives the eighteen lines and three totals expected of the six hand-written task lists: a tag settles a line, words name a kind without one, two kinds are joined, a requirement no task cites is uncited, and either kind is right for the round trip)"
+kr_plans=$(cd "$ROOT/scripts/kind-replies" && sh "$kr_sh" --read-plan plan-differential.md plan-none.md 2>&1 | tr '\t\n' ' |'); kr_rc=$?
+[ "$kr_plans" = "plan-differential.md differential|plan-none.md none|" ] \
+  || kr_fail="$kr_fail [--read-plan on the two hand-written plans: $kr_plans]"
+printf 'Step 1: add tests.\n\nStep 2: run both versions on the SAME INPUTS and keep the output.\n' > "$KR/a.md"
+printf 'Step 1: keep the old and new library side by side.\n\nStep 2: compare the notes by eye.\n' > "$KR/b.md"
+printf 'Step 1: record golden output before the upgrade.\n' > "$KR/c.md"
+: > "$KR/d.md"
+kr_plans=$(cd "$KR" && sh "$kr_sh" --read-plan a.md b.md c.md d.md 2>&1 | tr '\t\n' ' |')
+[ "$kr_plans" = "a.md differential|b.md none|c.md differential|d.md none|" ] \
+  || kr_fail="$kr_fail [--read-plan: both phrases in one block, the phrases in two blocks, one word alone, an empty file: $kr_plans]"
+kr_none=$(cd "$KR" && sh "$kr_sh" --read-plan a.md no-such-plan.md 2>"$KR/err"); kr_rc=$?
+[ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read-plan with a file that is not there: exit $kr_rc, not 2 with nothing printed and a line on standard error]"
+if [ -z "$kr_fail" ]; then pass "kind-reader (--read gives the eighteen lines and three totals expected of the six hand-written task lists: a tag settles a line, words name a kind without one, two kinds are joined, a requirement no task cites is uncited, and either kind is right for the round trip; --read-plan finds a differential step only where one block of the plan holds it)"
 else failc "kind-reader" "$kr_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
