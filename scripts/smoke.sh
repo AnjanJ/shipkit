@@ -184,6 +184,7 @@ registry() { cat <<'EOF'
 123 kind-reader
 124 prop
 125 prop-ci
+126 red-check
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5403,6 +5404,95 @@ sed "s/hypothesis==$pc_ver/hypothesis==0.0.1/" "$ROOT/.github/workflows/lint.yml
   || pc_fail="$pc_fail [a workflow that installs another version reads: $(pc_read "$PC/other.yml" | tr '\n' ';')]"
 if [ -z "$pc_fail" ]; then pass "prop-ci (both CI jobs install Hypothesis $pc_ver, the version prop.py is written for, and run prop.py; a workflow without one job's step, or with another version, is read as lacking it)"
 else failc "prop-ci" "$pc_fail"; fi
+
+# 126. red-check: nothing showed that a new test was ever red. red-check.sh runs the project's
+# suite on a scratch worktree of the base ref, once as the base has it and once with the
+# branch's citing test files copied in. A test that needs the feature fails there (RED-AT-BASE);
+# one that asserts nothing passes (GREEN-AT-BASE); a base that cannot run its own suite is said
+# so and not judged (BASE-NOT-RUNNABLE); and with no citing test that differs from the base
+# nothing is run (NO-TESTS). It is run by hand, exits 0 whatever the word, and leaves the
+# project and git as they were, also when it is stopped half way. The scratch project's suite is
+# a shell script, so the check needs no language but sh.
+# Cites: tests-worth-having/REQ-32 tests-worth-having/REQ-33 tests-worth-having/REQ-34 tests-worth-having/REQ-35 tests-worth-having/REQ-36 tests-worth-having/REQ-37 tests-worth-having/REQ-38 tests-worth-having/REQ-39 tests-worth-having/REQ-40 tests-worth-having/REQ-41 tests-worth-having/REQ-42
+RC="$WORK/red-check"; mkdir -p "$RC/p/tests" "$RC/p/deps" "$RC/tmp" "$RC/plain"; rc_fail=""
+rc_sh="$COPY/scripts/red-check.sh"
+rc_git() { git -C "$RC/p" -c user.email=s@s -c user.name=smoke -c commit.gpgsign=false "$@"; }
+rc_spec() {  # rc_spec <slug> [<a line under the stamp>]: a spec with two requirements
+  mkdir -p "$RC/p/.shipkit/specs/$1"
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n' "$1"
+    [ -z "$2" ] || printf '%s\n' "$2"
+    printf '\n## Requirements (EARS)\n- **REQ-1.** The thing shall shout.\n- **REQ-2.** The thing shall stay.\n'; } > "$RC/p/.shipkit/specs/$1/spec.md"
+}
+(cd "$RC/p" && git init -q)
+printf 'greet() { echo hello; }\n' > "$RC/p/lib.sh"
+printf '[ -z "$RC_COUNT" ] || echo run >> "$RC_COUNT"\necho "suite: running"\nfor t in tests/*.sh; do sh "$t" || exit 1; done\n' > "$RC/p/run-tests.sh"
+printf '# old/REQ-1\n. ./lib.sh\n[ "$(greet)" = hello ]\n' > "$RC/p/tests/base.sh"
+printf 'deps/\n.claude/\n' > "$RC/p/.gitignore"
+printf 'helper\n' > "$RC/p/deps/helper.sh"
+rc_spec old
+rc_git add -A >/dev/null 2>&1; rc_git commit -q -m base >/dev/null 2>&1; rc_git branch base >/dev/null 2>&1
+printf '# feat/REQ-1 is cited here too, outside the tests\ngreet() { echo hello; }\nshout() { echo HELLO; }\n' > "$RC/p/lib.sh"
+printf '# feat/REQ-1\n. ./lib.sh\n[ "$(shout)" = HELLO ]\n' > "$RC/p/tests/feat.sh"
+printf '# vac/REQ-1\ntrue\n' > "$RC/p/tests/vacuous.sh"
+rc_spec feat '> Tests: tests/'; rc_spec vac; rc_spec none
+rc_git add -A >/dev/null 2>&1; rc_git commit -q -m feature >/dev/null 2>&1
+git -C "$RC/p" worktree add -q "$RC/theirs" base >/dev/null 2>&1
+rc_run() { TMPDIR="$RC/tmp" RC_COUNT="$RC/count" sh "$rc_sh" "$@"; }
+rc_runs() { grep -c . "$RC/count" 2>/dev/null || true; }
+rc_state() { rc_git status --porcelain; rc_git branch; rc_git stash list; rc_git worktree list; rc_git rev-parse HEAD; }
+rc_clean() { [ -z "$(ls -A "$RC/tmp")" ] || rc_fail="$rc_fail [$1: something is left in the temporary directory: $(ls -A "$RC/tmp" | tr '\n' ' ')]"; }
+rc_is() {  # rc_is <what> <want on standard output, lines joined by |> <want exit> <args>...
+  rc_what=$1; rc_want=$2; rc_code=$3; shift 3
+  rc_out=$(rc_run "$@" 2>"$RC/err" | tr '\n' '|'); rc_out_rc=$(rc_run "$@" >/dev/null 2>&1; echo $?)
+  [ "$rc_out" = "$rc_want" ] && [ "$rc_out_rc" = "$rc_code" ] \
+    || rc_fail="$rc_fail [$rc_what: \"$rc_out\" exit $rc_out_rc, want \"$rc_want\" exit $rc_code; standard error: $(sed -n 1,2p "$RC/err" | tr '\n' '|' | cut -c1-160)]"
+  rc_clean "$rc_what"
+}
+rc_before=$(rc_state)
+: > "$RC/count"
+rc_is "a test that needs the feature" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'sh run-tests.sh'
+[ "$(rc_runs)" = 4 ] || rc_fail="$rc_fail [a red reading took $(rc_runs) runs of the suite over two calls, not 4]"
+grep -q '^suite: running$' "$RC/err" || rc_fail="$rc_fail [the suite's output is not on standard error]"
+rc_is "a test that asserts nothing" "TEST tests/vacuous.sh|GREEN-AT-BASE tests/vacuous.sh|" 0 "$RC/p" vac base --test 'sh run-tests.sh'
+: > "$RC/count"
+rc_is "a suite that fails at the base" "TEST tests/feat.sh|BASE-NOT-RUNNABLE|" 0 "$RC/p" feat base --test 'echo run >> "$RC_COUNT"; false'
+[ "$(rc_runs)" = 2 ] || rc_fail="$rc_fail [a base that cannot run was run $(rc_runs) times over two calls, not 2]"
+: > "$RC/count"
+rc_is "a spec no file cites" "NO-TESTS|" 0 "$RC/p" none base --test 'sh run-tests.sh'
+rc_is "a citing test the branch did not touch" "NO-TESTS|" 0 "$RC/p" old base --test 'sh run-tests.sh'
+[ "$(rc_runs)" = 0 ] || rc_fail="$rc_fail [with no test to judge the suite was still run]"
+sh "$COPY/scripts/spec-check.sh" "$RC/p" feat 2>/dev/null | grep -qx 'CITED-ELSEWHERE feat REQ-1 lib.sh' \
+  || rc_fail="$rc_fail [spec-check.sh does not call lib.sh CITED-ELSEWHERE, so the two searches are not compared]"
+printf '# feat/REQ-2\n. ./lib.sh\n[ "$(shout)" = HELLO ]\n' > "$RC/p/tests/new.sh"
+rc_is "an untracked citing test" "TEST tests/feat.sh|TEST tests/new.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'sh run-tests.sh'
+rm -f "$RC/p/tests/new.sh"
+rc_is "no test command at all" "" 2 "$RC/p" feat base
+sh "$COPY/scripts/test-command.sh" "$RC/p" --record 'sh run-tests.sh' >/dev/null 2>&1
+rc_is "the recorded test command" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base
+rc_is "a suite that needs a folder git does not track, without --link" "TEST tests/feat.sh|BASE-NOT-RUNNABLE|" 0 "$RC/p" feat base --test 'test -L deps && sh run-tests.sh'
+rc_is "the same with --link" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'test -L deps && test -f deps/helper.sh && sh run-tests.sh' --link deps
+[ -f "$RC/p/deps/helper.sh" ] && [ ! -L "$RC/p/deps" ] || rc_fail="$rc_fail [--link: the project's own folder was removed or replaced]"
+rc_is "--link with a file" "" 2 "$RC/p" feat base --test true --link run-tests.sh
+rc_is "--link with a folder git tracks at the base" "" 2 "$RC/p" feat base --test true --link tests
+rc_is "--link with a name that is not there" "" 2 "$RC/p" feat base --test true --link nosuch
+rc_is "no arguments" "" 2
+rc_is "an unknown ref" "" 2 "$RC/p" feat no-such-ref --test true
+rc_is "a directory that is no repository" "" 2 "$RC/plain" feat base --test true
+rc_is "an unknown slug" "" 2 "$RC/p" no-such-spec base --test true
+rc_is "an unknown option" "" 2 "$RC/p" feat base --frobnicate
+# Stopped half way: the suite sleeps, the script gets TERM, and nothing of it is left.
+TMPDIR="$RC/tmp" sh "$rc_sh" "$RC/p" feat base --test 'sleep 30' > "$RC/sig.out" 2>/dev/null &
+rc_pid=$!; rc_i=0
+while [ "$rc_i" -lt 100 ] && ! ls "$RC/tmp"/shipkit-red.*/tree/run-tests.sh >/dev/null 2>&1; do sleep 0.1; rc_i=$((rc_i + 1)); done
+ls "$RC/tmp"/shipkit-red.*/tree/run-tests.sh >/dev/null 2>&1 || rc_fail="$rc_fail [stopped half way: the scratch tree never appeared]"
+kill -TERM "$rc_pid" 2>/dev/null; wait "$rc_pid" 2>/dev/null; rc_code=$?
+[ "$rc_code" -eq 130 ] && [ "$(tr '\n' '|' < "$RC/sig.out")" = "TEST tests/feat.sh|" ] \
+  || rc_fail="$rc_fail [stopped half way: exit $rc_code, not 130 with the TEST line and no word after it: $(tr '\n' '|' < "$RC/sig.out")]"
+rc_clean "stopped half way"
+[ "$(rc_state)" = "$rc_before" ] || rc_fail="$rc_fail [git reads differently after the runs: $(rc_state | tr '\n' '|' | cut -c1-300)]"
+[ -f "$RC/theirs/lib.sh" ] || rc_fail="$rc_fail [a worktree the check made was removed]"
+if [ -z "$rc_fail" ]; then pass "red-check (a test that needs the feature is RED-AT-BASE, one that asserts nothing GREEN-AT-BASE, a base that cannot run BASE-NOT-RUNNABLE after one run, no differing citing test NO-TESTS with no run; the citing files are spec-check.sh's, untracked ones too; --link shares only the folders named; every other call is exit 2 with no word; the project, git and a worktree of the check's own are as they were, also after TERM)"
+else failc "red-check" "$rc_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
