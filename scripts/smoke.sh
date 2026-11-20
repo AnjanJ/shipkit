@@ -5511,15 +5511,17 @@ else failc "red-check" "$rc_fail"; fi
 # 127. brief-escapes: brief.sh printed a task's Test and Done when lines with echo, and sh reads
 # escapes there: a \n became a line break, a \t a tab, \\ one backslash and \b a backspace byte
 # (found 2026-11-20, tests-worth-having's "Found on the way"). The agent got a command that was
-# not the one in tasks.md. Both lines now come out as written, byte for byte.
-# Cites: tests-worth-having/REQ-51
+# not the one in tasks.md. Both lines now come out as written, byte for byte, and so does the
+# title line at the top of the brief, which was printed with echo too.
+# Cites: tests-worth-having/REQ-51 tests-worth-having/REQ-52
 BE="$WORK/brief-escapes"; mkdir -p "$BE/.shipkit/specs/esc"; be_fail=""
 be_test='tests/t.sh: printf '"'"'one\ntwo\tthree\\four'"'"' and grep -E '"'"'\bword\b'"'"''
 be_done='`sh run.sh` prints a\nb and \c stops nothing'
+be_title='Copy a\tb, c\\d and \c'
 { printf '# Spec: Esc\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n'
   printf '## Purpose\nA line is copied as written.\n\n## Requirements (EARS)\n- **REQ-1.** The thing shall copy.\n\n## Out of scope\nNothing.\n'
 } > "$BE/.shipkit/specs/esc/spec.md"
-{ printf '# Tasks: Esc\n\n- [ ] **T1** Copy → REQ-1\n  - Files: app.sh\n'
+{ printf '# Tasks: Esc\n\n- [ ] **T1** %s → REQ-1\n  - Files: app.sh\n' "$be_title"
   printf '  - Test: %s\n  - After: none\n  - Done when: %s\n' "$be_test" "$be_done"
 } > "$BE/.shipkit/specs/esc/tasks.md"
 be_out=$(sh "$COPY/scripts/brief.sh" "$BE" esc T1 2>/dev/null; echo "exit $?")
@@ -5532,8 +5534,10 @@ be_d=$(printf '%s\n' "$be_prove" | grep -c '^- Done when: ')
   || be_fail="$be_fail [the Done when line is not the task's, byte for byte: $(printf '%s\n' "$be_prove" | grep -A1 '^- Done when: ' | tr '\n' '|')]"
 [ "$be_t" = 1 ] && [ "$be_d" = 1 ] && [ "$(printf '%s\n' "$be_prove" | grep -c .)" = 3 ] \
   || be_fail="$be_fail [Prove it with holds $(printf '%s\n' "$be_prove" | grep -c .) lines, not 3]"
+[ "$(printf '%s\n' "$be_out" | sed -n 1p)" = "# Brief: esc / T1 — $be_title" ] \
+  || be_fail="$be_fail [the title line is not the task's title, byte for byte: $(printf '%s\n' "$be_out" | sed -n 1,2p | tr '\n' '|')]"
 printf '%s\n' "$be_out" | tail -1 | grep -qx 'exit 0' || be_fail="$be_fail [brief.sh: $(printf '%s\n' "$be_out" | tail -1)]"
-if [ -z "$be_fail" ]; then pass "brief-escapes (a task's Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
+if [ -z "$be_fail" ]; then pass "brief-escapes (a task's title, Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
 else failc "brief-escapes" "$be_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

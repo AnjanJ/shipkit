@@ -232,6 +232,8 @@ Found on the way (added 2026-11-20 on the owner's yes, after acceptance):
 
 - **REQ-51.** The `Test` and `Done when` lines that `brief.sh` prints under "Prove it with" shall
   be the task's own text in `tasks.md`, byte for byte, also when it holds a backslash.
+- **REQ-52.** The title line that `brief.sh` prints first shall hold the task's title as
+  `tasks.md` has it, byte for byte, also when it holds a backslash.
 
 ## A requirement of `gate-as-software` that this spec amends
 

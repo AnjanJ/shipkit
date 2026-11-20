@@ -85,6 +85,11 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 127 (`brief-escapes`): a task whose `Test` line holds `\n`, `\t`, `\\` and `\b` and whose `Done when` line holds `\n` and `\c` gives a brief whose "Prove it with" holds those two lines byte for byte and three lines in all; `brief.sh` exits 0
   - After: T9
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 71 and 127 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/brief.sh` → no output
+- [x] **T13** `brief.sh` copies a task's title as written → REQ-52
+  - Files: plugins/shipkit/scripts/brief.sh, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 127 (`brief-escapes`), extended: a task whose title holds `\t`, `\\` and `\c` gives a brief whose first line is `# Brief: <slug> / <task> — ` and that title, byte for byte
+  - After: T12
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 71 and 127 `PASS`, exit 0; `git grep -n 'echo "' plugins/shipkit/scripts/brief.sh` finds no line that prints task text
 
 ## The sprint's exit checklist (2026-11-20, at the commit after T9's)
 
@@ -118,4 +123,5 @@ Not fixed here; each goes to the sprint's pull request.
   is exact, which is what REQ-25 holds. None of the five properties reads these two lines. The
   fix is `printf '%s\n'` in a shipped script outside this sprint's files, so it is put to the
   owner. Fixed on the owner's yes (2026-11-20): T12, REQ-51, check 127. The
-  title line (`brief.sh:137`) is printed with `echo` too and is left as it was.
+  title line (`brief.sh:137`), printed with `echo` too, is fixed by T13 and REQ-52, also on the
+  owner's yes.

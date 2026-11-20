@@ -134,7 +134,7 @@ if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   [ "$DIRTY" -gt 0 ] && echo "brief: $DIRTY file(s) already differ from HEAD; brief-verify will count them" >&2
 fi
 
-echo "# Brief: $SLUG / $TASK — $(task title)"
+printf '%s\n' "# Brief: $SLUG / $TASK — $(task title)"
 echo
 echo "## Goal"
 section "$SPEC" "Purpose"
