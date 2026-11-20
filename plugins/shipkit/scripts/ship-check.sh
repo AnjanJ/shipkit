@@ -47,6 +47,12 @@
 #
 # Every step runs, even after one has failed: the report must show the whole picture.
 #
+# After the last block, one line: "Not run, a suggestion: " and the red-check.sh command for
+# the same project, slug and base, with --test when this script was given one. red-check.sh
+# shows whether the spec's new tests fail on the tree without the feature. Nothing runs it
+# here: it is read by hand until a real run has shown its verdict to be right
+# (.shipkit/specs/tests-worth-having/design.md, "run by hand, and every verdict exits 0").
+#
 # --clean <scratch-dir> removes a scratch directory, and only one this script made: its name
 # must fit the template and its evidence.md must start with this script's own first line.
 #
@@ -215,5 +221,15 @@ if [ "$n" -gt 0 ]; then r=FAIL; why="$n decision(s) fired; the first: $(grep '^F
 else r=PASS; why="no FIRED line"; fi
 block 8 "Decisions fired" "\`sh <plugin root>/scripts/decision-check.sh . --run\` → exit $rc" \
   "$S/decisions.out" "(no output)" "$r" "$why"
+
+# --- not a step: the red-check.sh command, named and not run ------------------------------
+# One line after the last block. It starts with neither "### " nor "result:", so the blocks
+# are counted as before, and standard output is not touched. A test command is written inside
+# single quotes, with a quote of its own as '\'', so that the line can be pasted.
+sug="Not run, a suggestion: sh \"<plugin root>/scripts/red-check.sh\" . $SLUG $BASE"
+if [ "$HAVE_TEST" -eq 1 ]; then
+  sug="$sug --test '$(printf '%s' "$TESTCMD" | sed "s/'/'\\\\''/g")'"
+fi
+printf '\n%s\n' "$sug" >> "$EV"
 
 exit $fail

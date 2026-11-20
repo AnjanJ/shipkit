@@ -3952,6 +3952,7 @@ else failc "test-command" "$tc_fail"; fi
 # gate-as-software/REQ-12 gate-as-software/REQ-13 gate-as-software/REQ-14 gate-as-software/REQ-15
 # gate-as-software/REQ-16 gate-as-software/REQ-17 gate-as-software/REQ-18 gate-as-software/REQ-19
 # gate-as-software/REQ-20 gate-as-software/REQ-21 gate-as-software/REQ-22 gate-as-software/REQ-23
+# tests-worth-having/REQ-43
 SK="$WORK/sck"; mkdir -p "$SK/base" "$SK/tmp" "$SK/tmp-h" "$SK/bin"
 (cd "$SK/base" && bash "$COPY/evals/reviewer/all-met/fixture.sh" >/dev/null 2>&1)
 printf '#!/bin/sh\necho called >> "%s"\n' "$SK/claude.log" > "$SK/bin/claude"; chmod +x "$SK/bin/claude"
@@ -3977,6 +3978,8 @@ grep -q '^Requirements changed on this branch:$' "$sk_ev" 2>/dev/null && grep -q
 grep -qF '`python3 -m unittest discover -s tests` → exit 0' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 2's command and exit status are not in its block]"
 grep -q 'no migration in the diff' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 5 does not say there is no migration]"
 [ "$(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null)" = 6 ] || sk_fail="$sk_fail [a: $(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null) result: PASS lines, want 6]"
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = "Not run, a suggestion: sh \"<plugin root>/scripts/red-check.sh\" . refunds base --test '$SK_T'" ] \
+  || sk_fail="$sk_fail [a: evidence.md does not end with the red-check.sh command and the test command given: $(sed -n '$p' "$sk_ev" 2>/dev/null)]"
 # b. one task unticked: step 3 fails and names the line; exit 1
 cp -R "$SK/base" "$SK/b"
 sed 's/^- \[x\] \*\*T3\*\*/- [ ] **T3**/' "$SK/b/.shipkit/specs/refunds/tasks.md" > "$SK/b.tasks" && cp "$SK/b.tasks" "$SK/b/.shipkit/specs/refunds/tasks.md"
@@ -4036,10 +4039,20 @@ sh "$SKS" --clean "$SK/other" >/dev/null 2>&1; sk_rc=$?
 sh "$SKS" --clean "$SK/tmp/shipkit-ship.zzzzzz" >/dev/null 2>&1; sk_rc2=$?
 [ "$sk_rc" -eq 1 ] && [ "$sk_rc2" -eq 1 ] && [ -f "$SK/other/evidence.md" ] && [ -f "$SK/tmp/shipkit-ship.zzzzzz/evidence.md" ] \
   || sk_fail="$sk_fail [j: --clean on a directory it did not make: exit $sk_rc and $sk_rc2]"
+# l. evidence.md ends with one line that names the red-check.sh command for the same project,
+# slug and base. Nothing runs it. It carries --test only when the script was given one, quoted
+# so that it can be pasted, and standard output is the scratch path and six lines as before
+cp -R "$SK/base" "$SK/l"; sk_run "$SK/l" refunds base
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = 'Not run, a suggestion: sh "<plugin root>/scripts/red-check.sh" . refunds base' ] \
+  && [ "$(printf '%s\n' "$sk_out" | sed 1d | grep -c .)" = 6 ] && [ "$(grep -c '^### ' "$sk_ev" 2>/dev/null)" = 6 ] \
+  || sk_fail="$sk_fail [l: with no test command the last line is: $(sed -n '$p' "$sk_ev" 2>/dev/null); printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+sk_run "$SK/l" refunds base --test "sh -c 'exit 0'"
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = "Not run, a suggestion: sh \"<plugin root>/scripts/red-check.sh\" . refunds base --test 'sh -c '\\''exit 0'\\'''" ] \
+  || sk_fail="$sk_fail [l: a test command that holds a quote: $(sed -n '$p' "$sk_ev" 2>/dev/null)]"
 # k. no model was started, and the script is clean under sh -n
 [ ! -s "$SK/claude.log" ] || sk_fail="$sk_fail [k: claude was called $(grep -c . "$SK/claude.log") time(s)]"
 sh -n "$SKS" 2>/dev/null || sk_fail="$sk_fail [k: sh -n reports a syntax error]"
-if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; no claude)"
+if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; the evidence ends with the red-check.sh command, not run; no claude)"
 else failc "ship-check" "$sk_fail"; fi
 
 # 108. release-check: a READY report is tied to a commit. For each shipped spec,

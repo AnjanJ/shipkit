@@ -91,6 +91,11 @@ The gate's command steps, run by a command:
   so on standard error, make no scratch directory and exit 2.
 - **REQ-11.** `ship-check.sh` shall write one block for each of steps 1, 2, 3, 5, 7 and 8 to
   `evidence.md`, in that order, and shall run every step even after one has failed.
+  > *Amended 2026-11-20 (`tests-worth-having` T8, the owner's yes):* `evidence.md` now ends with
+  > one line after the six blocks, `Not run, a suggestion: …`, which names the `red-check.sh`
+  > command for the same project, slug and base ref (`tests-worth-having/REQ-43`). It is not a
+  > block: it starts with neither `### ` nor `result:`, and no step's result reads it. Standard
+  > output is unchanged.
 - **REQ-12.** Step 1's block shall hold `spec-check.sh . <slug> --as-shipped` and its exit status,
   `PASS` when that status is 0, and after it the output of `spec-diff.sh` for the slug and the
   base ref.
