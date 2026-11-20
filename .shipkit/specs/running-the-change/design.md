@@ -221,6 +221,16 @@ for a built site (`dist/`).
 other than the one this text names in any run.
 **Fired-if.** manual
 
+Found on CI (2026-11-20, pull request #45): `python3 -m http.server` looks up the machine's
+name before it listens (`HTTPServer.server_bind` calls `socket.getfqdn` before
+`server_activate`). On CI's macOS runner that lookup took 35.0 s for `127.0.0.1` and 70.1 s for
+`""` (read by checks 128 and 129's failure messages); here it takes 0.005 s. Every run that
+needed the server read `NOT-READY`, which was `verify-run.sh` reporting truly. The smoke
+fixture now serves with `socketserver.TCPServer` and `SimpleHTTPRequestHandler`, which make no
+such lookup (shown with `getfqdn` made to raise: the fixture answers, `http.server` exits). The
+static skill keeps `python3 -m http.server "$PORT"` as its readable fallback, with
+`--timeout 90` and a sentence saying what a slow lookup does to it.
+
 ## Decision: the gate reads the hook's JSON with `sed`, allowing white space   (→ REQ-18 to REQ-25)
 
 **Context.** No `jq` and no `python3` (the intake's answer 2, `guard-commit.sh:20`). The docs do

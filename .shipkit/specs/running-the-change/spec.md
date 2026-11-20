@@ -41,8 +41,12 @@ model and changes no existing skill, agent, rule or overlay file (the plan's rul
 - **An outcome line.** `RAN <status> <path>`, `NOT-READY after <s> s` or `EXITED <code>`, where
   `<s>` is the timeout in seconds, as given or 30, not a measured time.
 - **A valid name.** A name for `--env` that matches `[A-Za-z_][A-Za-z0-9_]*`.
-- **A static fixture.** A folder holding an `index.html`, served by the start command
-  `python3 -m http.server "$PORT"` from inside it.
+- **A static fixture.** A folder holding an `index.html`, served from inside it by python3's
+  `socketserver.TCPServer` with `http.server.SimpleHTTPRequestHandler` on `127.0.0.1` and the
+  port in `PORT`. (Amended 2026-11-21 on the owner's yes: it read `python3 -m http.server
+  "$PORT"`, whose server looks up the machine's name before it listens; on CI's macOS runner that
+  took 35 s for `127.0.0.1` and 70 s for the bare name, so the port stayed shut past the
+  timeout.)
 - **SHIPKIT_HOME.** The environment variable of that name, or `~/.claude/shipkit` without it
   (`briefing.sh:26`).
 - **The log.** `$SHIPKIT_HOME/commit-gate.log`.

@@ -5541,8 +5541,10 @@ if [ -z "$be_fail" ]; then pass "brief-escapes (a task's title, Test and Done wh
 else failc "brief-escapes" "$be_fail"; fi
 
 # 128. verify-run: start an application on a free port, wait until it answers, make one request
-# and stop what it started (running-the-change T1). The application is python3's http.server,
-# so no framework and no model is needed. Every run's TMPDIR is a directory of the check's own,
+# and stop what it started (running-the-change T1). The application is a static server on
+# python3's socketserver.TCPServer, so no framework and no model is needed. Not python3 -m
+# http.server: its HTTPServer looks up the machine's name before it listens, which took 35 s on
+# CI's macOS runner (socket.getfqdn, read on pull request #45) and kept the port shut. Every run's TMPDIR is a directory of the check's own,
 # and every application command names $VR or sleep 6128, so what a run leaves behind is seen.
 # Cites: running-the-change/REQ-1 running-the-change/REQ-2 running-the-change/REQ-3
 # running-the-change/REQ-4 running-the-change/REQ-5 running-the-change/REQ-6
@@ -5551,7 +5553,7 @@ else failc "brief-escapes" "$be_fail"; fi
 VRS="$COPY/scripts/verify-run.sh"; VR="$WORK/verify-run"; vr_fail=""
 mkdir -p "$VR/site" "$VR/tmp" "$VR/bin"
 vr_i=1; while [ "$vr_i" -le 15 ]; do echo "p$vr_i"; vr_i=$((vr_i + 1)); done > "$VR/site/page.html"
-vr_srv="python3 -m http.server --bind 127.0.0.1 --directory '$VR/site'"
+vr_srv="python3 -c 'import functools, os, socketserver, http.server; socketserver.TCPServer((\"127.0.0.1\", int(os.environ[\"PORT\"])), functools.partial(http.server.SimpleHTTPRequestHandler, directory=\"$VR/site\")).serve_forever()'"
 sleep 6129 & vr_by=$!
 vr_diag() {  # on a failure only: how long this machine takes to look up its own name, which
   # http.server does before it listens (HTTPServer.server_bind calls socket.getfqdn)
@@ -5578,7 +5580,7 @@ if [ ! -f "$VRS" ]; then
   failc "verify-run" "scripts/verify-run.sh does not exist (checks written first, by design)"
 else
   # RAN: --env reaches the application, one GET to the path, at most 10 body lines, no app output
-  rc=$(vr --start "echo NOISE; printf '%s %s %s\n' \"\$PORT\" \"\$A\" \"\$B\" > '$VR/env.txt'; exec $vr_srv \"\$PORT\" 2>>'$VR/server.log'" \
+  rc=$(vr --start "echo NOISE; printf '%s %s %s\n' \"\$PORT\" \"\$A\" \"\$B\" > '$VR/env.txt'; exec $vr_srv 2>>'$VR/server.log'" \
          --request /page.html --env A=1 --env B=2)
   [ "$rc" -eq 0 ] || vr_fail="$vr_fail [RAN: exit $rc, want 0: $(head -3 "$VR/out" "$VR/err" | tr '\n' '|')]"
   [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] || vr_fail="$vr_fail [RAN: first line: $(sed -n 1p "$VR/out")]"
@@ -5593,7 +5595,7 @@ else
     || vr_fail="$vr_fail [RAN: PORT, A, B in the application: $(cat "$VR/env.txt" 2>/dev/null)]"
   vr_left "RAN"
   # a server that starts listening 2 s late is waited for
-  rc=$(vr --start "sleep 2; exec $vr_srv \"\$PORT\"" --request /page.html --timeout 10)
+  rc=$(vr --start "sleep 2; exec $vr_srv" --request /page.html --timeout 10)
   [ "$rc" -eq 0 ] && [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] \
     || vr_fail="$vr_fail [late start: exit $rc, first line $(sed -n 1p "$VR/out")]"
   vr_left "late start"
@@ -5646,7 +5648,8 @@ elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail [server.log: $(tail -5 "$V
 
 # 129. verify-run-ten: ten runs in a row on one static fixture give the same RAN line and leave
 # no server behind (running-the-change T2). The fixture is the spec's: a folder holding
-# index.html, served by python3 -m http.server "$PORT" from inside it. A server another program
+# index.html, served from inside it by python3's socketserver.TCPServer with
+# SimpleHTTPRequestHandler on 127.0.0.1 and $PORT (check 128 says why not http.server). A server another program
 # runs on this machine is listed before the runs and left out of the count.
 # Cites: running-the-change/REQ-11
 VT="$WORK/verify-ten"; mkdir -p "$VT/site" "$VT/tmp"; vt_fail=""
@@ -5655,7 +5658,7 @@ vt_servers() { ps -A -o pid= -o command= | awk '/[h]ttp\.server/ { print $1 }' |
 vt_servers > "$VT/before"
 vt_i=1
 while [ "$vt_i" -le 10 ]; do
-  (cd "$VT/site" && TMPDIR="$VT/tmp" sh "$COPY/scripts/verify-run.sh" --start 'python3 -m http.server "$PORT"' --request /index.html >"$VT/out" 2>"$VT/err")
+  (cd "$VT/site" && TMPDIR="$VT/tmp" sh "$COPY/scripts/verify-run.sh" --start 'python3 -c "import os, socketserver, http.server; socketserver.TCPServer((\"127.0.0.1\", int(os.environ[\"PORT\"])), http.server.SimpleHTTPRequestHandler).serve_forever()"' --request /index.html >"$VT/out" 2>"$VT/err")
   vt_rc=$?
   [ "$vt_rc" -eq 0 ] && [ "$(sed -n 1p "$VT/out")" = "RAN 200 /index.html" ] \
     || vt_fail="$vt_fail [run $vt_i: exit $vt_rc, first line $(sed -n 1p "$VT/out"), then $(sed -n '2,6p' "$VT/out" | tr '\n' '|' | cut -c1-300)]"
