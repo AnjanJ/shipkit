@@ -40,7 +40,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 124 (`prop`): `prop.py --max-examples 5` prints `PASS` for each of the five names and exits 0, and leaves `git status --porcelain` and the working directory's listing as they were; for each row of the table in `design.md`, "How each property is shown to fail", the broken copy differs from the script and `prop.py --only <name> --no-shrink` at it exits 1 and prints `FAIL <name>` with the input; two such runs at one broken copy print the same lines; with a `hypothesis.py` that raises `ImportError` first on `PYTHONPATH` it prints the `uv run --with hypothesis==6.170.16 python3 scripts/prop.py` line, checks nothing and exits 2. Each property function in `prop.py` cites its requirement
   - After: T4
   - Done when: `uv run --quiet --with hypothesis==6.170.16 python3 scripts/prop.py` → five `PASS` lines, exit 0; `sh scripts/smoke.sh --no-model </dev/null` → check 124 `PASS`, exit 0
-- [ ] **T6** Both CI jobs install Hypothesis and run the properties → REQ-31
+- [x] **T6** Both CI jobs install Hypothesis and run the properties → REQ-31
   - Files: .github/workflows/lint.yml, scripts/smoke.sh
   - Test: scripts/smoke.sh check 125 (`prop-ci`): each of the workflow's two jobs holds a step that installs `hypothesis==` at the version `prop.py` holds and a step whose run line is `python3 scripts/prop.py`; a copy of the workflow with one job's step taken out fails the check's own reading
   - After: T5
@@ -50,6 +50,11 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
     push. Not verified until then: that `pip install hypothesis==6.170.16` works on CI's Python
     3.12, how long forty inputs take on each runner, and whether Ubuntu's awk gives the answers
     macOS's gives.
+  - Verified (2026-11-20): on pull request #44 at `18e0356` (run 44686605730) both jobs ran
+    "Property tests of the two parsers" green, five `PASS` lines each, forty inputs each:
+    `lint` on Ubuntu, Python 3.12.16, 10 s; `smoke-no-model` on macOS arm64, Python 3.12.10,
+    35 s. `pip install hypothesis==6.170.16` worked on both. Ubuntu's awk agreed with macOS's on
+    the forty inputs. CI's smoke run: 250 passed, 0 failed.
 - [x] **T7** `red-check.sh`: a cited test is run on the base tree → REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42
   - Files: plugins/shipkit/scripts/red-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 126 (`red-check`): in a scratch repository with a base commit and a feature commit, a citing test that needs the feature gives `TEST <file>` and `RED-AT-BASE`; a test that asserts nothing gives `GREEN-AT-BASE <file>`; a suite broken at the base gives `BASE-NOT-RUNNABLE` after one run; no differing citing file gives `NO-TESTS` with no run; a citation outside the spec's `> Tests:` paths is not a `TEST` line and is the file `spec-check.sh` calls `CITED-ELSEWHERE`; an untracked citing test is listed; no `--test` and no record is exit 2 with no verdict word; `--link deps` puts a link in the scratch tree and its target's files are there afterwards; a `--link` name that is a file, or tracked at the base, is exit 2; after every run, and after a `TERM` sent during a run, the scratch directory is gone and `git status --porcelain`, `git branch`, `git stash list`, `git worktree list` and `HEAD` read as before, with a worktree made by the check still there; standard output holds only `TEST` lines and the verdict line; wrong usage, an unknown ref, a directory that is no repository and an unknown slug are each exit 2
@@ -93,7 +98,7 @@ python3 scripts/prop.py` exit 0, five properties hold on forty inputs each (Hypo
 Python 3.14.8). `decision-check.sh . --run`: 179 decisions, 0 fired, 0 errors. Line 10: no existing
 skill, agent, rule or overlay file is changed or removed since `main`.
 
-Still open in this sprint: T6, until both CI jobs have run the properties on the pull request.
+T6 closed on 2026-11-20, after both CI jobs ran the properties on pull request #44. Still open: T10 and T11, for Sprint 35.
 
 ## Found on the way
 
