@@ -189,6 +189,7 @@ registry() { cat <<'EOF'
 128 verify-run
 129 verify-run-ten
 130 verify-skills
+131 commit-gate
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5708,6 +5709,98 @@ vk_lint=$(python3 "$ROOT/scripts/lint.py" 2>&1 | grep 'skills/verify/SKILL.md')
 [ -z "$vk_lint" ] || vk_fail="$vk_fail [lint: $(printf '%s\n' "$vk_lint" | head -2 | tr '\n' '|')]"
 if [ -z "$vk_fail" ]; then pass "verify-skills (elixir and static ship a verify skill with a description of 300 characters or fewer, installed as it is on --with-skills and not without, with no new install argument, and lint names neither)"
 else failc "verify-skills" "$vk_fail"; fi
+
+# 131. commit-gate: a PreToolUse command that looks for a Verified: stamp on a commit's message
+# (running-the-change T5). Off by default; observe writes one log row per unstamped commit;
+# enforce blocks one twice a session, then lets it through. The hook's JSON is fed on stdin, both
+# compact and indented, with SHIPKIT_HOME a directory of the check's own.
+# Cites: running-the-change/REQ-18 running-the-change/REQ-19 running-the-change/REQ-20
+# running-the-change/REQ-21 running-the-change/REQ-22 running-the-change/REQ-23
+# running-the-change/REQ-24 running-the-change/REQ-25
+CGS="$COPY/scripts/commit-gate.sh"; CG="$WORK/commit-gate"; mkdir -p "$CG"; cg_fail=""
+CGH="$CG/home"; CGL="$CGH/commit-gate.log"
+cg_json() {  # cg_json <compact|indented> <session id, or - for none> <command> [cwd, or - for none]
+  _c=$(printf '%s' "$3" | sed 's/"/\\"/g')
+  _s=""; [ "$2" = - ] || _s="\"session_id\": \"$2\", "
+  _d="\"cwd\": \"${4:-/proj/a}\", "; [ "${4:-}" = - ] && _d=""
+  if [ "$1" = compact ]; then
+    printf '{%s%s"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s","description":"d"}}' \
+      "$(printf '%s' "$_s" | tr -d ' ')" "$(printf '%s' "$_d" | sed 's/": "/":"/; s/", $/",/')" "$_c"
+  else
+    printf '{\n  %s\n  %s\n  "hook_event_name": "PreToolUse",\n  "tool_name": "Bash",\n  "tool_input": {\n    "command": "%s",\n    "description": "d"\n  }\n}\n' \
+      "$_s" "$_d" "$_c"
+  fi
+}
+cg() {  # cg <mode, or - for unset> <json> → prints the exit status; stdout and stderr in $CG/out, $CG/err
+  if [ "$1" = - ]; then printf '%s' "$2" | (unset SHIPKIT_COMMIT_GATE; SHIPKIT_HOME="$CGH" sh "$CGS" >"$CG/out" 2>"$CG/err"); echo $?
+  else printf '%s' "$2" | SHIPKIT_COMMIT_GATE=$1 SHIPKIT_HOME="$CGH" sh "$CGS" >"$CG/out" 2>"$CG/err"; echo $?; fi
+}
+cg_rows() { if [ -f "$CGL" ]; then grep -c . "$CGL"; else echo 0; fi; }
+cg_quiet() {  # cg_quiet <label> <rc> <want rc>: that exit, nothing on stdout or stderr
+  [ "$2" -eq "$3" ] && [ ! -s "$CG/out" ] && [ ! -s "$CG/err" ] \
+    || cg_fail="$cg_fail [$1: exit $2 (want $3), out $(head -c 80 "$CG/out" | tr '\n' '|'), err $(head -c 80 "$CG/err" | tr '\n' '|')]"
+}
+if [ ! -f "$CGS" ]; then
+  failc "commit-gate" "scripts/commit-gate.sh does not exist (checks written first, by design)"
+else
+  sh -n "$CGS" 2>/dev/null || cg_fail="$cg_fail [sh -n reports a syntax error]"
+  # not a commit, in every mode, and an unstamped commit with the gate off: nothing at all
+  for cg_s in compact indented; do
+    for cg_m in off observe enforce; do
+      rc=$(cg "$cg_m" "$(cg_json $cg_s s1 'ls -la')"); cg_quiet "ls, $cg_m, $cg_s" "$rc" 0
+    done
+    for cg_m in - off bogus; do
+      rc=$(cg "$cg_m" "$(cg_json $cg_s s1 'git commit -m "x"')"); cg_quiet "commit, mode $cg_m, $cg_s" "$rc" 0
+    done
+  done
+  [ ! -e "$CGL" ] || cg_fail="$cg_fail [a log was written with the gate off or for a call that is not a commit]"
+  # observe: one row per unstamped commit, the JSON's cwd or - as the last field
+  rc=$(cg observe "$(cg_json compact s1 'git commit -m "x"')"); cg_quiet "observe, unstamped" "$rc" 0
+  awk -F'\t' 'NR == 1 && NF == 5 && $1 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z$/ \
+      && $2 == "s1" && $3 == "observe" && $4 == "unstamped" && $5 == "/proj/a" { ok = 1 } END { exit !ok }' "$CGL" 2>/dev/null \
+    || cg_fail="$cg_fail [observe: the row is not time, s1, observe, unstamped, /proj/a: $(head -1 "$CGL" 2>/dev/null)]"
+  rc=$(cg observe "$(cg_json indented s1 'git commit -am "y"' -)"); cg_quiet "observe, unstamped, indented" "$rc" 0
+  [ "$(cg_rows)" = 2 ] && [ "$(sed -n 2p "$CGL" | cut -f4,5)" = "$(printf 'unstamped\t-')" ] \
+    || cg_fail="$cg_fail [observe, indented, no cwd: rows $(cg_rows), second $(sed -n 2p "$CGL" | tr '\t' ' ')]"
+  # a stamp, also in the second -m part: nothing written, in observe and in enforce
+  for cg_m in observe enforce; do
+    for cg_c in 'git commit -m "feat: x" -m "Verified: tests (x)"' 'git commit -m "feat: x" -m "Verified: none (docs only)"'; do
+      cg_n=$(cg_rows); rc=$(cg "$cg_m" "$(cg_json indented s1 "$cg_c")"); cg_quiet "stamped, $cg_m" "$rc" 0
+      [ "$(cg_rows)" = "$cg_n" ] || cg_fail="$cg_fail [stamped, $cg_m: a row was written]"
+    done
+  done
+  # enforce: blocked twice in a session, the third passes; another session is still blocked
+  for cg_k in 1 2; do
+    rc=$(cg enforce "$(cg_json compact s2 'git commit -m "wip"')")
+    { [ "$rc" -eq 2 ] && [ ! -s "$CG/out" ] && [ "$(grep -c . "$CG/err")" = 1 ] \
+      && grep -q 'Verified:' "$CG/err" && grep -q 'Verified: none (' "$CG/err" \
+      && [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's2\tenforce\tblocked')" ]; } \
+      || cg_fail="$cg_fail [enforce, attempt $cg_k: exit $rc, err $(head -c 160 "$CG/err" | tr '\n' '|'), last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+  done
+  rc=$(cg enforce "$(cg_json compact s2 'git commit -m "wip"')"); cg_quiet "enforce, attempt 3" "$rc" 0
+  [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's2\tenforce\tpassed')" ] || cg_fail="$cg_fail [enforce, attempt 3: last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+  rc=$(cg enforce "$(cg_json indented s3 'git commit -m "wip"')")
+  [ "$rc" -eq 2 ] || cg_fail="$cg_fail [enforce, another session after two blocks of s2: exit $rc, want 2]"
+  rc=$(cg enforce "$(cg_json compact s4 'git commit -m "wip" -m "Verified: none ()"')")
+  [ "$rc" -eq 2 ] || cg_fail="$cg_fail [enforce: Verified: none () counted as a stamp, exit $rc]"
+  # no message on the command line: through, with an unseen row, in observe and in enforce
+  for cg_m in observe enforce; do
+    for cg_c in 'git commit -F f' 'git commit --no-edit' 'git commit'; do
+      rc=$(cg "$cg_m" "$(cg_json compact s5 "$cg_c")"); cg_quiet "$cg_c, $cg_m" "$rc" 0
+      [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's5\t%s\tunseen' "$cg_m")" ] || cg_fail="$cg_fail [$cg_c, $cg_m: last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+    done
+  done
+  # its own errors let the commit through: empty input, no session id, a log it cannot write
+  rc=$(printf '' | SHIPKIT_COMMIT_GATE=enforce SHIPKIT_HOME="$CGH" sh "$CGS" 2>/dev/null; echo $?)
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, empty input: exit $rc]"
+  rc=$(cg enforce "$(cg_json compact - 'git commit -m "wip"')")
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, no session id: exit $rc]"
+  : > "$CG/a-file"
+  rc=$(cg_json compact s6 'git commit -m "wip"' | SHIPKIT_COMMIT_GATE=enforce SHIPKIT_HOME="$CG/a-file/home" sh "$CGS" 2>/dev/null; echo $?)
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, a log it cannot write: exit $rc]"
+  if [ -z "$cg_fail" ]; then pass "commit-gate (off by default and for every call that is not a commit; observe logs an unstamped commit; enforce blocks twice a session, then passes; a stamp in any -m part passes; a message it cannot see passes with an unseen row; its own errors exit 0; compact and indented JSON alike)"
+  else failc "commit-gate" "$cg_fail"; fi
+fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
