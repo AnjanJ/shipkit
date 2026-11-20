@@ -5553,6 +5553,12 @@ mkdir -p "$VR/site" "$VR/tmp" "$VR/bin"
 vr_i=1; while [ "$vr_i" -le 15 ]; do echo "p$vr_i"; vr_i=$((vr_i + 1)); done > "$VR/site/page.html"
 vr_srv="python3 -m http.server --bind 127.0.0.1 --directory '$VR/site'"
 sleep 6129 & vr_by=$!
+vr_diag() {  # on a failure only: how long this machine takes to look up its own name, which
+  # http.server does before it listens (HTTPServer.server_bind calls socket.getfqdn)
+  python3 -c 'import socket, time
+for h in ("127.0.0.1", ""):
+    t = time.time(); socket.getfqdn(h); print("getfqdn(%r) %.1f s" % (h, time.time() - t))' 2>&1 | tr '\n' ' '
+}
 vr() {  # vr <args…> → prints the exit status; stdout in $VR/out, stderr in $VR/err
   (cd "$VR/site" && TMPDIR="$VR/tmp" sh "$VRS" "$@" >"$VR/out" 2>"$VR/err"); echo $?
 }
@@ -5636,7 +5642,7 @@ else
 fi
 kill "$vr_by" 2>/dev/null; wait "$vr_by" 2>/dev/null
 if [ -f "$VRS" ] && [ -z "$vr_fail" ]; then pass "verify-run (RAN with the status line and 10 body lines after one GET, EXITED with the code and the last 20 lines, NOT-READY after the timeout given, exit 2 on misuse or no curl with nothing started; nothing of a run is left and a bystander lives, also after INT)"
-elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail"; fi
+elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail [server.log: $(tail -5 "$VR/server.log" 2>/dev/null | tr '\n' '|' | cut -c1-400)] [$(vr_diag)]"; fi
 
 # 129. verify-run-ten: ten runs in a row on one static fixture give the same RAN line and leave
 # no server behind (running-the-change T2). The fixture is the spec's: a folder holding
@@ -5652,7 +5658,7 @@ while [ "$vt_i" -le 10 ]; do
   (cd "$VT/site" && TMPDIR="$VT/tmp" sh "$COPY/scripts/verify-run.sh" --start 'python3 -m http.server "$PORT"' --request /index.html >"$VT/out" 2>"$VT/err")
   vt_rc=$?
   [ "$vt_rc" -eq 0 ] && [ "$(sed -n 1p "$VT/out")" = "RAN 200 /index.html" ] \
-    || vt_fail="$vt_fail [run $vt_i: exit $vt_rc, first line $(sed -n 1p "$VT/out")]"
+    || vt_fail="$vt_fail [run $vt_i: exit $vt_rc, first line $(sed -n 1p "$VT/out"), then $(sed -n '2,6p' "$VT/out" | tr '\n' '|' | cut -c1-300)]"
   vt_n=0
   while :; do
     vt_servers > "$VT/after"; vt_new=$(comm -13 "$VT/before" "$VT/after" | tr '\n' ' ')
@@ -5664,7 +5670,7 @@ while [ "$vt_i" -le 10 ]; do
   vt_i=$((vt_i + 1))
 done
 if [ -z "$vt_fail" ]; then pass "verify-run-ten (ten runs in a row on one static fixture each print RAN 200 /index.html first and leave no server and nothing in TMPDIR)"
-else failc "verify-run-ten" "$vt_fail"; fi
+else failc "verify-run-ten" "$vt_fail [$(vr_diag)]"; fi
 
 # 130. verify-skills: the elixir and static overlays ship a verify skill, installed only on
 # --with-skills, with the arguments those overlays needed before (running-the-change T3). The
