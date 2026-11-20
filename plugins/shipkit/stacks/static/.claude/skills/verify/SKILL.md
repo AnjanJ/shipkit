@@ -12,7 +12,9 @@ Path: $ARGUMENTS (the path the task names; `/index.html` when it names none).
    `shipkit: plugin root is …` line, or in `~/.claude/shipkit/plugin-root`.
 2. The start command: the `Dev server:` line of `CLAUDE.md` when it names a server that takes
    a port (`npx serve -l "$PORT"`, `npx vite --port "$PORT"`); otherwise
-   `python3 -m http.server "$PORT"`, run from the folder that holds the site.
+   `python3 -m http.server "$PORT"`, run from the folder that holds the site, with
+   `--timeout 90`: this server looks up the machine's name before it listens, and where that
+   is slow (a minute on some build machines) `NOT-READY` can mean only that.
 3. Run `sh "<root>/scripts/verify-run.sh" --start '<start command>' --request <path>`, with the
    start command in single quotes so the script sets `PORT`.
 4. Report the script's first line as printed, with the lines under it. `RAN` is not a pass:

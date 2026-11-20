@@ -58,7 +58,7 @@ this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 | Overlay | `overlay-skills` without `--with-skills` | with it, before `verify` (`wc -c` of the other files) | with it, now | the `verify` file | its description line |
 |---|---:|---:|---:|---:|---:|
 | `elixir` | 0 | 2,075 (1 skill) | 3,465 (2 skills) | 1,390 | 278 |
-| `static` | 0 | 2,674 (1 skill) | 3,958 (2 skills) | 1,284 | 250 |
+| `static` | 0 | 2,674 (1 skill) | 4,133 (2 skills) | 1,459 | 250 |
 | `rails` | 0 | 11,758 (4 skills) | 11,758 (4 skills) | none until Sprint 35 | — |
 
 A project that installs the skills pays the whole file in its `overlay-skills` row, and the
@@ -67,6 +67,8 @@ newline) is the part listed in every session. Both descriptions are under lint's
 characters (247 and 275). A project installed without `--with-skills` pays nothing. The Rails
 `verify` skill waits for Sprint 35 (`running-the-change`'s design, "Waiting text"), and would
 add about as much as elixir's.
+
+On 2026-11-21 the static skill's fallback gained `--timeout 90` and a sentence on the name lookup `python3 -m http.server` makes before it listens (35 to 70 s on CI's macOS runner): the file went from 1,284 to 1,459 bytes and a static install with the flag from 3,958 to 4,133. Its description line is unchanged.
 
 ## History
 
@@ -83,3 +85,4 @@ add about as much as elixir's.
 | 2026-10-31 | S22-T2 (W5) | 2,289 | 2,894 | 1,885 | 991 | 2,999 | a real project, `linkshort` before setup; after setup `hook` 90, `overlay-skills` 0, `overlay-appends` 1,051 (`field-notes-5.0.md`) |
 | 2026-10-31 | 5.0.0 | 2,289 | 2,894 | 1,885 | 991 | 2,999 | the §0 table at the release, every row at its ceiling or the record says why (`CHANGELOG.md` 5.0.0); `eve.md` 12,067 |
 | 2026-11-20 | S34-T4 (`running-the-change`) | 2,288 | 2,894 | 1,885 | 1,073 | 2,999 | a bare dir; `verify` joins the elixir and static overlays behind `--with-skills`: elixir `overlay-skills` 2,075 → 3,465 and static 2,674 → 3,958 with the flag, 0 without; Rails 4 skills, 11,758 |
+| 2026-11-21 | S34, after CI on #45 | 2,288 | 2,894 | 1,885 | 1,073 | 2,999 | the static `verify` skill gains `--timeout 90` and one sentence: 1,284 → 1,459 bytes; a static install with `--with-skills` 3,958 → 4,133; the description line unchanged |
