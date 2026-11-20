@@ -76,6 +76,20 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - After: T10
   - Done when: `eval-history.md` holds the verdict word `red-check.sh` printed on the clone, the task it was run on and the time it took
 
+## The sprint's exit checklist (2026-11-20, at the commit after T9's)
+
+Lint 0 errors. `sh scripts/smoke.sh --no-model </dev/null` exit 0: 249 passed (35 text-only), 16
+skipped (model), 0 failed. No grader was written or changed; `scripts/grader-check.sh` still reads
+37 replies as expected, 0 not. `spec-check.sh .` exit 0: 36 specs, 0 gaps; this spec reads
+tested=41, waived=9, uncited=0. The three always-on rules: 2,999 of 3,000 bytes. The evals folder:
+204,629 of 204,800 bytes, as at the sprint's start. `release-check.sh .`: 31 shipped, 5 findings,
+the five of the sprint's start. Line 9, for the first time: `uv run --with hypothesis==6.170.16
+python3 scripts/prop.py` exit 0, five properties hold on forty inputs each (Hypothesis 6.170.16,
+Python 3.14.8). `decision-check.sh . --run`: 179 decisions, 0 fired, 0 errors. Line 10: no existing
+skill, agent, rule or overlay file is changed or removed since `main`.
+
+Still open in this sprint: T6, until both CI jobs have run the properties on the pull request.
+
 ## Found on the way
 
 Not fixed here; each goes to the sprint's pull request.
