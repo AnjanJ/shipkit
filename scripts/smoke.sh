@@ -181,6 +181,7 @@ registry() { cat <<'EOF'
 120 escape-second
 121 briefing-commands
 122 kind-fixtures
+123 kind-reader
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5254,6 +5255,65 @@ kpy --run migration 2 --yes --out "$KP/yes-mig" >/dev/null 2>&1; kp_rc=$?
   || kp_fail="$kp_fail [with the run flag: the stand-in was not given the two requests]"
 if [ -z "$kp_fail" ]; then pass "kind-fixtures (kind-probe.sh scaffolds the passbook spec, three requirements, a design and no task list, and the inkwell project, a library at two versions whose tests pass on the old and fail on the new; prints 5 and 3 commands, or the number asked for, and starts none; with its run flag and a stand-in it runs each in a fresh fixture and keeps the reply)"
 else failc "kind-fixtures" "$kp_fail"; fi
+
+# 123. kind-reader: kind-probe.sh --read says which kind of test each task's Test: line names for
+# the passbook spec's three requirements, and whether that is an expected kind. A tag at the
+# start of the line settles it; without one a short list of words does. Six task lists written
+# by hand, two for each kind, are kept in scripts/kind-replies/: one that names the kind and one
+# that does not. A seventh, made here, has a ticked task whose header runs over two lines, a tag
+# in capitals and words in capitals.
+# Cites: tests-worth-having/REQ-7 tests-worth-having/REQ-8 tests-worth-having/REQ-9 tests-worth-having/REQ-10 tests-worth-having/REQ-11 tests-worth-having/REQ-12 tests-worth-having/REQ-13 tests-worth-having/REQ-14
+KR="$WORK/kind-reader"; mkdir -p "$KR/one"; kr_fail=""
+kr_sh="$ROOT/scripts/kind-probe.sh"
+kr_want=$(tr '|' '\t' <<'KREOF'
+differential-named/tasks.md|REQ-1|property|right
+differential-named/tasks.md|REQ-2|property|right
+differential-named/tasks.md|REQ-3|differential|right
+differential-unnamed/tasks.md|REQ-1|uncited|missed
+differential-unnamed/tasks.md|REQ-2|e2e|right
+differential-unnamed/tasks.md|REQ-3|none|missed
+e2e-named/tasks.md|REQ-1|property|right
+e2e-named/tasks.md|REQ-2|e2e|right
+e2e-named/tasks.md|REQ-3|differential|right
+e2e-unnamed/tasks.md|REQ-1|property|right
+e2e-unnamed/tasks.md|REQ-2|none|missed
+e2e-unnamed/tasks.md|REQ-3|property|missed
+property-named/tasks.md|REQ-1|property|right
+property-named/tasks.md|REQ-2|e2e+property|right
+property-named/tasks.md|REQ-3|differential|right
+property-unnamed/tasks.md|REQ-1|none|missed
+property-unnamed/tasks.md|REQ-2|property|right
+property-unnamed/tasks.md|REQ-3|differential|right
+TOTAL REQ-1 right=4 missed=2
+TOTAL REQ-2 right=5 missed=1
+TOTAL REQ-3 right=4 missed=2
+KREOF
+)
+kr_out=$(sh "$kr_sh" --read "$ROOT/scripts/kind-replies" 2>&1); kr_rc=$?
+[ "$kr_rc" -eq 0 ] || kr_fail="$kr_fail [--read: exit $kr_rc]"
+[ "$kr_out" = "$kr_want" ] || kr_fail="$kr_fail [--read on the six task lists: $(printf '%s\n' "$kr_out" | tr '\t\n' ' |' | cut -c1-600)]"
+cat > "$KR/one/tasks.md" <<'KREOF'
+# Tasks: passbook
+
+- [x] **T1** The new parser takes over, and what the stored statements show
+  does not change → REQ-3
+  - Files: passbook/statements.py
+  - Test: An END-TO-END run of Both Parsers over data/statements/
+  - After: none
+  - Done when: `python3 -m unittest -q` → all pass
+- [ ] **T2** Withdrawals → REQ-1
+  - Files: passbook/account.py
+  - Test: [PROPERTY] tests/test_account.py, end-to-end it is not
+  - After: T1
+  - Done when: `python3 -m unittest -q` → all pass
+KREOF
+kr_one=$(sh "$kr_sh" --read "$KR/one" 2>&1 | tr '\t\n' ' |')
+[ "$kr_one" = "tasks.md REQ-1 property right|tasks.md REQ-2 uncited missed|tasks.md REQ-3 e2e+differential right|TOTAL REQ-1 right=1 missed=0|TOTAL REQ-2 right=0 missed=1|TOTAL REQ-3 right=1 missed=0|" ] \
+  || kr_fail="$kr_fail [--read on a ticked task with a wrapped header, a tag and words in capitals: $kr_one]"
+kr_none=$(sh "$kr_sh" --read "$KR/no-such-directory" 2>"$KR/err"); kr_rc=$?
+[ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read on a directory that is not there: exit $kr_rc, not 2 with a line on standard error]"
+if [ -z "$kr_fail" ]; then pass "kind-reader (--read gives the eighteen lines and three totals expected of the six hand-written task lists: a tag settles a line, words name a kind without one, two kinds are joined, a requirement no task cites is uncited, and either kind is right for the round trip)"
+else failc "kind-reader" "$kr_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

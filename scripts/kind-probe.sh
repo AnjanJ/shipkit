@@ -26,6 +26,14 @@
 #       textkit 1.4 2.0, and its reply is written to <dir>/run-<i>/plan.md. <dir> defaults
 #       to ${TMPDIR:-/tmp}/kind-probe-<fixture>-<time>. --yes COSTS MODEL CALLS: use it only
 #       on the owner's yes. Nothing is removed afterwards.
+#   kind-probe.sh --read <dir>
+#       For each file named tasks.md under <dir>, in path order, and each of the passbook
+#       spec's three requirements, print four tab-separated fields: the file's path under
+#       <dir>, REQ-<n>, the kinds of test that the Test: lines of the tasks citing it name
+#       (e2e, property, differential, joined by +; none; or uncited when no task cites it),
+#       and right or missed. Then a TOTAL line for each requirement. A tag at the start of a
+#       Test: line, [e2e], [property] or [differential], settles that line; without one, a
+#       kind is named by one of its words (design.md, "The reader's words"). No model call.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 NOTE='This run is not interactive: you cannot ask me anything.'
@@ -484,7 +492,103 @@ sys.stdout.write(text if text.endswith("\n") else text + "\n")' "$d/result.json"
   return "$bad"
 }
 
+py() {  # py <mode> <args>...: the readers, from a quoted heredoc so no shell touches them
+  python3 -I - "$@" <<'PYEOF'
+import os, re, sys
+
+ORDER = ["e2e", "property", "differential"]
+# The passbook spec's requirements and the kinds that are right for each. REQ-2 is a round
+# trip: an end-to-end test and a property test both prove it (the owner, 2026-11-20).
+EXPECTED = {"1": {"property"}, "2": {"e2e", "property"}, "3": {"differential"}}
+WORDS = {
+    "property": ["property test", "property-based", "property based", "hypothesis",
+                 "generated inputs", "generated sequences", "generated records"],
+    "e2e": ["end-to-end", "end to end", "e2e", "through the cli", "through the command line",
+            "subprocess"],
+    "differential": ["differential", "old and new", "old and the new", "both parsers",
+                     "both versions", "golden", "characterization", "characterisation"],
+}
+TAG = re.compile(r"\[(e2e|property|differential)\]", re.I)
+HEADER = re.compile(r"^- \[[ xX]\] \*\*[A-Za-z0-9_-]+\*\*(.*)$")
+FIELD = re.compile(r"^[ \t]+- (Files|Test|After|Done when):(.*)$")
+
+
+def kinds_of(text):
+    """The kinds one Test: line names."""
+    text = text.strip()
+    tag = TAG.match(text)
+    if tag:
+        return {tag.group(1).lower()}
+    low = text.lower()
+    return {k for k in ORDER if any(w in low for w in WORDS[k])}
+
+
+def tasks_of(path):
+    """Each task as (the requirement numbers its header holds, its Test: text), as brief.sh
+    reads a task list: a header may run over several lines, up to its first sub-line."""
+    tasks, cur, in_header = [], None, False
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            m = HEADER.match(line)
+            if m:
+                cur = {"header": m.group(1), "test": None}
+                tasks.append(cur); in_header = True
+                continue
+            if cur is None:
+                continue
+            m = FIELD.match(line)
+            if m:
+                in_header = False
+                if m.group(1) == "Test" and cur["test"] is None:
+                    cur["test"] = m.group(2)
+            elif not line.strip():
+                in_header = False
+            elif in_header:
+                cur["header"] += " " + line.strip()
+    return [(set(re.findall(r"REQ-([0-9]+)", t["header"])), t["test"] or "") for t in tasks]
+
+
+def read(top):
+    if not os.path.isdir(top):
+        sys.stderr.write("kind-probe: no such directory: %s\n" % top)
+        return 2
+    found = []
+    for folder, _, names in os.walk(top):
+        if "tasks.md" in names:
+            found.append(os.path.relpath(os.path.join(folder, "tasks.md"), top))
+    total = {n: [0, 0] for n in EXPECTED}
+    for rel in sorted(found):
+        tasks = tasks_of(os.path.join(top, rel))
+        for n in sorted(EXPECTED, key=int):
+            citing = [test for reqs, test in tasks if n in reqs]
+            named = set()
+            for test in citing:
+                named |= kinds_of(test)
+            if not citing:
+                shown = "uncited"
+            elif not named:
+                shown = "none"
+            else:
+                shown = "+".join(k for k in ORDER if k in named)
+            right = bool(named & EXPECTED[n])
+            total[n][0 if right else 1] += 1
+            print("%s\tREQ-%s\t%s\t%s" % (rel, n, shown, "right" if right else "missed"))
+    for n in sorted(EXPECTED, key=int):
+        print("TOTAL REQ-%s right=%d missed=%d" % (n, total[n][0], total[n][1]))
+    return 0
+
+
+mode, args = sys.argv[1], sys.argv[2:]
+if mode == "read":
+    sys.exit(read(args[0]))
+PYEOF
+}
+
 case "${1:-}" in
+  --read)
+    [ $# -eq 2 ] || usage
+    py read "$2" ;;
   --scaffold)
     [ $# -eq 3 ] || usage
     scaffold "$2" "$3" ;;

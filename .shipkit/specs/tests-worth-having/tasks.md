@@ -25,7 +25,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 122, extended: `--scaffold migration` into an empty directory leaves one commit and a clean tree that holds `vendor/textkit-1/`, `vendor/textkit-2/` and a changelog naming a change in a function `inkwell/format.py` calls, and no `.shipkit/specs/`; the recorded test command exits 0 there, and fails on a fresh copy whose `inkwell/deps.py` names version 2.0; `--run migration` prints 3 lines, each holding `/shipkit-workflows:migration-plan`, writes no file and never calls the stand-in `claude`. Added while building (2026-11-20): `--run kinds 1 --yes` and `--run migration 2 --yes`, with a second stand-in that records where and with what it was started and prints a canned JSON result, each start in a fresh fixture under `run-<i>/proj`, and each migration run's `plan.md` holds the reply's text
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 122 `PASS`, exit 0
-- [ ] **T3** `--read`, and six task lists written by hand → REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14
+- [x] **T3** `--read`, and six task lists written by hand → REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14
   - Files: scripts/kind-probe.sh, scripts/kind-replies/, scripts/smoke.sh
   - Test: scripts/smoke.sh check 123 (`kind-reader`): on `scripts/kind-replies/`, `--read` prints three tab-separated lines for each of the six `tasks.md` files, in path order, and they are the eighteen lines of the table in `design.md`, "The eight files written by hand"; then `TOTAL REQ-1 right=4 missed=2`, `TOTAL REQ-2 right=5 missed=1` and `TOTAL REQ-3 right=4 missed=2`
   - After: T2

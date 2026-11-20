@@ -427,8 +427,8 @@ Case does not count. A tag is read first and ends the reading of that line (REQ-
 | `e2e` | "end-to-end", "end to end", "e2e", "through the cli", "through the command line", "subprocess" |
 | `differential` | "differential", "old and new", "old and the new", "both parsers", "both versions", "golden", "characterization", "characterisation" |
 
-A task cites a requirement when its header line holds `REQ-<n>` after the arrow, as `brief.sh`
-reads it. `--read` knows the three requirements and their expected kinds; they are constants
+A task cites a requirement when its header holds `REQ-<n>`, as `brief.sh` reads it
+(`brief.sh:57-61`): anywhere in the header, which may run over several lines. `--read` knows the three requirements and their expected kinds; they are constants
 in the script beside the fixture's text.
 
 `--read-plan` reads a plan in blocks, a block being the lines between two blank lines. A plan
