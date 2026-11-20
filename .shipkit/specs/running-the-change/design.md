@@ -120,6 +120,16 @@ model-free smoke job runs on macOS only, so CI does not show it.
 left after a run, or if `dash` refuses `set -m` in a script.
 **Fired-if.** manual
 
+As built in T1 (2026-11-20), two details the record did not fix:
+- **How `EXITED` is seen.** The start command runs as `( sh -c "$START"; echo $? > code ) &`,
+  and the script waits for the file `code`, not on `kill -0`. A shell that has not reaped a
+  finished child still answers `kill -0` for it, so the file is the sign that does not depend
+  on the shell. The subshell is the group's leader.
+- **When no group is made.** After the start, `ps -o pgid= -p <pid>` is read. If it is not the
+  process id, the shell made no group (the `dash` risk above), and the processes under that id
+  are found through `ps -A -o pid= -o ppid=` and stopped instead: the record's alternative 3, as
+  a fallback.
+
 ## Decision: readiness is probed on a path of its own   (→ REQ-3, REQ-4)
 
 **Context.** REQ-4 says the request is made once. The script must learn that the port answers

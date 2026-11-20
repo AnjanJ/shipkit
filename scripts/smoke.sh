@@ -186,6 +186,7 @@ registry() { cat <<'EOF'
 125 prop-ci
 126 red-check
 127 brief-escapes
+128 verify-run
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5546,6 +5547,104 @@ be_d=$(printf '%s\n' "$be_prove" | grep -c '^- Done when: ')
 printf '%s\n' "$be_out" | tail -1 | grep -qx 'exit 0' || be_fail="$be_fail [brief.sh: $(printf '%s\n' "$be_out" | tail -1)]"
 if [ -z "$be_fail" ]; then pass "brief-escapes (a task's title, Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
 else failc "brief-escapes" "$be_fail"; fi
+
+# 128. verify-run: start an application on a free port, wait until it answers, make one request
+# and stop what it started (running-the-change T1). The application is python3's http.server,
+# so no framework and no model is needed. Every run's TMPDIR is a directory of the check's own,
+# and every application command names $VR or sleep 6128, so what a run leaves behind is seen.
+# Cites: running-the-change/REQ-1 running-the-change/REQ-2 running-the-change/REQ-3
+# running-the-change/REQ-4 running-the-change/REQ-5 running-the-change/REQ-6
+# running-the-change/REQ-7 running-the-change/REQ-8 running-the-change/REQ-9
+# running-the-change/REQ-10
+VRS="$COPY/scripts/verify-run.sh"; VR="$WORK/verify-run"; vr_fail=""
+mkdir -p "$VR/site" "$VR/tmp" "$VR/bin"
+vr_i=1; while [ "$vr_i" -le 15 ]; do echo "p$vr_i"; vr_i=$((vr_i + 1)); done > "$VR/site/page.html"
+vr_srv="python3 -m http.server --bind 127.0.0.1 --directory '$VR/site'"
+sleep 6129 & vr_by=$!
+vr() {  # vr <args…> → prints the exit status; stdout in $VR/out, stderr in $VR/err
+  (cd "$VR/site" && TMPDIR="$VR/tmp" sh "$VRS" "$@" >"$VR/out" 2>"$VR/err"); echo $?
+}
+vr_left() {  # vr_left <run>: nothing of the run is left, and the bystander still runs
+  vr_n=0
+  while :; do
+    ps -A -o command= > "$VR/ps"
+    if grep -F -e "$VR/site" -e 'sleep 6128' "$VR/ps" >/dev/null; then
+      [ "$vr_n" -ge 10 ] && { vr_fail="$vr_fail [$1: a process of the run is left: $(grep -F -e "$VR/site" -e 'sleep 6128' "$VR/ps" | head -2 | tr '\n' '|')]"; break; }
+      vr_n=$((vr_n + 1)); sleep 0.2
+    else break; fi
+  done
+  [ -z "$(ls -A "$VR/tmp" 2>/dev/null)" ] || vr_fail="$vr_fail [$1: left in TMPDIR: $(ls -A "$VR/tmp" | tr '\n' ' ')]"
+  kill -0 "$vr_by" 2>/dev/null || vr_fail="$vr_fail [$1: the bystander sleep was stopped]"
+}
+if [ ! -f "$VRS" ]; then
+  failc "verify-run" "scripts/verify-run.sh does not exist (checks written first, by design)"
+else
+  # RAN: --env reaches the application, one GET to the path, at most 10 body lines, no app output
+  rc=$(vr --start "echo NOISE; printf '%s %s %s\n' \"\$PORT\" \"\$A\" \"\$B\" > '$VR/env.txt'; exec $vr_srv \"\$PORT\" 2>>'$VR/server.log'" \
+         --request /page.html --env A=1 --env B=2)
+  [ "$rc" -eq 0 ] || vr_fail="$vr_fail [RAN: exit $rc, want 0: $(head -3 "$VR/out" "$VR/err" | tr '\n' '|')]"
+  [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] || vr_fail="$vr_fail [RAN: first line: $(sed -n 1p "$VR/out")]"
+  sed -n 2p "$VR/out" | grep -q '^HTTP/[0-9.]* 200' || vr_fail="$vr_fail [RAN: no status line: $(sed -n 2p "$VR/out")]"
+  [ "$(sed -n '3,$p' "$VR/out" | tr '\n' ' ')" = "p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 " ] \
+    || vr_fail="$vr_fail [RAN: the body lines are not the first 10: $(sed -n '3,$p' "$VR/out" | tr '\n' ' ')]"
+  grep -q NOISE "$VR/out" && vr_fail="$vr_fail [RAN: the application's output reached stdout]"
+  [ "$(grep -c '"GET /page.html ' "$VR/server.log" 2>/dev/null)" = 1 ] \
+    || vr_fail="$vr_fail [RAN: the path was asked $(grep -c '"GET /page.html ' "$VR/server.log" 2>/dev/null) times, want 1]"
+  read -r vr_port vr_a vr_b < "$VR/env.txt" 2>/dev/null
+  { [ "${vr_port:-0}" -gt 1023 ] 2>/dev/null && [ "$vr_a" = 1 ] && [ "$vr_b" = 2 ]; } \
+    || vr_fail="$vr_fail [RAN: PORT, A, B in the application: $(cat "$VR/env.txt" 2>/dev/null)]"
+  vr_left "RAN"
+  # a server that starts listening 2 s late is waited for
+  rc=$(vr --start "sleep 2; exec $vr_srv \"\$PORT\"" --request /page.html --timeout 10)
+  [ "$rc" -eq 0 ] && [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] \
+    || vr_fail="$vr_fail [late start: exit $rc, first line $(sed -n 1p "$VR/out")]"
+  vr_left "late start"
+  # EXITED: the code, then the last 20 lines of the application's output
+  rc=$(vr --start 'i=0; while [ $i -lt 30 ]; do echo line$i; i=$((i+1)); done; exit 3' --request /x)
+  vr_want="EXITED 3"; vr_i=10; while [ "$vr_i" -le 29 ]; do vr_want="$vr_want|line$vr_i"; vr_i=$((vr_i + 1)); done
+  [ "$rc" -eq 1 ] && [ "$(tr '\n' '|' < "$VR/out")" = "$vr_want|" ] \
+    || vr_fail="$vr_fail [EXITED: exit $rc, out $(tr '\n' '|' < "$VR/out" | cut -c1-120)]"
+  vr_left "EXITED"
+  # NOT-READY: the timeout as given
+  rc=$(vr --start 'sleep 6128' --request /x --timeout 2)
+  [ "$rc" -eq 1 ] && [ "$(sed -n 1p "$VR/out")" = "NOT-READY after 2 s" ] \
+    || vr_fail="$vr_fail [NOT-READY: exit $rc, first line $(sed -n 1p "$VR/out")]"
+  vr_left "NOT-READY"
+  # misuse: exit 2, a word on stderr, nothing started
+  vr_bad() {  # vr_bad <label> <args…>
+    vr_l=$1; shift; rm -f "$VR/marker"
+    rc=$(vr "$@")
+    { [ "$rc" -eq 2 ] && [ -s "$VR/err" ] && [ ! -e "$VR/marker" ]; } \
+      || vr_fail="$vr_fail [misuse, $vr_l: exit $rc, stderr $(wc -c < "$VR/err" | tr -d ' ') bytes, marker $([ -e "$VR/marker" ] && echo made || echo absent)]"
+  }
+  vr_bad "no --start" --request /x
+  vr_bad "no --request" --start "touch '$VR/marker'"
+  vr_bad "path x" --start "touch '$VR/marker'" --request x
+  vr_bad "timeout 0" --start "touch '$VR/marker'" --request /x --timeout 0
+  vr_bad "timeout abc" --start "touch '$VR/marker'" --request /x --timeout abc
+  vr_bad "env 1A=x" --start "touch '$VR/marker'" --request /x --env 1A=x
+  vr_bad "env noequals" --start "touch '$VR/marker'" --request /x --env noequals
+  vr_left "misuse"
+  # no curl on the PATH: exit 2, curl named, nothing started
+  ln -s "$(command -v sh)" "$VR/bin/sh"; ln -s "$(command -v awk)" "$VR/bin/awk"
+  rm -f "$VR/marker"
+  rc=$( (cd "$VR/site" && PATH="$VR/bin" TMPDIR="$VR/tmp" "$VR/bin/sh" "$VRS" --start "touch '$VR/marker'" --request /x >"$VR/out" 2>"$VR/err"); echo $?)
+  { [ "$rc" -eq 2 ] && grep -q curl "$VR/err" && [ ! -e "$VR/marker" ]; } \
+    || vr_fail="$vr_fail [no curl: exit $rc, stderr $(head -1 "$VR/err")]"
+  # an interrupt during the wait: its processes stopped, its directory gone. A job started with &
+  # ignores INT, so python3 puts INT back to its default before it becomes the script.
+  (cd "$VR/site" && TMPDIR="$VR/tmp" exec python3 -c 'import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execvp(sys.argv[1], sys.argv[1:])' \
+     sh "$VRS" --start 'sleep 6128' --request /x --timeout 60 >"$VR/out" 2>"$VR/err") &
+  vr_pid=$!; vr_n=0
+  while [ "$vr_n" -lt 100 ]; do ps -A -o command= > "$VR/ps"; grep -q '^sleep 6128' "$VR/ps" && break; sleep 0.1; vr_n=$((vr_n + 1)); done
+  grep -q '^sleep 6128' "$VR/ps" || vr_fail="$vr_fail [interrupt: the application never started]"
+  kill -INT "$vr_pid" 2>/dev/null; wait "$vr_pid" 2>/dev/null; rc=$?
+  [ "$rc" -ne 0 ] || vr_fail="$vr_fail [interrupt: exit 0]"
+  vr_left "interrupt"
+fi
+kill "$vr_by" 2>/dev/null; wait "$vr_by" 2>/dev/null
+if [ -f "$VRS" ] && [ -z "$vr_fail" ]; then pass "verify-run (RAN with the status line and 10 body lines after one GET, EXITED with the code and the last 20 lines, NOT-READY after the timeout given, exit 2 on misuse or no curl with nothing started; nothing of a run is left and a bystander lives, also after INT)"
+elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
