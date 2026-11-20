@@ -35,7 +35,7 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 129 `PASS`, exit 0
   - Note (2026-11-20): check 129 could not be red first: the behaviour it holds is T1's, already built. It was shown to fail instead on a copy of the script whose clean-up does not stop the application ("a server is left" from run 1 on) and passes on the script, ten runs in about 4 s.
-- [ ] **T3** The elixir and static `verify` skills, installed only on `--with-skills` → REQ-13, REQ-14, REQ-15
+- [x] **T3** The elixir and static `verify` skills, installed only on `--with-skills` → REQ-13, REQ-14, REQ-15
   - Files: plugins/shipkit/stacks/elixir/.claude/skills/verify/SKILL.md, plugins/shipkit/stacks/static/.claude/skills/verify/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 130 (`verify-skills`): both files exist with a `description:` of 300 characters or fewer; `install-stack.sh` for `elixir` and for `static` into fresh projects, with the `KEY=value` arguments that smoke's existing install checks pass for those stacks, exits 0 and leaves no `.claude/skills/verify/`; the same with `--with-skills` exits 0 and leaves `.claude/skills/verify/SKILL.md` byte-identical to the overlay's file; `scripts/lint.py` prints no line naming either file. The text is the design's, "The two `verify` skills"
   - After: T2

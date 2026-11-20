@@ -188,6 +188,7 @@ registry() { cat <<'EOF'
 127 brief-escapes
 128 verify-run
 129 verify-run-ten
+130 verify-skills
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5674,6 +5675,39 @@ while [ "$vt_i" -le 10 ]; do
 done
 if [ -z "$vt_fail" ]; then pass "verify-run-ten (ten runs in a row on one static fixture each print RAN 200 /index.html first and leave no server and nothing in TMPDIR)"
 else failc "verify-run-ten" "$vt_fail"; fi
+
+# 130. verify-skills: the elixir and static overlays ship a verify skill, installed only on
+# --with-skills, with the arguments those overlays needed before (running-the-change T3). The
+# Rails overlay gets none in this sprint: checks 67 and 69 still hold it to four skills.
+# Cites: running-the-change/REQ-13 running-the-change/REQ-15
+VK="$WORK/verify-skills"; mkdir -p "$VK"; vk_fail=""
+vk_one() {  # vk_one <stack> <KEY=value…>: the skill's description, then installs without and with --with-skills
+  vk_stack=$1; shift
+  vk_src="$COPY/stacks/$vk_stack/.claude/skills/verify/SKILL.md"
+  if [ ! -f "$vk_src" ]; then vk_fail="$vk_fail [$vk_stack: no verify skill]"; return; fi
+  vk_desc=$(sed -n 's/^description: "\(.*\)"$/\1/p' "$vk_src" | head -1)
+  { [ -n "$vk_desc" ] && [ "${#vk_desc}" -le 300 ]; } \
+    || vk_fail="$vk_fail [$vk_stack: description of ${#vk_desc} characters, want 1 to 300]"
+  for vk_with in no yes; do
+    vk_p="$VK/$vk_stack-$vk_with"; mkdir -p "$vk_p"
+    if [ "$vk_with" = yes ]; then sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" "$vk_stack" "$vk_p" "$@" >/dev/null 2>"$VK/err"
+    else sh "$COPY/scripts/install-stack.sh" "$COPY" "$vk_stack" "$vk_p" "$@" >/dev/null 2>"$VK/err"; fi
+    vk_rc=$?
+    [ "$vk_rc" -eq 0 ] || vk_fail="$vk_fail [$vk_stack, with skills $vk_with: install exit $vk_rc: $(head -2 "$VK/err" | tr '\n' '|')]"
+    if [ "$vk_with" = no ]; then
+      [ ! -e "$vk_p/.claude/skills/verify" ] || vk_fail="$vk_fail [$vk_stack: verify installed without --with-skills]"
+    else
+      cmp -s "$vk_src" "$vk_p/.claude/skills/verify/SKILL.md" \
+        || vk_fail="$vk_fail [$vk_stack: --with-skills did not install the overlay's verify skill as it is]"
+    fi
+  done
+}
+vk_one elixir ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app TEST_COMMAND="mix test"
+vk_one static BUNDLER=None DEV_SERVER=None
+vk_lint=$(python3 "$ROOT/scripts/lint.py" 2>&1 | grep 'skills/verify/SKILL.md')
+[ -z "$vk_lint" ] || vk_fail="$vk_fail [lint: $(printf '%s\n' "$vk_lint" | head -2 | tr '\n' '|')]"
+if [ -z "$vk_fail" ]; then pass "verify-skills (elixir and static ship a verify skill with a description of 300 characters or fewer, installed as it is on --with-skills and not without, with no new install argument, and lint names neither)"
+else failc "verify-skills" "$vk_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
