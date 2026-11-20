@@ -180,6 +180,12 @@ registry() { cat <<'EOF'
 119 checks-match
 120 escape-second
 121 briefing-commands
+122 kind-fixtures
+123 kind-reader
+124 prop
+125 prop-ci
+126 red-check
+127 brief-escapes
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -3947,6 +3953,7 @@ else failc "test-command" "$tc_fail"; fi
 # gate-as-software/REQ-12 gate-as-software/REQ-13 gate-as-software/REQ-14 gate-as-software/REQ-15
 # gate-as-software/REQ-16 gate-as-software/REQ-17 gate-as-software/REQ-18 gate-as-software/REQ-19
 # gate-as-software/REQ-20 gate-as-software/REQ-21 gate-as-software/REQ-22 gate-as-software/REQ-23
+# tests-worth-having/REQ-43
 SK="$WORK/sck"; mkdir -p "$SK/base" "$SK/tmp" "$SK/tmp-h" "$SK/bin"
 (cd "$SK/base" && bash "$COPY/evals/reviewer/all-met/fixture.sh" >/dev/null 2>&1)
 printf '#!/bin/sh\necho called >> "%s"\n' "$SK/claude.log" > "$SK/bin/claude"; chmod +x "$SK/bin/claude"
@@ -3972,6 +3979,8 @@ grep -q '^Requirements changed on this branch:$' "$sk_ev" 2>/dev/null && grep -q
 grep -qF '`python3 -m unittest discover -s tests` → exit 0' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 2's command and exit status are not in its block]"
 grep -q 'no migration in the diff' "$sk_ev" 2>/dev/null || sk_fail="$sk_fail [a: step 5 does not say there is no migration]"
 [ "$(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null)" = 6 ] || sk_fail="$sk_fail [a: $(grep -c '^result: PASS — ' "$sk_ev" 2>/dev/null) result: PASS lines, want 6]"
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = "Not run, a suggestion: sh \"<plugin root>/scripts/red-check.sh\" . refunds base --test '$SK_T'" ] \
+  || sk_fail="$sk_fail [a: evidence.md does not end with the red-check.sh command and the test command given: $(sed -n '$p' "$sk_ev" 2>/dev/null)]"
 # b. one task unticked: step 3 fails and names the line; exit 1
 cp -R "$SK/base" "$SK/b"
 sed 's/^- \[x\] \*\*T3\*\*/- [ ] **T3**/' "$SK/b/.shipkit/specs/refunds/tasks.md" > "$SK/b.tasks" && cp "$SK/b.tasks" "$SK/b/.shipkit/specs/refunds/tasks.md"
@@ -4031,10 +4040,20 @@ sh "$SKS" --clean "$SK/other" >/dev/null 2>&1; sk_rc=$?
 sh "$SKS" --clean "$SK/tmp/shipkit-ship.zzzzzz" >/dev/null 2>&1; sk_rc2=$?
 [ "$sk_rc" -eq 1 ] && [ "$sk_rc2" -eq 1 ] && [ -f "$SK/other/evidence.md" ] && [ -f "$SK/tmp/shipkit-ship.zzzzzz/evidence.md" ] \
   || sk_fail="$sk_fail [j: --clean on a directory it did not make: exit $sk_rc and $sk_rc2]"
+# l. evidence.md ends with one line that names the red-check.sh command for the same project,
+# slug and base. Nothing runs it. It carries --test only when the script was given one, quoted
+# so that it can be pasted, and standard output is the scratch path and six lines as before
+cp -R "$SK/base" "$SK/l"; sk_run "$SK/l" refunds base
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = 'Not run, a suggestion: sh "<plugin root>/scripts/red-check.sh" . refunds base' ] \
+  && [ "$(printf '%s\n' "$sk_out" | sed 1d | grep -c .)" = 6 ] && [ "$(grep -c '^### ' "$sk_ev" 2>/dev/null)" = 6 ] \
+  || sk_fail="$sk_fail [l: with no test command the last line is: $(sed -n '$p' "$sk_ev" 2>/dev/null); printed: $(printf '%s' "$sk_out" | sed 1d | tr '\n' '|')]"
+sk_run "$SK/l" refunds base --test "sh -c 'exit 0'"
+[ "$(sed -n '$p' "$sk_ev" 2>/dev/null)" = "Not run, a suggestion: sh \"<plugin root>/scripts/red-check.sh\" . refunds base --test 'sh -c '\\''exit 0'\\'''" ] \
+  || sk_fail="$sk_fail [l: a test command that holds a quote: $(sed -n '$p' "$sk_ev" 2>/dev/null)]"
 # k. no model was started, and the script is clean under sh -n
 [ ! -s "$SK/claude.log" ] || sk_fail="$sk_fail [k: claude was called $(grep -c . "$SK/claude.log") time(s)]"
 sh -n "$SKS" 2>/dev/null || sk_fail="$sk_fail [k: sh -n reports a syntax error]"
-if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; no claude)"
+if [ -z "$sk_fail" ]; then pass "ship-check (six blocks in order on a finished feature; an unticked task, a dirty tree, a failing or unknown test command and a fired decision each fail their own step; migrations are listed; a scratch directory for each run; --clean removes only its own; the evidence ends with the red-check.sh command, not run; no claude)"
 else failc "ship-check" "$sk_fail"; fi
 
 # 108. release-check: a READY report is tied to a commit. For each shipped spec,
@@ -5146,6 +5165,380 @@ case "$(bn_v "" "" 230)" in "FAIL  briefing-commands"*"230 commands"*) ;; *) bn_
 case "$(bn_v true report 229)" in "PASS  briefing-commands"*"starts 229 commands"*) ;; *) bn_fail="$bn_fail [229 with CI=true and SMOKE_TIMING=report: not a PASS that carries the count]" ;; esac
 if [ -n "$bn_fail" ]; then failc "briefing-commands" "$bn_fail [50 specs: $bn_50 commands]"
 else bn_verdict "$bn_50" "$bn_same"; fi
+
+# 122. kind-fixtures: which kind of test proves which requirement is measured before any text
+# says so (the verifier plan's V16, "measure first"). scripts/kind-probe.sh writes the project the
+# measurement runs on: an accepted spec, `passbook`, whose three requirements have three shapes
+# (something that never happens, a round trip, a replacement that behaves as before), a design and
+# no task list. It prints the headless commands and starts one only with its run flag, which this
+# check never gives a real one. A stand-in first on the PATH shows that no model is called. The
+# second fixture, `inkwell`, is for the migration skill: a library kept in the tree at two major
+# versions, with the changelog between them, and tests that pass on the old one and fail on the
+# new. The run flag is tried once for each fixture against a second stand-in that only records
+# its call and prints a canned reply, so the loop Sprint 35 pays for has run before it is paid for.
+# Cites: tests-worth-having/REQ-1 tests-worth-having/REQ-2 tests-worth-having/REQ-3 tests-worth-having/REQ-4 tests-worth-having/REQ-5 tests-worth-having/REQ-15 tests-worth-having/REQ-16 tests-worth-having/REQ-20
+KP="$WORK/kind-probe"; mkdir -p "$KP/bin" "$KP/tmp"; kp_fail=""
+kp_sh="$ROOT/scripts/kind-probe.sh"
+printf '#!/bin/sh\ntouch "%s/claude-called"\nexit 1\n' "$KP" > "$KP/bin/claude"; chmod +x "$KP/bin/claude"
+kp() { PATH="$KP/bin:$PATH" TMPDIR="$KP/tmp" sh "$kp_sh" "$@"; }
+kp_tree() { find "$KP" -not -path '*/__pycache__*' | sort; }
+kp --scaffold kinds "$KP/kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] || kp_fail="$kp_fail [--scaffold kinds: exit $kp_rc]"
+[ "$(git -C "$KP/kinds" rev-list --count HEAD 2>/dev/null)" = 1 ] && [ -z "$(git -C "$KP/kinds" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [kinds: not one commit with a clean tree]"
+kp_spec="$KP/kinds/.shipkit/specs/passbook"
+grep -q '^> Spec accepted at commit ' "$kp_spec/spec.md" 2>/dev/null && grep -qx '> Status: open' "$kp_spec/spec.md" 2>/dev/null \
+  && [ -f "$kp_spec/design.md" ] || kp_fail="$kp_fail [kinds: the spec lacks its stamp, Status: open or design.md]"
+[ -e "$kp_spec/tasks.md" ] && kp_fail="$kp_fail [kinds: the spec already has a tasks.md]"
+[ "$(grep -c '^- \*\*REQ-[0-9][0-9]*\.\*\*' "$kp_spec/spec.md" 2>/dev/null)" = 3 ] || kp_fail="$kp_fail [kinds: not three requirements]"
+kp_req() { grep "^- \\*\\*REQ-$1\\.\\*\\*" "$kp_spec/spec.md" 2>/dev/null | grep -qF "$2" || kp_fail="$kp_fail [kinds: REQ-$1 does not hold \"$2\"]"; }
+kp_req 1 'the balance shall never be negative'
+kp_req 2 'an exported file shall import to the same records'
+kp_req 3 'after the move to the new parser, every stored document shall render as before'
+kp_cmd=$(sh "$COPY/scripts/test-command.sh" "$KP/kinds" 2>/dev/null)
+[ -n "$kp_cmd" ] && (cd "$KP/kinds" && sh -c "$kp_cmd") >/dev/null 2>&1 \
+  || kp_fail="$kp_fail [kinds: no recorded test command, or it does not exit 0: ${kp_cmd:-none}]"
+kp_head=$(git -C "$KP/kinds" rev-parse HEAD 2>/dev/null)
+kp --scaffold kinds "$KP/kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 2 ] && [ "$(git -C "$KP/kinds" rev-parse HEAD 2>/dev/null)" = "$kp_head" ] && [ -z "$(git -C "$KP/kinds" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [--scaffold into the fixture again: exit $kp_rc, not 2, or the tree changed]"
+mkdir -p "$KP/held"; echo kept > "$KP/held/note.txt"
+kp --scaffold kinds "$KP/held" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 2 ] && [ "$(ls -A "$KP/held" | tr '\n' ' ')" = "note.txt " ] \
+  || kp_fail="$kp_fail [--scaffold into a directory that holds a file: exit $kp_rc, not 2, or something was written]"
+kp_before=$(kp_tree)
+kp_out=$(cd "$KP" && kp --run kinds 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out" | grep -c .)" = 5 ] && [ "$(printf '%s\n' "$kp_out" | grep -cF '/shipkit:spec passbook tasks')" = 5 ] \
+  || kp_fail="$kp_fail [--run kinds: exit $kp_rc, or not 5 lines that each hold the request]"
+kp_out2=$(cd "$KP" && kp --run kinds 2 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out2" | grep -c .)" = 2 ] && [ "$(printf '%s\n' "$kp_out2" | grep -cF '/shipkit:spec passbook tasks')" = 2 ] \
+  || kp_fail="$kp_fail [--run kinds 2: exit $kp_rc, or not 2 lines that each hold the request]"
+[ "$(kp_tree)" = "$kp_before" ] || kp_fail="$kp_fail [--run without its flag wrote a file]"
+kp_bad() {  # kp_bad <what> <args>...: usage on standard error, nothing on standard output, exit 2
+  kp_what=$1; shift
+  kp_o=$(kp "$@" 2>"$KP/err"); kp_rc=$?
+  [ "$kp_rc" -eq 2 ] && [ -z "$kp_o" ] && grep -qF 'kind-probe.sh --scaffold' "$KP/err" \
+    || kp_fail="$kp_fail [$kp_what: exit $kp_rc, not 2 with the usage on standard error]"
+}
+kp_bad "an unknown mode" --frobnicate
+kp_bad "no arguments"
+kp_bad "an unknown fixture to --scaffold" --scaffold nosuch "$KP/nosuch"
+kp_bad "an unknown fixture to --run" --run nosuch
+[ -e "$KP/nosuch" ] && kp_fail="$kp_fail [an unknown fixture still made its directory]"
+kp --scaffold migration "$KP/mig" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] || kp_fail="$kp_fail [--scaffold migration: exit $kp_rc]"
+[ "$(git -C "$KP/mig" rev-list --count HEAD 2>/dev/null)" = 1 ] && [ -z "$(git -C "$KP/mig" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [migration: not one commit with a clean tree]"
+[ -f "$KP/mig/vendor/textkit-1/textkit.py" ] && [ -f "$KP/mig/vendor/textkit-2/textkit.py" ] && [ -f "$KP/mig/vendor/textkit-2/CHANGELOG.md" ] \
+  || kp_fail="$kp_fail [migration: the library is not there at two versions with its changelog]"
+[ -e "$KP/mig/.shipkit/specs" ] && kp_fail="$kp_fail [migration: the fixture holds a spec]"
+for kp_f in wrap title; do
+  grep -qF "\`$kp_f()\`" "$KP/mig/vendor/textkit-2/CHANGELOG.md" 2>/dev/null && grep -qF "textkit.$kp_f(" "$KP/mig/inkwell/format.py" 2>/dev/null \
+    || kp_fail="$kp_fail [migration: the changelog does not name $kp_f(), or inkwell/format.py does not call it]"
+done
+kp_cmd=$(sh "$COPY/scripts/test-command.sh" "$KP/mig" 2>/dev/null)
+[ -n "$kp_cmd" ] && (cd "$KP/mig" && sh -c "$kp_cmd") >/dev/null 2>&1 \
+  || kp_fail="$kp_fail [migration: no recorded test command, or it does not exit 0 on the old version: ${kp_cmd:-none}]"
+# A second, fresh copy, and not a copy of the first: that one holds the bytecode of the run
+# above, and a deps.py rewritten within the same second, at the same size, would not be re-read.
+kp --scaffold migration "$KP/mig-new" >/dev/null 2>&1
+sed 's/textkit-1/textkit-2/' "$KP/mig/inkwell/deps.py" > "$KP/mig-new/inkwell/deps.py" 2>/dev/null
+cmp -s "$KP/mig/inkwell/deps.py" "$KP/mig-new/inkwell/deps.py" && kp_fail="$kp_fail [migration: inkwell/deps.py does not name the old version's folder]"
+(cd "$KP/mig-new" && sh -c "${kp_cmd:-false}") >/dev/null 2>&1 \
+  && kp_fail="$kp_fail [migration: the tests pass on the new version too, so no behaviour the code depends on changed]"
+rm -rf "$KP/mig-new"
+kp_before=$(kp_tree)
+kp_out=$(cd "$KP" && kp --run migration 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out" | grep -c .)" = 3 ] && [ "$(printf '%s\n' "$kp_out" | grep -cF '/shipkit-workflows:migration-plan')" = 3 ] \
+  || kp_fail="$kp_fail [--run migration: exit $kp_rc, or not 3 lines that each hold the request]"
+[ "$(kp_tree)" = "$kp_before" ] || kp_fail="$kp_fail [--run migration without its flag wrote a file]"
+[ -e "$KP/claude-called" ] && kp_fail="$kp_fail [a model was called]"
+# The run flag, against a stand-in that records where it was started and with what, and prints
+# a reply in the form a headless session's JSON result has.
+mkdir -p "$KP/bin2"
+printf '{"type":"result","subtype":"success","result":"Step 1: write the comparison.\\n\\nStep 2: move to 2.0."}\n' > "$KP/reply.json"
+printf '#!/bin/sh\npwd -P >> "%s/yes-cwd"\nprintf "%%s\\n" "$*" >> "%s/yes-args"\ncat "%s/reply.json"\n' "$KP" "$KP" "$KP" > "$KP/bin2/claude"; chmod +x "$KP/bin2/claude"
+kpy() { PATH="$KP/bin2:$PATH" TMPDIR="$KP/tmp" sh "$kp_sh" "$@"; }
+kpy --run kinds 1 --yes --out "$KP/yes-kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ -f "$KP/yes-kinds/run-1/proj/.shipkit/specs/passbook/spec.md" ] && [ -s "$KP/yes-kinds/run-1/result.json" ] \
+  || kp_fail="$kp_fail [--run kinds 1 with the run flag: exit $kp_rc, or no fixture and result under run-1]"
+kpy --run migration 2 --yes --out "$KP/yes-mig" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ -f "$KP/yes-mig/run-2/proj/vendor/textkit-2/CHANGELOG.md" ] \
+  && [ "$(cat "$KP/yes-mig/run-2/plan.md" 2>/dev/null | tr '\n' '|')" = "Step 1: write the comparison.||Step 2: move to 2.0.|" ] \
+  || kp_fail="$kp_fail [--run migration 2 with the run flag: exit $kp_rc, or run-2 lacks its fixture or its plan.md is not the reply's text]"
+[ "$(grep -c . "$KP/yes-cwd" 2>/dev/null)" = 3 ] && [ "$(sed -n 1p "$KP/yes-cwd" 2>/dev/null)" = "$(cd "$KP/yes-kinds/run-1/proj" 2>/dev/null && pwd -P)" ] \
+  || kp_fail="$kp_fail [with the run flag: not three starts, the first in run-1's fixture]"
+[ "$(grep -cF '/shipkit:spec passbook tasks' "$KP/yes-args" 2>/dev/null)" = 1 ] && [ "$(grep -cF '/shipkit-workflows:migration-plan textkit 1.4 2.0' "$KP/yes-args" 2>/dev/null)" = 2 ] \
+  || kp_fail="$kp_fail [with the run flag: the stand-in was not given the two requests]"
+if [ -z "$kp_fail" ]; then pass "kind-fixtures (kind-probe.sh scaffolds the passbook spec, three requirements, a design and no task list, and the inkwell project, a library at two versions whose tests pass on the old and fail on the new; prints 5 and 3 commands, or the number asked for, and starts none; with its run flag and a stand-in it runs each in a fresh fixture and keeps the reply)"
+else failc "kind-fixtures" "$kp_fail"; fi
+
+# 123. kind-reader: kind-probe.sh --read says which kind of test each task's Test: line names for
+# the passbook spec's three requirements, and whether that is an expected kind. A tag at the
+# start of the line settles it; without one a short list of words does. Six task lists written
+# by hand, two for each kind, are kept in scripts/kind-replies/: one that names the kind and one
+# that does not. A seventh, made here, has a ticked task whose header runs over two lines, a tag
+# in capitals and words in capitals. --read-plan says whether a migration plan holds a step that
+# runs the old and the new version on the same inputs and compares them: the words must be in one
+# block of the plan, and two plans written by hand, one with such a step and one without, are kept
+# beside the task lists.
+# Cites: tests-worth-having/REQ-7 tests-worth-having/REQ-8 tests-worth-having/REQ-9 tests-worth-having/REQ-10 tests-worth-having/REQ-11 tests-worth-having/REQ-12 tests-worth-having/REQ-13 tests-worth-having/REQ-14 tests-worth-having/REQ-18 tests-worth-having/REQ-19
+KR="$WORK/kind-reader"; mkdir -p "$KR/one"; kr_fail=""
+kr_sh="$ROOT/scripts/kind-probe.sh"
+kr_want=$(tr '|' '\t' <<'KREOF'
+differential-named/tasks.md|REQ-1|property|right
+differential-named/tasks.md|REQ-2|property|right
+differential-named/tasks.md|REQ-3|differential|right
+differential-unnamed/tasks.md|REQ-1|uncited|missed
+differential-unnamed/tasks.md|REQ-2|e2e|right
+differential-unnamed/tasks.md|REQ-3|none|missed
+e2e-named/tasks.md|REQ-1|property|right
+e2e-named/tasks.md|REQ-2|e2e|right
+e2e-named/tasks.md|REQ-3|differential|right
+e2e-unnamed/tasks.md|REQ-1|property|right
+e2e-unnamed/tasks.md|REQ-2|none|missed
+e2e-unnamed/tasks.md|REQ-3|property|missed
+property-named/tasks.md|REQ-1|property|right
+property-named/tasks.md|REQ-2|e2e+property|right
+property-named/tasks.md|REQ-3|differential|right
+property-unnamed/tasks.md|REQ-1|none|missed
+property-unnamed/tasks.md|REQ-2|property|right
+property-unnamed/tasks.md|REQ-3|differential|right
+TOTAL REQ-1 right=4 missed=2
+TOTAL REQ-2 right=5 missed=1
+TOTAL REQ-3 right=4 missed=2
+KREOF
+)
+kr_out=$(sh "$kr_sh" --read "$ROOT/scripts/kind-replies" 2>&1); kr_rc=$?
+[ "$kr_rc" -eq 0 ] || kr_fail="$kr_fail [--read: exit $kr_rc]"
+[ "$kr_out" = "$kr_want" ] || kr_fail="$kr_fail [--read on the six task lists: $(printf '%s\n' "$kr_out" | tr '\t\n' ' |' | cut -c1-600)]"
+cat > "$KR/one/tasks.md" <<'KREOF'
+# Tasks: passbook
+
+- [x] **T1** The new parser takes over, and what the stored statements show
+  does not change → REQ-3
+  - Files: passbook/statements.py
+  - Test: An END-TO-END run of Both Parsers over data/statements/
+  - After: none
+  - Done when: `python3 -m unittest -q` → all pass
+- [ ] **T2** Withdrawals → REQ-1
+  - Files: passbook/account.py
+  - Test: [PROPERTY] tests/test_account.py, end-to-end it is not
+  - After: T1
+  - Done when: `python3 -m unittest -q` → all pass
+KREOF
+kr_one=$(sh "$kr_sh" --read "$KR/one" 2>&1 | tr '\t\n' ' |')
+[ "$kr_one" = "tasks.md REQ-1 property right|tasks.md REQ-2 uncited missed|tasks.md REQ-3 e2e+differential right|TOTAL REQ-1 right=1 missed=0|TOTAL REQ-2 right=0 missed=1|TOTAL REQ-3 right=1 missed=0|" ] \
+  || kr_fail="$kr_fail [--read on a ticked task with a wrapped header, a tag and words in capitals: $kr_one]"
+kr_none=$(sh "$kr_sh" --read "$KR/no-such-directory" 2>"$KR/err"); kr_rc=$?
+[ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read on a directory that is not there: exit $kr_rc, not 2 with a line on standard error]"
+kr_plans=$(cd "$ROOT/scripts/kind-replies" && sh "$kr_sh" --read-plan plan-differential.md plan-none.md 2>&1 | tr '\t\n' ' |'); kr_rc=$?
+[ "$kr_plans" = "plan-differential.md differential|plan-none.md none|" ] \
+  || kr_fail="$kr_fail [--read-plan on the two hand-written plans: $kr_plans]"
+printf 'Step 1: add tests.\n\nStep 2: run both versions on the SAME INPUTS and keep the output.\n' > "$KR/a.md"
+printf 'Step 1: keep the old and new library side by side.\n\nStep 2: compare the notes by eye.\n' > "$KR/b.md"
+printf 'Step 1: record golden output before the upgrade.\n' > "$KR/c.md"
+: > "$KR/d.md"
+kr_plans=$(cd "$KR" && sh "$kr_sh" --read-plan a.md b.md c.md d.md 2>&1 | tr '\t\n' ' |')
+[ "$kr_plans" = "a.md differential|b.md none|c.md differential|d.md none|" ] \
+  || kr_fail="$kr_fail [--read-plan: both phrases in one block, the phrases in two blocks, one word alone, an empty file: $kr_plans]"
+kr_none=$(cd "$KR" && sh "$kr_sh" --read-plan a.md no-such-plan.md 2>"$KR/err"); kr_rc=$?
+[ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read-plan with a file that is not there: exit $kr_rc, not 2 with nothing printed and a line on standard error]"
+if [ -z "$kr_fail" ]; then pass "kind-reader (--read gives the eighteen lines and three totals expected of the six hand-written task lists: a tag settles a line, words name a kind without one, two kinds are joined, a requirement no task cites is uncited, and either kind is right for the round trip; --read-plan finds a differential step only where one block of the plan holds it)"
+else failc "kind-reader" "$kr_fail"; fi
+
+# 124. prop: spec-check.sh and brief.sh each read a task list with their own awk, and every other
+# check here feeds them inputs a person thought of. scripts/prop.py checks five properties of the
+# two on specs that Hypothesis generates, the same ones on every run: they agree on each task's
+# files; spec-check.sh changes nothing and says the same twice; a new citation never adds a gap;
+# a citation taken away adds exactly one MISSING-TEST; and the brief copies a requirement byte for
+# byte. Here it runs on five inputs for each property (CI's own step runs forty), and each
+# property is shown to fail on a copy of the script broken in the way it is meant to catch.
+# Hypothesis comes from uv when uv is there, as lint.sh gets PyYAML, and from python3 otherwise.
+# Cites: tests-worth-having/REQ-26 tests-worth-having/REQ-27 tests-worth-having/REQ-28 tests-worth-having/REQ-29 tests-worth-having/REQ-30
+PR="$WORK/prop"; mkdir -p "$PR/broken" "$PR/nohyp" "$PR/cwd"; pr_fail=""
+pr_py="$ROOT/scripts/prop.py"
+pr_ver=$(sed -n 's/^HYPOTHESIS = "\(.*\)"$/\1/p' "$pr_py" 2>/dev/null)
+if command -v uv >/dev/null 2>&1; then prop() { (cd "$PR/cwd" && uv run --quiet --with "hypothesis==$pr_ver" python3 "$pr_py" "$@"); }
+else prop() { (cd "$PR/cwd" && python3 "$pr_py" "$@"); }; fi
+pr_status=$(git -C "$ROOT" status --porcelain 2>/dev/null)
+pr_out=$(prop --max-examples 5 --spec-check "$COPY/scripts/spec-check.sh" --brief "$COPY/scripts/brief.sh" 2>&1); pr_rc=$?
+[ "$pr_rc" -eq 0 ] || pr_fail="$pr_fail [prop.py on this checkout's scripts: exit $pr_rc]"
+for pr_n in agreement no-side-effect monotone exactly-one round-trip; do
+  printf '%s\n' "$pr_out" | grep -q "^PASS $pr_n " || pr_fail="$pr_fail [no PASS line for $pr_n]"
+done
+[ -z "$(ls -A "$PR/cwd")" ] || pr_fail="$pr_fail [prop.py wrote into its working directory: $(ls -A "$PR/cwd" | tr '\n' ' ')]"
+[ "$(git -C "$ROOT" status --porcelain 2>/dev/null)" = "$pr_status" ] || pr_fail="$pr_fail [prop.py changed the repository's status]"
+ls -d "${TMPDIR:-/tmp}"/shipkit-prop.* >/dev/null 2>&1 && pr_fail="$pr_fail [prop.py left its temporary directory behind]"
+pr_break() {  # pr_break <property> <script> <sed expression>: the property fails on the broken copy
+  cp "$COPY/scripts/spec-check.sh" "$COPY/scripts/brief.sh" "$PR/broken/"
+  sed "$3" "$COPY/scripts/$2" > "$PR/broken/$2"
+  if cmp -s "$COPY/scripts/$2" "$PR/broken/$2"; then pr_fail="$pr_fail [$1: the break changed nothing in $2]"; return; fi
+  pr_o=$(prop --only "$1" --no-shrink --spec-check "$PR/broken/spec-check.sh" --brief "$PR/broken/brief.sh" 2>&1); pr_rc=$?
+  [ "$pr_rc" -eq 1 ] && printf '%s\n' "$pr_o" | grep -qx "FAIL $1" && printf '%s\n' "$pr_o" | grep -q '^--- \.shipkit/specs/.*/spec\.md$' \
+    || pr_fail="$pr_fail [$1 on a broken $2: exit $pr_rc, not 1 with FAIL $1 and the input: $(printf '%s' "$pr_o" | sed -n 1,3p | tr '\n' '|' | cut -c1-200)]"
+}
+pr_break agreement spec-check.sh 's/function trim(s) { gsub(\/`\/, "", s); /function trim(s) { /'
+pr_break no-side-effect spec-check.sh 's|^TMP=\$(mktemp|: > "$PROJ/left-behind"; &|'
+pr_break monotone spec-check.sh 's/(order\[i\] in cit ? "C" : "-")/(order[i] in cit ? "-" : "C")/'
+pr_break exactly-one spec-check.sh 's/echo "MISSING-TEST \$slug REQ-\$n"/&; &/'
+pr_break round-trip brief.sh '/^requirement() {/,/^}/ s/on { print }/on { print; exit }/'
+pr_again=$(prop --only round-trip --no-shrink --spec-check "$PR/broken/spec-check.sh" --brief "$PR/broken/brief.sh" 2>&1)
+[ -n "$pr_o" ] && [ "$pr_again" = "$pr_o" ] || pr_fail="$pr_fail [two runs at one broken copy did not print the same lines]"
+printf 'raise ImportError("no Hypothesis here")\n' > "$PR/nohyp/hypothesis.py"
+pr_o=$(PYTHONPATH="$PR/nohyp" prop 2>&1); pr_rc=$?
+[ "$pr_rc" -eq 2 ] && [ "$(printf '%s\n' "$pr_o" | grep -c .)" = 1 ] \
+  && printf '%s\n' "$pr_o" | grep -qF "uv run --with hypothesis==$pr_ver python3 scripts/prop.py" \
+  || pr_fail="$pr_fail [without Hypothesis: exit $pr_rc, not 2 with the one line that names the uv command: $(printf '%s' "$pr_o" | sed -n 1,2p | tr '\n' '|' | cut -c1-200)]"
+if [ -z "$pr_fail" ]; then pass "prop (prop.py: the five properties hold on this checkout's spec-check.sh and brief.sh, on five generated inputs each; each fails on a copy broken for it, with the input printed; two runs print the same; without Hypothesis it names the uv command and exits 2; it writes nothing outside its own temporary directory)"
+else failc "prop" "$pr_fail"; fi
+
+# 125. prop-ci: both of CI's jobs run the five properties, since the two runners do not ship the
+# same awk and users run the scripts on both (the owner's answer, 2026-11-20). Each job installs
+# Hypothesis at the version prop.py is written for and runs it. The reading is shown to fail on a
+# copy of the workflow that lacks one job's run step, and on one that installs another version.
+# Cites: tests-worth-having/REQ-31
+PC="$WORK/prop-ci"; mkdir -p "$PC"; pc_fail=""
+pc_ver=$(sed -n 's/^HYPOTHESIS = "\(.*\)"$/\1/p' "$ROOT/scripts/prop.py" 2>/dev/null)
+pc_read() {  # pc_read <workflow file> → one line for each thing a job lacks
+  for pc_j in lint smoke-no-model; do
+    pc_job=$(awk -v j="  $pc_j:" '$0 == j { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$1")
+    printf '%s\n' "$pc_job" | grep -qxF "        run: pip install --quiet hypothesis==$pc_ver" || echo "$pc_j: no step installs hypothesis==$pc_ver"
+    printf '%s\n' "$pc_job" | grep -qxF '        run: python3 scripts/prop.py' || echo "$pc_j: no step runs prop.py"
+  done
+}
+[ -n "$pc_ver" ] || pc_fail="$pc_fail [prop.py names no version of Hypothesis]"
+pc_miss=$(pc_read "$ROOT/.github/workflows/lint.yml")
+[ -z "$pc_miss" ] || pc_fail="$pc_fail [lint.yml: $(printf '%s' "$pc_miss" | tr '\n' ';')]"
+awk '/^  smoke-no-model:$/ { seen = 1 } !seen && /^        run: python3 scripts\/prop\.py$/ { next } { print }' "$ROOT/.github/workflows/lint.yml" > "$PC/no-run.yml"
+[ "$(pc_read "$PC/no-run.yml")" = "lint: no step runs prop.py" ] \
+  || pc_fail="$pc_fail [a workflow whose lint job does not run prop.py reads: $(pc_read "$PC/no-run.yml" | tr '\n' ';')]"
+sed "s/hypothesis==$pc_ver/hypothesis==0.0.1/" "$ROOT/.github/workflows/lint.yml" > "$PC/other.yml"
+[ "$(pc_read "$PC/other.yml" | grep -c 'no step installs')" = 2 ] \
+  || pc_fail="$pc_fail [a workflow that installs another version reads: $(pc_read "$PC/other.yml" | tr '\n' ';')]"
+if [ -z "$pc_fail" ]; then pass "prop-ci (both CI jobs install Hypothesis $pc_ver, the version prop.py is written for, and run prop.py; a workflow without one job's step, or with another version, is read as lacking it)"
+else failc "prop-ci" "$pc_fail"; fi
+
+# 126. red-check: nothing showed that a new test was ever red. red-check.sh runs the project's
+# suite on a scratch worktree of the base ref, once as the base has it and once with the
+# branch's citing test files copied in. A test that needs the feature fails there (RED-AT-BASE);
+# one that asserts nothing passes (GREEN-AT-BASE); a base that cannot run its own suite is said
+# so and not judged (BASE-NOT-RUNNABLE); and with no citing test that differs from the base
+# nothing is run (NO-TESTS). It is run by hand, exits 0 whatever the word, and leaves the
+# project and git as they were, also when it is stopped half way. The scratch project's suite is
+# a shell script, so the check needs no language but sh.
+# Cites: tests-worth-having/REQ-32 tests-worth-having/REQ-33 tests-worth-having/REQ-34 tests-worth-having/REQ-35 tests-worth-having/REQ-36 tests-worth-having/REQ-37 tests-worth-having/REQ-38 tests-worth-having/REQ-39 tests-worth-having/REQ-40 tests-worth-having/REQ-41 tests-worth-having/REQ-42
+RC="$WORK/red-check"; mkdir -p "$RC/p/tests" "$RC/p/deps" "$RC/tmp" "$RC/plain"; rc_fail=""
+rc_sh="$COPY/scripts/red-check.sh"
+rc_git() { git -C "$RC/p" -c user.email=s@s -c user.name=smoke -c commit.gpgsign=false "$@"; }
+rc_spec() {  # rc_spec <slug> [<a line under the stamp>]: a spec with two requirements
+  mkdir -p "$RC/p/.shipkit/specs/$1"
+  { printf '# Spec: %s\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n' "$1"
+    [ -z "$2" ] || printf '%s\n' "$2"
+    printf '\n## Requirements (EARS)\n- **REQ-1.** The thing shall shout.\n- **REQ-2.** The thing shall stay.\n'; } > "$RC/p/.shipkit/specs/$1/spec.md"
+}
+(cd "$RC/p" && git init -q)
+printf 'greet() { echo hello; }\n' > "$RC/p/lib.sh"
+printf '[ -z "$RC_COUNT" ] || echo run >> "$RC_COUNT"\necho "suite: running"\nfor t in tests/*.sh; do sh "$t" || exit 1; done\n' > "$RC/p/run-tests.sh"
+printf '# old/REQ-1\n. ./lib.sh\n[ "$(greet)" = hello ]\n' > "$RC/p/tests/base.sh"
+printf 'deps/\n.claude/\n' > "$RC/p/.gitignore"
+printf 'helper\n' > "$RC/p/deps/helper.sh"
+rc_spec old
+rc_git add -A >/dev/null 2>&1; rc_git commit -q -m base >/dev/null 2>&1; rc_git branch base >/dev/null 2>&1
+printf '# feat/REQ-1 is cited here too, outside the tests\ngreet() { echo hello; }\nshout() { echo HELLO; }\n' > "$RC/p/lib.sh"
+printf '# feat/REQ-1\n. ./lib.sh\n[ "$(shout)" = HELLO ]\n' > "$RC/p/tests/feat.sh"
+printf '# vac/REQ-1\ntrue\n' > "$RC/p/tests/vacuous.sh"
+rc_spec feat '> Tests: tests/'; rc_spec vac; rc_spec none
+rc_git add -A >/dev/null 2>&1; rc_git commit -q -m feature >/dev/null 2>&1
+git -C "$RC/p" worktree add -q "$RC/theirs" base >/dev/null 2>&1
+rc_run() { TMPDIR="$RC/tmp" RC_COUNT="$RC/count" sh "$rc_sh" "$@"; }
+rc_runs() { grep -c . "$RC/count" 2>/dev/null || true; }
+rc_state() { rc_git status --porcelain; rc_git branch; rc_git stash list; rc_git worktree list; rc_git rev-parse HEAD; }
+rc_clean() { [ -z "$(ls -A "$RC/tmp")" ] || rc_fail="$rc_fail [$1: something is left in the temporary directory: $(ls -A "$RC/tmp" | tr '\n' ' ')]"; }
+rc_is() {  # rc_is <what> <want on standard output, lines joined by |> <want exit> <args>...
+  rc_what=$1; rc_want=$2; rc_code=$3; shift 3
+  rc_out=$(rc_run "$@" 2>"$RC/err" | tr '\n' '|'); rc_out_rc=$(rc_run "$@" >/dev/null 2>&1; echo $?)
+  [ "$rc_out" = "$rc_want" ] && [ "$rc_out_rc" = "$rc_code" ] \
+    || rc_fail="$rc_fail [$rc_what: \"$rc_out\" exit $rc_out_rc, want \"$rc_want\" exit $rc_code; standard error: $(sed -n 1,2p "$RC/err" | tr '\n' '|' | cut -c1-160)]"
+  rc_clean "$rc_what"
+}
+rc_before=$(rc_state)
+: > "$RC/count"
+rc_is "a test that needs the feature" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'sh run-tests.sh'
+[ "$(rc_runs)" = 4 ] || rc_fail="$rc_fail [a red reading took $(rc_runs) runs of the suite over two calls, not 4]"
+grep -q '^suite: running$' "$RC/err" || rc_fail="$rc_fail [the suite's output is not on standard error]"
+rc_is "a test that asserts nothing" "TEST tests/vacuous.sh|GREEN-AT-BASE tests/vacuous.sh|" 0 "$RC/p" vac base --test 'sh run-tests.sh'
+: > "$RC/count"
+rc_is "a suite that fails at the base" "TEST tests/feat.sh|BASE-NOT-RUNNABLE|" 0 "$RC/p" feat base --test 'echo run >> "$RC_COUNT"; false'
+[ "$(rc_runs)" = 2 ] || rc_fail="$rc_fail [a base that cannot run was run $(rc_runs) times over two calls, not 2]"
+: > "$RC/count"
+rc_is "a spec no file cites" "NO-TESTS|" 0 "$RC/p" none base --test 'sh run-tests.sh'
+rc_is "a citing test the branch did not touch" "NO-TESTS|" 0 "$RC/p" old base --test 'sh run-tests.sh'
+[ "$(rc_runs)" = 0 ] || rc_fail="$rc_fail [with no test to judge the suite was still run]"
+sh "$COPY/scripts/spec-check.sh" "$RC/p" feat 2>/dev/null | grep -qx 'CITED-ELSEWHERE feat REQ-1 lib.sh' \
+  || rc_fail="$rc_fail [spec-check.sh does not call lib.sh CITED-ELSEWHERE, so the two searches are not compared]"
+printf '# feat/REQ-2\n. ./lib.sh\n[ "$(shout)" = HELLO ]\n' > "$RC/p/tests/new.sh"
+rc_is "an untracked citing test" "TEST tests/feat.sh|TEST tests/new.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'sh run-tests.sh'
+rm -f "$RC/p/tests/new.sh"
+rc_is "no test command at all" "" 2 "$RC/p" feat base
+sh "$COPY/scripts/test-command.sh" "$RC/p" --record 'sh run-tests.sh' >/dev/null 2>&1
+rc_is "the recorded test command" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base
+rc_is "a suite that needs a folder git does not track, without --link" "TEST tests/feat.sh|BASE-NOT-RUNNABLE|" 0 "$RC/p" feat base --test 'test -L deps && sh run-tests.sh'
+rc_is "the same with --link" "TEST tests/feat.sh|RED-AT-BASE|" 0 "$RC/p" feat base --test 'test -L deps && test -f deps/helper.sh && sh run-tests.sh' --link deps
+[ -f "$RC/p/deps/helper.sh" ] && [ ! -L "$RC/p/deps" ] || rc_fail="$rc_fail [--link: the project's own folder was removed or replaced]"
+rc_is "--link with a file" "" 2 "$RC/p" feat base --test true --link run-tests.sh
+rc_is "--link with a folder git tracks at the base" "" 2 "$RC/p" feat base --test true --link tests
+rc_is "--link with a name that is not there" "" 2 "$RC/p" feat base --test true --link nosuch
+rc_is "no arguments" "" 2
+rc_is "an unknown ref" "" 2 "$RC/p" feat no-such-ref --test true
+rc_is "a directory that is no repository" "" 2 "$RC/plain" feat base --test true
+rc_is "an unknown slug" "" 2 "$RC/p" no-such-spec base --test true
+rc_is "an unknown option" "" 2 "$RC/p" feat base --frobnicate
+# Stopped half way: the suite sleeps, the script gets TERM, and nothing of it is left.
+TMPDIR="$RC/tmp" sh "$rc_sh" "$RC/p" feat base --test 'sleep 30' > "$RC/sig.out" 2>/dev/null &
+rc_pid=$!; rc_i=0
+while [ "$rc_i" -lt 100 ] && ! ls "$RC/tmp"/shipkit-red.*/tree/run-tests.sh >/dev/null 2>&1; do sleep 0.1; rc_i=$((rc_i + 1)); done
+ls "$RC/tmp"/shipkit-red.*/tree/run-tests.sh >/dev/null 2>&1 || rc_fail="$rc_fail [stopped half way: the scratch tree never appeared]"
+kill -TERM "$rc_pid" 2>/dev/null; wait "$rc_pid" 2>/dev/null; rc_code=$?
+[ "$rc_code" -eq 130 ] && [ "$(tr '\n' '|' < "$RC/sig.out")" = "TEST tests/feat.sh|" ] \
+  || rc_fail="$rc_fail [stopped half way: exit $rc_code, not 130 with the TEST line and no word after it: $(tr '\n' '|' < "$RC/sig.out")]"
+rc_clean "stopped half way"
+[ "$(rc_state)" = "$rc_before" ] || rc_fail="$rc_fail [git reads differently after the runs: $(rc_state | tr '\n' '|' | cut -c1-300)]"
+[ -f "$RC/theirs/lib.sh" ] || rc_fail="$rc_fail [a worktree the check made was removed]"
+if [ -z "$rc_fail" ]; then pass "red-check (a test that needs the feature is RED-AT-BASE, one that asserts nothing GREEN-AT-BASE, a base that cannot run BASE-NOT-RUNNABLE after one run, no differing citing test NO-TESTS with no run; the citing files are spec-check.sh's, untracked ones too; --link shares only the folders named; every other call is exit 2 with no word; the project, git and a worktree of the check's own are as they were, also after TERM)"
+else failc "red-check" "$rc_fail"; fi
+
+# 127. brief-escapes: brief.sh printed a task's Test and Done when lines with echo, and sh reads
+# escapes there: a \n became a line break, a \t a tab, \\ one backslash and \b a backspace byte
+# (found 2026-11-20, tests-worth-having's "Found on the way"). The agent got a command that was
+# not the one in tasks.md. Both lines now come out as written, byte for byte, and so does the
+# title line at the top of the brief, which was printed with echo too.
+# Cites: tests-worth-having/REQ-51 tests-worth-having/REQ-52
+BE="$WORK/brief-escapes"; mkdir -p "$BE/.shipkit/specs/esc"; be_fail=""
+be_test='tests/t.sh: printf '"'"'one\ntwo\tthree\\four'"'"' and grep -E '"'"'\bword\b'"'"''
+be_done='`sh run.sh` prints a\nb and \c stops nothing'
+be_title='Copy a\tb, c\\d and \c'
+{ printf '# Spec: Esc\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n'
+  printf '## Purpose\nA line is copied as written.\n\n## Requirements (EARS)\n- **REQ-1.** The thing shall copy.\n\n## Out of scope\nNothing.\n'
+} > "$BE/.shipkit/specs/esc/spec.md"
+{ printf '# Tasks: Esc\n\n- [ ] **T1** %s → REQ-1\n  - Files: app.sh\n' "$be_title"
+  printf '  - Test: %s\n  - After: none\n  - Done when: %s\n' "$be_test" "$be_done"
+} > "$BE/.shipkit/specs/esc/tasks.md"
+be_out=$(sh "$COPY/scripts/brief.sh" "$BE" esc T1 2>/dev/null; echo "exit $?")
+be_prove=$(printf '%s\n' "$be_out" | awk '/^## Prove it with/ { on = 1; next } /^## / { on = 0 } on')
+be_t=$(printf '%s\n' "$be_prove" | grep -c '^- Test: ')
+be_d=$(printf '%s\n' "$be_prove" | grep -c '^- Done when: ')
+[ "$(printf '%s\n' "$be_prove" | sed -n 1p)" = "- Test: $be_test" ] \
+  || be_fail="$be_fail [the Test line is not the task's, byte for byte: $(printf '%s\n' "$be_prove" | sed -n 1,2p | od -c | sed -n 1,4p | tr -s ' ' | tr '\n' '|')]"
+[ "$(printf '%s\n' "$be_prove" | grep '^- Done when: ')" = "- Done when: $be_done" ] \
+  || be_fail="$be_fail [the Done when line is not the task's, byte for byte: $(printf '%s\n' "$be_prove" | grep -A1 '^- Done when: ' | tr '\n' '|')]"
+[ "$be_t" = 1 ] && [ "$be_d" = 1 ] && [ "$(printf '%s\n' "$be_prove" | grep -c .)" = 3 ] \
+  || be_fail="$be_fail [Prove it with holds $(printf '%s\n' "$be_prove" | grep -c .) lines, not 3]"
+[ "$(printf '%s\n' "$be_out" | sed -n 1p)" = "# Brief: esc / T1 — $be_title" ] \
+  || be_fail="$be_fail [the title line is not the task's title, byte for byte: $(printf '%s\n' "$be_out" | sed -n 1,2p | tr '\n' '|')]"
+printf '%s\n' "$be_out" | tail -1 | grep -qx 'exit 0' || be_fail="$be_fail [brief.sh: $(printf '%s\n' "$be_out" | tail -1)]"
+if [ -z "$be_fail" ]; then pass "brief-escapes (a task's title, Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
+else failc "brief-escapes" "$be_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

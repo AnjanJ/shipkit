@@ -134,7 +134,7 @@ if git -C "$PROJ" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   [ "$DIRTY" -gt 0 ] && echo "brief: $DIRTY file(s) already differ from HEAD; brief-verify will count them" >&2
 fi
 
-echo "# Brief: $SLUG / $TASK — $(task title)"
+printf '%s\n' "# Brief: $SLUG / $TASK — $(task title)"
 echo
 echo "## Goal"
 section "$SPEC" "Purpose"
@@ -151,8 +151,8 @@ printf '%s\n' "$FILES" | sed 's/^/- /'
 echo "Nothing else. If the task cannot be done inside these files, stop and report blocked."
 echo
 echo "## Prove it with"
-echo "- Test: $(task test)"
-echo "- Done when: $(task done)"
+printf '%s\n' "- Test: $(task test)"
+printf '%s\n' "- Done when: $(task done)"
 echo "- Each test cites the requirement it proves as \`$SLUG/REQ-N\`; \`spec-check\` reads exactly that."
 echo
 echo "## Already done"
