@@ -60,6 +60,7 @@ puts its candidates to the owner (the plan's release task).
     but check 9 proves the first half of REQ-10 (content outside the block survives) and only 9c
     the second (an edit inside the block is not overwritten without a diff and a question). Its
     citation cannot move, so it should stay.
+- **Cut on the owner's yes, 2026-11-20:** `2b rules-fallback`. Its row stays, marked cut; `install-lifecycle/REQ-5` is still cited by `8b incomplete-install`, and the full smoke run has 15 model checks, about $0.22 less.
 - **Where the time goes.** The model-free suite took 129 s. Five checks take 42 s of it:
   `112 briefing-cost` 11.5 s, `124 prop` 9.7 s, `121 briefing-commands` 7.8 s,
   `39 xl-scaffold` 7.3 s, `47 rule-cases` 6.0 s. None is a candidate: each is the only proof of
@@ -79,7 +80,7 @@ puts its candidates to the owner (the plan's release task).
 |---|---|---|---|---|---|---|
 | smoke | 1 rules-inject | never | nothing | $0.22 | no |  |
 | smoke | 2 rules-skip | never | nothing | $0.22 | no |  |
-| smoke | 2b rules-fallback | never | 8b incomplete-install | $0.22 | yes: never failed, its requirements covered elsewhere |  |
+| smoke | 2b rules-fallback | never | 8b incomplete-install | $0.22 | yes: never failed, its requirements covered elsewhere | cut 2026-11-20 |
 | smoke | 3 plugin-root | never | nothing | $0.22 | no |  |
 | smoke | 4 agents | never | nothing | $0.22 | no |  |
 | smoke | 5 workflows-skills | never | nothing | $0.22 | no |  |

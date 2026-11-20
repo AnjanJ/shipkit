@@ -29,7 +29,7 @@ CORE="$ROOT/plugins/shipkit"
 #   --list              print RUN or SKIP for each numbered check, as the other arguments decide,
 #                       and run nothing
 # A wrong argument, a number --only does not take, or --no-model with --only: usage, exit 64.
-MODEL_CHECKS="1 2 2b 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
+MODEL_CHECKS="1 2 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
 NEEDS="32:31"   # <check>:<the check whose model session wrote a file it reads>
 usage() { echo "usage: smoke.sh [--no-model | --only <n>[,<n>]] [--list]" >&2; exit 64; }
 NO_MODEL=0; ONLY=""; LIST=0
@@ -57,7 +57,6 @@ done
 registry() { cat <<'EOF'
 1 rules-inject
 2 rules-skip
-2b rules-fallback
 3 plugin-root
 4 agents
 5 workflows-skills
@@ -308,18 +307,6 @@ case "$out" in
 esac
 fi  # /model_check 2
 
-# 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
-# Cites: install-lifecycle/REQ-5
-# always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
-# Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
-rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
-if model_check 2b; then
-out=$(ask "$COPY" "$CW_Q")
-case "$out" in
-  *ZEBRA-1001*) pass "rules-fallback (a rule deleted from disk is re-injected, not lost)";;
-  *) failc "rules-fallback" "a rule missing from disk was not injected: $out";;
-esac
-fi  # /model_check 2b
 rm -rf "$PROJ/.claude"
 
 # 3. plugin-root: the root line is in context and names the scratch copy
@@ -3553,7 +3540,7 @@ if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term
 else failc "goldfish-fixture" "$gx_fail"; fi
 
 # 97. smoke-args: the suite's own arguments. --list prints what would run and runs nothing;
-# --no-model leaves out the sixteen checks that start a model; --only names some of them and
+# --no-model leaves out the fifteen checks that start a model; --only names some of them and
 # takes the ones they need with it; a wrong argument is a usage error. Every form run below
 # stops before the first check, so nothing here starts a model. Then the script reads itself:
 # a numbered check that starts claude is one of MODEL_CHECKS and does it inside its
@@ -3576,7 +3563,7 @@ printf '%s\n' "$sa_nm" | grep -q '^RUN 19 spec-check-reqs$' || sa_fail="$sa_fail
 sa_only=$(sh "$SELF" --list --only 32 2>&1)
 sa_run=$(printf '%s\n' "$sa_only" | sed -n 's/^RUN \([^ ]*\) .*/\1/p' | tr '\n' ' ')
 case " $sa_run" in *" 31 32 "*) ;; *) sa_fail="$sa_fail [--only 32 does not run 31 and 32]";; esac
-[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 14 ] || sa_fail="$sa_fail [--only 32 does not skip the other fourteen]"
+[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 13 ] || sa_fail="$sa_fail [--only 32 does not skip the other thirteen]"
 printf '%s\n' "$sa_only" | grep -q '^RUN 19 ' || sa_fail="$sa_fail [--only 32 leaves out a check that needs no model]"
 sa_out=$(sh "$SELF" --only 7 2>&1); sa_rc=$?
 if [ "$sa_rc" -ne 64 ] || ! printf '%s\n' "$sa_out" | grep -qF "$MODEL_CHECKS" || printf '%s\n' "$sa_out" | grep -q '^PASS'; then
@@ -3611,7 +3598,7 @@ sa_scan=$(awk -v models="$MODEL_CHECKS" '
 sa_heads=$(sed -n 's/^# \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$SELF" | tr '\n' ' ')
 sa_reg=$(registry | awk '{ print $1 }' | tr '\n' ' ')
 if [ -z "$sa_scan" ] && [ "$sa_heads" = "$sa_reg" ]; then
-  pass "smoke-args (the script read as text: sixteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
+  pass "smoke-args (the script read as text: fifteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
 else failc "smoke-args" "$sa_scan — headers [$sa_heads] registry [$sa_reg]"; fi
 
 # 98. ci-smoke-job: CI runs this suite without its model checks on every pull request. The
@@ -5869,10 +5856,11 @@ else
   awk '!done && /^\| smoke \| / { done = 1; next } { print }' "$TAF" > "$TA/one-gone.md"
   awk '/^\| smoke \| / && !done { n = split($0, c, / \| /); c[5] = "quick"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/bad-cost.md"
   awk '/^\| eval \| trap2-/ && !done { n = split($0, c, / \| /); c[6] = "yes: full score, a script holds it"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/trap2-yes.md"
-  for ta_c in one-gone bad-cost trap2-yes; do
+  awk '/^\| smoke \| / && !done { n = split($0, c, / \| /); c[7] = "cut 2026-11-20 |"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/cut-listed.md"
+  for ta_c in one-gone bad-cost trap2-yes cut-listed; do
     [ -n "$(ta_read "$TA/$ta_c.md")" ] || ta_fail="$ta_fail [the reading passes a broken copy: $ta_c]"
   done
-  if [ -z "$ta_fail" ]; then pass "trim-audit (one row per smoke check and eval case, each cell in its form, no trap-2 case a candidate, a cut row only for what is gone; the reading fails on a copy with a row gone, a cost in the wrong form or a trap-2 case marked yes)"
+  if [ -z "$ta_fail" ]; then pass "trim-audit (one row per smoke check and eval case, each cell in its form, no trap-2 case a candidate, a cut row only for what is gone; the reading fails on a copy with a row gone, a cost in the wrong form a trap-2 case marked yes, or a cut row whose check is still listed)"
   else failc "trim-audit" "$ta_fail"; fi
 fi
 
