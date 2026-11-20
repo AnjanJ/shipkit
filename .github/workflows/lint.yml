@@ -27,6 +27,10 @@ jobs:
           python-version: '3.12'
       - name: Install PyYAML
         run: pip install --quiet pyyaml
+      # The version scripts/prop.py is written for: its inputs are the same from run to run only
+      # for one version of Hypothesis. Smoke check 125 holds this line to the script's constant.
+      - name: Install Hypothesis
+        run: pip install --quiet hypothesis==6.170.16
       - name: Run lint
         run: python3 scripts/lint.py
       # Every spec under .shipkit/specs/: each requirement has a task, each requirement of a
@@ -50,6 +54,13 @@ jobs:
           echo "judge: $tag"
           git show "$tag:plugins/shipkit/scripts/spec-check.sh" > "$RUNNER_TEMP/spec-check-tag.sh"
           sh "$RUNNER_TEMP/spec-check-tag.sh" .
+      # Five properties of spec-check.sh and brief.sh on generated specs, forty inputs each, the
+      # same on every run. Here with this runner's awk, and in the second job with macOS's: users
+      # run the two scripts on both (the spec tests-worth-having, REQ-31). It runs whatever the
+      # steps above said, so a red run shows both readings. No model calls.
+      - name: Property tests of the two parsers
+        if: ${{ !cancelled() }}
+        run: python3 scripts/prop.py
 
   # The smoke suite without its sixteen model checks. This runner has no `claude`, so every pull
   # request shows again that --no-model starts none. Proves honest-evidence/REQ-11.
@@ -77,5 +88,12 @@ jobs:
           python-version: '3.12'
       - name: Install PyYAML
         run: pip install --quiet pyyaml
+      # Before the smoke suite: its check 124 runs scripts/prop.py too, on five inputs.
+      - name: Install Hypothesis
+        run: pip install --quiet hypothesis==6.170.16
       - name: Smoke suite, without the checks that start a model
         run: sh scripts/smoke.sh --no-model </dev/null
+      # The same five properties as the first job's, with macOS's awk.
+      - name: Property tests of the two parsers
+        if: ${{ !cancelled() }}
+        run: python3 scripts/prop.py

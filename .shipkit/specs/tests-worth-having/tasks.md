@@ -45,6 +45,11 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 125 (`prop-ci`): each of the workflow's two jobs holds a step that installs `hypothesis==` at the version `prop.py` holds and a step whose run line is `python3 scripts/prop.py`; a copy of the workflow with one job's step taken out fails the check's own reading
   - After: T5
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 98, 105, 108, 109 and 125 `PASS`, exit 0; on the pull request, both jobs run the step and are green
+  - Note (2026-11-20): the two steps are in both jobs and check 125 reads them. The task stays open
+    until both jobs have run the properties on the pull request, which needs the owner's yes to
+    push. Not verified until then: that `pip install hypothesis==6.170.16` works on CI's Python
+    3.12, how long forty inputs take on each runner, and whether Ubuntu's awk gives the answers
+    macOS's gives.
 - [ ] **T7** `red-check.sh`: a cited test is run on the base tree → REQ-32, REQ-33, REQ-34, REQ-35, REQ-36, REQ-37, REQ-38, REQ-39, REQ-40, REQ-41, REQ-42
   - Files: plugins/shipkit/scripts/red-check.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 126 (`red-check`): in a scratch repository with a base commit and a feature commit, a citing test that needs the feature gives `TEST <file>` and `RED-AT-BASE`; a test that asserts nothing gives `GREEN-AT-BASE <file>`; a suite broken at the base gives `BASE-NOT-RUNNABLE` after one run; no differing citing file gives `NO-TESTS` with no run; a citation outside the spec's `> Tests:` paths is not a `TEST` line and is the file `spec-check.sh` calls `CITED-ELSEWHERE`; an untracked citing test is listed; no `--test` and no record is exit 2 with no verdict word; `--link deps` puts a link in the scratch tree and its target's files are there afterwards; a `--link` name that is a file, or tracked at the base, is exit 2; after every run, and after a `TERM` sent during a run, the scratch directory is gone and `git status --porcelain`, `git branch`, `git stash list`, `git worktree list` and `HEAD` read as before, with a worktree made by the check still there; standard output holds only `TEST` lines and the verdict line; wrong usage, an unknown ref, a directory that is no repository and an unknown slug are each exit 2

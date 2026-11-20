@@ -183,6 +183,7 @@ registry() { cat <<'EOF'
 122 kind-fixtures
 123 kind-reader
 124 prop
+125 prop-ci
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5376,6 +5377,32 @@ pr_o=$(PYTHONPATH="$PR/nohyp" prop 2>&1); pr_rc=$?
   || pr_fail="$pr_fail [without Hypothesis: exit $pr_rc, not 2 with the one line that names the uv command: $(printf '%s' "$pr_o" | sed -n 1,2p | tr '\n' '|' | cut -c1-200)]"
 if [ -z "$pr_fail" ]; then pass "prop (prop.py: the five properties hold on this checkout's spec-check.sh and brief.sh, on five generated inputs each; each fails on a copy broken for it, with the input printed; two runs print the same; without Hypothesis it names the uv command and exits 2; it writes nothing outside its own temporary directory)"
 else failc "prop" "$pr_fail"; fi
+
+# 125. prop-ci: both of CI's jobs run the five properties, since the two runners do not ship the
+# same awk and users run the scripts on both (the owner's answer, 2026-11-20). Each job installs
+# Hypothesis at the version prop.py is written for and runs it. The reading is shown to fail on a
+# copy of the workflow that lacks one job's run step, and on one that installs another version.
+# Cites: tests-worth-having/REQ-31
+PC="$WORK/prop-ci"; mkdir -p "$PC"; pc_fail=""
+pc_ver=$(sed -n 's/^HYPOTHESIS = "\(.*\)"$/\1/p' "$ROOT/scripts/prop.py" 2>/dev/null)
+pc_read() {  # pc_read <workflow file> → one line for each thing a job lacks
+  for pc_j in lint smoke-no-model; do
+    pc_job=$(awk -v j="  $pc_j:" '$0 == j { on = 1; next } on && /^  [a-z]/ { on = 0 } on' "$1")
+    printf '%s\n' "$pc_job" | grep -qxF "        run: pip install --quiet hypothesis==$pc_ver" || echo "$pc_j: no step installs hypothesis==$pc_ver"
+    printf '%s\n' "$pc_job" | grep -qxF '        run: python3 scripts/prop.py' || echo "$pc_j: no step runs prop.py"
+  done
+}
+[ -n "$pc_ver" ] || pc_fail="$pc_fail [prop.py names no version of Hypothesis]"
+pc_miss=$(pc_read "$ROOT/.github/workflows/lint.yml")
+[ -z "$pc_miss" ] || pc_fail="$pc_fail [lint.yml: $(printf '%s' "$pc_miss" | tr '\n' ';')]"
+awk '/^  smoke-no-model:$/ { seen = 1 } !seen && /^        run: python3 scripts\/prop\.py$/ { next } { print }' "$ROOT/.github/workflows/lint.yml" > "$PC/no-run.yml"
+[ "$(pc_read "$PC/no-run.yml")" = "lint: no step runs prop.py" ] \
+  || pc_fail="$pc_fail [a workflow whose lint job does not run prop.py reads: $(pc_read "$PC/no-run.yml" | tr '\n' ';')]"
+sed "s/hypothesis==$pc_ver/hypothesis==0.0.1/" "$ROOT/.github/workflows/lint.yml" > "$PC/other.yml"
+[ "$(pc_read "$PC/other.yml" | grep -c 'no step installs')" = 2 ] \
+  || pc_fail="$pc_fail [a workflow that installs another version reads: $(pc_read "$PC/other.yml" | tr '\n' ';')]"
+if [ -z "$pc_fail" ]; then pass "prop-ci (both CI jobs install Hypothesis $pc_ver, the version prop.py is written for, and run prop.py; a workflow without one job's step, or with another version, is read as lacking it)"
+else failc "prop-ci" "$pc_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
