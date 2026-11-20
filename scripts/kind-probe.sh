@@ -14,12 +14,18 @@
 #       Write the kinds fixture into <dir> (new or empty): a small git repository with one
 #       commit, whose accepted spec, passbook, holds three requirements of three shapes, a
 #       design and no task list. No model call.
-#   kind-probe.sh --run kinds [N] [--out <dir>] [--yes]
-#       Without --yes: print the N headless commands (5 by default), one a line, and start
-#       nothing. With --yes: N runs of /shipkit:spec passbook tasks, each on a fresh fixture
-#       at <dir>/run-<i>/proj, where the run's tasks.md stays; <dir> defaults to
-#       ${TMPDIR:-/tmp}/kind-probe-kinds-<time>. --yes COSTS MODEL CALLS: use it only on the
-#       owner's yes. Nothing is removed afterwards.
+#   kind-probe.sh --scaffold migration <dir>
+#       Write the migration fixture into <dir> (new or empty): a small git repository with
+#       one commit, a program, inkwell, that uses a library kept in its own tree at version
+#       1.4, the same library at 2.0, and the changelog between them. No model call.
+#   kind-probe.sh --run kinds|migration [N] [--out <dir>] [--yes]
+#       Without --yes: print the N headless commands (5 by default for kinds, 3 for
+#       migration), one a line, and start nothing. With --yes: N runs, each on a fresh
+#       fixture at <dir>/run-<i>/proj. A kinds run is /shipkit:spec passbook tasks, and its
+#       tasks.md stays in the fixture. A migration run is /shipkit-workflows:migration-plan
+#       textkit 1.4 2.0, and its reply is written to <dir>/run-<i>/plan.md. <dir> defaults
+#       to ${TMPDIR:-/tmp}/kind-probe-<fixture>-<time>. --yes COSTS MODEL CALLS: use it only
+#       on the owner's yes. Nothing is removed afterwards.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 NOTE='This run is not interactive: you cannot ask me anything.'
@@ -290,9 +296,140 @@ EOF
   commit "$sd" "passbook: an account and its statements"
 }
 
+# The migration fixture. inkwell formats a note with textkit, a library it keeps in vendor/ at
+# version 1.4. Version 2.0 is beside it with its changelog, which names two changes of behaviour
+# in the two functions inkwell calls. inkwell's tests pass on 1.4 and fail on 2.0.
+scaffold_migration() {
+  sd=$1
+  fresh "$sd" || return 2
+  mkdir -p "$sd/inkwell" "$sd/tests" "$sd/vendor/textkit-1" "$sd/vendor/textkit-2" \
+    "$sd/.claude/rules/shipkit" || return 1
+  cat > "$sd/README.md" <<'EOF'
+# inkwell
+
+Formats a note for the printed page: a title-cased heading, a rule, and the body wrapped to a
+width.
+
+    python3 -c 'from inkwell.format import page; print(page("the reader'"'"'s notes", "one two three"))'
+
+The text helpers come from `textkit`, kept under `vendor/`. `inkwell/deps.py` says which
+version is in use. Run the tests with `python3 -m unittest -q`.
+EOF
+  printf '__pycache__/\n' > "$sd/.gitignore"
+  printf 'python3 -m unittest -q\n' > "$sd/.claude/rules/shipkit/.test-command"
+  : > "$sd/inkwell/__init__.py"
+  : > "$sd/tests/__init__.py"
+  cat > "$sd/inkwell/deps.py" <<'EOF'
+"""The one place that says which textkit is in use."""
+import os
+import sys
+
+VENDOR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vendor")
+sys.path.insert(0, os.path.join(VENDOR, "textkit-1"))
+EOF
+  cat > "$sd/inkwell/format.py" <<'EOF'
+"""Formats a note for the printed page."""
+from . import deps  # noqa: F401, it puts the vendored textkit on the path
+
+import textkit
+
+
+def heading(text):
+    return textkit.title(text)
+
+
+def body(text, width=24):
+    return textkit.wrap(text, width)
+
+
+def page(title, text, width=24):
+    return heading(title) + "\n" + "-" * width + "\n" + body(text, width) + "\n"
+EOF
+  cat > "$sd/vendor/textkit-1/textkit.py" <<'EOF'
+"""textkit 1.4: small helpers for plain text."""
+__version__ = "1.4"
+
+
+def wrap(text, width):
+    """Break text into lines of at most width characters, at single spaces."""
+    lines, line = [], ""
+    for word in text.split(" "):
+        if line and len(line) + 1 + len(word) > width:
+            lines.append(line)
+            line = word
+        else:
+            line = word if not line else line + " " + word
+    lines.append(line)
+    return "\n".join(lines)
+
+
+def title(text):
+    """Capitalise the first letter of each word."""
+    return text.title()
+EOF
+  cat > "$sd/vendor/textkit-2/textkit.py" <<'EOF'
+"""textkit 2.0: small helpers for plain text."""
+__version__ = "2.0"
+
+
+def wrap(text, width):
+    """Break text into lines of at most width characters, at single spaces."""
+    lines, line = [], ""
+    for word in text.split(" "):
+        if line and len(line) + 1 + len(word) > width:
+            lines.append(line)
+            line = word
+        else:
+            line = word if not line else line + " " + word
+    lines.append(line)
+    return "\n".join(each.rstrip(" ") for each in lines)
+
+
+def title(text):
+    """Capitalise the first letter of each word, and no letter after an apostrophe."""
+    return " ".join(word[:1].upper() + word[1:].lower() for word in text.split(" "))
+EOF
+  cat > "$sd/vendor/textkit-2/CHANGELOG.md" <<'EOF'
+# Changelog
+
+## 2.0
+
+Breaking changes from 1.4:
+
+- `wrap()` strips trailing spaces from every line it returns. In 1.4 a line could end with a
+  space when the text had two spaces in a row.
+- `title()` no longer capitalises the letter after an apostrophe: "reader's" gives "Reader's",
+  where 1.4 gave "Reader'S".
+
+Nothing else changes: both functions take the arguments they took.
+
+## 1.4
+
+- `wrap()` and `title()`.
+EOF
+  cat > "$sd/tests/test_format.py" <<'EOF'
+import unittest
+
+from inkwell.format import body, heading, page
+
+
+class FormatTest(unittest.TestCase):
+    def test_a_heading_is_title_cased(self):
+        self.assertEqual(heading("the reader's notes"), "The Reader'S Notes")
+
+    def test_a_body_is_wrapped_at_the_width(self):
+        self.assertEqual(body("one two  three four", 8), "one two \nthree\nfour")
+
+    def test_a_page_has_a_heading_a_rule_and_a_body(self):
+        self.assertEqual(page("notes", "one two", 8), "Notes\n--------\none two\n")
+EOF
+  commit "$sd" "inkwell: a page formatter on textkit 1.4"
+}
+
 scaffold() {  # scaffold <fixture> <dir>
   case "$1" in
     kinds) scaffold_kinds "$2" ;;
+    migration) scaffold_migration "$2" ;;
     *) usage ;;
   esac
 }
@@ -301,6 +438,8 @@ run() {  # run <fixture> [N] [--out <dir>] [--yes]
   fx=$1; shift
   case "$fx" in
     kinds) n=5; plugin="$ROOT/plugins/shipkit"; request="/shipkit:spec passbook tasks $NOTE" ;;
+    migration) n=3; plugin="$ROOT/plugins/shipkit-workflows"
+      request="/shipkit-workflows:migration-plan textkit 1.4 2.0. The changelog is vendor/textkit-2/CHANGELOG.md, in this repository. $NOTE" ;;
     *) usage ;;
   esac
   out=""; yes=0
@@ -332,6 +471,13 @@ run() {  # run <fixture> [N] [--out <dir>] [--yes]
     (cd "$d/proj" && claude --plugin-dir "$plugin" --model sonnet \
       --allowedTools Read Glob Grep Bash Write Edit Skill Agent --output-format json \
       -p "$request" < /dev/null > "$d/result.json" 2> "$d/stderr.txt") || bad=1
+    if [ "$fx" = migration ]; then  # the plan is the session's reply: the JSON result's text
+      python3 -I -c 'import json, sys
+text = json.load(open(sys.argv[1])).get("result")
+if not isinstance(text, str): sys.exit(1)
+sys.stdout.write(text if text.endswith("\n") else text + "\n")' "$d/result.json" > "$d/plan.md" 2>/dev/null \
+        || { rm -f "$d/plan.md"; echo "kind-probe: run $i: no reply text in $d/result.json, so no plan.md" >&2; bad=1; }
+    fi
     i=$((i + 1))
   done
   echo "kind-probe: $n run(s) kept in $out" >&2

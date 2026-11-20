@@ -5153,8 +5153,12 @@ else bn_verdict "$bn_50" "$bn_same"; fi
 # measurement runs on: an accepted spec, `passbook`, whose three requirements have three shapes
 # (something that never happens, a round trip, a replacement that behaves as before), a design and
 # no task list. It prints the headless commands and starts one only with its run flag, which this
-# check never gives. A stand-in first on the PATH shows that no model is called.
-# Cites: tests-worth-having/REQ-1 tests-worth-having/REQ-2 tests-worth-having/REQ-3 tests-worth-having/REQ-4 tests-worth-having/REQ-5 tests-worth-having/REQ-20
+# check never gives a real one. A stand-in first on the PATH shows that no model is called. The
+# second fixture, `inkwell`, is for the migration skill: a library kept in the tree at two major
+# versions, with the changelog between them, and tests that pass on the old one and fail on the
+# new. The run flag is tried once for each fixture against a second stand-in that only records
+# its call and prints a canned reply, so the loop Sprint 35 pays for has run before it is paid for.
+# Cites: tests-worth-having/REQ-1 tests-worth-having/REQ-2 tests-worth-having/REQ-3 tests-worth-having/REQ-4 tests-worth-having/REQ-5 tests-worth-having/REQ-15 tests-worth-having/REQ-16 tests-worth-having/REQ-20
 KP="$WORK/kind-probe"; mkdir -p "$KP/bin" "$KP/tmp"; kp_fail=""
 kp_sh="$ROOT/scripts/kind-probe.sh"
 printf '#!/bin/sh\ntouch "%s/claude-called"\nexit 1\n' "$KP" > "$KP/bin/claude"; chmod +x "$KP/bin/claude"
@@ -5203,8 +5207,52 @@ kp_bad "no arguments"
 kp_bad "an unknown fixture to --scaffold" --scaffold nosuch "$KP/nosuch"
 kp_bad "an unknown fixture to --run" --run nosuch
 [ -e "$KP/nosuch" ] && kp_fail="$kp_fail [an unknown fixture still made its directory]"
+kp --scaffold migration "$KP/mig" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] || kp_fail="$kp_fail [--scaffold migration: exit $kp_rc]"
+[ "$(git -C "$KP/mig" rev-list --count HEAD 2>/dev/null)" = 1 ] && [ -z "$(git -C "$KP/mig" status --porcelain 2>/dev/null)" ] \
+  || kp_fail="$kp_fail [migration: not one commit with a clean tree]"
+[ -f "$KP/mig/vendor/textkit-1/textkit.py" ] && [ -f "$KP/mig/vendor/textkit-2/textkit.py" ] && [ -f "$KP/mig/vendor/textkit-2/CHANGELOG.md" ] \
+  || kp_fail="$kp_fail [migration: the library is not there at two versions with its changelog]"
+[ -e "$KP/mig/.shipkit/specs" ] && kp_fail="$kp_fail [migration: the fixture holds a spec]"
+for kp_f in wrap title; do
+  grep -qF "\`$kp_f()\`" "$KP/mig/vendor/textkit-2/CHANGELOG.md" 2>/dev/null && grep -qF "textkit.$kp_f(" "$KP/mig/inkwell/format.py" 2>/dev/null \
+    || kp_fail="$kp_fail [migration: the changelog does not name $kp_f(), or inkwell/format.py does not call it]"
+done
+kp_cmd=$(sh "$COPY/scripts/test-command.sh" "$KP/mig" 2>/dev/null)
+[ -n "$kp_cmd" ] && (cd "$KP/mig" && sh -c "$kp_cmd") >/dev/null 2>&1 \
+  || kp_fail="$kp_fail [migration: no recorded test command, or it does not exit 0 on the old version: ${kp_cmd:-none}]"
+# A second, fresh copy, and not a copy of the first: that one holds the bytecode of the run
+# above, and a deps.py rewritten within the same second, at the same size, would not be re-read.
+kp --scaffold migration "$KP/mig-new" >/dev/null 2>&1
+sed 's/textkit-1/textkit-2/' "$KP/mig/inkwell/deps.py" > "$KP/mig-new/inkwell/deps.py" 2>/dev/null
+cmp -s "$KP/mig/inkwell/deps.py" "$KP/mig-new/inkwell/deps.py" && kp_fail="$kp_fail [migration: inkwell/deps.py does not name the old version's folder]"
+(cd "$KP/mig-new" && sh -c "${kp_cmd:-false}") >/dev/null 2>&1 \
+  && kp_fail="$kp_fail [migration: the tests pass on the new version too, so no behaviour the code depends on changed]"
+rm -rf "$KP/mig-new"
+kp_before=$(kp_tree)
+kp_out=$(cd "$KP" && kp --run migration 2>/dev/null); kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ "$(printf '%s\n' "$kp_out" | grep -c .)" = 3 ] && [ "$(printf '%s\n' "$kp_out" | grep -cF '/shipkit-workflows:migration-plan')" = 3 ] \
+  || kp_fail="$kp_fail [--run migration: exit $kp_rc, or not 3 lines that each hold the request]"
+[ "$(kp_tree)" = "$kp_before" ] || kp_fail="$kp_fail [--run migration without its flag wrote a file]"
 [ -e "$KP/claude-called" ] && kp_fail="$kp_fail [a model was called]"
-if [ -z "$kp_fail" ]; then pass "kind-fixtures (kind-probe.sh scaffolds the passbook spec with its three requirements, a design and no task list, and a passing test command; prints 5 commands, or the number asked for, and starts none)"
+# The run flag, against a stand-in that records where it was started and with what, and prints
+# a reply in the form a headless session's JSON result has.
+mkdir -p "$KP/bin2"
+printf '{"type":"result","subtype":"success","result":"Step 1: write the comparison.\\n\\nStep 2: move to 2.0."}\n' > "$KP/reply.json"
+printf '#!/bin/sh\npwd -P >> "%s/yes-cwd"\nprintf "%%s\\n" "$*" >> "%s/yes-args"\ncat "%s/reply.json"\n' "$KP" "$KP" "$KP" > "$KP/bin2/claude"; chmod +x "$KP/bin2/claude"
+kpy() { PATH="$KP/bin2:$PATH" TMPDIR="$KP/tmp" sh "$kp_sh" "$@"; }
+kpy --run kinds 1 --yes --out "$KP/yes-kinds" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ -f "$KP/yes-kinds/run-1/proj/.shipkit/specs/passbook/spec.md" ] && [ -s "$KP/yes-kinds/run-1/result.json" ] \
+  || kp_fail="$kp_fail [--run kinds 1 with the run flag: exit $kp_rc, or no fixture and result under run-1]"
+kpy --run migration 2 --yes --out "$KP/yes-mig" >/dev/null 2>&1; kp_rc=$?
+[ "$kp_rc" -eq 0 ] && [ -f "$KP/yes-mig/run-2/proj/vendor/textkit-2/CHANGELOG.md" ] \
+  && [ "$(cat "$KP/yes-mig/run-2/plan.md" 2>/dev/null | tr '\n' '|')" = "Step 1: write the comparison.||Step 2: move to 2.0.|" ] \
+  || kp_fail="$kp_fail [--run migration 2 with the run flag: exit $kp_rc, or run-2 lacks its fixture or its plan.md is not the reply's text]"
+[ "$(grep -c . "$KP/yes-cwd" 2>/dev/null)" = 3 ] && [ "$(sed -n 1p "$KP/yes-cwd" 2>/dev/null)" = "$(cd "$KP/yes-kinds/run-1/proj" 2>/dev/null && pwd -P)" ] \
+  || kp_fail="$kp_fail [with the run flag: not three starts, the first in run-1's fixture]"
+[ "$(grep -cF '/shipkit:spec passbook tasks' "$KP/yes-args" 2>/dev/null)" = 1 ] && [ "$(grep -cF '/shipkit-workflows:migration-plan textkit 1.4 2.0' "$KP/yes-args" 2>/dev/null)" = 2 ] \
+  || kp_fail="$kp_fail [with the run flag: the stand-in was not given the two requests]"
+if [ -z "$kp_fail" ]; then pass "kind-fixtures (kind-probe.sh scaffolds the passbook spec, three requirements, a design and no task list, and the inkwell project, a library at two versions whose tests pass on the old and fail on the new; prints 5 and 3 commands, or the number asked for, and starts none; with its run flag and a stand-in it runs each in a fresh fixture and keeps the reply)"
 else failc "kind-fixtures" "$kp_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.

@@ -4,7 +4,7 @@ The test command for this spec is the model-free smoke suite: `sh scripts/smoke.
 </dev/null`. Every new smoke check is written first and shown failing, then the code.
 
 T0 to T9 are Sprint 33's and start no model: `kind-probe.sh --run` is only ever run here without
-`--yes`. No file under `plugins/*/skills`, `plugins/*/agents` or `plugins/*/rules` changes in
+`--yes`, or with it against a stand-in for `claude` that records its call. No file under `plugins/*/skills`, `plugins/*/agents` or `plugins/*/rules` changes in
 them. T10 and T11 need paid runs and wait for Sprint 35.
 
 A property of REQ-21 to REQ-25 that fails on this checkout's own scripts stops T5. It is put to
@@ -20,9 +20,9 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 122 (`kind-fixtures`): `--scaffold kinds` into an empty directory leaves one commit and a clean tree, a spec `passbook` with a stamp, `Status: open` and a `design.md`, no `tasks.md`, and exactly three requirements holding the three sentences; the recorded test command exits 0 there; a second scaffold into the same directory exits 2 and changes nothing; `--run kinds` prints 5 lines and `--run kinds 2` prints 2, each holding `/shipkit:spec passbook tasks`, writes no file and never calls a stand-in `claude` put first on the `PATH`; an unknown mode and an unknown fixture name each print the usage on standard error and exit 2
   - After: T0
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 122 `PASS`, exit 0; `sh -n scripts/kind-probe.sh` → no output
-- [ ] **T2** `kind-probe.sh`: the migration fixture → REQ-15, REQ-16
+- [x] **T2** `kind-probe.sh`: the migration fixture → REQ-15, REQ-16
   - Files: scripts/kind-probe.sh, scripts/smoke.sh
-  - Test: scripts/smoke.sh check 122, extended: `--scaffold migration` into an empty directory leaves one commit and a clean tree that holds `vendor/textkit-1/`, `vendor/textkit-2/` and a changelog naming a change in a function `inkwell/format.py` calls, and no `.shipkit/specs/`; the recorded test command exits 0 there; `--run migration` prints 3 lines, each holding `/shipkit-workflows:migration-plan`, writes no file and never calls the stand-in `claude`
+  - Test: scripts/smoke.sh check 122, extended: `--scaffold migration` into an empty directory leaves one commit and a clean tree that holds `vendor/textkit-1/`, `vendor/textkit-2/` and a changelog naming a change in a function `inkwell/format.py` calls, and no `.shipkit/specs/`; the recorded test command exits 0 there, and fails on a fresh copy whose `inkwell/deps.py` names version 2.0; `--run migration` prints 3 lines, each holding `/shipkit-workflows:migration-plan`, writes no file and never calls the stand-in `claude`. Added while building (2026-11-20): `--run kinds 1 --yes` and `--run migration 2 --yes`, with a second stand-in that records where and with what it was started and prints a canned JSON result, each start in a fresh fixture under `run-<i>/proj`, and each migration run's `plan.md` holds the reply's text
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 122 `PASS`, exit 0
 - [ ] **T3** `--read`, and six task lists written by hand → REQ-7, REQ-8, REQ-9, REQ-10, REQ-11, REQ-12, REQ-13, REQ-14
