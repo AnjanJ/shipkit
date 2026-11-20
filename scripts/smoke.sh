@@ -190,6 +190,7 @@ registry() { cat <<'EOF'
 129 verify-run-ten
 130 verify-skills
 131 commit-gate
+132 commit-gate-hook
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5801,6 +5802,35 @@ else
   if [ -z "$cg_fail" ]; then pass "commit-gate (off by default and for every call that is not a commit; observe logs an unstamped commit; enforce blocks twice a session, then passes; a stamp in any -m part passes; a message it cannot see passes with an unseen row; its own errors exit 0; compact and indented JSON alike)"
   else failc "commit-gate" "$cg_fail"; fi
 fi
+
+# 132. commit-gate-hook: hooks.json runs the gate as a second command on the Bash matcher,
+# beside the secret guard (running-the-change T6). With the gate unset, a commit that stages
+# .env is still blocked by the guard, and the gate adds nothing.
+# Cites: running-the-change/REQ-26
+CH="$WORK/commit-gate-hook"; mkdir -p "$CH"; ch_fail=""
+ch_cmds=$(python3 -c '
+import json, sys
+h = json.load(open(sys.argv[1]))
+for e in h.get("hooks", {}).get("PreToolUse", []):
+    if e.get("matcher") == "Bash":
+        for c in e.get("hooks", []):
+            print("%s\t%s\t%s" % (c.get("type"), c.get("timeout"), c.get("command")))
+' "$COPY/hooks/hooks.json" 2>"$CH/err") || ch_fail="$ch_fail [hooks.json does not parse: $(head -1 "$CH/err")]"
+ch_want=$(printf 'command\t5\t"${CLAUDE_PLUGIN_ROOT}/scripts/guard-commit.sh"\ncommand\t5\t"${CLAUDE_PLUGIN_ROOT}/scripts/commit-gate.sh"')
+[ "$ch_cmds" = "$ch_want" ] || ch_fail="$ch_fail [the Bash entry's commands: $(printf '%s' "$ch_cmds" | tr '\t\n' ' |')]"
+for ch_s in guard-commit.sh commit-gate.sh; do
+  [ -x "$COPY/scripts/$ch_s" ] || ch_fail="$ch_fail [$ch_s is not an executable file]"
+done
+CHP="$CH/proj"; mkdir -p "$CHP"
+(cd "$CHP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init \
+  && printf 'KEY=1\n' > .env && git add -f .env)
+ch_json=$(printf '{"session_id":"s1","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit -m wip"}}' "$CHP")
+ch_g=$(printf '%s' "$ch_json" | (cd "$CH" && sh "$COPY/scripts/guard-commit.sh" 2>/dev/null); echo $?)
+ch_c=$(printf '%s' "$ch_json" | (cd "$CH" && unset SHIPKIT_COMMIT_GATE; SHIPKIT_HOME="$CH/home" sh "$COPY/scripts/commit-gate.sh" >"$CH/out" 2>&1); echo $?)
+{ [ "$ch_g" -eq 2 ] && [ "$ch_c" -eq 0 ] && [ ! -s "$CH/out" ] && [ ! -e "$CH/home" ]; } \
+  || ch_fail="$ch_fail [a staged .env with the gate unset: guard exit $ch_g (want 2), gate exit $ch_c (want 0), gate output $(head -c 80 "$CH/out"), log $([ -e "$CH/home" ] && echo written || echo none)]"
+if [ -z "$ch_fail" ]; then pass "commit-gate-hook (the Bash entry of PreToolUse runs guard-commit.sh then commit-gate.sh, timeout 5 each, both executable; with the gate unset a staged .env is still blocked by the guard and the gate adds nothing)"
+else failc "commit-gate-hook" "$ch_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then
