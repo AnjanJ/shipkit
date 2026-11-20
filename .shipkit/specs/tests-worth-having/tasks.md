@@ -35,7 +35,7 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: scripts/smoke.sh check 123, extended: `--read-plan` on `plan-differential.md` and `plan-none.md` prints two tab-separated lines, the first ending `differential` and the second `none`; a file that does not exist is a line on standard error and exit 2
   - After: T3
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 123 `PASS`, exit 0
-- [ ] **T5** `prop.py`: five properties of the two parsers, each shown to fail on a broken copy → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30
+- [x] **T5** `prop.py`: five properties of the two parsers, each shown to fail on a broken copy → REQ-21, REQ-22, REQ-23, REQ-24, REQ-25, REQ-26, REQ-27, REQ-28, REQ-29, REQ-30
   - Files: scripts/prop.py, scripts/smoke.sh
   - Test: scripts/smoke.sh check 124 (`prop`): `prop.py --max-examples 5` prints `PASS` for each of the five names and exits 0, and leaves `git status --porcelain` and the working directory's listing as they were; for each row of the table in `design.md`, "How each property is shown to fail", the broken copy differs from the script and `prop.py --only <name> --no-shrink` at it exits 1 and prints `FAIL <name>` with the input; two such runs at one broken copy print the same lines; with a `hypothesis.py` that raises `ImportError` first on `PYTHONPATH` it prints the `uv run --with hypothesis==6.170.16 python3 scripts/prop.py` line, checks nothing and exits 2. Each property function in `prop.py` cites its requirement
   - After: T4
@@ -81,3 +81,11 @@ Not fixed here; each goes to the sprint's pull request.
   Two sessions on one machine write one file. This spec's reply was kept beside it under another
   name and the other session's file was left as it was. The fix is a change to a skill's text,
   so it waits for Sprint 35 (the plan's rule 34).
+- `brief.sh` does not copy a task's `Test:` and `Done when:` lines as written when they hold a
+  backslash (found 2026-11-20, while choosing what `prop.py` may generate). It prints them with
+  `echo` (`brief.sh:154-155`), and `sh` on this machine reads escapes there: in a scratch task,
+  `'one\ntwo\tthree\\four'` came out with a real line break, a tab and one backslash, and
+  `grep -E '\bword\b'` with two backspace bytes. The requirement itself is printed by awk and
+  is exact, which is what REQ-25 holds. None of the five properties reads these two lines. The
+  fix is `printf '%s\n'` in a shipped script outside this sprint's files, so it is put to the
+  owner.

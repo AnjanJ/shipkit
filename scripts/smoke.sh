@@ -182,6 +182,7 @@ registry() { cat <<'EOF'
 121 briefing-commands
 122 kind-fixtures
 123 kind-reader
+124 prop
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5329,6 +5330,52 @@ kr_none=$(cd "$KR" && sh "$kr_sh" --read-plan a.md no-such-plan.md 2>"$KR/err");
 [ "$kr_rc" -eq 2 ] && [ -z "$kr_none" ] && [ -s "$KR/err" ] || kr_fail="$kr_fail [--read-plan with a file that is not there: exit $kr_rc, not 2 with nothing printed and a line on standard error]"
 if [ -z "$kr_fail" ]; then pass "kind-reader (--read gives the eighteen lines and three totals expected of the six hand-written task lists: a tag settles a line, words name a kind without one, two kinds are joined, a requirement no task cites is uncited, and either kind is right for the round trip; --read-plan finds a differential step only where one block of the plan holds it)"
 else failc "kind-reader" "$kr_fail"; fi
+
+# 124. prop: spec-check.sh and brief.sh each read a task list with their own awk, and every other
+# check here feeds them inputs a person thought of. scripts/prop.py checks five properties of the
+# two on specs that Hypothesis generates, the same ones on every run: they agree on each task's
+# files; spec-check.sh changes nothing and says the same twice; a new citation never adds a gap;
+# a citation taken away adds exactly one MISSING-TEST; and the brief copies a requirement byte for
+# byte. Here it runs on five inputs for each property (CI's own step runs forty), and each
+# property is shown to fail on a copy of the script broken in the way it is meant to catch.
+# Hypothesis comes from uv when uv is there, as lint.sh gets PyYAML, and from python3 otherwise.
+# Cites: tests-worth-having/REQ-26 tests-worth-having/REQ-27 tests-worth-having/REQ-28 tests-worth-having/REQ-29 tests-worth-having/REQ-30
+PR="$WORK/prop"; mkdir -p "$PR/broken" "$PR/nohyp" "$PR/cwd"; pr_fail=""
+pr_py="$ROOT/scripts/prop.py"
+pr_ver=$(sed -n 's/^HYPOTHESIS = "\(.*\)"$/\1/p' "$pr_py" 2>/dev/null)
+if command -v uv >/dev/null 2>&1; then prop() { (cd "$PR/cwd" && uv run --quiet --with "hypothesis==$pr_ver" python3 "$pr_py" "$@"); }
+else prop() { (cd "$PR/cwd" && python3 "$pr_py" "$@"); }; fi
+pr_status=$(git -C "$ROOT" status --porcelain 2>/dev/null)
+pr_out=$(prop --max-examples 5 --spec-check "$COPY/scripts/spec-check.sh" --brief "$COPY/scripts/brief.sh" 2>&1); pr_rc=$?
+[ "$pr_rc" -eq 0 ] || pr_fail="$pr_fail [prop.py on this checkout's scripts: exit $pr_rc]"
+for pr_n in agreement no-side-effect monotone exactly-one round-trip; do
+  printf '%s\n' "$pr_out" | grep -q "^PASS $pr_n " || pr_fail="$pr_fail [no PASS line for $pr_n]"
+done
+[ -z "$(ls -A "$PR/cwd")" ] || pr_fail="$pr_fail [prop.py wrote into its working directory: $(ls -A "$PR/cwd" | tr '\n' ' ')]"
+[ "$(git -C "$ROOT" status --porcelain 2>/dev/null)" = "$pr_status" ] || pr_fail="$pr_fail [prop.py changed the repository's status]"
+ls -d "${TMPDIR:-/tmp}"/shipkit-prop.* >/dev/null 2>&1 && pr_fail="$pr_fail [prop.py left its temporary directory behind]"
+pr_break() {  # pr_break <property> <script> <sed expression>: the property fails on the broken copy
+  cp "$COPY/scripts/spec-check.sh" "$COPY/scripts/brief.sh" "$PR/broken/"
+  sed "$3" "$COPY/scripts/$2" > "$PR/broken/$2"
+  if cmp -s "$COPY/scripts/$2" "$PR/broken/$2"; then pr_fail="$pr_fail [$1: the break changed nothing in $2]"; return; fi
+  pr_o=$(prop --only "$1" --no-shrink --spec-check "$PR/broken/spec-check.sh" --brief "$PR/broken/brief.sh" 2>&1); pr_rc=$?
+  [ "$pr_rc" -eq 1 ] && printf '%s\n' "$pr_o" | grep -qx "FAIL $1" && printf '%s\n' "$pr_o" | grep -q '^--- \.shipkit/specs/.*/spec\.md$' \
+    || pr_fail="$pr_fail [$1 on a broken $2: exit $pr_rc, not 1 with FAIL $1 and the input: $(printf '%s' "$pr_o" | sed -n 1,3p | tr '\n' '|' | cut -c1-200)]"
+}
+pr_break agreement spec-check.sh 's/function trim(s) { gsub(\/`\/, "", s); /function trim(s) { /'
+pr_break no-side-effect spec-check.sh 's|^TMP=\$(mktemp|: > "$PROJ/left-behind"; &|'
+pr_break monotone spec-check.sh 's/(order\[i\] in cit ? "C" : "-")/(order[i] in cit ? "-" : "C")/'
+pr_break exactly-one spec-check.sh 's/echo "MISSING-TEST \$slug REQ-\$n"/&; &/'
+pr_break round-trip brief.sh '/^requirement() {/,/^}/ s/on { print }/on { print; exit }/'
+pr_again=$(prop --only round-trip --no-shrink --spec-check "$PR/broken/spec-check.sh" --brief "$PR/broken/brief.sh" 2>&1)
+[ -n "$pr_o" ] && [ "$pr_again" = "$pr_o" ] || pr_fail="$pr_fail [two runs at one broken copy did not print the same lines]"
+printf 'raise ImportError("no Hypothesis here")\n' > "$PR/nohyp/hypothesis.py"
+pr_o=$(PYTHONPATH="$PR/nohyp" prop 2>&1); pr_rc=$?
+[ "$pr_rc" -eq 2 ] && [ "$(printf '%s\n' "$pr_o" | grep -c .)" = 1 ] \
+  && printf '%s\n' "$pr_o" | grep -qF "uv run --with hypothesis==$pr_ver python3 scripts/prop.py" \
+  || pr_fail="$pr_fail [without Hypothesis: exit $pr_rc, not 2 with the one line that names the uv command: $(printf '%s' "$pr_o" | sed -n 1,2p | tr '\n' '|' | cut -c1-200)]"
+if [ -z "$pr_fail" ]; then pass "prop (prop.py: the five properties hold on this checkout's spec-check.sh and brief.sh, on five generated inputs each; each fails on a copy broken for it, with the input printed; two runs print the same; without Hypothesis it names the uv command and exits 2; it writes nothing outside its own temporary directory)"
+else failc "prop" "$pr_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

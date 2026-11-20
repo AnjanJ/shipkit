@@ -461,17 +461,24 @@ missed=1`, REQ-3 `right=4 missed=2` (REQ-12).
   one to three lines of text; later lines are indented two spaces. With chance, a requirement
   ends with `[untested: <reason>]`. Requirements follow one another directly, or with a blank
   line or a `###` heading between them. Text is drawn from letters, digits, spaces and
-  ``.,;:'"()[]{}<>/\|!?*_`~@#$%^&=+-``, and from "é", "ß" and "→". It never holds `**REQ-`,
-  `[untested:` or a slash followed by `REQ-`, and no line of it starts with `#`.
+  ``.,;:'"()[]{}<>/\|!?*_`~@#$%^&=+-``, and from "é", "ß" and "→". It never holds `REQ-` or
+  `[untested:`, and no line of it starts with `#`.
 - **A task list:** one to five tasks `T1` to `T5`, each with a title, an arrow, one or more
   `REQ-N` of the spec, and the four sub-lines. `Files` holds one to three names drawn from a
   pool of six, each a path of letters, digits and `._/-`, written plain or inside backticks,
   and no name twice in one task. `After` is `none`. `Test` and `Done when` are text as above.
   For REQ-21 a last task lists every name the others list.
-- **Citations:** lines `# <slug>/REQ-N` in `tests/test_gen.py`.
+- **Citations:** lines `# <slug>/REQ-N` in `tests/test_gen.py`. For `monotone` the requirement
+  the property cites is one that no line cites yet, and two specs in three are shipped: an open
+  spec's gap count does not read citations, and a line that repeats one already there can
+  change nothing. The first generator had neither rule, and its forty inputs held no shipped
+  spec with an uncited requirement, so the property passed on the copy broken for it; smoke
+  check 124 showed that before the property was ever relied on (2026-11-20).
 - **Sizes:** 40 inputs for each property; `--max-examples <n>` changes it. Each input is written
   to a fresh directory under one `tempfile.TemporaryDirectory`, which is all `prop.py` writes
-  (REQ-30). The projects are not git repositories.
+  (REQ-30). Hypothesis keeps tables of its own in a `.hypothesis` folder of the working
+  directory whatever `database` says; `prop.py` points that folder into the same temporary
+  directory. The projects are not git repositories.
 
 **The five properties,** by the names `prop.py` prints: `agreement` (REQ-21), `no-side-effect`
 (REQ-22), `monotone` (REQ-23), `exactly-one` (REQ-24), `round-trip` (REQ-25). Each is one
