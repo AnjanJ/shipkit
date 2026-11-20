@@ -17,10 +17,16 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - Test: none: REQ-16 is prose, read against `design.md` ("Waiting text for Sprint 35")
   - After: none
   - Done when: `sh plugins/shipkit/scripts/spec-check.sh . running-the-change --as-open` → exit 0; `sh plugins/shipkit/scripts/decision-check.sh . --run` → 0 fired, 0 error(s)
+- [x] **T11** The secret guard reads `cwd` from indented hook JSON → REQ-35
+  - Files: plugins/shipkit/scripts/guard-commit.sh, scripts/smoke.sh, .shipkit/specs/running-the-change/spec.md, .shipkit/specs/running-the-change/tasks.md
+  - Test: scripts/smoke.sh check 18 (`guard-commit`), extended: the hook JSON of `git commit -m wip`, indented over several lines with a space after each colon and naming the project as `cwd`, run from another directory while `config/server.key` is staged, exits 2 and names the file
+  - After: T0
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 18 `PASS`, exit 0
+  - Found 2026-11-20 at the design gate: `guard-commit.sh:30` read `cwd` only as `"cwd":"`, so with indented JSON it checked the directory it started in. The new case was red (exit 0) before the fix and green after it; the other seven cases of check 18 passed both times.
 - [ ] **T1** `verify-run.sh`: start, probe, one request, stop, three outcomes → REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8, REQ-9, REQ-10, REQ-12
   - Files: plugins/shipkit/scripts/verify-run.sh, scripts/smoke.sh
   - Test: scripts/smoke.sh check 128 (`verify-run`), with `TMPDIR` set to an empty directory of the check's own: a start command that writes `$PORT`, `$A` and `$B` to a file and then serves a folder with `python3 -m http.server "$PORT"`, run with `--env A=1 --env B=2 --request /page.html`, where `page.html` has 15 lines, prints `RAN 200 /page.html`, then a status line holding `200`, then the page's first 10 lines and no more, and exits 0; the file holds a port above 1023, `1` and `2`; the server's log holds exactly one `GET /page.html`; a start command that sleeps 2 s before serving, with `--timeout 10`, gives `RAN`; `--start 'i=0; while [ $i -lt 30 ]; do echo line$i; i=$((i+1)); done; exit 3'` prints `EXITED 3`, then `line10` to `line29` and nothing else, and exits 1; `--start 'sleep 60' --timeout 2` prints `NOT-READY after 2 s` first and exits 1; each bad form (no `--start`, no `--request`, path `x`, `--timeout 0`, `--timeout abc`, `--env 1A=x`, `--env noequals`) exits 2 with standard error not empty, and a marker file the start command would write is absent; a `PATH` holding `sh` and `awk` but no `curl` exits 2 with `curl` named on standard error; after every run, and after an `INT` sent to a run waiting on `sleep 60`, the `TMPDIR` directory is empty, no process of the run is left in its process group, and a `sleep` the check started beforehand still runs. The script's header cites `running-the-change/REQ-12` beside the lines REQ-12 asks for
-  - After: T0
+  - After: T11
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 128 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/verify-run.sh` → no output; `bash scripts/lint.sh` → 0 errors
 - [ ] **T2** Ten runs in a row on one static fixture → REQ-11
   - Files: scripts/smoke.sh

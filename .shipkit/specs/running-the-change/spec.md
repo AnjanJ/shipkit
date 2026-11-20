@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `49a3284` on sprint-34/running-the-change.
 > Status: open
-> Paths: plugins/shipkit/scripts/verify-run.sh, plugins/shipkit/scripts/commit-gate.sh, plugins/shipkit/hooks/hooks.json, plugins/shipkit/stacks/elixir/.claude/skills/verify/, plugins/shipkit/stacks/static/.claude/skills/verify/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/trim-audit-checks.md, docs/plans/verifier-sprint-plan.md, scripts/evals-map.tsv, docs/design/eval-cases.md, plugins/shipkit/evals/, GUIDE.md
+> Paths: plugins/shipkit/scripts/verify-run.sh, plugins/shipkit/scripts/guard-commit.sh, plugins/shipkit/scripts/commit-gate.sh, plugins/shipkit/hooks/hooks.json, plugins/shipkit/stacks/elixir/.claude/skills/verify/, plugins/shipkit/stacks/static/.claude/skills/verify/, scripts/smoke.sh, scripts/lint.py, docs/design/context-cost.md, docs/design/trim-audit-checks.md, docs/plans/verifier-sprint-plan.md, scripts/evals-map.tsv, docs/design/eval-cases.md, plugins/shipkit/evals/, GUIDE.md
 > Tests: scripts/smoke.sh
 
 ## Purpose
@@ -181,6 +181,12 @@ The prune:
   that proves it. [untested: held by `spec-check.sh` at 0 gaps in the exit checklist]
 - **REQ-34.** The release task in `docs/plans/verifier-sprint-plan.md` shall hold a line that
   makes a prune pass part of every release. [untested: prose, verified by reading]
+
+Found on the way (added 2026-11-20 on the owner's yes, after acceptance):
+
+- **REQ-35.** When the hook's JSON is indented, or has white space around the colon after
+  `"cwd"`, `guard-commit.sh` shall check the staged files of the repository at that `cwd`, as
+  it does for compact JSON.
 
 ## How the prune runs
 

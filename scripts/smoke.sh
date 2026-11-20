@@ -734,6 +734,13 @@ else
   if [ "$rc" -eq 2 ] && grep -q 'config/server.key' "$WORK/guard.err"; then
     pass "guard-commit (nested *.key in a chained commit → exit 2)"
   else failc "guard-commit" "nested key: exit $rc, stderr: $(cat "$WORK/guard.err")"; fi
+  # Cites: running-the-change/REQ-35. The hook docs do not promise compact JSON, and their
+  # example is indented: the same call, indented, must still look at the project it names.
+  rc=$(printf '{\n  "hook_event_name": "PreToolUse",\n  "cwd": "%s",\n  "tool_name": "Bash",\n  "tool_input": {\n    "command": "git commit -m wip"\n  }\n}\n' "$GP" \
+    | (cd "$WORK" && sh "$GUARD" 2>"$WORK/guard.err"); echo $?)
+  if [ "$rc" -eq 2 ] && grep -q 'config/server.key' "$WORK/guard.err"; then
+    pass "guard-commit (indented hook JSON names the project → exit 2)"
+  else failc "guard-commit" "indented JSON: exit $rc, want 2 naming config/server.key"; fi
   # a broken guard must never block a session: not a repository, and no input at all
   mkdir -p "$WORK/not-a-repo"
   rc=$(guard "git commit -m wip" "$WORK/not-a-repo")
