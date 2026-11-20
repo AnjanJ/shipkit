@@ -40,7 +40,7 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - Test: scripts/smoke.sh check 130 (`verify-skills`): both files exist with a `description:` of 300 characters or fewer; `install-stack.sh` for `elixir` and for `static` into fresh projects, with the `KEY=value` arguments that smoke's existing install checks pass for those stacks, exits 0 and leaves no `.claude/skills/verify/`; the same with `--with-skills` exits 0 and leaves `.claude/skills/verify/SKILL.md` byte-identical to the overlay's file; `scripts/lint.py` prints no line naming either file. The text is the design's, "The two `verify` skills"
   - After: T2
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 130 `PASS`, checks 67 and 69 `PASS`, exit 0; `bash scripts/lint.sh` → 0 errors, 0 warnings
-- [ ] **T4** `context-cost.md`: the two skills' bytes, and the Rails count corrected → REQ-17
+- [x] **T4** `context-cost.md`: the two skills' bytes, and the Rails count corrected → REQ-17
   - Files: docs/design/context-cost.md
   - Test: none: REQ-17 is prose, read against `docs/design/context-cost.md`
   - After: T3
