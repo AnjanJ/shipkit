@@ -77,6 +77,29 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - After: T0
   - Done when: the plan's "### The release task" holds a line that makes a prune pass, against `docs/design/trim-audit-checks.md`, part of every release
 
+## The sprint's exit checklist (2026-11-20, at `765bda8`)
+
+All ten lines of the plan's checklist hold. Line 1: `bash scripts/lint.sh` 0 errors, 0 warnings
+across 28 skills, 5 agents, 22 rules. Line 2: `sh scripts/smoke.sh --no-model </dev/null` exit 0,
+257 passed (35 text-only), 15 skipped (model), 0 failed, at a load average of 2.7; check 112
+(`briefing-cost`), which failed twice earlier in the sprint on a loaded machine (0.54 s and
+0.57 s against 0.5, read and not run again), passed. Line 3: the sprint wrote and changed no
+grader; `sh scripts/grader-check.sh` 37 as expected, 0 not. Line 4: `spec-check.sh .` exit 0, 37
+specs, 0 gaps; this spec reads tested=26, waived=9, uncited=0. Line 5: the three always-on rules,
+2,999 of 3,000 bytes. Line 6: the evals folder, 204,629 of 204,800 bytes, as at the sprint's
+start (the prune cut no case). Line 7, the plan's §0 rows this sprint owns: paid model runs, 0;
+"a way for the gate to run the change", `verify-run.sh` and a `verify` skill for two stacks, not
+three (the intake's answer 1: Rails waits for Sprint 35, with setup's count and checks 67 and 69);
+"a commit stamped with how it was verified", the gate that reads the stamp exists, off, and the
+commit skill's text that writes it waits for Sprint 35 (rule 34); the three always-on rules,
+unchanged; eval cases, 78, none cut; smoke checks, 1 to 133 less 2b (136, 15 of them model
+checks), the prune's one cut. Line 8: `release-check.sh .` 31 shipped, 5 findings, the five
+`NO-REPORT` lines of the sprint's start. Line 9: `uv run --with hypothesis==6.170.16 python3
+scripts/prop.py` exit 0, five properties hold on forty inputs each. Line 10: no existing skill,
+agent, rule or overlay file changed or removed since `main`. Beside the ten:
+`decision-check.sh . --run` 190 decisions, 0 fired, 0 errors; `checks-match.sh . main` exit 0,
+no line.
+
 ## After the gate
 
 T-MERGE: the plan's exit checklist (ten lines, plan §1), its results written under this file's
