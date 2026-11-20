@@ -187,6 +187,7 @@ registry() { cat <<'EOF'
 126 red-check
 127 brief-escapes
 128 verify-run
+129 verify-run-ten
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5645,6 +5646,34 @@ fi
 kill "$vr_by" 2>/dev/null; wait "$vr_by" 2>/dev/null
 if [ -f "$VRS" ] && [ -z "$vr_fail" ]; then pass "verify-run (RAN with the status line and 10 body lines after one GET, EXITED with the code and the last 20 lines, NOT-READY after the timeout given, exit 2 on misuse or no curl with nothing started; nothing of a run is left and a bystander lives, also after INT)"
 elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail"; fi
+
+# 129. verify-run-ten: ten runs in a row on one static fixture give the same RAN line and leave
+# no server behind (running-the-change T2). The fixture is the spec's: a folder holding
+# index.html, served by python3 -m http.server "$PORT" from inside it. A server another program
+# runs on this machine is listed before the runs and left out of the count.
+# Cites: running-the-change/REQ-11
+VT="$WORK/verify-ten"; mkdir -p "$VT/site" "$VT/tmp"; vt_fail=""
+printf '<!doctype html><title>t</title><p>static fixture</p>\n' > "$VT/site/index.html"
+vt_servers() { ps -A -o pid= -o command= | awk '/[h]ttp\.server/ { print $1 }' | sort; }
+vt_servers > "$VT/before"
+vt_i=1
+while [ "$vt_i" -le 10 ]; do
+  (cd "$VT/site" && TMPDIR="$VT/tmp" sh "$COPY/scripts/verify-run.sh" --start 'python3 -m http.server "$PORT"' --request /index.html >"$VT/out" 2>"$VT/err")
+  vt_rc=$?
+  [ "$vt_rc" -eq 0 ] && [ "$(sed -n 1p "$VT/out")" = "RAN 200 /index.html" ] \
+    || vt_fail="$vt_fail [run $vt_i: exit $vt_rc, first line $(sed -n 1p "$VT/out")]"
+  vt_n=0
+  while :; do
+    vt_servers > "$VT/after"; vt_new=$(comm -13 "$VT/before" "$VT/after" | tr '\n' ' ')
+    [ -z "$vt_new" ] && break
+    [ "$vt_n" -ge 10 ] && { vt_fail="$vt_fail [run $vt_i: a server is left: $vt_new]"; break; }
+    vt_n=$((vt_n + 1)); sleep 0.2
+  done
+  [ -z "$(ls -A "$VT/tmp" 2>/dev/null)" ] || vt_fail="$vt_fail [run $vt_i: left in TMPDIR]"
+  vt_i=$((vt_i + 1))
+done
+if [ -z "$vt_fail" ]; then pass "verify-run-ten (ten runs in a row on one static fixture each print RAN 200 /index.html first and leave no server and nothing in TMPDIR)"
+else failc "verify-run-ten" "$vt_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

@@ -29,11 +29,12 @@ T9 cuts nothing without the owner's yes for each cut, given in the thread to one
   - After: T11
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 128 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/verify-run.sh` → no output; `bash scripts/lint.sh` → 0 errors
   - Note (2026-11-20): the suite's run for this commit exited 1 on one check: 112 (`briefing-cost`) read 0.54 s of CPU, best of three, against its half second. It was read and not run again, as on 2026-11-19 (misses-to-checks T5): `briefing.sh` and `spec-check.sh` are unchanged since `main`, the check times a fixture of fifty specs of its own, and the load average was 4.1 just after the run, with another window at work. The other 251 checks passed, check 128 among them. Check 128 alone takes about 5 s; run against two broken copies of the script (one that never stops the application, one that probes the request path), it failed both.
-- [ ] **T2** Ten runs in a row on one static fixture → REQ-11
+- [x] **T2** Ten runs in a row on one static fixture → REQ-11
   - Files: scripts/smoke.sh
   - Test: scripts/smoke.sh check 129 (`verify-run-ten`): a fresh folder holding `index.html`, ten runs of `verify-run.sh --start 'python3 -m http.server "$PORT"' --request /index.html` from inside it, each first line `RAN 200 /index.html`, and no `http.server` process started by a run left after it (read with `ps -A -o pid= -o command=` against the list taken before)
   - After: T1
   - Done when: `sh scripts/smoke.sh --no-model </dev/null` → check 129 `PASS`, exit 0
+  - Note (2026-11-20): check 129 could not be red first: the behaviour it holds is T1's, already built. It was shown to fail instead on a copy of the script whose clean-up does not stop the application ("a server is left" from run 1 on) and passes on the script, ten runs in about 4 s.
 - [ ] **T3** The elixir and static `verify` skills, installed only on `--with-skills` → REQ-13, REQ-14, REQ-15
   - Files: plugins/shipkit/stacks/elixir/.claude/skills/verify/SKILL.md, plugins/shipkit/stacks/static/.claude/skills/verify/SKILL.md, scripts/smoke.sh
   - Test: scripts/smoke.sh check 130 (`verify-skills`): both files exist with a `description:` of 300 characters or fewer; `install-stack.sh` for `elixir` and for `static` into fresh projects, with the `KEY=value` arguments that smoke's existing install checks pass for those stacks, exits 0 and leaves no `.claude/skills/verify/`; the same with `--with-skills` exits 0 and leaves `.claude/skills/verify/SKILL.md` byte-identical to the overlay's file; `scripts/lint.py` prints no line naming either file. The text is the design's, "The two `verify` skills"
