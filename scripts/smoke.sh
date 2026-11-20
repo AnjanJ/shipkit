@@ -185,6 +185,7 @@ registry() { cat <<'EOF'
 124 prop
 125 prop-ci
 126 red-check
+127 brief-escapes
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -5506,6 +5507,34 @@ rc_clean "stopped half way"
 [ -f "$RC/theirs/lib.sh" ] || rc_fail="$rc_fail [a worktree the check made was removed]"
 if [ -z "$rc_fail" ]; then pass "red-check (a test that needs the feature is RED-AT-BASE, one that asserts nothing GREEN-AT-BASE, a base that cannot run BASE-NOT-RUNNABLE after one run, no differing citing test NO-TESTS with no run; the citing files are spec-check.sh's, untracked ones too; --link shares only the folders named; every other call is exit 2 with no word; the project, git and a worktree of the check's own are as they were, also after TERM)"
 else failc "red-check" "$rc_fail"; fi
+
+# 127. brief-escapes: brief.sh printed a task's Test and Done when lines with echo, and sh reads
+# escapes there: a \n became a line break, a \t a tab, \\ one backslash and \b a backspace byte
+# (found 2026-11-20, tests-worth-having's "Found on the way"). The agent got a command that was
+# not the one in tasks.md. Both lines now come out as written, byte for byte.
+# Cites: tests-worth-having/REQ-51
+BE="$WORK/brief-escapes"; mkdir -p "$BE/.shipkit/specs/esc"; be_fail=""
+be_test='tests/t.sh: printf '"'"'one\ntwo\tthree\\four'"'"' and grep -E '"'"'\bword\b'"'"''
+be_done='`sh run.sh` prints a\nb and \c stops nothing'
+{ printf '# Spec: Esc\n\n> Spec accepted at commit `abc1234` on main.\n> Status: open\n\n'
+  printf '## Purpose\nA line is copied as written.\n\n## Requirements (EARS)\n- **REQ-1.** The thing shall copy.\n\n## Out of scope\nNothing.\n'
+} > "$BE/.shipkit/specs/esc/spec.md"
+{ printf '# Tasks: Esc\n\n- [ ] **T1** Copy → REQ-1\n  - Files: app.sh\n'
+  printf '  - Test: %s\n  - After: none\n  - Done when: %s\n' "$be_test" "$be_done"
+} > "$BE/.shipkit/specs/esc/tasks.md"
+be_out=$(sh "$COPY/scripts/brief.sh" "$BE" esc T1 2>/dev/null; echo "exit $?")
+be_prove=$(printf '%s\n' "$be_out" | awk '/^## Prove it with/ { on = 1; next } /^## / { on = 0 } on')
+be_t=$(printf '%s\n' "$be_prove" | grep -c '^- Test: ')
+be_d=$(printf '%s\n' "$be_prove" | grep -c '^- Done when: ')
+[ "$(printf '%s\n' "$be_prove" | sed -n 1p)" = "- Test: $be_test" ] \
+  || be_fail="$be_fail [the Test line is not the task's, byte for byte: $(printf '%s\n' "$be_prove" | sed -n 1,2p | od -c | sed -n 1,4p | tr -s ' ' | tr '\n' '|')]"
+[ "$(printf '%s\n' "$be_prove" | grep '^- Done when: ')" = "- Done when: $be_done" ] \
+  || be_fail="$be_fail [the Done when line is not the task's, byte for byte: $(printf '%s\n' "$be_prove" | grep -A1 '^- Done when: ' | tr '\n' '|')]"
+[ "$be_t" = 1 ] && [ "$be_d" = 1 ] && [ "$(printf '%s\n' "$be_prove" | grep -c .)" = 3 ] \
+  || be_fail="$be_fail [Prove it with holds $(printf '%s\n' "$be_prove" | grep -c .) lines, not 3]"
+printf '%s\n' "$be_out" | tail -1 | grep -qx 'exit 0' || be_fail="$be_fail [brief.sh: $(printf '%s\n' "$be_out" | tail -1)]"
+if [ -z "$be_fail" ]; then pass "brief-escapes (a task's Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
+else failc "brief-escapes" "$be_fail"; fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

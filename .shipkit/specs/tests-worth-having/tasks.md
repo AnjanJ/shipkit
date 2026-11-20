@@ -75,6 +75,11 @@ the owner, with the input it failed on, before any change to `spec-check.sh` or 
   - Test: none: REQ-50 is read from Sprint 35's record
   - After: T10
   - Done when: `eval-history.md` holds the verdict word `red-check.sh` printed on the clone, the task it was run on and the time it took
+- [x] **T12** `brief.sh` copies a task's `Test` and `Done when` lines as written → REQ-51
+  - Files: plugins/shipkit/scripts/brief.sh, scripts/smoke.sh
+  - Test: scripts/smoke.sh check 127 (`brief-escapes`): a task whose `Test` line holds `\n`, `\t`, `\\` and `\b` and whose `Done when` line holds `\n` and `\c` gives a brief whose "Prove it with" holds those two lines byte for byte and three lines in all; `brief.sh` exits 0
+  - After: T9
+  - Done when: `sh scripts/smoke.sh --no-model </dev/null` → checks 71 and 127 `PASS`, exit 0; `sh -n plugins/shipkit/scripts/brief.sh` → no output
 
 ## The sprint's exit checklist (2026-11-20, at the commit after T9's)
 
@@ -107,4 +112,5 @@ Not fixed here; each goes to the sprint's pull request.
   `grep -E '\bword\b'` with two backspace bytes. The requirement itself is printed by awk and
   is exact, which is what REQ-25 holds. None of the five properties reads these two lines. The
   fix is `printf '%s\n'` in a shipped script outside this sprint's files, so it is put to the
-  owner.
+  owner. Fixed on the owner's yes (2026-11-20): T12, REQ-51, check 127. The
+  title line (`brief.sh:137`) is printed with `echo` too and is left as it was.

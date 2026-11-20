@@ -151,8 +151,8 @@ printf '%s\n' "$FILES" | sed 's/^/- /'
 echo "Nothing else. If the task cannot be done inside these files, stop and report blocked."
 echo
 echo "## Prove it with"
-echo "- Test: $(task test)"
-echo "- Done when: $(task done)"
+printf '%s\n' "- Test: $(task test)"
+printf '%s\n' "- Done when: $(task done)"
 echo "- Each test cites the requirement it proves as \`$SLUG/REQ-N\`; \`spec-check\` reads exactly that."
 echo
 echo "## Already done"

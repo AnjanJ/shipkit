@@ -2,7 +2,7 @@
 
 > Spec accepted at commit `6fea503` on sprint-33/tests-worth-having.
 > Status: open
-> Paths: scripts/kind-probe.sh, scripts/kind-replies/, scripts/prop.py, plugins/shipkit/scripts/red-check.sh, plugins/shipkit/scripts/ship-check.sh, .github/workflows/lint.yml, GUIDE.md, .shipkit/specs/gate-as-software/spec.md
+> Paths: scripts/kind-probe.sh, scripts/kind-replies/, scripts/prop.py, plugins/shipkit/scripts/red-check.sh, plugins/shipkit/scripts/ship-check.sh, plugins/shipkit/scripts/brief.sh, .github/workflows/lint.yml, GUIDE.md, .shipkit/specs/gate-as-software/spec.md
 > Tests: scripts/smoke.sh, scripts/prop.py
 
 ## Purpose
@@ -227,6 +227,11 @@ What a model reads (written here, applied in Sprint 35 after its baseline):
 - **REQ-50.** `red-check.sh` shall be read on the clone of the owner's project, never on the
   live checkout, and its verdict word and its time shall be written into the record.
   [untested: read from Sprint 35's record]
+
+Found on the way (added 2026-11-20 on the owner's yes, after acceptance):
+
+- **REQ-51.** The `Test` and `Done when` lines that `brief.sh` prints under "Prove it with" shall
+  be the task's own text in `tasks.md`, byte for byte, also when it holds a backslash.
 
 ## A requirement of `gate-as-software` that this spec amends
 
