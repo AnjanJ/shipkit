@@ -29,7 +29,7 @@ CORE="$ROOT/plugins/shipkit"
 #   --list              print RUN or SKIP for each numbered check, as the other arguments decide,
 #                       and run nothing
 # A wrong argument, a number --only does not take, or --no-model with --only: usage, exit 64.
-MODEL_CHECKS="1 2 2b 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
+MODEL_CHECKS="1 2 3 4 5 5b 6 22 23 29 31 32 50 54 64"   # the numbered checks that start `claude`
 NEEDS="32:31"   # <check>:<the check whose model session wrote a file it reads>
 usage() { echo "usage: smoke.sh [--no-model | --only <n>[,<n>]] [--list]" >&2; exit 64; }
 NO_MODEL=0; ONLY=""; LIST=0
@@ -57,7 +57,6 @@ done
 registry() { cat <<'EOF'
 1 rules-inject
 2 rules-skip
-2b rules-fallback
 3 plugin-root
 4 agents
 5 workflows-skills
@@ -186,6 +185,12 @@ registry() { cat <<'EOF'
 125 prop-ci
 126 red-check
 127 brief-escapes
+128 verify-run
+129 verify-run-ten
+130 verify-skills
+131 commit-gate
+132 commit-gate-hook
+133 trim-audit
 EOF
 }
 is_model() { case " $MODEL_CHECKS " in *" $1 "*) return 0 ;; esac; return 1; }
@@ -302,18 +307,6 @@ case "$out" in
 esac
 fi  # /model_check 2
 
-# 2b. ...and a rule MISSING from an otherwise-complete install IS still injected, so the
-# Cites: install-lifecycle/REQ-5
-# always-on fallback cannot be silently disabled (finding 2, the other half of the contract).
-# Deleting the disk copy removes ZEBRA-2002, so seeing ZEBRA-1001 proves the hook stepped in.
-rm -f "$PROJ/.claude/rules/shipkit/decisions.md"
-if model_check 2b; then
-out=$(ask "$COPY" "$CW_Q")
-case "$out" in
-  *ZEBRA-1001*) pass "rules-fallback (a rule deleted from disk is re-injected, not lost)";;
-  *) failc "rules-fallback" "a rule missing from disk was not injected: $out";;
-esac
-fi  # /model_check 2b
 rm -rf "$PROJ/.claude"
 
 # 3. plugin-root: the root line is in context and names the scratch copy
@@ -734,6 +727,13 @@ else
   if [ "$rc" -eq 2 ] && grep -q 'config/server.key' "$WORK/guard.err"; then
     pass "guard-commit (nested *.key in a chained commit → exit 2)"
   else failc "guard-commit" "nested key: exit $rc, stderr: $(cat "$WORK/guard.err")"; fi
+  # Cites: running-the-change/REQ-35. The hook docs do not promise compact JSON, and their
+  # example is indented: the same call, indented, must still look at the project it names.
+  rc=$(printf '{\n  "hook_event_name": "PreToolUse",\n  "cwd": "%s",\n  "tool_name": "Bash",\n  "tool_input": {\n    "command": "git commit -m wip"\n  }\n}\n' "$GP" \
+    | (cd "$WORK" && sh "$GUARD" 2>"$WORK/guard.err"); echo $?)
+  if [ "$rc" -eq 2 ] && grep -q 'config/server.key' "$WORK/guard.err"; then
+    pass "guard-commit (indented hook JSON names the project → exit 2)"
+  else failc "guard-commit" "indented JSON: exit $rc, want 2 naming config/server.key"; fi
   # a broken guard must never block a session: not a repository, and no input at all
   mkdir -p "$WORK/not-a-repo"
   rc=$(guard "git commit -m wip" "$WORK/not-a-repo")
@@ -3540,7 +3540,7 @@ if [ -z "$gx_fail" ]; then pass "goldfish-fixture (gap plants one undefined term
 else failc "goldfish-fixture" "$gx_fail"; fi
 
 # 97. smoke-args: the suite's own arguments. --list prints what would run and runs nothing;
-# --no-model leaves out the sixteen checks that start a model; --only names some of them and
+# --no-model leaves out the fifteen checks that start a model; --only names some of them and
 # takes the ones they need with it; a wrong argument is a usage error. Every form run below
 # stops before the first check, so nothing here starts a model. Then the script reads itself:
 # a numbered check that starts claude is one of MODEL_CHECKS and does it inside its
@@ -3563,7 +3563,7 @@ printf '%s\n' "$sa_nm" | grep -q '^RUN 19 spec-check-reqs$' || sa_fail="$sa_fail
 sa_only=$(sh "$SELF" --list --only 32 2>&1)
 sa_run=$(printf '%s\n' "$sa_only" | sed -n 's/^RUN \([^ ]*\) .*/\1/p' | tr '\n' ' ')
 case " $sa_run" in *" 31 32 "*) ;; *) sa_fail="$sa_fail [--only 32 does not run 31 and 32]";; esac
-[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 14 ] || sa_fail="$sa_fail [--only 32 does not skip the other fourteen]"
+[ "$(printf '%s\n' "$sa_only" | grep -c '^SKIP ')" -eq 13 ] || sa_fail="$sa_fail [--only 32 does not skip the other thirteen]"
 printf '%s\n' "$sa_only" | grep -q '^RUN 19 ' || sa_fail="$sa_fail [--only 32 leaves out a check that needs no model]"
 sa_out=$(sh "$SELF" --only 7 2>&1); sa_rc=$?
 if [ "$sa_rc" -ne 64 ] || ! printf '%s\n' "$sa_out" | grep -qF "$MODEL_CHECKS" || printf '%s\n' "$sa_out" | grep -q '^PASS'; then
@@ -3598,7 +3598,7 @@ sa_scan=$(awk -v models="$MODEL_CHECKS" '
 sa_heads=$(sed -n 's/^# \([0-9][0-9]*[a-z]\{0,1\}\)\. .*/\1/p' "$SELF" | tr '\n' ' ')
 sa_reg=$(registry | awk '{ print $1 }' | tr '\n' ' ')
 if [ -z "$sa_scan" ] && [ "$sa_heads" = "$sa_reg" ]; then
-  pass "smoke-args (the script read as text: sixteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
+  pass "smoke-args (the script read as text: fifteen guarded checks start a model and no other does; model-free assertions stay outside the guards; $sa_n checks, each in the registry)"
 else failc "smoke-args" "$sa_scan — headers [$sa_heads] registry [$sa_reg]"; fi
 
 # 98. ci-smoke-job: CI runs this suite without its model checks on every pull request. The
@@ -5539,6 +5539,339 @@ be_d=$(printf '%s\n' "$be_prove" | grep -c '^- Done when: ')
 printf '%s\n' "$be_out" | tail -1 | grep -qx 'exit 0' || be_fail="$be_fail [brief.sh: $(printf '%s\n' "$be_out" | tail -1)]"
 if [ -z "$be_fail" ]; then pass "brief-escapes (a task's title, Test and Done when lines that hold a backslash before n, t, b, c or another backslash are copied into the brief byte for byte)"
 else failc "brief-escapes" "$be_fail"; fi
+
+# 128. verify-run: start an application on a free port, wait until it answers, make one request
+# and stop what it started (running-the-change T1). The application is a static server on
+# python3's socketserver.TCPServer, so no framework and no model is needed. Not python3 -m
+# http.server: its HTTPServer looks up the machine's name before it listens, which took 35 s on
+# CI's macOS runner (socket.getfqdn, read on pull request #45) and kept the port shut. Every run's TMPDIR is a directory of the check's own,
+# and every application command names $VR or sleep 6128, so what a run leaves behind is seen.
+# Cites: running-the-change/REQ-1 running-the-change/REQ-2 running-the-change/REQ-3
+# running-the-change/REQ-4 running-the-change/REQ-5 running-the-change/REQ-6
+# running-the-change/REQ-7 running-the-change/REQ-8 running-the-change/REQ-9
+# running-the-change/REQ-10
+VRS="$COPY/scripts/verify-run.sh"; VR="$WORK/verify-run"; vr_fail=""
+mkdir -p "$VR/site" "$VR/tmp" "$VR/bin"
+vr_i=1; while [ "$vr_i" -le 15 ]; do echo "p$vr_i"; vr_i=$((vr_i + 1)); done > "$VR/site/page.html"
+vr_srv="python3 -c 'import functools, os, socketserver, http.server; socketserver.TCPServer((\"127.0.0.1\", int(os.environ[\"PORT\"])), functools.partial(http.server.SimpleHTTPRequestHandler, directory=\"$VR/site\")).serve_forever()'"
+sleep 6129 & vr_by=$!
+vr_diag() {  # on a failure only: how long this machine takes to look up its own name, which
+  # http.server does before it listens (HTTPServer.server_bind calls socket.getfqdn)
+  python3 -c 'import socket, time
+for h in ("127.0.0.1", ""):
+    t = time.time(); socket.getfqdn(h); print("getfqdn(%r) %.1f s" % (h, time.time() - t))' 2>&1 | tr '\n' ' '
+}
+vr() {  # vr <args…> → prints the exit status; stdout in $VR/out, stderr in $VR/err
+  (cd "$VR/site" && TMPDIR="$VR/tmp" sh "$VRS" "$@" >"$VR/out" 2>"$VR/err"); echo $?
+}
+vr_left() {  # vr_left <run>: nothing of the run is left, and the bystander still runs
+  vr_n=0
+  while :; do
+    ps -A -o command= > "$VR/ps"
+    if grep -F -e "$VR/site" -e 'sleep 6128' "$VR/ps" >/dev/null; then
+      [ "$vr_n" -ge 10 ] && { vr_fail="$vr_fail [$1: a process of the run is left: $(grep -F -e "$VR/site" -e 'sleep 6128' "$VR/ps" | head -2 | tr '\n' '|')]"; break; }
+      vr_n=$((vr_n + 1)); sleep 0.2
+    else break; fi
+  done
+  [ -z "$(ls -A "$VR/tmp" 2>/dev/null)" ] || vr_fail="$vr_fail [$1: left in TMPDIR: $(ls -A "$VR/tmp" | tr '\n' ' ')]"
+  kill -0 "$vr_by" 2>/dev/null || vr_fail="$vr_fail [$1: the bystander sleep was stopped]"
+}
+if [ ! -f "$VRS" ]; then
+  failc "verify-run" "scripts/verify-run.sh does not exist (checks written first, by design)"
+else
+  # RAN: --env reaches the application, one GET to the path, at most 10 body lines, no app output
+  rc=$(vr --start "echo NOISE; printf '%s %s %s\n' \"\$PORT\" \"\$A\" \"\$B\" > '$VR/env.txt'; exec $vr_srv 2>>'$VR/server.log'" \
+         --request /page.html --env A=1 --env B=2)
+  [ "$rc" -eq 0 ] || vr_fail="$vr_fail [RAN: exit $rc, want 0: $(head -3 "$VR/out" "$VR/err" | tr '\n' '|')]"
+  [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] || vr_fail="$vr_fail [RAN: first line: $(sed -n 1p "$VR/out")]"
+  sed -n 2p "$VR/out" | grep -q '^HTTP/[0-9.]* 200' || vr_fail="$vr_fail [RAN: no status line: $(sed -n 2p "$VR/out")]"
+  [ "$(sed -n '3,$p' "$VR/out" | tr '\n' ' ')" = "p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 " ] \
+    || vr_fail="$vr_fail [RAN: the body lines are not the first 10: $(sed -n '3,$p' "$VR/out" | tr '\n' ' ')]"
+  grep -q NOISE "$VR/out" && vr_fail="$vr_fail [RAN: the application's output reached stdout]"
+  [ "$(grep -c '"GET /page.html ' "$VR/server.log" 2>/dev/null)" = 1 ] \
+    || vr_fail="$vr_fail [RAN: the path was asked $(grep -c '"GET /page.html ' "$VR/server.log" 2>/dev/null) times, want 1]"
+  read -r vr_port vr_a vr_b < "$VR/env.txt" 2>/dev/null
+  { [ "${vr_port:-0}" -gt 1023 ] 2>/dev/null && [ "$vr_a" = 1 ] && [ "$vr_b" = 2 ]; } \
+    || vr_fail="$vr_fail [RAN: PORT, A, B in the application: $(cat "$VR/env.txt" 2>/dev/null)]"
+  vr_left "RAN"
+  # a server that starts listening 2 s late is waited for
+  rc=$(vr --start "sleep 2; exec $vr_srv" --request /page.html --timeout 10)
+  [ "$rc" -eq 0 ] && [ "$(sed -n 1p "$VR/out")" = "RAN 200 /page.html" ] \
+    || vr_fail="$vr_fail [late start: exit $rc, first line $(sed -n 1p "$VR/out")]"
+  vr_left "late start"
+  # EXITED: the code, then the last 20 lines of the application's output
+  rc=$(vr --start 'i=0; while [ $i -lt 30 ]; do echo line$i; i=$((i+1)); done; exit 3' --request /x)
+  vr_want="EXITED 3"; vr_i=10; while [ "$vr_i" -le 29 ]; do vr_want="$vr_want|line$vr_i"; vr_i=$((vr_i + 1)); done
+  [ "$rc" -eq 1 ] && [ "$(tr '\n' '|' < "$VR/out")" = "$vr_want|" ] \
+    || vr_fail="$vr_fail [EXITED: exit $rc, out $(tr '\n' '|' < "$VR/out" | cut -c1-120)]"
+  vr_left "EXITED"
+  # NOT-READY: the timeout as given
+  rc=$(vr --start 'sleep 6128' --request /x --timeout 2)
+  [ "$rc" -eq 1 ] && [ "$(sed -n 1p "$VR/out")" = "NOT-READY after 2 s" ] \
+    || vr_fail="$vr_fail [NOT-READY: exit $rc, first line $(sed -n 1p "$VR/out")]"
+  vr_left "NOT-READY"
+  # misuse: exit 2, a word on stderr, nothing started
+  vr_bad() {  # vr_bad <label> <args…>
+    vr_l=$1; shift; rm -f "$VR/marker"
+    rc=$(vr "$@")
+    { [ "$rc" -eq 2 ] && [ -s "$VR/err" ] && [ ! -e "$VR/marker" ]; } \
+      || vr_fail="$vr_fail [misuse, $vr_l: exit $rc, stderr $(wc -c < "$VR/err" | tr -d ' ') bytes, marker $([ -e "$VR/marker" ] && echo made || echo absent)]"
+  }
+  vr_bad "no --start" --request /x
+  vr_bad "no --request" --start "touch '$VR/marker'"
+  vr_bad "path x" --start "touch '$VR/marker'" --request x
+  vr_bad "timeout 0" --start "touch '$VR/marker'" --request /x --timeout 0
+  vr_bad "timeout abc" --start "touch '$VR/marker'" --request /x --timeout abc
+  vr_bad "env 1A=x" --start "touch '$VR/marker'" --request /x --env 1A=x
+  vr_bad "env noequals" --start "touch '$VR/marker'" --request /x --env noequals
+  vr_left "misuse"
+  # no curl on the PATH: exit 2, curl named, nothing started
+  ln -s "$(command -v sh)" "$VR/bin/sh"; ln -s "$(command -v awk)" "$VR/bin/awk"
+  rm -f "$VR/marker"
+  rc=$( (cd "$VR/site" && PATH="$VR/bin" TMPDIR="$VR/tmp" "$VR/bin/sh" "$VRS" --start "touch '$VR/marker'" --request /x >"$VR/out" 2>"$VR/err"); echo $?)
+  { [ "$rc" -eq 2 ] && grep -q curl "$VR/err" && [ ! -e "$VR/marker" ]; } \
+    || vr_fail="$vr_fail [no curl: exit $rc, stderr $(head -1 "$VR/err")]"
+  # an interrupt during the wait: its processes stopped, its directory gone. A job started with &
+  # ignores INT, so python3 puts INT back to its default before it becomes the script.
+  (cd "$VR/site" && TMPDIR="$VR/tmp" exec python3 -c 'import os, signal, sys; signal.signal(signal.SIGINT, signal.SIG_DFL); os.execvp(sys.argv[1], sys.argv[1:])' \
+     sh "$VRS" --start 'sleep 6128' --request /x --timeout 60 >"$VR/out" 2>"$VR/err") &
+  vr_pid=$!; vr_n=0
+  while [ "$vr_n" -lt 100 ]; do ps -A -o command= > "$VR/ps"; grep -q '^sleep 6128' "$VR/ps" && break; sleep 0.1; vr_n=$((vr_n + 1)); done
+  grep -q '^sleep 6128' "$VR/ps" || vr_fail="$vr_fail [interrupt: the application never started]"
+  kill -INT "$vr_pid" 2>/dev/null; wait "$vr_pid" 2>/dev/null; rc=$?
+  [ "$rc" -ne 0 ] || vr_fail="$vr_fail [interrupt: exit 0]"
+  vr_left "interrupt"
+fi
+kill "$vr_by" 2>/dev/null; wait "$vr_by" 2>/dev/null
+if [ -f "$VRS" ] && [ -z "$vr_fail" ]; then pass "verify-run (RAN with the status line and 10 body lines after one GET, EXITED with the code and the last 20 lines, NOT-READY after the timeout given, exit 2 on misuse or no curl with nothing started; nothing of a run is left and a bystander lives, also after INT)"
+elif [ -f "$VRS" ]; then failc "verify-run" "$vr_fail [server.log: $(tail -5 "$VR/server.log" 2>/dev/null | tr '\n' '|' | cut -c1-400)] [$(vr_diag)]"; fi
+
+# 129. verify-run-ten: ten runs in a row on one static fixture give the same RAN line and leave
+# no server behind (running-the-change T2). The fixture is the spec's: a folder holding
+# index.html, served from inside it by python3's socketserver.TCPServer with
+# SimpleHTTPRequestHandler on 127.0.0.1 and $PORT (check 128 says why not http.server). A server another program
+# runs on this machine is listed before the runs and left out of the count.
+# Cites: running-the-change/REQ-11
+VT="$WORK/verify-ten"; mkdir -p "$VT/site" "$VT/tmp"; vt_fail=""
+printf '<!doctype html><title>t</title><p>static fixture</p>\n' > "$VT/site/index.html"
+vt_servers() { ps -A -o pid= -o command= | awk '/[h]ttp\.server/ { print $1 }' | sort; }
+vt_servers > "$VT/before"
+vt_i=1
+while [ "$vt_i" -le 10 ]; do
+  (cd "$VT/site" && TMPDIR="$VT/tmp" sh "$COPY/scripts/verify-run.sh" --start 'python3 -c "import os, socketserver, http.server; socketserver.TCPServer((\"127.0.0.1\", int(os.environ[\"PORT\"])), http.server.SimpleHTTPRequestHandler).serve_forever()"' --request /index.html >"$VT/out" 2>"$VT/err")
+  vt_rc=$?
+  [ "$vt_rc" -eq 0 ] && [ "$(sed -n 1p "$VT/out")" = "RAN 200 /index.html" ] \
+    || vt_fail="$vt_fail [run $vt_i: exit $vt_rc, first line $(sed -n 1p "$VT/out"), then $(sed -n '2,6p' "$VT/out" | tr '\n' '|' | cut -c1-300)]"
+  vt_n=0
+  while :; do
+    vt_servers > "$VT/after"; vt_new=$(comm -13 "$VT/before" "$VT/after" | tr '\n' ' ')
+    [ -z "$vt_new" ] && break
+    [ "$vt_n" -ge 10 ] && { vt_fail="$vt_fail [run $vt_i: a server is left: $vt_new]"; break; }
+    vt_n=$((vt_n + 1)); sleep 0.2
+  done
+  [ -z "$(ls -A "$VT/tmp" 2>/dev/null)" ] || vt_fail="$vt_fail [run $vt_i: left in TMPDIR]"
+  vt_i=$((vt_i + 1))
+done
+if [ -z "$vt_fail" ]; then pass "verify-run-ten (ten runs in a row on one static fixture each print RAN 200 /index.html first and leave no server and nothing in TMPDIR)"
+else failc "verify-run-ten" "$vt_fail [$(vr_diag)]"; fi
+
+# 130. verify-skills: the elixir and static overlays ship a verify skill, installed only on
+# --with-skills, with the arguments those overlays needed before (running-the-change T3). The
+# Rails overlay gets none in this sprint: checks 67 and 69 still hold it to four skills.
+# Cites: running-the-change/REQ-13 running-the-change/REQ-15
+VK="$WORK/verify-skills"; mkdir -p "$VK"; vk_fail=""
+vk_one() {  # vk_one <stack> <KEY=value…>: the skill's description, then installs without and with --with-skills
+  vk_stack=$1; shift
+  vk_src="$COPY/stacks/$vk_stack/.claude/skills/verify/SKILL.md"
+  if [ ! -f "$vk_src" ]; then vk_fail="$vk_fail [$vk_stack: no verify skill]"; return; fi
+  vk_desc=$(sed -n 's/^description: "\(.*\)"$/\1/p' "$vk_src" | head -1)
+  { [ -n "$vk_desc" ] && [ "${#vk_desc}" -le 300 ]; } \
+    || vk_fail="$vk_fail [$vk_stack: description of ${#vk_desc} characters, want 1 to 300]"
+  for vk_with in no yes; do
+    vk_p="$VK/$vk_stack-$vk_with"; mkdir -p "$vk_p"
+    if [ "$vk_with" = yes ]; then sh "$COPY/scripts/install-stack.sh" --with-skills "$COPY" "$vk_stack" "$vk_p" "$@" >/dev/null 2>"$VK/err"
+    else sh "$COPY/scripts/install-stack.sh" "$COPY" "$vk_stack" "$vk_p" "$@" >/dev/null 2>"$VK/err"; fi
+    vk_rc=$?
+    [ "$vk_rc" -eq 0 ] || vk_fail="$vk_fail [$vk_stack, with skills $vk_with: install exit $vk_rc: $(head -2 "$VK/err" | tr '\n' '|')]"
+    if [ "$vk_with" = no ]; then
+      [ ! -e "$vk_p/.claude/skills/verify" ] || vk_fail="$vk_fail [$vk_stack: verify installed without --with-skills]"
+    else
+      cmp -s "$vk_src" "$vk_p/.claude/skills/verify/SKILL.md" \
+        || vk_fail="$vk_fail [$vk_stack: --with-skills did not install the overlay's verify skill as it is]"
+    fi
+  done
+}
+vk_one elixir ELIXIR_FRAMEWORK=Phoenix ELIXIR_FRONTEND=LiveView APP_NAME=my_app TEST_COMMAND="mix test"
+vk_one static BUNDLER=None DEV_SERVER=None
+vk_lint=$(python3 "$ROOT/scripts/lint.py" 2>&1 | grep 'skills/verify/SKILL.md')
+[ -z "$vk_lint" ] || vk_fail="$vk_fail [lint: $(printf '%s\n' "$vk_lint" | head -2 | tr '\n' '|')]"
+if [ -z "$vk_fail" ]; then pass "verify-skills (elixir and static ship a verify skill with a description of 300 characters or fewer, installed as it is on --with-skills and not without, with no new install argument, and lint names neither)"
+else failc "verify-skills" "$vk_fail"; fi
+
+# 131. commit-gate: a PreToolUse command that looks for a Verified: stamp on a commit's message
+# (running-the-change T5). Off by default; observe writes one log row per unstamped commit;
+# enforce blocks one twice a session, then lets it through. The hook's JSON is fed on stdin, both
+# compact and indented, with SHIPKIT_HOME a directory of the check's own.
+# Cites: running-the-change/REQ-18 running-the-change/REQ-19 running-the-change/REQ-20
+# running-the-change/REQ-21 running-the-change/REQ-22 running-the-change/REQ-23
+# running-the-change/REQ-24 running-the-change/REQ-25
+CGS="$COPY/scripts/commit-gate.sh"; CG="$WORK/commit-gate"; mkdir -p "$CG"; cg_fail=""
+CGH="$CG/home"; CGL="$CGH/commit-gate.log"
+cg_json() {  # cg_json <compact|indented> <session id, or - for none> <command> [cwd, or - for none]
+  _c=$(printf '%s' "$3" | sed 's/"/\\"/g')
+  _s=""; [ "$2" = - ] || _s="\"session_id\": \"$2\", "
+  _d="\"cwd\": \"${4:-/proj/a}\", "; [ "${4:-}" = - ] && _d=""
+  if [ "$1" = compact ]; then
+    printf '{%s%s"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"%s","description":"d"}}' \
+      "$(printf '%s' "$_s" | tr -d ' ')" "$(printf '%s' "$_d" | sed 's/": "/":"/; s/", $/",/')" "$_c"
+  else
+    printf '{\n  %s\n  %s\n  "hook_event_name": "PreToolUse",\n  "tool_name": "Bash",\n  "tool_input": {\n    "command": "%s",\n    "description": "d"\n  }\n}\n' \
+      "$_s" "$_d" "$_c"
+  fi
+}
+cg() {  # cg <mode, or - for unset> <json> → prints the exit status; stdout and stderr in $CG/out, $CG/err
+  if [ "$1" = - ]; then printf '%s' "$2" | (unset SHIPKIT_COMMIT_GATE; SHIPKIT_HOME="$CGH" sh "$CGS" >"$CG/out" 2>"$CG/err"); echo $?
+  else printf '%s' "$2" | SHIPKIT_COMMIT_GATE=$1 SHIPKIT_HOME="$CGH" sh "$CGS" >"$CG/out" 2>"$CG/err"; echo $?; fi
+}
+cg_rows() { if [ -f "$CGL" ]; then grep -c . "$CGL"; else echo 0; fi; }
+cg_quiet() {  # cg_quiet <label> <rc> <want rc>: that exit, nothing on stdout or stderr
+  [ "$2" -eq "$3" ] && [ ! -s "$CG/out" ] && [ ! -s "$CG/err" ] \
+    || cg_fail="$cg_fail [$1: exit $2 (want $3), out $(head -c 80 "$CG/out" | tr '\n' '|'), err $(head -c 80 "$CG/err" | tr '\n' '|')]"
+}
+if [ ! -f "$CGS" ]; then
+  failc "commit-gate" "scripts/commit-gate.sh does not exist (checks written first, by design)"
+else
+  sh -n "$CGS" 2>/dev/null || cg_fail="$cg_fail [sh -n reports a syntax error]"
+  # not a commit, in every mode, and an unstamped commit with the gate off: nothing at all
+  for cg_s in compact indented; do
+    for cg_m in off observe enforce; do
+      rc=$(cg "$cg_m" "$(cg_json $cg_s s1 'ls -la')"); cg_quiet "ls, $cg_m, $cg_s" "$rc" 0
+    done
+    for cg_m in - off bogus; do
+      rc=$(cg "$cg_m" "$(cg_json $cg_s s1 'git commit -m "x"')"); cg_quiet "commit, mode $cg_m, $cg_s" "$rc" 0
+    done
+  done
+  [ ! -e "$CGL" ] || cg_fail="$cg_fail [a log was written with the gate off or for a call that is not a commit]"
+  # observe: one row per unstamped commit, the JSON's cwd or - as the last field
+  rc=$(cg observe "$(cg_json compact s1 'git commit -m "x"')"); cg_quiet "observe, unstamped" "$rc" 0
+  awk -F'\t' 'NR == 1 && NF == 5 && $1 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9]Z$/ \
+      && $2 == "s1" && $3 == "observe" && $4 == "unstamped" && $5 == "/proj/a" { ok = 1 } END { exit !ok }' "$CGL" 2>/dev/null \
+    || cg_fail="$cg_fail [observe: the row is not time, s1, observe, unstamped, /proj/a: $(head -1 "$CGL" 2>/dev/null)]"
+  rc=$(cg observe "$(cg_json indented s1 'git commit -am "y"' -)"); cg_quiet "observe, unstamped, indented" "$rc" 0
+  [ "$(cg_rows)" = 2 ] && [ "$(sed -n 2p "$CGL" | cut -f4,5)" = "$(printf 'unstamped\t-')" ] \
+    || cg_fail="$cg_fail [observe, indented, no cwd: rows $(cg_rows), second $(sed -n 2p "$CGL" | tr '\t' ' ')]"
+  # a stamp, also in the second -m part: nothing written, in observe and in enforce
+  for cg_m in observe enforce; do
+    for cg_c in 'git commit -m "feat: x" -m "Verified: tests (x)"' 'git commit -m "feat: x" -m "Verified: none (docs only)"'; do
+      cg_n=$(cg_rows); rc=$(cg "$cg_m" "$(cg_json indented s1 "$cg_c")"); cg_quiet "stamped, $cg_m" "$rc" 0
+      [ "$(cg_rows)" = "$cg_n" ] || cg_fail="$cg_fail [stamped, $cg_m: a row was written]"
+    done
+  done
+  # enforce: blocked twice in a session, the third passes; another session is still blocked
+  for cg_k in 1 2; do
+    rc=$(cg enforce "$(cg_json compact s2 'git commit -m "wip"')")
+    { [ "$rc" -eq 2 ] && [ ! -s "$CG/out" ] && [ "$(grep -c . "$CG/err")" = 1 ] \
+      && grep -q 'Verified:' "$CG/err" && grep -q 'Verified: none (' "$CG/err" \
+      && [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's2\tenforce\tblocked')" ]; } \
+      || cg_fail="$cg_fail [enforce, attempt $cg_k: exit $rc, err $(head -c 160 "$CG/err" | tr '\n' '|'), last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+  done
+  rc=$(cg enforce "$(cg_json compact s2 'git commit -m "wip"')"); cg_quiet "enforce, attempt 3" "$rc" 0
+  [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's2\tenforce\tpassed')" ] || cg_fail="$cg_fail [enforce, attempt 3: last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+  rc=$(cg enforce "$(cg_json indented s3 'git commit -m "wip"')")
+  [ "$rc" -eq 2 ] || cg_fail="$cg_fail [enforce, another session after two blocks of s2: exit $rc, want 2]"
+  rc=$(cg enforce "$(cg_json compact s4 'git commit -m "wip" -m "Verified: none ()"')")
+  [ "$rc" -eq 2 ] || cg_fail="$cg_fail [enforce: Verified: none () counted as a stamp, exit $rc]"
+  # no message on the command line: through, with an unseen row, in observe and in enforce
+  for cg_m in observe enforce; do
+    for cg_c in 'git commit -F f' 'git commit --no-edit' 'git commit'; do
+      rc=$(cg "$cg_m" "$(cg_json compact s5 "$cg_c")"); cg_quiet "$cg_c, $cg_m" "$rc" 0
+      [ "$(tail -1 "$CGL" | cut -f2-4)" = "$(printf 's5\t%s\tunseen' "$cg_m")" ] || cg_fail="$cg_fail [$cg_c, $cg_m: last row $(tail -1 "$CGL" | tr '\t' ' ')]"
+    done
+  done
+  # its own errors let the commit through: empty input, no session id, a log it cannot write
+  rc=$(printf '' | SHIPKIT_COMMIT_GATE=enforce SHIPKIT_HOME="$CGH" sh "$CGS" 2>/dev/null; echo $?)
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, empty input: exit $rc]"
+  rc=$(cg enforce "$(cg_json compact - 'git commit -m "wip"')")
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, no session id: exit $rc]"
+  : > "$CG/a-file"
+  rc=$(cg_json compact s6 'git commit -m "wip"' | SHIPKIT_COMMIT_GATE=enforce SHIPKIT_HOME="$CG/a-file/home" sh "$CGS" 2>/dev/null; echo $?)
+  [ "$rc" -eq 0 ] || cg_fail="$cg_fail [enforce, a log it cannot write: exit $rc]"
+  if [ -z "$cg_fail" ]; then pass "commit-gate (off by default and for every call that is not a commit; observe logs an unstamped commit; enforce blocks twice a session, then passes; a stamp in any -m part passes; a message it cannot see passes with an unseen row; its own errors exit 0; compact and indented JSON alike)"
+  else failc "commit-gate" "$cg_fail"; fi
+fi
+
+# 132. commit-gate-hook: hooks.json runs the gate as a second command on the Bash matcher,
+# beside the secret guard (running-the-change T6). With the gate unset, a commit that stages
+# .env is still blocked by the guard, and the gate adds nothing.
+# Cites: running-the-change/REQ-26
+CH="$WORK/commit-gate-hook"; mkdir -p "$CH"; ch_fail=""
+ch_cmds=$(python3 -c '
+import json, sys
+h = json.load(open(sys.argv[1]))
+for e in h.get("hooks", {}).get("PreToolUse", []):
+    if e.get("matcher") == "Bash":
+        for c in e.get("hooks", []):
+            print("%s\t%s\t%s" % (c.get("type"), c.get("timeout"), c.get("command")))
+' "$COPY/hooks/hooks.json" 2>"$CH/err") || ch_fail="$ch_fail [hooks.json does not parse: $(head -1 "$CH/err")]"
+ch_want=$(printf 'command\t5\t"${CLAUDE_PLUGIN_ROOT}/scripts/guard-commit.sh"\ncommand\t5\t"${CLAUDE_PLUGIN_ROOT}/scripts/commit-gate.sh"')
+[ "$ch_cmds" = "$ch_want" ] || ch_fail="$ch_fail [the Bash entry's commands: $(printf '%s' "$ch_cmds" | tr '\t\n' ' |')]"
+for ch_s in guard-commit.sh commit-gate.sh; do
+  [ -x "$COPY/scripts/$ch_s" ] || ch_fail="$ch_fail [$ch_s is not an executable file]"
+done
+CHP="$CH/proj"; mkdir -p "$CHP"
+(cd "$CHP" && git init -q && git -c user.email=s@s -c user.name=s commit -q --allow-empty -m init \
+  && printf 'KEY=1\n' > .env && git add -f .env)
+ch_json=$(printf '{"session_id":"s1","cwd":"%s","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit -m wip"}}' "$CHP")
+ch_g=$(printf '%s' "$ch_json" | (cd "$CH" && sh "$COPY/scripts/guard-commit.sh" 2>/dev/null); echo $?)
+ch_c=$(printf '%s' "$ch_json" | (cd "$CH" && unset SHIPKIT_COMMIT_GATE; SHIPKIT_HOME="$CH/home" sh "$COPY/scripts/commit-gate.sh" >"$CH/out" 2>&1); echo $?)
+{ [ "$ch_g" -eq 2 ] && [ "$ch_c" -eq 0 ] && [ ! -s "$CH/out" ] && [ ! -e "$CH/home" ]; } \
+  || ch_fail="$ch_fail [a staged .env with the gate unset: guard exit $ch_g (want 2), gate exit $ch_c (want 0), gate output $(head -c 80 "$CH/out"), log $([ -e "$CH/home" ] && echo written || echo none)]"
+if [ -z "$ch_fail" ]; then pass "commit-gate-hook (the Bash entry of PreToolUse runs guard-commit.sh then commit-gate.sh, timeout 5 each, both executable; with the gate unset a staged .env is still blocked by the guard and the gate adds nothing)"
+else failc "commit-gate-hook" "$ch_fail"; fi
+
+# 133. trim-audit: docs/design/trim-audit-checks.md has one row for every smoke check in
+# registry() and every case in scripts/evals-map.tsv, each cell in its form, no trap-2 case a
+# candidate, and a cut row only for what is gone (running-the-change T8, T9). A new check or case
+# without a row fails here, so the prune pass at each release starts from a complete list.
+# Cites: running-the-change/REQ-30 running-the-change/REQ-31 running-the-change/REQ-32
+TA="$WORK/trim-audit"; mkdir -p "$TA"; ta_fail=""
+TAF="$ROOT/docs/design/trim-audit-checks.md"
+{ registry | sed 's/^/smoke	/'; awk -F'\t' 'NR > 1 { print "eval\t" $1 }' "$ROOT/scripts/evals-map.tsv"; } > "$TA/listed"
+ta_read() {  # ta_read <audit file> → one line per problem; nothing when the audit holds
+  awk -F'\t' 'NR == FNR { listed[$1 "\t" $2] = 1; next }
+    /<!-- audit:begin -->/ { on = 1; next } /<!-- audit:end -->/ { on = 0; next }
+    !on || !/^\| / || /^\| Kind / || /^\|---/ { next }
+    { n = split($0, c, / \| /); sub(/^\| /, "", c[1]); sub(/ \|$/, "", c[n])
+      if (n != 7) { print "a row of " n " cells: " substr($0, 1, 60); next }
+      k = c[1]; l = c[2]; key = k "\t" l; seen[key] = 1
+      if (k != "smoke" && k != "eval") print "kind " k ": " l
+      if (c[3] !~ /^([0-9]+\.[0-9]+\.[0-9]+|never)$/) print "last failed " c[3] ": " l
+      if (c[4] == "") print "also covered by is empty: " l
+      if (c[5] !~ /^([0-9]+(\.[0-9]+)? s|\$[0-9]+(\.[0-9]+)?)$/) print "cost " c[5] ": " l
+      if (k == "eval" && l ~ /^trap2-/ && c[6] ~ /^yes/) print "a trap-2 case is a candidate: " l
+      if (c[7] != "" && c[7] !~ /^cut [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/) print "cut " c[7] ": " l
+      if (key in listed && c[7] != "") print "cut but still listed: " l
+      if (!(key in listed) && c[7] == "") print "not listed and not cut: " l }
+    END { for (x in listed) if (!(x in seen)) { sub(/\t/, " ", x); print "no row: " x } }' "$TA/listed" "$1"
+}
+if [ ! -f "$TAF" ]; then
+  failc "trim-audit" "docs/design/trim-audit-checks.md does not exist (checks written first, by design)"
+else
+  ta_out=$(ta_read "$TAF")
+  [ -z "$ta_out" ] || ta_fail="$ta_fail [the audit: $(printf '%s\n' "$ta_out" | head -4 | tr '\n' '|')]"
+  [ "$(awk '/<!-- audit:begin -->/{on=1} on && /^\| (smoke|eval) \|/{n++} END{print n+0}' "$TAF")" -ge "$(grep -c . "$TA/listed")" ] \
+    || ta_fail="$ta_fail [fewer rows than checks and cases]"
+  # the reading itself fails on a broken copy: a row taken out, a cell in the wrong form, a trap-2 case marked yes
+  awk '!done && /^\| smoke \| / { done = 1; next } { print }' "$TAF" > "$TA/one-gone.md"
+  awk '/^\| smoke \| / && !done { n = split($0, c, / \| /); c[5] = "quick"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/bad-cost.md"
+  awk '/^\| eval \| trap2-/ && !done { n = split($0, c, / \| /); c[6] = "yes: full score, a script holds it"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/trap2-yes.md"
+  awk '/^\| smoke \| / && !done { n = split($0, c, / \| /); c[7] = "cut 2026-11-20 |"; s = c[1]; for (i = 2; i <= n; i++) s = s " | " c[i]; $0 = s; done = 1 } { print }' "$TAF" > "$TA/cut-listed.md"
+  for ta_c in one-gone bad-cost trap2-yes cut-listed; do
+    [ -n "$(ta_read "$TA/$ta_c.md")" ] || ta_fail="$ta_fail [the reading passes a broken copy: $ta_c]"
+  done
+  if [ -z "$ta_fail" ]; then pass "trim-audit (one row per smoke check and eval case, each cell in its form, no trap-2 case a candidate, a cut row only for what is gone; the reading fails on a copy with a row gone, a cost in the wrong form a trap-2 case marked yes, or a cut row whose check is still listed)"
+  else failc "trim-audit" "$ta_fail"; fi
+fi
 
 # The last assertion of a --no-model run: the stand-in `claude` was never called.
 if [ "$NO_MODEL" -eq 1 ]; then

@@ -18,7 +18,7 @@ no `CLAUDE.md`, no `.claude/`, no `.shipkit/`; the plugin at `plugins/shipkit` (
 | `skills-core` | 3,969 | the `description:` line of each of 17 `plugins/shipkit/skills/*/SKILL.md` | **≤ 2,950** (W3: 10 skills; the plan's draft said 2,400 — the eight skills W3 does not touch total 2,535 on their own and lint caps a description at 300, so the owner amended the ceiling on 2026-10-30; after W3 the row reads 2,894) |
 | `skills-workflows` | 1,598 | the same for 6 `plugins/shipkit-workflows/skills/*/SKILL.md` | ≤ 1,900 (7 skills; `commit` joins) |
 | `agents` | 1,720 | the `description:` line of each of 7 agents (6 core, `test-analyzer`) | ≤ 1,000 (W4: 4 agents) — after W4 the row reads 991 (3 core + `test-analyzer`); **≤ 1,075 since spec-goldfish** (2026-11-08, the owner's word in its intake): `goldfish`'s one line, 82 bytes, for an agent only `/shipkit:spec` starts — the row reads 1,073 (4 core + `test-analyzer`) |
-| `overlay-skills` | 0 | whole files of the skills setup installed under the project's `.claude/skills/`, read from the manifest `.claude/rules/shipkit/.installed` | 0 by default (W6: installed on a flag) — **after S21-T1 a Rails install without `--with-skills` reads 0** (6 skills, 17,529 bytes, with it) |
+| `overlay-skills` | 0 | whole files of the skills setup installed under the project's `.claude/skills/`, read from the manifest `.claude/rules/shipkit/.installed` | 0 by default (W6: installed on a flag) — **after S21-T1 a Rails install without `--with-skills` reads 0** (with it: six skills and 17,529 bytes at S21-T1; 4 skills, 11,758 bytes, since `d39025c` cut `deploy-check` and `safety-check`, re-measured 2026-11-20) |
 | `overlay-appends` | 0 | the stack sections between `<!-- shipkit:stack:X -->` markers in the project's `CLAUDE.md` | audited line by line (W7) — **after S21-T2** a Rails project's section is 1,388 bytes (was 1,651), a FastAPI project's 1,012 (was 2,507; its Django lines now load only on Django files) |
 | `rules-always-on` | 2,979 | `rules/shipkit.md` + `spec-driven.md` + `decisions.md` as shipped | ≤ 3,000, lint-held; the text does not change in this plan (two skill names move with W3) |
 
@@ -48,6 +48,28 @@ rows (a header row with the date, project and plugin version, then the seven abo
 Run it on any project: `scripts/context-cost.sh ~/code/<project>`; on a checkout other than
 this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 
+## The `verify` overlay skills (S34-T4)
+
+`running-the-change` T3 adds a `verify` skill to the elixir and static overlays, behind
+`--with-skills` like every overlay skill (decision 0004). Measured on 2026-11-20 with
+`scripts/context-cost.sh` on fresh scratch projects (`install-rules.sh`, then
+`install-stack.sh` with the arguments smoke's install checks pass), and `wc -c` per file:
+
+| Overlay | `overlay-skills` without `--with-skills` | with it, before `verify` (`wc -c` of the other files) | with it, now | the `verify` file | its description line |
+|---|---:|---:|---:|---:|---:|
+| `elixir` | 0 | 2,075 (1 skill) | 3,465 (2 skills) | 1,390 | 278 |
+| `static` | 0 | 2,674 (1 skill) | 4,133 (2 skills) | 1,459 | 250 |
+| `rails` | 0 | 11,758 (4 skills) | 11,758 (4 skills) | none until Sprint 35 | — |
+
+A project that installs the skills pays the whole file in its `overlay-skills` row, and the
+description line (counted as the script counts one: the text after `description:` and its
+newline) is the part listed in every session. Both descriptions are under lint's 300
+characters (247 and 275). A project installed without `--with-skills` pays nothing. The Rails
+`verify` skill waits for Sprint 35 (`running-the-change`'s design, "Waiting text"), and would
+add about as much as elixir's.
+
+On 2026-11-21 the static skill's fallback gained `--timeout 90` and a sentence on the name lookup `python3 -m http.server` makes before it listens (35 to 70 s on CI's macOS runner): the file went from 1,284 to 1,459 bytes and a static install with the flag from 3,958 to 4,133. Its description line is unchanged.
+
 ## History
 
 | Date | Tree | hook (bare) | skills-core | skills-workflows | agents | rules | Note |
@@ -62,3 +84,5 @@ this one, `CLAUDE_PLUGIN_ROOT=<root> scripts/context-cost.sh <project>`.
 | 2026-10-30 | S21 exit (W6–W9) | 2,289 | 2,894 | 1,885 | 991 | 2,999 | the §0 table re-measured on a bare dir and scratch Rails and Python installs: Rails `overlay-skills` 0 by default, `overlay-appends` 1,388; Python `overlay-skills` 0, `overlay-appends` 1,003 (shorter placeholder values than T2's 1,012); `eve.md` 12,067 (W9); `ask/SKILL.md` 6,294 (+161, the shapes in `reports.md`) |
 | 2026-10-31 | S22-T2 (W5) | 2,289 | 2,894 | 1,885 | 991 | 2,999 | a real project, `linkshort` before setup; after setup `hook` 90, `overlay-skills` 0, `overlay-appends` 1,051 (`field-notes-5.0.md`) |
 | 2026-10-31 | 5.0.0 | 2,289 | 2,894 | 1,885 | 991 | 2,999 | the §0 table at the release, every row at its ceiling or the record says why (`CHANGELOG.md` 5.0.0); `eve.md` 12,067 |
+| 2026-11-20 | S34-T4 (`running-the-change`) | 2,288 | 2,894 | 1,885 | 1,073 | 2,999 | a bare dir; `verify` joins the elixir and static overlays behind `--with-skills`: elixir `overlay-skills` 2,075 → 3,465 and static 2,674 → 3,958 with the flag, 0 without; Rails 4 skills, 11,758 |
+| 2026-11-21 | S34, after CI on #45 | 2,288 | 2,894 | 1,885 | 1,073 | 2,999 | the static `verify` skill gains `--timeout 90` and one sentence: 1,284 → 1,459 bytes; a static install with `--with-skills` 3,958 → 4,133; the description line unchanged |

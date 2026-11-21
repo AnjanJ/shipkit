@@ -26,8 +26,10 @@ case "$input" in
   *) exit 0 ;;
 esac
 
-# The hook's JSON names the session's working directory; look at that repository.
-dir=$(printf '%s' "$input" | sed -n 's/.*"cwd":"\([^"]*\)".*/\1/p' 2>/dev/null)
+# The hook's JSON names the session's working directory; look at that repository. The docs do
+# not promise compact JSON and their example is indented, so white space may sit around the
+# colon (running-the-change/REQ-35); the first `cwd` read is the one used.
+dir=$(printf '%s\n' "$input" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null | head -n 1)
 if [ -n "$dir" ] && [ -d "$dir" ]; then cd "$dir" 2>/dev/null || exit 0; fi
 
 staged=$(git diff --cached --name-only 2>/dev/null) || exit 0
